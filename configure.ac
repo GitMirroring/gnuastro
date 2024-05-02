@@ -144,8 +144,21 @@ AC_ARG_ENABLE(debug,
 AS_IF([test "x$enable_debug" = "xyes"],
       [cflags_add="-g -O0"; enable_shared=no],
       [cflags_add="-O3"])
+AC_ARG_ENABLE(sanitize,
+              [AS_HELP_STRING([--enable-sanitize=STR@<:@,STR@:>@],
+                              [Compiler '-fsanitize' (can be multiple STRs).])],
+              [AS_IF([test "x$enable_sanitize" != xno],
+                     [enable_sanitize="$enable_sanitize"])],
+              [enable_sanitize=no])
+AS_IF([test "x$enable_sanitize" != "xno"],
+      [AC_LANG(C)
+       AX_CHECK_COMPILE_FLAG([-fsanitize=$enable_sanitize],
+                             [cflags_add=" -fsanitize=$enable_sanitize";
+                              ldflags_add=" -fsanitize=$enable_sanitize"],
+                             [AC_MSG_ERROR([Sanitizer '$enable_sanitize' not supported by your compiler ($CC). See https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html])])])
 CFLAGS="-Wall $cflags_add $CFLAGS"
 CXXFLAGS="-Wall $cflags_add $CXXFLAGS"
+LDFLAGS="$LDFLAGS $ldflags_add"
 
 
 

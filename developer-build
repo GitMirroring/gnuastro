@@ -46,6 +46,7 @@ check=0
 reconf=0
 upload=0
 install=0
+sanitize=0
 valgrind=0
 compression=lzip
 prefix=/usr/local
@@ -185,6 +186,8 @@ Options:
                           libraries.
                           Current status: $debug_status
 
+ -s, --sanitize=STR[,STR] Build Gnuastro with sanitize options.
+
  -v, --valgrind           Build with '--enable-check-with-valgrind'.
                           Current status: $valgrind_status
 
@@ -282,6 +285,15 @@ do
         -d|--debug)
             debug=1
             shift # past argument
+            ;;
+        -s|--sanitize)
+            sanitize="$2"
+            if [ x"$sanitize" = x ]; then
+                echo "No argument given to '--sanitize' ('-s')."
+                exit 1;
+            fi
+            shift # past argument
+            shift # past value
             ;;
         -v|--valgrind)
             valgrind=1
@@ -527,6 +539,9 @@ if [ ! -f Makefile ]; then
     # Set the proper flags.
     if [ x$debug = x1 ]; then
         confopts="$confopts --enable-debug"
+    fi
+    if ! [ x$sanitize = x0 ]; then
+        confopts="$confopts --enable-sanitize=$sanitize"
     fi
     if [ x$valgrind = x1 ]; then
         confopts="$confopts --enable-check-with-valgrind"

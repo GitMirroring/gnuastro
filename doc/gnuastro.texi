@@ -12929,6 +12929,12 @@ It runs a program within its own controlled environment and can thus identify th
 However, it can significantly slow-down the tests.
 So this option is only useful when a segmentation fault is found during @command{make check}.
 
+@item --enable-sanitize=STR[,STR]
+Enable the C compiler sanitization flags (@code{-fsanitize=STR}), described among the @url{https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html, GCC Instrumentation Options} or @url{https://clang.llvm.org/docs, Clang docs}.
+They are useful to debug certain issues at runtime (most relevant for developers of Gnuastro).
+It is possible to enable more than one sanitizer by writing them in a comma-separated list; for example @code{--enable-sanitize=address,undefined}.
+Note that some of the sanitizers have incompatibilities, as explained in the compiler manuals.
+
 @item --enable-progname
 Only build and install @file{progname} along with any other program that is enabled in this fashion.
 @file{progname} is the name of the executable without the @file{ast}, for example, @file{crop} for Crop (with the executable name of @file{astcrop}).
@@ -13459,6 +13465,12 @@ So when you are testing something small or working on the build system itself, i
 @cindex Valgrind
 Build all @command{make check} tests within Valgrind.
 For more, see the description of @option{--enable-check-with-valgrind} in @ref{Gnuastro configure options}.
+
+@item -s
+@itemx --sanitize STR[,STR]
+Build with GCC/Clang's @code{-fsanitize} options.
+For more, see the description of @option{--enable-sanitize} in @ref{Gnuastro configure options}.
+
 
 @item -j INT
 @itemx --jobs INT

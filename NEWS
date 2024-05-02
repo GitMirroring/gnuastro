@@ -7,6 +7,11 @@ See the end of the file for license conditions.
 ** New publications
 ** New features
 
+*** Configuration
+
+  --enable-sanitize: add support for GCC/Clang's sanitizer options (useful
+    for developers; task #16546). Implemented by Giacomo Lorenzetti.
+
 *** Arithmetic
 
   - New Operators: similar operators are grouped; groups are sorted
