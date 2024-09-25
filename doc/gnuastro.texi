@@ -7821,7 +7821,7 @@ astcrop "$base"_convolved_scaled.fits --zeroisnotblank \
         --mode=img --section=$st_edge:*-$edge,$st_edge:*-$edge
 
 # Add noise to the image.
-$ astarithmetic "$base"_convolved_scaled_cropped.fits \
+astarithmetic "$base"_convolved_scaled_cropped.fits \
                 7 18 mag-to-counts mknoise-sigma-from-mean \
                 --output=out.fits
 
@@ -29656,8 +29656,8 @@ So to see the discussions below in action (on real data), see @ref{Measuring the
 
 Here, we will review some of the most commonly used methods to quantify the limits in astronomical data analysis and how MakeCatalog makes it easy to measure them.
 Depending on the higher-level analysis, there are more tests that must be done, but these are relatively low-level and usually necessary in most cases.
-In astronomy, it is common to use the magnitude (a unit-less scale) and physical units, see @ref{Brightness flux magnitude}.
-Therefore the measurements discussed here are commonly used in units of magnitudes.
+In astronomy, it is common to use the magnitude (a unit-less scale) and the flux (physical units), see @ref{Brightness flux magnitude}.
+The measurements discussed here are commonly used in units of magnitudes.
 
 @menu
 * Standard deviation vs Standard error::  Differnece between these important measures.
@@ -29814,7 +29814,7 @@ Note that the @mymath{10.0} below was reported as ``standard deviation'' in the 
 
 @dispmath{\sigma_{\bar{x}}\approx\frac{\sigma}{\sqrt{N}} = \frac{10.0}{200} = 0.05}
 
-Therefore the standard error of the mean is directly related to the number of pixels you used to measure the mean
+Therefore the standard error of the mean is directly related to the number of pixels you used to measure the mean.
 You can test this by changing the @code{200}s in the commands above to smaller or larger values.
 As you make larger and larger images, you will be able to measure the mean much more precisely (the standard error of the mean will go to zero).
 But no matter how many pixels you use, the standard deviation will always be the same.
@@ -29825,7 +29825,7 @@ Within MakeCatalog, the options related to dispersion/error in the measurements 
 For example @option{--std} or @option{--sigclip-std}.
 These return the standard deviation of the values within a label.
 If the underlying object (in the noise) is flat, then this will be the @option{\sigma} that is mentioned above.
-However, no object in astronomy in flat!
+However, no object in astronomy is flat!
 So this option should be used with extreme care!
 It only makes sense in special contexts like measuring the radial profile where we assume that the values at a certain radius have the same flux (see @ref{Generate radial profile}).
 
@@ -29840,7 +29840,7 @@ You can use @ref{NoiseChisel} to generate such an image.
 
 If the underlying profile and sky standard deviations is flat, then @option{--sum-error} will be the standard deviation that we discussed in this section and @option{--mean-error} will be the standard error.
 When the values are different, the combined error is calculated by adding the variances (second power of the standard deviation) of each pixel, added with its value.
-When the values are smaller than one a correction is applied (that is defined in Section 3.3 of Akhlaghi and Ichikawa @url{https://arxiv.org/abs/1505.01664, 2015}).
+When the values are smaller than one, a correction is applied (that is defined in Section 3.3 of Akhlaghi and Ichikawa @url{https://arxiv.org/abs/1505.01664, 2015}).
 @end table
 
 @node Magnitude measurement error of each detection, Surface brightness error of each detection, Standard deviation vs Standard error, Quantifying measurement limits
