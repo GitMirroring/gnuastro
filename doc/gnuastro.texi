@@ -31187,9 +31187,15 @@ The values can be written as simple floating point numbers, or as fractions, for
 
 @item --spatialresolution=FLT
 The error in measuring spatial properties (for example, the area) in units of pixels.
-You can think of this as the FWHM of the dataset's PSF and is used in measurements like the error in surface brightness (@option{--sb-error}, see @ref{MakeCatalog measurements}).
-Ideally, images are taken in the optimal Nyquist sampling @ref{Sampling theorem}, so the default value for this option is 2.
-But in practice real images my be over-sampled (usually ground-based images, where you will need to increase the default value) or undersampled (some space-based images, where you will need to decrease the default value).
+You can think of this as the FWHM of the dataset's PSF and is used in measurements like the error in surface brightness (@option{--sb-error}), see @ref{Surface brightness measurements} and @ref{Surface brightness error of each detection}.
+
+@cindex Cirrus (Galactic)
+@cindex Interstellar dust filaments
+But because most objects in astronomy are either concentrated (like stars or galaxies) or very large (like interstellar dust filaments, also known as Galactic cirrus), our @url{https://savannah.gnu.org/task/?16586,tests} showed that this factor should be set to zero to give a reasonable error measurement.
+
+In summary, this is because in both situations the error in the number of pixels used in the measurement only effects the few pixels in the circumference of the label and they usually have the lowest values (contribute least to the total sum or average).
+Therefore, the default value to this option is 0.
+But in case your targets are very small (a handful of pixels wide) and their light profiles are flat (for example a cosmic ray!), it may be necessary to increase the value to this option.
 
 @item --inbetweenints
 Output will contain one row for all integers between 1 and the largest label in the input (irrespective of their existance in the input image).
