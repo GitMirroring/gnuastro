@@ -641,9 +641,9 @@ if [ x$rweight = x"1.0000" ] &&
    [ x$gweight = x"1.0000" ] &&
    [ x$bweight = x"1.0000" ] &&
    [ x"$rzero" = x ]; then
-    ln -sf $rclipped $rscaled
-    ln -sf $gclipped $gscaled
-    ln -sf $bclipped $bscaled
+    cp $rclipped $rscaled
+    cp $gclipped $gscaled
+    cp $bclipped $bscaled
 
 # If diferent weights but same zeropoints, then scale the images.
 elif [ x$rweight != x"1.0000" ] ||
@@ -906,7 +906,7 @@ else
 
     else
         i_back_convolved=$kclipped
-        ln -sf $kclipped $i_colorgray_threshold
+        cp $kclipped $i_colorgray_threshold
     fi
 
 
