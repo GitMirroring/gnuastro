@@ -309,6 +309,24 @@ ui_colormap_sanity_check(struct converttparams *p)
           */
         }
     }
+
+  /* The color that must be used for blanks. */
+  if(p->cmapblankcolor==NULL)
+    error(EXIT_FAILURE, 0, "no value given to '--cmapblankcolor' "
+          "(or '-l'). When using color-maps to show a single-channel "
+          "dataset, this option is mandatory. Run with '--listcolors' "
+          "to see the list of available colors you can use");
+
+  /* If a PGFPlots colormap is desired, set its filename. */
+  if(p->cmappgfplots)
+    {
+      uint8_t keep=p->cp.keepinputdir;
+      p->cp.keepinputdir=1;
+      p->cmappgfplotsfile = gal_checkset_automatic_output(&p->cp,
+                                                          p->cp.output,
+                                                          "-colormap.tex");
+      p->cp.keepinputdir=keep;
+    }
 }
 
 

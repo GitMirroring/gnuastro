@@ -17325,9 +17325,11 @@ $ astconvertt --listcolors
 
 @cindex Image annotation
 @cindex Annotation of images for paper
-To make a nice figure from your FITS images, it is important to show more than merely the raw image (converted to a printer friendly format like PDF or JPEG).
+To make a nice figure from your FITS images, it is important to show more than merely the raw image (converted to a printer friendly format like PDF or JPEG; see @ref{FITS images in a publication} and @ref{Marking objects for publication}).
+
 Annotations (or visual metadata) over the raw image greatly help the readers clearly see your argument and put the image/result in a larger context.
 Examples include:
+
 @itemize
 @item
 Coordinates (Right Ascension and Declination) on the edges of the image, so viewers of your paper or presentation slides can get a physical feeling of the field's sky coverage.
@@ -17344,6 +17346,7 @@ Because of the modular philosophy of Gnuastro, ConvertType is only focused on co
 But to present your results in a slide or paper, you will often need to annotate the raw JPEG or PDF with some of the features above.
 The good news is that there are many powerful plotting programs that you can use to add such annotations.
 As a result, there is no point in making a new one, specific to Gnuastro.
+Instead, Gnuastro hopes to provide the necessary interface to communicate easily with those tools.
 In this section, we will demonstrate this using the very powerful PGFPlots@footnote{@url{http://mirrors.ctan.org/graphics/pgf/contrib/pgfplots/doc/pgfplots.pdf}} package of @LaTeX{}.
 
 @cartouche
@@ -17361,7 +17364,7 @@ Since most papers (and presentation slides@footnote{To build slides, @LaTeX{} ha
 PGFPlots also does not need any extra dependencies beyond a basic/minimal @TeX{}-live installation, so it is much more reliable than tools like Matplotlib in Python that have hundreds of fast-evolving dependencies@footnote{See Figure 1 of Alliez et al. @url{https://arxiv.org/abs/1905.11123,2019}.}.
 
 To demonstrate this, we will create a surface brightness image of a galaxy in the F160W filter of the ABYSS survey@footnote{@url{http://research.iac.es/proyecto/abyss}}.
-In the code-block below, let's make a ``build'' directory to keep intermediate files and avoid populating the source.
+In the code-block below, let's make a ``build'' directory to keep intermediate files and avoid populating the top-level source directory (it is always good to keep your data separate from your source).
 Afterwards, we will download the full image and crop out a 20 arcmin wide image around the galaxy with the commands below.
 You can run these commands in an empty directory.
 
@@ -17372,38 +17375,42 @@ $ astcrop ah_f160w.fits --center=53.1616278,-27.7802446 --mode=wcs \
           --width=20/3600 --output=build/crop.fits
 @end example
 
-To better show the low surface brightness (LSB) outskirts, we will warp the image, then convert the pixel units to surface brightness with the commands below.
-It is very important that the warping is done @emph{before} the conversion to surface brightness (in units of mag/arcsec@mymath{^2}), because the definition of surface brightness is non-linear.
+To better show the low surface brightness (LSB) outskirts, we will warp the image, then convert the pixel units to surface brightness with the commands below with Gnuastro's Arithmetic program.
+An important point to remember here is that the magnitudes (and thus the surface brightness) come from a logarithm; therefore if a pixel is negative, its log will be NaN (Not-a-Number).
+Therefore after @code{counts-to-sb}, we convert all the NaN pixels with the faintest (highest) surface brighntess limit possible in this image: 30 mag/arcsec@mymath{^2} (which we define as a variable because it is also necessary later).
+In case you don't know your image's surface brightness limit, see @ref{FITS images in a publication}.
 For more, see the surface brightness topic of @ref{Brightness flux magnitude}, and for a more complete tutorial, see @ref{FITS images in a publication}.
 
 @example
+$ sbhigh=30
 $ zeropoint=25.94
 $ astwarp build/crop.fits --centeroncorner --scale=1/3 \
           --output=build/scaled.fits
 $ pixarea=$(astfits build/scaled.fits --pixelareaarcsec2)
 $ astarithmetic build/scaled.fits $zeropoint $pixarea counts-to-sb \
+                set-sb sb sb isblank sb $sbhigh gt or $sbhigh where \
                 --output=build/sb.fits
 @end example
 
 We are now ready to convert the surface brightness image into a PDF.
-To better show the LSB features, we will also limit the color range with the @code{--fluxlow} and @option{--fluxhigh} options: all pixels with a surface brightness brighter than 22 mag/arcsec@mymath{^2} will be shown as black, and all pixels with a surface brightness fainter than 30 mag/arcsec@mymath{^2} will be white.
-These thresholds are being defined as variables, because we will also need them below (to pass into PGFPlots).
-We will also set @option{--borderwidth=0}, because the coordinate system we will add over the image will effectively be a border for the image (separating it from the background).
+To better show the LSB features, we will limit the brighter range of values (lower numerics in the Magnitude) with the @code{--fluxlow} option.
+All pixels with a surface brightness brighter than 22 mag/arcsec@mymath{^2} will be shown at a similar color.
+This threshold is also being defined as a variable, because we will also need it later below (to pass into PGFPlots).
+Finally, in the call to convert the FITS to PDF, we also set @option{--borderwidth=0}, because the coordinate system we will be added over the edges of the image which effectively becomes a border for the image (separating it from the background).
+The @option{--cmappgfplots} option of ConvertType is recommended when you want to add a color bar in PGFPlots because it will create the necessary PGFPlots command to show the exact color map that ConvertType used in the colorbar.
 
 @example
 $ sblow=22
-$ sbhigh=30
-$ astconvertt build/sb.fits --colormap=gray --borderwidth=0 \
-              --fluxhigh=$sbhigh --fluxlow=$sblow --output=build/sb.pdf
+$ colormap=sls
+$ astconvertt build/sb.fits --colormap=$colormap --borderwidth=0 \
+              --fluxhigh=$sbhigh --fluxlow=$sblow \
+              --output=build/sb.pdf --cmappgfplots
 @end example
 
-Please open @file{sb.pdf} and have a look.
-Also, please open @file{sb.fits} in DS9 (or any other FITS viewer) and play with the color range.
-Can the surface brightness limits be changed to better show the LSB structure?
-If so, you are free to change the limits above.
-
+Please open @file{build/sb.pdf} and have a look.
+Try changing the surface brighntess variables above or the colormap to make it more pleasing to your eye (you will need such experimentation when you later do this on your own images).
 We now have the printable PDF representation of the image, but as discussed above, it is not enough for a paper.
-We will add 1) a thick line showing the size of 20 kpc (kilo parsecs) at the redshift of the central galaxy, 2) coordinates and 3) a color bar, showing the surface brightness level of each grayscale level.
+We will add 1) a thick line showing the size of 20 kpc (kilo parsecs) at the redshift of the central galaxy to help the readers of our report create a mental image of its physical size, 2) coordinates on the edge so the reader can easily identify the location on the sky and observed size, and 3) a color bar, showing the colormap of the surface brightness level for readers to be able to interpret the pixel values.
 
 To get the first job done, we first need to know the redshift of the central galaxy.
 To do this, we can use Gnuastro's Query program to look into all the objects in NED within this image (only asking for the RA, Dec and redshift columns).
@@ -17411,17 +17418,18 @@ We will then use the Match program to find the NED entry that corresponds to our
 
 @example
 $ astquery ned --dataset=objdir --overlapwith=build/sb.fits \
-           --column=ra,dec,z --output=ned.fits
-$ astmatch ned.fits -h1 --coord=53.1616278,-27.7802446 \
-           --ccol1=RA,Dec --aperture=1/3600
-$ redshift=$(asttable ned_matched.fits -cz)
+           --column=ra,dec,z --output=build/ned.fits
+$ astmatch build/ned.fits -h1 --coord=53.1616278,-27.7802446 \
+           --ccol1=RA,Dec --aperture=1/3600 \
+           --output=build/ned-matched.fits
+$ redshift=$(asttable build/ned-matched.fits -cz)
 $ echo $redshift
 @end example
 
 Now that we know the redshift of the central object, we can define the coordinates of the thick line that will show the length of 20 kpc at that redshift.
 It will be a horizontal line (fixed Declination) across a range of RA.
 The start of this thick line will be located at the top edge of the image (at the 95-percent of the width and height of the image).
-With the commands below we will find the three necessary parameters (one declination and two RAs).
+With the commands below we will find the three necessary parameters (one declination and two Right Ascensions).
 Just note that in astronomical images, RA increases to the left/east, which is the reason we are using the minimum and @code{+} to find the RA starting point.
 
 @example
@@ -17436,7 +17444,7 @@ $ scalelineraend=$(astcosmiccal --redshift=$redshift --arcsectandist \
 @end example
 
 To draw coordinates over the image, we need to feed these values into PGFPlots.
-But manually entering numbers into the PGFPlots source will be very frustrating and prone to many errors!
+But manually entering numbers into the PGFPlots source will be very frustrating, prone to many errors and will be hard to change in the future (for example after the referee report comes)!
 Fortunately there is an easy way to do this: @LaTeX{} macros.
 New macros are defined by this @LaTeX{} command:
 @example
@@ -17446,9 +17454,10 @@ New macros are defined by this @LaTeX{} command:
 Anywhere that @LaTeX{} confronts @code{\macroname}, it will replace @code{value} when building the output.
 We will have one file called @file{macros.tex} in the build directory and define macros based on those values.
 We will use the shell's @code{printf} command to write these macro definition lines into the macro file.
-We just have to use double backslashes in the @code{printf} command, because backslash is a meaningful character for @code{printf}, but we want to keep one of them.
+Double backslashes are used in the @code{printf} command, because backslash is a meaningful character for it.
 Also, we put a @code{\n} at the end of each line, otherwise, all the commands will go into a single line of the macro file.
-We will also place the random `@code{ma}' string at the start of all our @LaTeX{} macros to help identify the macros for this plot.
+We will also place the random `@code{ma}' string at the start of all our @LaTeX{} macros to help identify the macros for this plot throughout your report's source.
+In the case of calculated numbers (like the redshift, we will use AWK to print to two decimal digits) to simplify the @LaTeX{} commands.
 
 @example
 $ macros=build/macros.tex
@@ -17456,7 +17465,8 @@ $ printf '\\newcommand@{\\maScaleDec@}'"@{$scalelinedec@}\n" > $macros
 $ printf '\\newcommand@{\\maScaleRAa@}'"@{$scalelinerastart@}\n" >> $macros
 $ printf '\\newcommand@{\\maScaleRAb@}'"@{$scalelineraend@}\n" >> $macros
 $ printf '\\newcommand@{\\maScaleKpc@}'"@{$scalelineinkpc@}\n" >> $macros
-$ printf '\\newcommand@{\\maCenterZ@}'"@{$redshift@}\n" >> $macros
+$ v=$(echo $redshift | awk '@{printf "%.2f", $1'@})
+$ printf '\\newcommand@{\\maCenterZ@}'"@{$v@}\n" >> $macros
 @end example
 
 Please open the macros file after these commands and have a look to see if they do conform to the expected format above.
@@ -17479,20 +17489,22 @@ $ printf '\\newcommand@{\\maCropDecMax@}'"@{$v@}\n" >> $macros
 Finally, we also need to pass some other numbers to PGFPlots: 1) the major tick distance (in the coordinate axes that will be printed on the edge of the image).
 We will assume 7 ticks for this image.
 2) The minimum and maximum surface brightness values that we gave to ConvertType when making the PDF; PGFPlots will define its color-bar based on these two values.
+3) The name of the Gnuastro colormap (you can manually change this in the produced colormap file by ConvertType: it is plain-text). Also, note that if all your figures are generated with the same colormap you only need to ask ConvertType to generate it once.
 
 @example
 $ v=$(echo $coverage | awk '@{print ($2-$1)/7@}')
 $ printf '\\newcommand@{\\maTickDist@}'"@{$v@}\n" >> $macros
 $ printf '\\newcommand@{\\maSBlow@}'"@{$sblow@}\n" >> $macros
 $ printf '\\newcommand@{\\maSBhigh@}'"@{$sbhigh@}\n" >> $macros
+$ printf '\\newcommand@{\maColormap@}'"@{gnuastro$colormap@}\n" >> $macros
 @end example
 
-All the necessary numbers are now ready.
+All the necessary numbers we need to pass to @LaTeX{} are now ready.
 Please copy the contents below into a file called @file{my-figure.tex}.
 This is the PGFPlots source for this particular plot.
 Besides the coordinates and scale-line, we will also add some text over the image and an orange arrow pointing to the central object with its redshift printed over it.
-The parameters are generally human-readable, so you should be able to get a good feeling of every line.
-There are also comments which will show up as a different color when you copy this into a plain-text editor.
+The parameters are generally human-readable, so you should be able to get a good feeling of every line by simply reading it.
+There are also comments which will show up as a different color when you copy this into a plain-text editor that recognizes @LaTeX{}.
 
 @verbatim
 \begin{tikzpicture}
@@ -17524,7 +17536,7 @@ There are also comments which will show up as a different color when you copy th
       y label style={at={(axis description cs:0.07,0.5)},
         anchor=south,font=\small},
       colorbar,
-      colormap name=gray,
+      colormap name=\maColormap,
       point meta min=\maSBlow,
       point meta max=\maSBhigh,
       colorbar style={
@@ -17559,16 +17571,15 @@ There are also comments which will show up as a different color when you copy th
        {(a) Text can be added here};
 
   %% Add an arrow to highlight certain structures.
-  \draw [->, red!70!yellow, line width=5]
+  \draw [->, black, line width=5]
   (0.35\linewidth,0.35\linewidth)
   -- node [anchor=south, rotate=45]{$z=\maCenterZ$}
   (0.45\linewidth,0.45\linewidth);
 \end{tikzpicture}
 @end verbatim
 
-Finally, we need another simple @LaTeX{} source for the main PDF ``report'' that will host this figure.
-This can actually be your paper or slides for example.
-Here, we will suffice to the minimal working example.
+Finally, we need another simple @LaTeX{} source for the main text of your report that will host the figure (it helps the readability of your source for yourself to keep the code of your figures in a separate file to be easily included in the proper place you want).
+Simply copy the minimal working example below in a file called @file{report.tex}.
 
 @verbatim
 \documentclass{article}
@@ -17578,12 +17589,10 @@ Here, we will suffice to the minimal working example.
 \usetikzlibrary{external}
 \tikzexternalize
 
-%% PGFPlots (which uses TiKZ).
+%% PGFPlots (which uses TiKZ) and all the colormaps you need.
 \usepackage{pgfplots}
 \pgfplotsset{axis line style={thick}}
-\pgfplotsset{
-  /pgfplots/colormap={gray}{rgb255=(0,0,0) rgb255=(255,255,255)}
-}
+\input{sb-colormap.tex}
 
 %% Import the macros.
 \input{macros.tex}
@@ -17603,8 +17612,9 @@ You can write anything here.
 @end verbatim
 
 You are now ready to create the PDF.
-But @LaTeX{} creates many temporary files, so to avoid populating our top-level directory, we will copy the two @file{.tex} files into the build directory, go there and run @LaTeX{}.
-Before running it though, we will first delete all the files that have the name pattern @file{*-figure0*}, these are ``external'' files created by TiKZ+PGFPlots, including the actual PDF of the figure.
+But @LaTeX{} creates many temporary files, so to avoid populating our top-level (source code and input data) directory, we will copy the two @file{.tex} files into the build directory, go there and run @LaTeX{}.
+Before running it, we will first delete all the files that have the name pattern @file{*-figure0*}, these are ``external'' files created by TiKZ+PGFPlots, including the actual PDF of the figure.
+PGFPlots has nice ways to set a name for each ``external'' figure it generates (and not depend on a counter), but that is beyond the scope here, see its manual for details.
 
 @example
 $ cp report.tex my-figure.tex build
@@ -17614,16 +17624,20 @@ $ pdflatex -shell-escape -halt-on-error report.tex
 @end example
 
 You now have the full ``report'' in @file{report.pdf}.
-Try adding some extra text on top of the figure, or in the caption and re-running the last four commands.
-Also try changing the 20kpc scale line length to 50kpc, or try changing the redshift, to see how the length and text of the thick scale-line will automatically change.
-But the good news is that you also have the raw PDF of the figure that you can use in other places.
-You can see that file in @file{report-figure0.pdf}.
+The good news is that in case you need the high-quality figure for other purposes (like showing in slides), you don't have to take a screenshot!
+You also have the raw PDF of the figure in @file{report-figure0.pdf}.
+Try adding some extra text in @file{report.tex}, or in the caption of the figure and re-running the last four commands so it becomes more like an actual
 
-In a larger paper, you can add multiple such figures (with different @file{.tex} files that are placed in different @code{figure} environments with different captions).
+You can also try changing the 20kpc scale line length to 50kpc, or try changing the redshift, to see how the length and text of the thick scale-line will automatically change.
+But these kinds of changes will be hard in the manual steps above and due to the number of steps, human error can easily cause a crash.
+Therefore it is best to put such numerous steps in a script as we have done in @ref{Full script of annotations on figure} below.
+So it may be easier to take the script from there and do the changes suggested here.
+
+In a larger paper, you can add multiple such figures (with different @file{.tex} files that are placed in different @code{figure} environments with different captions throughout your text).
 Each figure will get a number in the build directory.
 TiKZ also allows setting a file name for each ``external'' figure (to avoid such numbers that can be annoying if the image orders are changed).
 PGFPlots is also highly customizable, you can make a lot of changes and customizations.
-Both TiKZ@footnote{@url{http://mirrors.ctan.org/graphics/pgf/base/doc/pgfmanual.pdf}} and PGFPLots@footnote{@url{http://mirrors.ctan.org/graphics/pgf/contrib/pgfplots/doc/pgfplots.pdf}} have wonderful manuals, so have a look trough them.
+Both TiKZ@footnote{@url{http://mirrors.ctan.org/graphics/pgf/base/doc/pgfmanual.pdf}} and PGFPLots@footnote{@url{http://mirrors.ctan.org/graphics/pgf/contrib/pgfplots/doc/pgfplots.pdf}} have wonderful manuals, so have a look trough them and you will enjoy the power that comes under your fingers afterwards.
 
 @menu
 * Full script of annotations on figure::  All the steps in one script
@@ -17632,16 +17646,19 @@ Both TiKZ@footnote{@url{http://mirrors.ctan.org/graphics/pgf/base/doc/pgfmanual.
 @node Full script of annotations on figure,  , Annotations for figure in paper, Annotations for figure in paper
 @subsubsection Full script of annotations on figure
 
-In @ref{Annotations for figure in paper}, we each one of the steps to add annotations over an image were described in detail.
-So if you have understood the steps, but need to add annotations over an image, repeating those steps individually will be annoying.
+In @ref{Annotations for figure in paper}, we went through each of the steps to add annotations over an image were described in detail.
+So if you have understood the steps, but want to start experimenting with different settings, repeating those steps individually will be annoying and buggy (humans aren't good at repetition).
 Therefore in this section, we will summarize all the steps in a single script that you can simply copy-paste into a text editor, configure, and run.
+
+Compared to @ref{Annotations for figure in paper}, we have brought the redshift as a parameter here.
+But if the center of your image always points to your main object, you can also include the Query command to automatically find the object's redshift from NED.
+Alternatively, your image may already be cropped, in this case, you can remove the cropping step.
+If you are not familiar with reading, writing or running scripts, see @ref{Writing scripts to automate the steps}.
 
 @cartouche
 @noindent
-@strong{Necessary files:} To run this script, you will need an image to crop your object from (here assuming it is called @file{ah_f160w.fits} with a certain zero point) and two @file{my-figure.tex} and @file{report.tex} files that were fully included in @ref{Annotations for figure in paper}.
-Also, we have brought the redshift as a parameter here.
-But if the center of your image always points to your main object, you can also include the Query command to automatically find the object's redshift from NED.
-Alternatively, your image may already be cropped, in this case, you can remove the cropping step and
+@strong{Necessary files:} To run this script, you will need an image to crop your object from (here assuming it is called @file{ah_f160w.fits} with a certain zero point) and two @file{my-figure.tex} and @file{report.tex} files that were fully provided in @ref{Annotations for figure in paper}.
+They need to be in the same directory as this script.
 @end cartouche
 
 @verbatim
@@ -17650,10 +17667,13 @@ sblow=22                 # Minimum surface brightness.
 sbhigh=30                # Maximum surface brightness.
 bdir=build               # Build directory location on filesystem.
 numticks=7               # Number of major ticks in each axis.
+colormap=sls             # Name of ConvertType's colormap.
 redshift=0.619           # Redshift of object of interest.
 zeropoint=25.94          # Zero point of input image.
 scalelineinkpc=20        # Length of scale-line (in kilo parsecs).
-input=ah_f160w.fits      # Name of input (to crop).
+input=ah_f160w.fits      # Name of large input image.
+width=20/3600            # Width of crop in degrees.
+center=53.1616278,-27.7802446  # RA and Dec of crop's center.
 
 # Stop the script in case of a crash.
 set -e
@@ -17663,8 +17683,8 @@ if ! [ -d $bdir ]; then mkdir $bdir; fi
 
 # Crop out the desired region.
 crop=$bdir/crop.fits
-astcrop $input --center=53.1616278,-27.7802446 --mode=wcs \
-        --width=20/3600 --output=$crop
+astcrop $input --center=$center --mode=wcs --width=$width \
+        --output=$crop
 
 # Warp the image to larger pixels to show surface brightness better.
 scaled=$bdir/scaled.fits
@@ -17674,11 +17694,12 @@ astwarp $crop --centeroncorner --scale=1/3 --output=$scaled
 sb=$bdir/sb.fits
 pixarea=$(astfits $scaled --pixelareaarcsec2)
 astarithmetic $scaled $zeropoint $pixarea counts-to-sb \
+              set-sb sb sb isblank sb $sbhigh gt or $sbhigh where \
               --output=$sb
 
 # Convert the surface brightness image into PDF.
 sbpdf=$bdir/sb.pdf
-astconvertt $sb --colormap=gray --borderwidth=0 \
+astconvertt $sb --colormap=$colormap --borderwidth=0 --cmappgfplots \
             --fluxhigh=$sbhigh --fluxlow=$sblow --output=$sbpdf
 
 # Specify the coordinates of the scale line (specifying a certain
@@ -17710,6 +17731,7 @@ v=$(echo $coverage | awk '{print $3}')
 printf '\\newcommand{\maCropDecMin}'"{$v}\n" >> $macros
 v=$(echo $coverage | awk '{print $4}')
 printf '\\newcommand{\maCropDecMax}'"{$v}\n" >> $macros
+printf '\\newcommand{\maColormap}'"{gnuastro$colormap}\n" >> $macros
 
 # Distance between each tick value.
 v=$(echo $coverage | awk '{print ($2-$1)/'$numticks'}')
@@ -17899,6 +17921,7 @@ The color map to visualize a single channel.
 The first value given to this option is the name of the color map, which is shown below.
 Some color maps can be configured.
 In this case, the configuration parameters are optionally given as numbers following the name of the color map for example, see @option{hsv}.
+When the input has blank values, the value to @option{--cmapblankcolor} will be used to define the color that they are shown (except for the @code{gray} color map).
 The table below contains the usable names of the color maps that are currently supported:
 
 @table @option
@@ -17940,6 +17963,21 @@ So unlike the HSV color range, it includes black and white and brighter colors (
 The inverse of the SLS color map (see above), where the lowest value corresponds to white and the highest value is black.
 While SLS is good for visualizing on the monitor, SLS-inverse is good for printing.
 @end table
+
+@item  -l STR
+@itemx --cmapblankcolor=STR
+Name of color to be used for blank pixels with the @option{--colormap} is used (a single channel input).
+For the list of color names that can be given to this option, run ConvertType with @option{--listcolors}.
+
+This option will be ignored for the gray color map because the list of colors given to this option are defined on a 3-channel RGB color space.
+But image formats have single-channel formats for grayscale images that ConvertType also uses (to save storage space).
+
+@item --cmappgfplots
+@cindex Colorbar
+Create a second output file containing the PGFPlots colormap definition for single-channel data that are to be displayed through a colormap.
+PGFPlots is a powerful plot creation package within LaTeX to create high-quality plots and figures in your papers, slides or reports.
+With this option, you can use Gnuastro colormaps that are not available in PGFPlots.
+For a fully working example of the usage of PGFPlots in combination with Gnuastro for high-quality figure generation (including this option), see @ref{Annotations for figure in paper}.
 
 @item --rgbtohsv
 When there are three input channels and the output is in the FITS format, interpret the three input channels as red, green and blue channels (RGB) and convert them to the hue, saturation, value (HSV) color space.
@@ -18015,7 +18053,13 @@ Similar to @option{--forcemin}, but for the maximum.
 For 8-bit output types (JPEG, EPS, and PDF for example) the final value that is stored is inverted so white becomes black and vice versa.
 The reason for this is that astronomical images usually have a very large area of blank sky in them.
 The result will be that a large are of the image will be black.
-Note that this behavior is ideal for gray-scale images, if you want a color image, the colors are going to be mixed up.
+This behavior is ideal for gray-scale images, if you want a color image, the colors are going to be mixed up.
+
+Special considerations for this option:
+@itemize
+@item
+For single-channel inputs (when @option{--colormap} becomes necessary), this option only affects @option{--colormap=gray}.
+@end itemize
 @end table
 
 @node Drawing with vector graphics,  , Pixel visualization, Invoking astconvertt

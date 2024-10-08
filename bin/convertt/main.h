@@ -91,6 +91,8 @@ struct converttparams
   uint8_t       bordercolor;  /* Color of the border.                  */
   uint8_t               hex;  /* Use hexadecimal not ASCII85 encoding. */
   gal_data_t      *colormap;  /* Color space to use for single/mono.   */
+  char      *cmapblankcolor;  /* Blank color name in color maps.       */
+  uint8_t      cmappgfplots;  /* Write color map to PGFPlots format.   */
   uint8_t          rgbtohsv;  /* Convert input RGB channels to HSV.    */
   char          *fluxlowstr;  /* Lower flux truncation value.          */
   char         *fluxhighstr;  /* Higher flux truncation value.         */
@@ -129,6 +131,7 @@ struct converttparams
   size_t              numch;  /* Current Channel.                      */
   gal_data_t          *chll;  /* Linked list of color channels.        */
   gal_data_t         *marks;  /* Information of objects to show.       */
+  char    *cmappgfplotsfile;  /* Name of file for PGFPlots.            */
 };
 
 #endif

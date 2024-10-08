@@ -666,13 +666,13 @@ data_copy_to_string(gal_data_t *from, gal_data_t *to)
     case GAL_TYPE_STRLL:
     case GAL_TYPE_COMPLEX32:
     case GAL_TYPE_COMPLEX64:
-      error(EXIT_FAILURE, 0, "%s: copying to %s type not currently supported",
-            __func__, gal_type_name(from->type, 1));
+      error(EXIT_FAILURE, 0, "%s: copying to %s type not currently "
+            "supported", __func__, gal_type_name(from->type, 1));
       break;
 
     default:
-      error(EXIT_FAILURE, 0, "%s: type %d not recognized for 'from->type'",
-            __func__, from->type);
+      error(EXIT_FAILURE, 0, "%s: type %d not recognized for "
+            "'from->type'", __func__, from->type);
     }
 }
 

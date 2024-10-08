@@ -6,6 +6,29 @@ See the end of the file for license conditions.
 * Noteworthy changes in release X.XX (library XX.X.X) (YYYY-MM-DD)
 ** New publications
 ** New features
+
+*** ConvertType
+
+  --cmapblankcolor: Name of color to use for blank values when showing
+    single-channel images through a colorbar. This is very useful in
+    scenarios where you don't want your audience to confuse NaN pixels with
+    pixels that have data. For example if you use the Viridis colormap, you
+    can set '--cmapblankcolor=white' or '--cmapblankcolor=red' (which do
+    not exist in the Viridis color map). Note that this option does not
+    apply to the "gray" colormap because that is single channel. To get the
+    list of recognized colors in Gnuastro run 'astconvertt
+    --listcolors'. This was suggested by Sepideh Eskandarlou.
+
+  --cmappgfplots: create a second output file containing the PGFPlots
+    colormap definition for single-channel data that are to be displayed
+    through a colormap. PGFPlots is a powerful plot creation package within
+    LaTeX to create high-quality plots and figures in your papers, slides
+    or reports. With this option, you can use Gnuastro colormaps that are
+    not available in PGFPlots. The "Annotations for figure in paper"
+    section of the book has a fully working example of the usage of
+    PGFPlots in combination with Gnuastro for high-quality figure
+    generation.
+
 *** MakeCatalog
 
   --novalinerror: ignore pixel in the values image when calculating the
