@@ -2870,7 +2870,13 @@ wcs_convert_prepare_out(gal_data_t *coords, struct wcsprm *wcs, int inplace)
   if(inplace)
     out=coords;
   else
-    for(i=0;i<wcs->naxis;++i)
+    /* About this loop: the condition on 'i' never hits 0 to have a problem
+       with 'size_t' always being positive. For the first coordinate
+       (i==0), when the condition on 'i' is checked, it has a value of 1,
+       but due to the postfix decrement ('i--'), immediately after the
+       check, 'i' becomes zero and 'wcs->ctype[0]' is used. Afterwards,
+       since i==0, the condition fails and the loop stops. */
+    for(i=wcs->naxis;i-->0;)
       gal_list_data_add_alloc(&out, NULL, GAL_TYPE_FLOAT64, 1,
                               &coords->size, NULL, 0, coords->minmapsize,
                               coords->quietmmap, wcs->ctype[i],
