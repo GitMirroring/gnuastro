@@ -67,6 +67,9 @@ See the end of the file for license conditions.
 
   - bug #66280: Convolve's check images not in same directory as output.
 
+  - bug #66309: Match crashes if kdtree is not set. Found and fixed by
+    Giacomo Lorenzetti.
+
 
 
 

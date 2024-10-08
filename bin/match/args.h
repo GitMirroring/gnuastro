@@ -166,7 +166,7 @@ struct argp_option program_options[] =
       &p->kdtree,
       GAL_TYPE_STRING,
       GAL_OPTIONS_RANGE_ANY,
-      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_MANDATORY,
       GAL_OPTIONS_NOT_SET,
     },
     {
