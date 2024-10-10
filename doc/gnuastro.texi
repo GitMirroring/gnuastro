@@ -35263,6 +35263,11 @@ When this option is given the @option{--colorval} and @option{--grayval} options
 This gives you the freedom to select the pixels to show in color, black or gray based on any criteria that is relevant for your purpose.
 For an example of using this option to get a physically motivated threshold, see @ref{Manually setting color-black-gray regions}.
 
+@item -r
+@itemx --reghdu=STR/INT
+HDU name or counter (counting from 0) of the region image given to @option{--regions}.
+
+
 @cartouche
 @noindent
 @strong{IMPORTANT NOTE.}

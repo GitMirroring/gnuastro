@@ -46,7 +46,7 @@ export LC_NUMERIC="en_US.UTF-8"
 
 # Default option values (can be changed with options on the command-line).
 hdu=""
-rhdu=1
+reghdu=1
 globalhdu=""
 
 # Minimum, weights, and zeropoint values
@@ -128,7 +128,7 @@ experienced Gnuastro users and developers. For more information, please run:
 $scriptname options:
  Input:
   -h, --hdu=STR           HDU/extension for the input channels.
-  -t, --rhdu=STR          HDU/extension for the regions image.
+  -r, --reghdu=STR        HDU/extension for the regions image.
   -g, --globalhdu=STR/INT Use this HDU for all inputs, ignore '--hdu'.
   -w, --weight=FLT        Relative weight for each input channel.
   -m, --minimum=FLT       Minimum value for each input channel.
@@ -318,9 +318,9 @@ do
         -h|--hdu)            aux="$2";                                  check_v "$1" "$aux"; hdu="$hdu $aux"; shift;shift;;
         -h=*|--hdu=*)        aux="${1#*=}";                             check_v "$1" "$aux"; hdu="$hdu $aux"; shift;;
         -h*)                 aux="$(echo "$1"  | sed -e's/-h//')";      check_v "$1" "$aux"; hdu="$hdu $aux"; shift;;
-        -t|--rhdu)           rhdu="$2";                                 check_v "$1" "$rhdu";  shift;shift;;
-        -t=*|--rhdu=*)       rhdu="${1#*=}";                            check_v "$1" "$rhdu";  shift;;
-        -t*)                 rhdu=$(echo "$1" | sed -e's/-t//');        check_v "$1" "$rhdu";  shift;;
+        -r|--reghdu)         reghdu="$2";                               check_v "$1" "$reghdu";  shift;shift;;
+        -r=*|--reghdu=*)     reghdu="${1#*=}";                          check_v "$1" "$reghdu";  shift;;
+        -r*)                 reghdu=$(echo "$1" | sed -e's/-r//');      check_v "$1" "$reghdu";  shift;;
         -w|--weight)         aux="$2";                                  check_v "$1" "$aux"; weight="$weight $aux"; shift;shift;;
         -w=*|--weight=*)     aux="${1#*=}";                             check_v "$1" "$aux"; weight="$weight $aux"; shift;;
         -w*)                 aux="$(echo "$1"  | sed -e's/-w//')";      check_v "$1" "$aux"; weight="$weight $aux"; shift;;
@@ -489,10 +489,10 @@ else
 fi
 
 
-# Weight. If the does not provide a value for weight, set it to 1.0. If
-# user provides a single value for --weight, use it for all channels.
-# Otherwise, check that the number of weights matches
-# with the number of inputs.
+# Weight. If the user does not provide a value for weight, set it to 1.0.
+# If the user provides a single value for --weight, use it for all
+# channels.  Otherwise, check that the number of weights matches with the
+# number of inputs.
 nweight=$(echo "$weight" | awk '{print NF}')
 if [ x$nweight = x0 ]; then
     rweight=1.0
@@ -565,7 +565,7 @@ if [ -d $tmpdir ]; then junk=1; else mkdir $tmpdir; fi
 #
 # If the user specify a given value below which the pixel values are
 # wanted to be zero, then put all of those pixels to zero. By default,
-# no clipping will be done (a symbolic link will be put to the input).
+# no clipping will be done.
 rclipped="$tmpdir/R_clipped.fits"
 gclipped="$tmpdir/G_clipped.fits"
 bclipped="$tmpdir/B_clipped.fits"
@@ -906,7 +906,7 @@ else
 
     else
         i_back_convolved=$kclipped
-        cp $kclipped $i_colorgray_threshold
+        astfits $kclipped --copy=$khdu --output=$i_colorgray_threshold
     fi
 
 
@@ -955,7 +955,7 @@ else
                       i $colorval lt i $grayval gt and 1 uint8 x set-b \
                       i $colorval lt                   0 uint8 x set-g \
                       c b g 3 sum uint8 --output $total_mask
-        rhdu=1
+        reghdu=1
    else
        grayval="$regions"
        colorval="$regions"
@@ -990,8 +990,8 @@ else
     #   function is specified. E.g., log, sqrt, asinh, etc.)
     grayscale=""
     i_gray_colormasked="$tmpdir/gray_colormasked.fits"
-    astarithmetic $i_back_convolved -h1          set-values \
-                  $total_mask -h$rhdu 2 uint8 eq set-mask \
+    astarithmetic $i_back_convolved -h$khdu set-values \
+                  $total_mask -h$reghdu 2 uint8 eq set-mask \
                   values mask nan where $grayscale set-masked \
                   masked minvalue set-oldmin \
                   masked maxvalue set-oldmax \
@@ -1014,7 +1014,7 @@ else
     # this, those pixels will be set to pure black color.
     i_gray_colormasked_zeroblack="$tmpdir/gray_colormasked_zeroblack.fits"
     astarithmetic $i_gray_colormasked -h1 set-i \
-                  $total_mask -h$rhdu 1 uint8 eq -h1 set-b \
+                  $total_mask -h$reghdu 1 uint8 eq -h1 set-b \
                   i b 0.0 where float32 \
                   --output=$i_gray_colormasked_zeroblack
 

@@ -67,6 +67,9 @@ See the end of the file for license conditions.
 
   - bug #66280: Convolve's check images not in same directory as output.
 
+  - bug #66303: astscript-color-faint-gray crashes if using 4th
+    channel. Reported by Elizabeth Sola and fixed by Raul Infante-Sainz.
+
   - bug #66308: Library's 'gal_wcs_img_to_world' and 'gal_wcs_world_to_img'
     returned inverse names when the operation was not in-place. Found and
     fixed by Giacomo Lorenzetti.
