@@ -30922,6 +30922,12 @@ For a tutorial on how to use these options and interpret their values, see @ref{
 These options will do measurements on each 2D slice of the input 3D cube; hence the common the format of @code{--*-in-slice}.
 Each slice usually corresponds to a certain wavelength, you can also think of these measurements as spectra.
 
+@cartouche
+@noindent
+@strong{No in-slice measurement for clumps:} Unfortunately due to time-constrains, the columns described in this section are not yet implemented for clumps.
+For the status of this issue, see @url{https://savannah.gnu.org/bugs/?66286, bug 66286}.
+@end cartouche
+
 For each row (input label), each of the columns described here will contain multiple values as a vector column.
 The number of measurements in each column is the number of slices in the cube, or the size of the cube along the third dimension.
 To learn more about vector columns and how to manipulate them, see @ref{Vector columns}.

@@ -3592,6 +3592,22 @@ columns_fill(struct mkcatalog_passparams *pp)
               ((float *)colarr)[cind] = tmp<1e-6 ? NAN : tmp;
             break;
 
+          case UI_KEY_SUMINSLICE:
+          case UI_KEY_AREAINSLICE:
+          case UI_KEY_SUMERRINSLICE:
+          case UI_KEY_SUMPROJINSLICE:
+          case UI_KEY_AREAPROJINSLICE:
+          case UI_KEY_SUMOTHERINSLICE:
+          case UI_KEY_AREAOTHERINSLICE:
+          case UI_KEY_SUMPROJERRINSLICE:
+          case UI_KEY_SUMOTHERERRINSLICE:
+            error(EXIT_FAILURE, 0, "%s: a known bug "
+                  "(https://savannah.gnu.org/bugs/?66286)! Please contact "
+                  "us at %s to raise the priority of this bug. "
+                  "Unfortunately in-slice measurements are not yet "
+                  "implemented for clumps", __func__, PACKAGE_BUGREPORT);
+            break;
+
           default:
             error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "
                   "solve the problem. The output column code %d not "
