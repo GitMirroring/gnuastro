@@ -63,6 +63,7 @@ struct matchparams
   char            *input1name;  /* First input filename.                */
   char            *input2name;  /* Second input filename.               */
   char                  *hdu2;  /* Second input's HDU.                  */
+  uint8_t                type;  /* Type of matching: inner, outer, full */
   gal_data_t           *ccol1;  /* Array of first input column names.   */
   gal_data_t           *ccol2;  /* Array of second input column names.  */
   gal_data_t           *coord;  /* Array of manual coordinate values.   */
@@ -74,7 +75,6 @@ struct matchparams
   uint8_t          notmatched;  /* Output is rows that don't match.     */
 
   /* Internal */
-  int                    mode;  /* Mode of operation: image or catalog. */
   gal_data_t           *cols1;  /* Column values of first input.        */
   gal_data_t           *cols2;  /* Column values of second input.       */
   gal_list_str_t       *acols;  /* Output columns from first input.     */

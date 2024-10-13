@@ -1,5 +1,5 @@
 /*********************************************************************
-match -- Functions to match catalogs and WCS.
+Match -- Functions to match catalogs.
 This is part of GNU Astronomy Utilities (Gnuastro) package.
 
 Original author:
@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/box.h>
 #include <gnuastro/list.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/match.h>
 #include <gnuastro/binary.h>
 #include <gnuastro/kdtree.h>
 #include <gnuastro/pointer.h>
@@ -150,7 +151,8 @@ match_aperture_prepare(gal_data_t *A, gal_data_t *B,
         {
           /* Using the box that encloses the aperture, calculate the
              distance along each axis. */
-          gal_box_bound_ellipse_extent(aperture[0], aperture[0]*aperture[1],
+          gal_box_bound_ellipse_extent(aperture[0],
+                                       aperture[0]*aperture[1],
                                        aperture[2], dist);
 
           /* Calculate the sin and cos of the given ellipse if necessary
@@ -277,9 +279,9 @@ match_distance(double *delta, int iscircle, size_t ndim,
 
 
 
-/* In the 'match_XXXX_second_in_first' functions, we made an array of
-   lists, here we want to reverse that list to fix the second two issues
-   that were discussed there. */
+/* In the 'match_*_second_in_first' functions, we made an array of lists,
+   here we want to reverse that list to fix the second two issues that were
+   discussed there. */
 void
 match_rearrange(gal_data_t *A, gal_data_t *B, struct match_sfll **bina)
 {
@@ -387,8 +389,9 @@ match_rearrange(gal_data_t *A, gal_data_t *B, struct match_sfll **bina)
 
 /* The matching has been done, write the output. */
 static gal_data_t *
-match_output(gal_data_t *A, gal_data_t *B, size_t *A_perm, size_t *B_perm,
-             struct match_sfll **bina, size_t minmapsize, int quietmmap)
+match_output_inner(gal_data_t *A, gal_data_t *B, size_t *A_perm,
+                   size_t *B_perm, struct match_sfll **bina,
+                   size_t minmapsize, int quietmmap)
 {
   float r;
   double *rval;
@@ -483,6 +486,57 @@ match_output(gal_data_t *A, gal_data_t *B, size_t *A_perm, size_t *B_perm,
   return out;
 }
 
+
+
+
+
+/* The matching has been done, write the output. */
+static gal_data_t *
+match_output_outer(uint8_t arrange, gal_data_t *A, gal_data_t *B,
+                   size_t *aoinb, double *aoinbd, size_t minmapsize,
+                   int quietmmap, size_t *nummatched)
+{
+  gal_data_t *out;
+  size_t *s, *ss, nm=0;
+
+  /* If there aren't any matches to write, return NULL. */
+  if(B->size==0) return NULL;
+
+  /* For a check.
+  size_t b;
+  for(b=0;b<B->size;++b)
+    printf("%zu: %zu, %f\n", b, aoinb[b], aoinbd[b]);
+  */
+
+  /* Allocate the output list. */
+  out=gal_data_alloc(aoinb, GAL_TYPE_SIZE_T, 1, &B->size, NULL, 0,
+                     minmapsize, quietmmap, "CAT1_ROW", "counter",
+                     "Row index in first catalog (counting from 0).");
+  out->next=gal_data_alloc(aoinbd, GAL_TYPE_FLOAT64, 1, &B->size,
+                           NULL, 0, minmapsize, quietmmap,
+                           "MATCH_DIST", NULL,
+                           "Distance between the match.");
+
+  /* Report the number of matches: */
+  switch(arrange)
+    {
+    case GAL_MATCH_ARRANGE_OUTER:
+      *nummatched=out->size;
+      break;
+    case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+      ss=(s=out->array)+out->size;
+      do if(*s!=GAL_BLANK_SIZE_T) ++nm; while(++s<ss);
+      *nummatched=nm;
+      break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' "
+            "to fix the problem. The code '%u' is not recognized for "
+            "'arrange'", __func__, PACKAGE_BUGREPORT, arrange);
+    }
+
+  /* Return the output. */
+  return out;
+}
 
 
 
@@ -587,7 +641,8 @@ match_sort_based_sanity_check(gal_data_t *coord1, gal_data_t *coord2,
       break;
 
     case 3:
-      if(aperture[1]<=0 || aperture[1]>1 || aperture[2]<=0 || aperture[2]>1)
+      if(   aperture[1]<=0 || aperture[1]>1
+         || aperture[2]<=0 || aperture[2]>1 )
         error(EXIT_FAILURE, 0, "%s: at least one of the second or "
               "third values in the aperture (%g and %g respectively) "
               "is smaller than zero or larger than one. In a 3D match, "
@@ -734,8 +789,8 @@ match_sort_based_second_in_first(gal_data_t *A, gal_data_t *B,
                                   struct match_sfll **bina)
 {
   /* To keep things easy to read, all variables related to catalog 1 start
-     with an 'a' and things related to catalog 2 are marked with a 'b'. The
-     redundant variables (those that equal a previous value) are only
+     with an 'a' and things related to catalog 2 are start with a 'b'. The
+     redundant variables (those that equal a previous variable) are only
      defined to make it easy to read the code.*/
   int iscircle=0;
   size_t i, ar=A->size, br=B->size;
@@ -892,8 +947,8 @@ gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
 {
   int allf64=1;
   gal_data_t *A, *B, *out;
-  size_t *A_perm=NULL, *B_perm=NULL;
   struct match_sfll **bina;
+  size_t *A_perm=NULL, *B_perm=NULL;
 
   /* Do a small sanity check and make the preparations. After this point,
      we'll call the two arrays 'a' and 'b'.*/
@@ -902,7 +957,6 @@ gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
   match_sort_based_prepare(coord1, coord2, sorted_by_first, inplace,
                             allf64, &A, &B, &A_perm, &B_perm,
                             minmapsize);
-
 
   /* Allocate the 'bina' array (an array of lists). Let's call the first
      catalog 'a' and the second 'b'. This array has 'a->size' elements
@@ -914,18 +968,15 @@ gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
     error(EXIT_FAILURE, errno, "%s: %zu bytes for 'bina'", __func__,
           A->size*sizeof *bina);
 
-
   /* All records in 'b' that match each 'a' (possibly duplicate). */
   match_sort_based_second_in_first(A, B, aperture, bina);
-
 
   /* Two re-arrangings will fix the issue. */
   match_rearrange(A, B, bina);
 
-
   /* The match is done, write the output. */
-  out=match_output(A, B, A_perm, B_perm, bina, minmapsize, quietmmap);
-
+  out=match_output_inner(A, B, A_perm, B_perm, bina, minmapsize,
+                         quietmmap);
 
   /* Clean up. */
   free(bina);
@@ -936,7 +987,6 @@ gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
     }
   if(A_perm) free(A_perm);
   if(B_perm) free(B_perm);
-
 
   /* Set 'nummatched' and return output. */
   *nummatched = out ?  out->next->next->size : 0;
@@ -968,6 +1018,7 @@ gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
 struct match_kdtree_params
 {
   /* Input arguments. */
+  uint8_t           arrange;  /* Arrangement: outer, inner, full...   */
   gal_data_t             *A;  /* 1st coordinate list of 'gal_data_t's */
   gal_data_t             *B;  /* 2nd coordinate list of 'gal_data_t's */
   size_t               ndim;  /* The number of dimensions.            */
@@ -987,6 +1038,8 @@ struct match_kdtree_params
   double              *a[3];  /* Direct pointers to column arrays.    */
   double              *b[3];  /* Direct pointers to column arrays.    */
   struct match_sfll  **bina;  /* Second cat. items in first.          */
+  size_t             *aoinb;  /* For outer: 1st cat element in 2nd.   */
+  double            *aoinbd;  /* Distance of the aoinb match.         */
   gal_data_t        *Aexist;  /* If any element of A exists in bins.  */
   double         *Abinwidth;  /* Width of bins along each dimension.  */
   double              *Amin;  /* Minimum value of A along each dim.   */
@@ -1039,10 +1092,6 @@ match_kdtree_A_coverage(struct match_kdtree_params *p)
       if(numbins>MATCH_KDTREE_COVERAGE_MAXBINS)
         numbins=MATCH_KDTREE_COVERAGE_MAXBINS;
       if(numbins==0) numbins=1;
-
-      /*************************/
-      //numbins=1;
-      /*************************/
 
       /* Generate the 'Aexist' list for this dimension. Note that if we
          have a single bin in this dimension, we can just set everything
@@ -1103,7 +1152,8 @@ match_kdtree_A_coverage(struct match_kdtree_params *p)
           {
             d=bins->array;
             for(i=0;i<bins->size;++i)
-              printf("%zu: %-15.8f%-15.8f%u\n", i, d[i]-p->Abinwidth[dim]/2,
+              printf("%zu: %-15.8f%-15.8f%u\n", i,
+                     d[i]-p->Abinwidth[dim]/2,
                      d[i]+p->Abinwidth[dim]/2, u[i]);
           }
         else
@@ -1135,6 +1185,8 @@ match_kdtree_A_coverage(struct match_kdtree_params *p)
 static void
 match_kdtree_sanity_check(struct match_kdtree_params *p)
 {
+  double *d, *dd;
+  size_t *s, *ss;
   gal_data_t *tmp;
 
   /* Make sure all coordinates and the k-d tree have the same number of
@@ -1177,11 +1229,40 @@ match_kdtree_sanity_check(struct match_kdtree_params *p)
      call the first catalog 'a' and the second 'b'. This array has
      'a->size' elements (pointers) and for each, it keeps a list of 'b'
      elements that are nearest to it. */
-  errno=0;
-  p->bina=calloc(p->A->size, sizeof *p->bina);
-  if(p->bina==NULL)
-    error(EXIT_FAILURE, errno, "%s: %zu bytes for 'bina'",
-          __func__, p->A->size*sizeof *p->bina);
+  switch(p->arrange)
+    {
+
+    /* For inner and full, we need the bina array. */
+    case GAL_MATCH_ARRANGE_FULL:
+    case GAL_MATCH_ARRANGE_INNER:
+      errno=0;
+      p->bina=calloc(p->A->size, sizeof *p->bina);
+      if(p->bina==NULL)
+        error(EXIT_FAILURE, errno, "%s: %zu bytes for 'bina'",
+              __func__, p->A->size*sizeof *p->bina);
+      break;
+
+    /* For the outer matches, we need the aoinb array, which is initialized
+       to blank for the outer-within-aperture type. */
+    case GAL_MATCH_ARRANGE_OUTER:
+    case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+      p->aoinb=gal_pointer_allocate(GAL_TYPE_SIZE_T, p->B->size, 0,
+                                    __func__, "p->aoinb");
+      p->aoinbd=gal_pointer_allocate(GAL_TYPE_FLOAT64, p->B->size, 0,
+                                     __func__, "p->aoinb");
+      if(p->arrange==GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE)
+        {
+          ss=(s=p->aoinb)+p->B->size;
+          do *s=GAL_BLANK_SIZE_T; while(++s<ss);
+          dd=(d=p->aoinbd)+p->B->size; do *d=NAN; while(++d<dd);
+        }
+      break;
+
+    /* Un-recognized match arrangement. */
+    default:
+      error(EXIT_FAILURE, 0, "%s: arrange code %u is not recognized",
+            __func__, p->arrange);
+    }
 
   /* Pointers to the input column arrays for easy parsing later. */
   p->a[0]=p->A->array;
@@ -1252,15 +1333,22 @@ match_kdtree_worker(void *in_prm)
               po = point[j] = ((double *)(ccol->array))[ bi ];
 
               /* Make sure it covers the range of A (following the same set
-                 of tests as in 'gal_statistics_histogram'). */
-              if( po >= p->Amin[j] && po <= p->Amax[j] )
+                 of tests as in 'gal_statistics_histogram'). Note that this
+                 applies to all types of matching, except for the "outer"
+                 (where we simply want the nearest and no aperture is
+                 defined). */
+              if( p->arrange!=GAL_MATCH_ARRANGE_OUTER )
                 {
-                  h_i=(po-p->Amin[j])/p->Abinwidth[j];
-                  if( existA[ h_i - (h_i==p->Aexist->size ? 1 : 0) ] == 0 )
+                  if ( po >= p->Amin[j] && po <= p->Amax[j] )
+                    {
+                      h_i=(po-p->Amin[j])/p->Abinwidth[j];
+                      if( existA[ h_i - (h_i==p->Aexist->size ? 1 : 0) ]
+                          == 0 )
+                        iscovered=0;
+                    }
+                  else
                     iscovered=0;
                 }
-              else
-                iscovered=0;
             }
 
           /* Increment the dimensionality counter. */
@@ -1277,8 +1365,8 @@ match_kdtree_worker(void *in_prm)
                                             p->kdtree_root, point,
                                             &least_dist);
 
-          /* If nothing was found within the least distance, then the 'ai'
-             will be 'GAL_BLANK_SIZE_T'. */
+          /* If nothing was found, then the 'ai' will be
+             'GAL_BLANK_SIZE_T'. */
           if(ai!=GAL_BLANK_SIZE_T)
             {
               /* Make sure the matched point is within the given aperture
@@ -1290,17 +1378,34 @@ match_kdtree_worker(void *in_prm)
 
               /* If the radial distance is smaller than the radial measure,
                  then add this item to a match with 'ai'. */
-              if(r<p->aperture[0])
-                match_add_to_sfll(&p->bina[ai], bi, r);
-            }
+              if(p->arrange==GAL_MATCH_ARRANGE_OUTER || r<p->aperture[0])
+                {
+                  switch(p->arrange)
+                    {
+                    case GAL_MATCH_ARRANGE_FULL:
+                    case GAL_MATCH_ARRANGE_INNER:
+                      match_add_to_sfll(&p->bina[ai], bi, r);
+                      break;
 
-          /* For a check:
-          if(ai==GAL_BLANK_SIZE_T)
-            printf("second[%zu] matched with first[%zu].\n", bi);
-          else
-            printf("second[%zu] DIDN'T match with first.\n", bi, bi);
-          */
+                    case GAL_MATCH_ARRANGE_OUTER:
+                    case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+                      p->aoinb[bi]=ai;
+                      p->aoinbd[bi]=r;
+                      break;
+                    }
+                }
+            }
         }
+      else ai=GAL_BLANK_SIZE_T;
+
+      /* For a check:
+      if(ai==GAL_BLANK_SIZE_T)
+        printf("%s: second[%zu] DIDN'T match with first.\n",
+               __func__, bi);
+      else
+        printf("%s: second[%zu] matched with first[%zu].\n",
+               __func__, bi, ai);
+      */
     }
 
   /* Clean up. */
@@ -1339,11 +1444,11 @@ match_kdtree_second_in_first(struct match_kdtree_params *p,
 gal_data_t *
 gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
                  gal_data_t *coord1_kdtree, size_t kdtree_root,
-                 double *aperture, size_t numthreads, size_t minmapsize,
-                 int quietmmap, size_t *nummatched)
+                 uint8_t arrange, double *aperture, size_t numthreads,
+                 size_t minmapsize, int quietmmap, size_t *nummatched)
 {
   gal_data_t *out=NULL;
-  struct match_kdtree_params p;
+  struct match_kdtree_params p={0};
 
   /* In case the 'k-d' tree is empty, just return a NULL pointer and the
      number of matches to zero. */
@@ -1352,6 +1457,7 @@ gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
   /* Write the parameters into the structure. */
   p.A=coord1;
   p.B=coord2;
+  p.arrange=arrange;
   p.aperture=aperture;
   p.A_kdtree=coord1_kdtree;
   p.kdtree_root=kdtree_root;
@@ -1363,20 +1469,35 @@ gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
      radius of the first. */
   match_kdtree_second_in_first(&p, numthreads, minmapsize, quietmmap);
 
-  /* Find the best match for each item (from possibly multiple matches). */
-  match_rearrange(p.A, p.B, p.bina);
-
   /* The match is done, write the output. */
-  out=match_output(p.A, p.B, NULL, NULL, p.bina, minmapsize, quietmmap);
+  switch(arrange)
+    {
+    case GAL_MATCH_ARRANGE_FULL:
+    case GAL_MATCH_ARRANGE_INNER:
+      match_rearrange(p.A, p.B, p.bina);
+      out=match_output_inner(p.A, p.B, NULL, NULL, p.bina, minmapsize,
+                             quietmmap);
+      *nummatched = out ?  out->next->next->size : 0;
+      break;
 
-  /* Set 'nummatched' and return output. */
-  *nummatched = out ?  out->next->next->size : 0;
+    case GAL_MATCH_ARRANGE_OUTER:
+    case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+      out=match_output_outer(arrange, p.A, p.B, p.aoinb, p.aoinbd,
+                             minmapsize, quietmmap, nummatched);
+      break;
 
-  /* Clean up and return. */
-  free(p.bina);
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "fix the problem. The 'arrange' code '%u' is not recognized",
+            __func__, PACKAGE_BUGREPORT, arrange);
+    }
+
+  /* Clean up and return (the 'aoinb' and 'aoinbd' are not freed because
+     when used, they are directly written to the output). */
   free(p.Amin);
   free(p.Amax);
   free(p.Abinwidth);
+  if(p.bina) free(p.bina);
   gal_list_data_free(p.Aexist);
   return out;
 }

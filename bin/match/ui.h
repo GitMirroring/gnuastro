@@ -41,12 +41,13 @@ enum program_args_groups
 /* Available letters for short options:
 
    b e f g i j m n p r s t u v w x y z
-   A B E G J L O Q R W X Y
+   B E G J L O Q R W X Y
 */
 enum option_keys_enum
 {
   /* With short-option version. */
   UI_KEY_HDU2            = 'H',
+  UI_KEY_ARRANGE         = 'A',
   UI_KEY_APERTURE        = 'a',
   UI_KEY_LOGASOUTPUT     = 'l',
   UI_KEY_CCOL1           = 'c',

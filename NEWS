@@ -50,6 +50,27 @@ See the end of the file for license conditions.
   --mean-error: Measure the error of the mean for each label (object or
     clump).
 
+*** Match
+
+  --arrange: the arrangement of the match output. Until now, the Match
+    program only had the 'inner' arrangement (known in SQL as "INNER
+    JOIN"). From this version, other arrangements are also available and
+    fully described (with example tables and short tutorials) in the newly
+    added "Arranging match output" section of the book. A short summary of
+    the new arrangements is given below:
+
+    - full: known as "FULL OUTER JOIN" in SQL. Its output has both the
+      matched rows and the non-matched rows in one catalog.
+
+    - outer: known as "RIGHT OUTER JOIN" in SQL. Its output has the same
+      number of rows as the second (query) input catalog to Match, giving
+      the ability to find the (possibly repeated) matching rows from the
+      first (reference) catalog. See the demo for a real-world example.
+
+    - outer-within-aperture: similar to 'outer', but if the nearest
+      reference catalog entry is more distant than the given aperture, it
+      will be NaN/blank in the output.
+
 *** astscript-fits-view
 
   --topcat4k (or '-k') option is added for easy display on 4K monitors
@@ -75,6 +96,12 @@ See the end of the file for license conditions.
 
 ** Removed features
 ** Changed features
+
+*** Library
+
+  - gal_match_kdtree: a new 'arrange' argument has been added to define the
+    arrangement of the output.
+
 ** Bugs fixed
 
   - bug #66216: NaN values in MakeProfile outputs for very small profiles

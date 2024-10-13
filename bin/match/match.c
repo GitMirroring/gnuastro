@@ -225,27 +225,85 @@ match_catalog_permute_inplace(struct matchparams *p, gal_data_t *in,
 
 static void
 match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
-                         size_t *permutation, size_t nummatched)
+                         size_t *permut, size_t nummatched, uint8_t f1s2)
 {
-  size_t c=0, i, n;
-  size_t istart=p->notmatched ? nummatched : 0;
-  size_t iend=p->notmatched ? in->dsize[0] : nummatched;
-  size_t outrows=p->notmatched ? in->dsize[0] - nummatched : nummatched;
+  void *out;
+  size_t istart, iend, outrows;
+  size_t i, j, n, c=0, offset=0;
+
+  /* Set the match types. */
+  switch(p->type)
+    {
+    case GAL_MATCH_ARRANGE_INNER:
+      istart=p->notmatched ? nummatched : 0;
+      iend=p->notmatched ? in->dsize[0] : nummatched;
+      outrows = p->notmatched ? in->dsize[0] - nummatched : nummatched;
+      break;
+
+    case GAL_MATCH_ARRANGE_FULL:
+      /* In a full match, the matched rows (first set of rows) will come
+         from both catalogs, all the non-matched rows will come after
+         that. So the final number of rows will be the addition of the two
+         sizes, minus the number of matched rows. */
+      istart=0;
+      iend=nummatched;
+      offset = f1s2==1 ? nummatched : p->cols1->size;
+      outrows = p->cols1->size + p->cols2->size - nummatched;
+      break;
+
+    case GAL_MATCH_ARRANGE_OUTER:
+    case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+      istart=0;
+      iend = outrows = p->cols2->size;
+      break;
+
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "fix the problem. The code '%u' is not recognized for "
+            "'p->type'", __func__, PACKAGE_BUGREPORT, p->type);
+    }
 
   /* Set the number of values in this column (for vectors). */
   n = in->ndim==1 ? 1 : in->dsize[1];
 
-  /* Allocate the array. */
-  void *out=gal_pointer_allocate_ram_or_mmap(in->type, outrows*n, 0,
-                                             p->cp.minmapsize,
-                                             &in->mmapname, p->cp.quietmmap,
-                                             __func__, "out");
+  /* Allocate the output array. */
+  out=gal_pointer_allocate_ram_or_mmap(in->type, outrows*n, 0,
+                                       p->cp.minmapsize,
+                                       &in->mmapname, p->cp.quietmmap,
+                                       __func__, "out");
+
+  /* Except for inner and outer, the other types of match can lead to empty
+     rows. So we'll initialize all the values to blank in the given
+     type. */
+  if(   p->type==GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE
+     || p->type==GAL_MATCH_ARRANGE_FULL )
+    for(i=0;i<outrows*n;++i)
+      gal_blank_write(gal_pointer_increment(out, i, in->type),
+                      in->type);
 
   /* Copy the matched rows into the output array. */
   for(i=istart;i<iend;++i)
-    memcpy(gal_pointer_increment(out,       n*c++,            in->type),
-           gal_pointer_increment(in->array, n*permutation[i], in->type),
-           gal_type_sizeof(in->type) * n);
+    {
+      /* Copy the matched columns. */
+      if(permut[i]!=GAL_BLANK_SIZE_T) /* For 'outer-within-aperture'. */
+        memcpy(gal_pointer_increment(out,       n*c,         in->type),
+               gal_pointer_increment(in->array, n*permut[i], in->type),
+               gal_type_sizeof(in->type) * n);
+
+      /* Increment the output row counter. */
+      ++c;
+    }
+
+  /* If we are doing a full match, we need to write the non-matching rows
+     in the last rows. */
+  if(p->type==GAL_MATCH_ARRANGE_FULL)
+    {
+      i=offset;
+      for(j=iend;j<in->size;++j)
+        memcpy(gal_pointer_increment(out,       n*i++,       in->type),
+               gal_pointer_increment(in->array, n*permut[j], in->type),
+               gal_type_sizeof(in->type) * n);
+    }
 
   /**********************************/
   /* Add a check so if the column is a string, we free the strings that
@@ -270,10 +328,11 @@ struct ma_params
   gal_data_t       *cat;        /* Dataset (all rows) to arrange. */
   size_t     nummatched;        /* Number of matched. */
   size_t   *permutation;        /* The permutation. */
+  uint8_t          f1s2;        /* First catalog: 1, second: 2. */
 };
 
 static void *
-match_arrange(void *in_prm)
+match_arrange_worker(void *in_prm)
 {
   /* Low-level definitions to be done first. */
   struct gal_threads_params *tprm=(struct gal_threads_params *)in_prm;
@@ -295,12 +354,79 @@ match_arrange(void *in_prm)
 
       /* Rearrange this columns' elements. */
       match_arrange_in_new_col(map->p, tmp, map->permutation,
-                               map->nummatched);
+                               map->nummatched, map->f1s2);
     }
 
   /* Wait for all the other threads to finish, then return. */
   if(tprm->b) pthread_barrier_wait(tprm->b);
   return NULL;
+}
+
+
+
+
+
+static void
+match_arrange_inner_full(struct matchparams *p, size_t *permutation,
+                         int f1s2, gal_data_t *cat, size_t nummatched)
+{
+  gal_data_t *tmp;
+  struct ma_params map;
+
+  /* Arrange the output rows. */
+  if(permutation)
+    {
+      /* When we are in no-match AND outcols mode, we don't need to touch
+         the rows of the first input catalog (we want all of them) */
+      if( (p->notmatched && p->outcols && f1s2==1) == 0 )
+        {
+          map.p=p;
+          map.cat=cat;
+          map.f1s2=f1s2;
+          map.nummatched=nummatched;
+          map.permutation=permutation;
+          gal_threads_spin_off(match_arrange_worker, &map,
+                               gal_list_data_number(cat),
+                               p->cp.numthreads, p->cp.minmapsize,
+                               p->cp.quietmmap);
+
+        }
+    }
+
+  /* If no match was found ('permutation==NULL'), and the matched columns
+     are requested, empty all the columns that are to be written (only
+     keeping the meta-data). */
+  else
+    if(p->notmatched==0)
+      {
+        for(tmp=cat; tmp!=NULL; tmp=tmp->next)
+          {
+            tmp->size=0;
+            free(tmp->dsize); tmp->dsize=NULL;
+            free(tmp->array); tmp->array=NULL;
+          }
+      }
+
+}
+
+
+
+
+
+static void
+match_arrange_outer(struct matchparams *p, size_t *permutation,
+                    gal_data_t *cat)
+{
+  struct ma_params map;
+
+  /* Fill the multi-threaded arrangement values. */
+  map.p=p;
+  map.cat=cat;
+  map.permutation=permutation;
+  gal_threads_spin_off(match_arrange_worker, &map,
+                       gal_list_data_number(cat),
+                       p->cp.numthreads, p->cp.minmapsize,
+                       p->cp.quietmmap);
 }
 
 
@@ -315,8 +441,7 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
                              size_t **numcolmatch)
 {
   int hasall=0;
-  struct ma_params map;
-  gal_data_t *tmp, *cat;
+  gal_data_t *cat;
   gal_list_str_t *cols, *tcol;
 
   char *hopt             = (f1s2==1) ? "--hdu"       : "--hdu2";
@@ -368,43 +493,28 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
   else
     cat=match_cat_from_coord(p, cols, *numcolmatch);
 
-  /* Arrange the output rows. */
-  if(permutation)
+  /* Arrange the rows (depends on the type of match). */
+  switch(p->type)
     {
-      /* When we are in no-match AND outcols mode, we don't need to touch
-         the rows of the first input catalog (we want all of them) */
-      if( (p->notmatched && p->outcols && f1s2==1) == 0 )
-        {
-          map.p=p;
-          map.cat=cat;
-          map.nummatched=nummatched;
-          map.permutation=permutation;
-          gal_threads_spin_off(match_arrange, &map,
-                               gal_list_data_number(cat),
-                               p->cp.numthreads, p->cp.minmapsize,
-                               p->cp.quietmmap);
-
-        }
+    case GAL_MATCH_ARRANGE_FULL:
+    case GAL_MATCH_ARRANGE_INNER:
+      match_arrange_inner_full(p, permutation, f1s2, cat, nummatched);
+      break;
+    case GAL_MATCH_ARRANGE_OUTER:
+    case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+      /* In an outer matching, the second input's columns do not need
+         arrangement, only the first input's columns need to be arranged
+         to match the second input. */
+      if(f1s2==1) match_arrange_outer(p, permutation, cat);
+      break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "fix the problem. The value '%u' of the 'type' variable is "
+            "not recognized", __func__, PACKAGE_BUGREPORT, p->type);
     }
 
-  /* If no match was found ('permutation==NULL'), and the matched columns
-     are requested, empty all the columns that are to be written (only
-     keeping the meta-data). */
-  else
-    if(p->notmatched==0)
-      {
-        for(tmp=cat; tmp!=NULL; tmp=tmp->next)
-          {
-            tmp->size=0;
-            free(tmp->dsize); tmp->dsize=NULL;
-            free(tmp->array); tmp->array=NULL;
-          }
-      }
-
-
   /* Write the catalog to the output. */
-  if(p->outcols)
-    return cat;
+  if(p->outcols) return cat;
   else if(cat)
     {
       /* Write the catalog to a file. */
@@ -415,6 +525,7 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
       gal_list_data_free(cat);
     }
 
+  /* If control reaches here, the output is already written. */
   return NULL;
 }
 
@@ -451,11 +562,12 @@ match_catalog_write_one_row(struct matchparams *p, gal_data_t *a,
           /* Make sure both have the same type. */
           if(ta->type!=tb->type)
             error(EXIT_FAILURE, 0, "when '--notmatched' and '--outcols' "
-                  "are used together, the each column given to '--outcols' "
-                  "must have the same datatype in both tables. However, "
-                  "the first input has a type of '%s' for one of the "
-                  "columns, while the second has a type of '%s'",
-                  gal_type_name(ta->type, 1), gal_type_name(tb->type, 1));
+                  "are used together, the each column given to "
+                  "'--outcols' must have the same datatype in both "
+                  "tables. However, the first input has a type of '%s' "
+                  "for one of the columns, while the second has a type "
+                  "of '%s'", gal_type_name(ta->type, 1),
+                  gal_type_name(tb->type, 1));
 
           /* Allocate the necessary space. */
           gal_list_data_add_alloc(&cat, NULL, ta->type, ta->ndim,
@@ -644,7 +756,8 @@ match_catalog_kdtree(struct matchparams *p, size_t *nummatched)
           printf("  - Match using the k-d tree ...\n");
         }
       out = gal_match_kdtree(p->cols1, p->cols2, p->kdtreedata,
-                             p->kdtreeroot, p->aperture->array,
+                             p->kdtreeroot, p->type,
+                             p->aperture ? p->aperture->array : NULL,
                              p->cp.numthreads, p->cp.minmapsize,
                              p->cp.quietmmap, nummatched);
       if(!p->cp.quiet)
@@ -710,12 +823,123 @@ match_catalog_sort_based(struct matchparams *p, size_t *nummatched)
 
 
 static void
+match_catalog_output(struct matchparams *p, gal_data_t *mcols,
+                     size_t nummatched)
+{
+  struct timeval t1;
+  gal_data_t *a=NULL, *b=NULL;
+  size_t *acolmatch=NULL, *bcolmatch=NULL;
+
+  /* Let the user know what is happening. */
+  if(!p->cp.quiet)
+    {
+      gettimeofday(&t1, NULL);
+      printf("  - Arranging matched rows (skip this with "
+             "'--logasoutput')...\n");
+    }
+
+  /* Read (and possibly write) the outputs. Note that we only need to
+     read the table when it is necessary for the output (the user might
+     have asked for '--outcols', only with columns of one of the two
+     inputs). */
+  if(p->outcols==NULL || p->acols)
+    a=match_catalog_read_write_all(p, mcols?mcols->array:NULL,
+                                   nummatched, 1, &acolmatch);
+  if(p->outcols==NULL || p->bcols)
+    b=match_catalog_read_write_all(p, mcols?mcols->next->array:NULL,
+                                   nummatched, 2, &bcolmatch);
+
+  /* If one catalog (with specific columns from either of the two
+     inputs) was requested, then write it out. */
+  if(p->outcols)
+    {
+      /* Arrange the columns and write the output. */
+      if(p->notmatched)
+        match_catalog_write_one_row(p, a, b);
+      else
+        {
+          match_catalog_write_one_col(p, a, b, acolmatch, bcolmatch);
+          a=b=NULL; /*They are freed in function above. */
+        }
+
+      /* Clean up. */
+      if(acolmatch) free(acolmatch);
+      if(bcolmatch) free(bcolmatch);
+    }
+
+  /* Clean up. */
+  if(a) gal_list_data_free(a);
+  if(b) gal_list_data_free(b);
+
+  /* Let the user know. */
+  if( !p->cp.quiet )
+    gal_timing_report(&t1, "... done!", 1);
+}
+
+
+
+
+
+static void
+match_catalog_log(struct matchparams *p, gal_data_t *mcols,
+                  size_t nummatched)
+{
+  gal_data_t *tmp;
+  uint32_t *u, *uf;
+
+  /* Note that unsigned 64-bit integers are not recognized in FITS
+     tables. So if the log file is a FITS table, covert the two
+     index columns to uint32. */
+  tmp=gal_data_copy_to_new_type(mcols, GAL_TYPE_UINT32);
+  tmp->size=tmp->dsize[0]=nummatched;
+  tmp->next=mcols->next;
+  gal_data_free(mcols);
+  mcols=tmp;
+
+  /* We also want everything to be incremented by one. In a C
+     program, counting starts with zero, so 'gal_match_sort_based'
+     will return indexs starting from zero. But outside a C
+     program, on the command-line people expect counting to start
+     from 1 (for example with AWK). */
+  uf = (u=mcols->array) + tmp->size; do (*u)++; while(++u<uf);
+
+  /* Same for the second set of indexs. */
+  tmp=gal_data_copy_to_new_type(mcols->next, GAL_TYPE_UINT32);
+  uf = (u=tmp->array) + tmp->size; do (*u)++; while(++u<uf);
+  tmp->size=tmp->dsize[0]=nummatched;
+  tmp->next=mcols->next->next;
+  gal_data_free(mcols->next);
+  mcols->next=tmp;
+
+  /* Correct the comments. */
+  free(mcols->comment);
+  mcols->comment="Row index in first catalog (counting from 1).";
+  free(mcols->next->comment);
+  mcols->next->comment="Row index in second catalog (counting "
+    "from 1).";
+
+  /* Write them into the table. */
+  gal_table_write(mcols, NULL, NULL, p->cp.tableformat, p->logname,
+                  "LOG_INFO", 0, 0);
+
+  /* Set the comment pointer to NULL: they weren't allocated. */
+  mcols->comment=NULL;
+  mcols->next->comment=NULL;
+
+  /* Inform the user that a log-file has been created. */
+  if(!p->cp.quiet)
+    fprintf(stdout, "  - Output (log): %s\n", p->logname);
+}
+
+
+
+
+
+static void
 match_catalog(struct matchparams *p)
 {
-  uint32_t *u, *uf;
-  struct timeval t1;
-  gal_data_t *tmp, *a=NULL, *b=NULL, *mcols=NULL;
-  size_t nummatched, *acolmatch=NULL, *bcolmatch=NULL;
+  size_t nummatched;
+  gal_data_t *mcols=NULL;
 
   /* If we want to use kd-tree for matching. */
   if(p->kdtreemode!=MATCH_KDTREE_DISABLE)
@@ -732,105 +956,13 @@ match_catalog(struct matchparams *p)
 
   /* If the output is to be taken from the input columns (it isn't just the
      log), then do the job. */
-  if(p->logasoutput==0)
-    {
-      /* Let the user know what is happening. */
-      if(!p->cp.quiet)
-        {
-          gettimeofday(&t1, NULL);
-          printf("  - Arranging matched rows (skip this with "
-                 "'--logasoutput')...\n");
-        }
-
-      /* Read (and possibly write) the outputs. Note that we only need to
-         read the table when it is necessary for the output (the user might
-         have asked for '--outcols', only with columns of one of the two
-         inputs). */
-      if(p->outcols==NULL || p->acols)
-        a=match_catalog_read_write_all(p, mcols?mcols->array:NULL,
-                                       nummatched, 1, &acolmatch);
-      if(p->outcols==NULL || p->bcols)
-        b=match_catalog_read_write_all(p, mcols?mcols->next->array:NULL,
-                                       nummatched, 2, &bcolmatch);
-
-      /* If one catalog (with specific columns from either of the two
-         inputs) was requested, then write it out. */
-      if(p->outcols)
-        {
-          /* Arrange the columns and write the output. */
-          if(p->notmatched)
-            match_catalog_write_one_row(p, a, b);
-          else
-            {
-              match_catalog_write_one_col(p, a, b, acolmatch, bcolmatch);
-              a=b=NULL; /*They are freed in function above. */
-            }
-
-          /* Clean up. */
-          if(acolmatch) free(acolmatch);
-          if(bcolmatch) free(bcolmatch);
-        }
-
-      /* Clean up. */
-      if(a) gal_list_data_free(a);
-      if(b) gal_list_data_free(b);
-
-      /* Let the user know. */
-      if( !p->cp.quiet )
-        gal_timing_report(&t1, "... done!", 1);
-    }
+  if(p->logasoutput==0) match_catalog_output(p, mcols, nummatched);
 
   /* Write the raw information in a log file if necessary.  */
-  if(p->logname && mcols)
-    {
-      /* Note that unsigned 64-bit integers are not recognized in FITS
-         tables. So if the log file is a FITS table, covert the two
-         index columns to uint32. */
-      tmp=gal_data_copy_to_new_type(mcols, GAL_TYPE_UINT32);
-      tmp->size=tmp->dsize[0]=nummatched;
-      tmp->next=mcols->next;
-      gal_data_free(mcols);
-      mcols=tmp;
+  if(p->logname && mcols) match_catalog_log(p, mcols, nummatched);
 
-      /* We also want everything to be incremented by one. In a C
-         program, counting starts with zero, so 'gal_match_sort_based'
-         will return indexs starting from zero. But outside a C
-         program, on the command-line people expect counting to start
-         from 1 (for example with AWK). */
-      uf = (u=mcols->array) + tmp->size; do (*u)++; while(++u<uf);
-
-      /* Same for the second set of indexs. */
-      tmp=gal_data_copy_to_new_type(mcols->next, GAL_TYPE_UINT32);
-      uf = (u=tmp->array) + tmp->size; do (*u)++; while(++u<uf);
-      tmp->size=tmp->dsize[0]=nummatched;
-      tmp->next=mcols->next->next;
-      gal_data_free(mcols->next);
-      mcols->next=tmp;
-
-      /* Correct the comments. */
-      free(mcols->comment);
-      mcols->comment="Row index in first catalog (counting from 1).";
-      free(mcols->next->comment);
-      mcols->next->comment="Row index in second catalog (counting "
-        "from 1).";
-
-      /* Write them into the table. */
-      gal_table_write(mcols, NULL, NULL, p->cp.tableformat, p->logname,
-                      "LOG_INFO", 0, 0);
-
-      /* Set the comment pointer to NULL: they weren't allocated. */
-      mcols->comment=NULL;
-      mcols->next->comment=NULL;
-
-      /* Inform the user that a log-file has been created. */
-      if(!p->cp.quiet)
-        fprintf(stdout, "  - Output (log): %s\n", p->logname);
-    }
-
-  /* Clean up. */
+  /* Clean up and print the number of matches if not in quiet mode. */
   gal_list_data_free(mcols);
-
-  /* Print the number of matches if not in quiet mode. */
   if(!p->cp.quiet)
     {
       if(p->out2name && strcmp(p->out1name, p->out2name))
@@ -867,16 +999,7 @@ void
 match(struct matchparams *p)
 {
   /* Do the correct type of matching. */
-  switch(p->mode)
-    {
-    case MATCH_MODE_CATALOG: match_catalog(p); break;
-    case MATCH_MODE_WCS:
-      error(EXIT_FAILURE, 0, "matching by WCS is not yet supported");
-    default:
-      error(EXIT_FAILURE, 0, "%s: a bug! please contact us at %s to fix "
-            "the problem: %d is not a recognized mode",
-            __func__, PACKAGE_BUGREPORT, p->mode);
-    }
+  match_catalog(p);
 
   /* Write Match's configuration as keywords into the first extension of
      the output. */

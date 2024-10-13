@@ -29,6 +29,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 
 #include <gnuastro/fits.h>
+#include <gnuastro/match.h>
 #include <gnuastro/threads.h>
 
 #include <gnuastro-internal/timing.h>
@@ -195,6 +196,70 @@ parse_opt(int key, char *arg, struct argp_state *state)
 
 
 
+void *
+ui_parse_match_type(struct argp_option *option, char *arg,
+                    char *filename, size_t lineno, void *junk)
+{
+  char *str=NULL;
+  uint8_t value=GAL_MATCH_ARRANGE_INVALID;
+
+  /* If we are printing values. */
+  if(lineno==-1)
+    {
+      /* The output must be an allocated string (will be 'free'd later). */
+      value=*(uint8_t *)(option->value);
+      switch(value)
+        {
+        case GAL_MATCH_ARRANGE_FULL:
+          gal_checkset_allocate_copy("full", &str);
+          break;
+        case GAL_MATCH_ARRANGE_INNER:
+          gal_checkset_allocate_copy("inner", &str);
+          break;
+        case GAL_MATCH_ARRANGE_OUTER:
+          gal_checkset_allocate_copy("outer", &str);
+          break;
+        case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+          gal_checkset_allocate_copy("outer-within-aperture", &str);
+          break;
+        default:
+          error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' "
+                "to fix the problem. %u is not a recognized match type",
+                __func__, PACKAGE_BUGREPORT, value);
+        }
+      return str;
+    }
+
+  /* If we are reading/parsing values. */
+  else
+    {
+      /* If the option is already set, just return. */
+      if(option->set) return NULL;
+
+      /* Read the value. */
+      if(      !strcmp(arg, "full") )  value = GAL_MATCH_ARRANGE_FULL;
+      else if( !strcmp(arg, "inner") ) value = GAL_MATCH_ARRANGE_INNER;
+      else if( !strcmp(arg, "outer") ) value = GAL_MATCH_ARRANGE_OUTER;
+      else if( !strcmp(arg, "outer-within-aperture") )
+        value = GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE;
+      else
+        error_at_line(EXIT_FAILURE, 0, filename, lineno, "'%s' (value "
+                      "to '%s' option) couldn't be recognized as a known "
+                      "mathing type. Acceptable values are 'full', "
+                      "'inner', 'outer' or 'outer-within-aperture'", arg,
+                      option->name);
+      *(uint8_t *)(option->value)=value;
+
+      /* For no un-used variable warning. This function doesn't need the
+         pointer. */
+      return junk=NULL;
+    }
+}
+
+
+
+
+
 
 
 
@@ -218,42 +283,63 @@ parse_opt(int key, char *arg, struct argp_state *state)
 static void
 ui_check_only_options(struct matchparams *p)
 {
-  /* k-d tree specific sanity checks. */
-  if(p->kdtree)
-  {
-    /* Set the k-d tree mode. */
-    if(      !strcmp(p->kdtree,"build")    ) p->kdtreemode=MATCH_KDTREE_BUILD;
-    else if( !strcmp(p->kdtree,"internal") ) p->kdtreemode=MATCH_KDTREE_INTERNAL;
-    else if( !strcmp(p->kdtree,"disable")  ) p->kdtreemode=MATCH_KDTREE_DISABLE;
-    else if( gal_fits_name_is_fits(p->kdtree) ) p->kdtreemode=MATCH_KDTREE_FILE;
-    else
-      error(EXIT_FAILURE, 0, "'%s' is not valid for '--kdtree'. The "
-            "following values are accepted: 'build' (to build the k-d tree in "
-            "the file given to '--output'), 'internal' (to force internal "
-            "usage of a k-d tree for the matching), 'disable' (to not use a "
-            "k-d tree at all), a FITS file name (the file to read a created "
-            "k-d tree from)", p->kdtree);
+  /* Set the k-d tree mode. */
+  if(      !strcmp(p->kdtree,"build")    )
+    p->kdtreemode=MATCH_KDTREE_BUILD;
+  else if( !strcmp(p->kdtree,"internal") )
+    p->kdtreemode=MATCH_KDTREE_INTERNAL;
+  else if( !strcmp(p->kdtree,"disable")  )
+    p->kdtreemode=MATCH_KDTREE_DISABLE;
+  else if( gal_fits_name_is_fits(p->kdtree) )
+    p->kdtreemode=MATCH_KDTREE_FILE;
+  else
+    error(EXIT_FAILURE, 0, "'%s' is not valid for '--kdtree'. The "
+          "following values are accepted: 'build' (to build the k-d "
+          "tree in the file given to '--output'), 'internal' (to "
+          "force internal usage of a k-d tree for the matching), "
+          "'disable' (to not use a k-d tree at all), a FITS file "
+          "name (the file to read a created k-d tree from)", p->kdtree);
 
-    /* Make sure that the k-d tree build mode is not called with
-       '--outcols'. */
-    if( p->kdtreemode==MATCH_KDTREE_BUILD && (p->outcols || p->coord) )
-      error(EXIT_FAILURE, 0, "the '--kdtree=build' option is incompatible "
-            "with the '--outcols' or '--coord' options (because in the k-d "
-            "tree building mode doesn't involve actual matching. It will "
-            "only build k-d tree and write it to a file so it can be used "
-            "in future matches)");
+  /* Make sure that the k-d tree build mode is not called with
+     '--outcols'. */
+  if( p->kdtreemode==MATCH_KDTREE_BUILD && (p->outcols || p->coord) )
+    error(EXIT_FAILURE, 0, "the '--kdtree=build' option is "
+          "incompatible with the '--outcols' or '--coord' options "
+          "(because in the k-d tree building mode doesn't involve "
+          "actual matching. It will only build k-d tree and write "
+          "it to a file so it can be used in future matches)");
 
-    /* Make sure that a HDU is also specified for the k-d tree when its an
-       external file. */
-    if( p->kdtreemode==MATCH_KDTREE_FILE && p->kdtreehdu==NULL )
-      error(EXIT_FAILURE, 0, "no '--kdtreehdu' specified! When a FITS "
-            "file is given to '--kdtree', you should specify its "
-            "extension/HDU within the file using '--kdtreehdu'. You "
-            "can either use the HDU name, or its number (counting "
-            "from 0). If you aren't sure what HDUs exist in the file, "
-            "you can use the 'astfits %s' command to see the full list",
-            p->kdtree);
-  }
+  /* Make sure that a HDU is also specified for the k-d tree when its an
+     external file. */
+  if( p->kdtreemode==MATCH_KDTREE_FILE && p->kdtreehdu==NULL )
+    error(EXIT_FAILURE, 0, "no '--kdtreehdu' specified! When a FITS "
+          "file is given to '--kdtree', you should specify its "
+          "extension/HDU within the file using '--kdtreehdu'. You "
+          "can either use the HDU name, or its number (counting "
+          "from 0). If you aren't sure what HDUs exist in the file, "
+          "you can use the 'astfits %s' command to see the full list",
+          p->kdtree);
+
+  /* For an outer match, we only operate in k-d tree mode. */
+  if( (   p->type==GAL_MATCH_ARRANGE_OUTER
+       || p->type==GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE )
+      && p->kdtreemode==MATCH_KDTREE_DISABLE )
+    error(EXIT_FAILURE, 0, "the 'outer' arrangement only works with the "
+          "k-d tree algorithm (in other words, it conflicts with "
+          "'--kdtree=disable' option). Please set '--kdtree=internal' "
+          "(if you want to build the k-d tree very time), or to "
+          "'--kdtree=file.fits' (where 'file.fits' is an existing k-d "
+          "tree that was built once and can be used many times for "
+          "a faster result on a repeated reference catalog). See the "
+          "description of the '--kdtree' option of the Match program "
+          "in Gnuastro manual for more (by running 'info %s')",
+          PROGRAM_EXEC);
+
+  /* The '--notmatched' option is only valid for the inner type of
+     matching. */
+  if(p->notmatched && p->type!=GAL_MATCH_ARRANGE_INNER)
+    error(EXIT_FAILURE, 0, "the '--notmatched' option is only defined "
+          "with the '--arrange=inner' match type");
 }
 
 
@@ -347,79 +433,6 @@ ui_check_options_and_arguments(struct matchparams *p)
 /**************************************************************/
 /***************       Preparations         *******************/
 /**************************************************************/
-static void
-ui_set_mode(struct matchparams *p)
-{
-  int tin1, tin2;
-  char *t1=NULL, *t2=NULL;
-
-  /* We will base the mode on the first input, then check with the
-     second. Note that when the first is from standard input (it is
-     'NULL'), then we go into catalog mode because currently we assume
-     standard input is only for plain text and WCS matching is not defined
-     on plain text. */
-  if( p->input1name && gal_fits_file_recognized(p->input1name) )
-    {
-      tin1=gal_fits_hdu_format(p->input1name, p->cp.hdu, "--hdu");
-      p->mode = (tin1 == IMAGE_HDU) ? MATCH_MODE_WCS : MATCH_MODE_CATALOG;
-    }
-  else
-    {
-      tin1=ASCII_TBL; /* For "uninitialized" warning, irrelevant here. */
-      p->mode=MATCH_MODE_CATALOG;
-    }
-
-
-  /* Necessary sanity checks. */
-  if(p->mode==MATCH_MODE_CATALOG && p->cp.searchin==0)
-    error(EXIT_FAILURE, 0, "no '--searchin' option specified. Please run "
-          "the following command for more information:\n\n"
-          "    $ info gnuastro \"selecting table columns\"\n");
-
-
-  /* Now that the mode is set, do some sanity checks on the second
-     catalog. Recall that when '--coord' is given, there is no second input
-     file.*/
-  if(p->input2name)
-    {
-      if(gal_fits_file_recognized(p->input2name))
-        {
-          tin2=gal_fits_hdu_format(p->input2name, p->hdu2, "--hdu2");
-          if(tin1==IMAGE_HDU && tin2!=IMAGE_HDU)
-            {
-              t1 = (tin1==IMAGE_HDU) ? "image" : "catalog";
-              t2 = (tin2==IMAGE_HDU) ? "image" : "catalog";
-            }
-          if(t1)
-            error(EXIT_FAILURE, 0, "%s is a %s, while %s is an "
-                  "%s. Both inputs have to be images or catalogs",
-                  gal_checkset_dataset_name(p->input1name, p->cp.hdu), t1,
-                  gal_checkset_dataset_name(p->input2name, p->hdu2), t2 );
-        }
-      else
-        {
-          if(p->mode==MATCH_MODE_WCS)
-            error(EXIT_FAILURE, 0, "%s is an image, while %s is a catalog! "
-                  "Both inputs have to be images or catalogs",
-                  gal_checkset_dataset_name(p->input1name, p->cp.hdu),
-                  gal_checkset_dataset_name(p->input2name, p->hdu2) );
-        }
-    }
-  else
-    {
-      /* When there is no second-input file name ('--coord' is given), we
-         cannot be in WCS mode (requiring a FITS file). */
-      if(p->mode==MATCH_MODE_WCS)
-        error(EXIT_FAILURE, 0, "%s is an image, while '--coord' is only "
-              "meaningful for catalogs",
-              gal_checkset_dataset_name(p->input1name, p->cp.hdu));
-    }
-}
-
-
-
-
-
 /* The final aperture must have the following values:
 
        p->aperture[0]: Major axis length.
@@ -467,13 +480,15 @@ ui_read_columns_aperture_2d(struct matchparams *p)
     case 3:
       if(oaper[1]>1)
         error(EXIT_FAILURE, 0, "second value to '--aperture' is larger "
-              "than one. When three numbers are given to this option, the "
-              "second is the axis ratio (which must always be less than 1).");
+              "than one. When three numbers are given to this option, "
+              "the second is the axis ratio (which must always be less "
+              "than 1).");
       break;
 
     default:
-      error(EXIT_FAILURE, 0, "%zu values given to '--aperture'. In 2D, this "
-            "option can only take 1, 2, or 3 values", p->aperture->size);
+      error(EXIT_FAILURE, 0, "%zu values given to '--aperture'. In 2D, "
+            "this option can only take 1, 2, or 3 values",
+            p->aperture->size);
     }
 
   /* If a new aperture was defined, then replace it with the exitsting
@@ -600,10 +615,11 @@ ui_read_columns_aperture_3d(struct matchparams *p)
       break;
 
     default:
-      error(EXIT_FAILURE, 0, "%zu values given to '--aperture'. In 3D, this "
-            "option can only take 1, 3, or 6 values. See the description of "
-            "this option in the book for more with this command:\n\n"
-            "    $ info astmatch\n", p->aperture->size);
+      error(EXIT_FAILURE, 0, "%zu values given to '--aperture'. In 3D, "
+            "this option can only take 1, 3, or 6 values. See the "
+            "description of this option in the book for more with this "
+            "command:\n\n"
+            "    $ info %s\n", p->aperture->size, PROGRAM_EXEC);
     }
 
   /* If a new aperture was defined, then replace it with the exitsting
@@ -670,17 +686,19 @@ ui_set_columns_sanity_check_read_aperture(struct matchparams *p)
       case 2: ui_read_columns_aperture_2d(p); break;
       case 3: ui_read_columns_aperture_3d(p); break;
       default:
-        error(EXIT_FAILURE, 0, "%zu dimensional matches are not currently "
-              "supported (maximum is 2 dimensions). The number of "
-              "dimensions is deduced from the number of values given to "
-              "'--ccol1' (or '--coord') and '--ccol2'", ccol1n);
+        error(EXIT_FAILURE, 0, "%zu dimensional matches are not "
+              "currently supported (maximum is 2 dimensions). The number "
+              "of dimensions is deduced from the number of values given "
+              "to '--ccol1' (or '--coord') and '--ccol2'", ccol1n);
       }
   else if ( p->kdtreemode != MATCH_KDTREE_BUILD )
-    error(EXIT_FAILURE, 0, "no matching aperture specified. Please use "
-          "the '--aperture' option to define the acceptable aperture for "
-          "matching the coordinates (in the same units as each "
-          "dimension). Please run the following command for more "
-          "information.\n\n    $ info %s\n", PROGRAM_EXEC);
+    error(EXIT_FAILURE, 0, "no matching aperture specified. Please "
+          "use the '--aperture' option to define the acceptable "
+          "aperture for matching the coordinates (in the same units "
+          "as each dimension). An aperture is not necessary when you "
+          "are building a k-d tree or when you want an outer match; "
+          "but this run is not any of those. Please run 'info %s' for "
+          "more on the format of '--aperture'", PROGRAM_EXEC);
 
   /* Return the number of dimensions. */
   return ccol1n;
@@ -788,8 +806,9 @@ ui_read_columns_to_double(struct matchparams *p, char *filename,
 #define UI_READ_KDTREE_FIXED_MSG "You can construct a k-d tree "        \
   "for your first input table using the command below (just set your "  \
   "desired output name, and give that file to '--kdtree', in a later "  \
-  "call with the same first input catalog):\n\n"                  \
-  "    astmatch %s -h%s --ccol1=%s,%s --kdtree=build --output=KDTREE.fits\n\n" \
+  "call with the same first input catalog):\n\n"                        \
+  "    astmatch %s -h%s --ccol1=%s,%s --kdtree=build "                  \
+  "--output=KDTREE.fits\n\n"                                            \
   "To learn more about the expected format of k-d trees in Gnuastro, "  \
   "please run this command: 'info gnuastro k-d'"
 
@@ -891,24 +910,44 @@ ui_read_columns(struct matchparams *p)
     ui_read_kdtree(p);
 
   /* If we are in k-d tree based matching and the second dataset is smaller
-     than the first, print a warning to let the user know that the speed
+     than the first, and we are not in an outer-match (where the order of
+     the inputs matter) print a warning to let the user know that the speed
      can be greatly improved if they swap the two. */
   if( !p->cp.quiet
       && p->kdtreemode!=MATCH_KDTREE_BUILD
       && p->kdtreemode!=MATCH_KDTREE_DISABLE
-      && p->cols1->size > (2*p->cols2->size) )
-    error(EXIT_SUCCESS, 0, "TIP: the matching speed will GREATLY IMPROVE "
-          "if you swap the two inputs. Currently the second input has "
-          "fewer rows than the first. In the k-d tree based matching, "
-          "multi-threading will occur on the second input's rows and "
-          "the k-d will be constructed for the first input. Fewer "
-          "first-input rows therefore means a smaller tree, and more "
-          "second-input rows will be better distributed in your "
-          "system's CPU threads");
+      && p->cols1->size > (2*p->cols2->size)
+      && p->type!=GAL_MATCH_ARRANGE_OUTER)
+    error(EXIT_SUCCESS, 0, "TIP: the matching speed will improve "
+          "if you swap the two inputs. Recall that for an inner or "
+          "full match, the order of inputs does not matter. "
+          "In the k-d tree based matching, a k-d tree will be "
+          "constructed for the first input and parallelized matching "
+          "will occur on the second input's rows. Fewer first-input "
+          "rows therefore mean a smaller k-d tree (which is easier "
+          "to build), and more second-input rows will be better "
+          "distributed in your system's processing threads");
 
   /* Free the extra spaces. */
   gal_list_str_free(cols1, 1);
   gal_list_str_free(cols2, 1);
+}
+
+
+
+
+
+static void
+ui_preparations_out_cols_read(gal_list_str_t **list, char *string)
+{
+  /* Make sure the string is not empty. */
+  if(string[0]=='\0')
+    error(EXIT_FAILURE, 0, "the value(s) given to '--outcols' should "
+          "a column identifier (counter, name or '_all') after the 'a' "
+          "or 'b'");
+
+  /* Add the string to the list of columns for this column. */
+  gal_list_str_add(list, string, 0);
 }
 
 
@@ -932,8 +971,8 @@ ui_preparations_out_cols(struct matchparams *p)
       /* For easy reading. */
       col=strarr[i];
 
-      /* In no-match mode, then the same column will be used from both
-         catalogs so things are easier. */
+      /* In no-match mode, the same column will be used from both catalogs
+         so things are easier. */
       if(p->notmatched)
         {
           gal_list_str_add(&p->acols, col, 0);
@@ -945,7 +984,9 @@ ui_preparations_out_cols(struct matchparams *p)
       else
         switch(col[0])
           {
-          case 'a': gal_list_str_add(&p->acols, col+1, 0); break;
+          case 'a':
+            ui_preparations_out_cols_read(&p->acols, col+1);
+            break;
           case 'b':
             /* With '--coord', only numbers that are smaller than the
                number of the dimensions are acceptable. */
@@ -976,7 +1017,7 @@ ui_preparations_out_cols(struct matchparams *p)
                         "the number of dimensions (%zu in this case) "
                         "are acceptable", col+1, ndim);
               }
-            gal_list_str_add(&p->bcols, col+1, 0);
+            ui_preparations_out_cols_read(&p->bcols, col+1);
             break;
           default:
             error(EXIT_FAILURE, 0, "'%s' is not a valid value for "
@@ -1127,19 +1168,40 @@ ui_preparations_out_name(struct matchparams *p)
 static void
 ui_preparations(struct matchparams *p)
 {
-  /* Set the mode of the program. */
-  ui_set_mode(p);
+  int intype;
 
-  /* Currently Match only works on catalogs. */
-  if(p->mode==MATCH_MODE_WCS)
-    error(EXIT_FAILURE, 0, "currently Match only works on catalogs, "
-          "we will implement the WCS matching routines later");
-  else
+  /* Since Match only works on tables, 'searchin' is necessary. */
+  if(p->cp.searchin==0)
+    error(EXIT_FAILURE, 0, "no '--searchin' option specified. Please "
+          "run the following command for more information:\n\n"
+          "    $ info gnuastro \"selecting table columns\"\n");
+
+  /* We will base the mode on the first input, then check with the
+     second. Note that when the first is from standard input (it is
+     'NULL'), then we go into catalog mode because currently we assume
+     standard input is only for plain text and WCS matching is not defined
+     on plain text. */
+  if( p->input1name && gal_fits_file_recognized(p->input1name) )
     {
-      ui_read_columns(p);
-      if(p->outcols)
-        ui_preparations_out_cols(p);
+      intype=gal_fits_hdu_format(p->input1name, p->cp.hdu, "--hdu");
+      if(intype==IMAGE_HDU)
+        error(EXIT_FAILURE, 0, "%s: not a catalog",
+              gal_checkset_dataset_name(p->input1name, p->cp.hdu));
     }
+
+  /* Same check for second input. */
+  if(p->input2name && gal_fits_file_recognized(p->input2name))
+    {
+      intype=gal_fits_hdu_format(p->input2name, p->hdu2, "--hdu2");
+      if(intype==IMAGE_HDU)
+        error(EXIT_FAILURE, 0, "%s: not a catalog",
+              gal_checkset_dataset_name(p->input2name, p->hdu2));
+    }
+
+  /* Read the input columns and prepare output columns. */
+  ui_read_columns(p);
+  if(p->outcols)
+    ui_preparations_out_cols(p);
 
   /* Set the output filename. */
   ui_preparations_out_name(p);

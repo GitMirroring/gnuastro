@@ -49,6 +49,7 @@ struct argp_option program_options[] =
 
 
 
+
     /* Outputs. */
     {
       "logasoutput",
@@ -89,6 +90,20 @@ struct argp_option program_options[] =
       GAL_OPTIONS_NOT_MANDATORY,
       GAL_OPTIONS_NOT_SET,
       gal_options_parse_csv_strings
+    },
+    {
+      "arrange",
+      UI_KEY_ARRANGE,
+      "STR",
+      0,
+      "inner, outer, outer-within-aperture or full.",
+      GAL_OPTIONS_GROUP_OUTPUT,
+      &p->type,
+      GAL_TYPE_STRING,
+      GAL_OPTIONS_RANGE_ANY,
+      GAL_OPTIONS_MANDATORY,
+      GAL_OPTIONS_NOT_SET,
+      ui_parse_match_type,
     },
 
 
