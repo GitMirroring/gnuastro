@@ -23008,7 +23008,7 @@ $ astarithmetic image1.fits 1000 ne
 @end example
 
 @item and
-Logical AND: returns 1 if both operands have a non-zero value and 0 if both are zero.
+Logical AND: returns 1 if both operands have a non-zero value, and returns 0 if either operand is zero.
 Both operands have to be the same kind: either both images or both numbers and it mostly makes meaningful values when the inputs are binary (with pixel values of 0 or 1).
 @example
 $ astarithmetic image1.fits image2.fits -g1 and
