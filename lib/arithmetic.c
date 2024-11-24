@@ -669,10 +669,12 @@ arithmetic_function_unary(int operator, int flags, gal_data_t *in)
     case GAL_ARITHMETIC_OP_AU_TO_LY:
       UNIARY_FUNCTION_ON_ELEMENT( gal_units_au_to_ly, +0, +0); break;
     case GAL_ARITHMETIC_OP_RA_TO_DEGREE:
-      UNIFUNC_RUN_FUNCTION_ON_ELEMENT_SEXAGESIMAL(double, gal_units_ra_to_degree);
+      UNIFUNC_RUN_FUNCTION_ON_ELEMENT_SEXAGESIMAL(double,
+                                                  gal_units_ra_to_degree);
       break;
     case GAL_ARITHMETIC_OP_DEC_TO_DEGREE:
-      UNIFUNC_RUN_FUNCTION_ON_ELEMENT_SEXAGESIMAL(double, gal_units_dec_to_degree);
+      UNIFUNC_RUN_FUNCTION_ON_ELEMENT_SEXAGESIMAL(double,
+                                                  gal_units_dec_to_degree);
       break;
     case GAL_ARITHMETIC_OP_DEGREE_TO_RA:
       UNIARY_FUNCTION_ON_ELEMENT_OUTPUT_STRING(arithmetic_units_degree_to_ra);
@@ -3083,6 +3085,8 @@ arithmetic_function_binary_flt(int operator, int flags, gal_data_t *il,
       BINFUNC_F_OPERATOR_SET( pow,   +0 );         break;
     case GAL_ARITHMETIC_OP_ATAN2:
       BINFUNC_F_OPERATOR_SET( atan2, *180.0f/M_PI ); break;
+    case GAL_ARITHMETIC_OP_SBLIM_DIFF:
+      BINFUNC_F_OPERATOR_SET( gal_units_sblim_diff, +0 ); break;
     case GAL_ARITHMETIC_OP_SB_TO_MAG:
       BINFUNC_F_OPERATOR_SET( gal_units_sb_to_mag, +0 ); break;
     case GAL_ARITHMETIC_OP_MAG_TO_SB:
@@ -4102,6 +4106,8 @@ gal_arithmetic_set_operator(char *string, size_t *num_operands)
     { op=GAL_ARITHMETIC_OP_MAG_TO_JY;         *num_operands=1;  }
   else if (!strcmp(string, "jy-to-mag"))
     { op=GAL_ARITHMETIC_OP_JY_TO_MAG;         *num_operands=1;  }
+  else if (!strcmp(string, "sblim-diff"))
+    { op=GAL_ARITHMETIC_OP_SBLIM_DIFF;        *num_operands=2;  }
   else if( !strcmp(string, "au-to-pc"))
     { op=GAL_ARITHMETIC_OP_AU_TO_PC;          *num_operands=1;  }
   else if( !strcmp(string, "pc-to-au"))
@@ -4471,6 +4477,7 @@ gal_arithmetic_operator_string(int operator)
       return "jy-to-wavelength-flux-density";
     case GAL_ARITHMETIC_OP_WAVELENGTH_FLUX_DENSITY_TO_JY:
       return "wavelength-flux-density-to-jy";
+    case GAL_ARITHMETIC_OP_SBLIM_DIFF:      return "sblim-diff";
     case GAL_ARITHMETIC_OP_AU_TO_PC:        return "au-to-pc";
     case GAL_ARITHMETIC_OP_PC_TO_AU:        return "pc-to-au";
     case GAL_ARITHMETIC_OP_LY_TO_PC:        return "ly-to-pc";
@@ -4717,7 +4724,7 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
       out=arithmetic_function_unary(operator, flags, d1);
       break;
 
-    /* 2-component unit conversion. */
+    /* Binary unit conversion. */
     case GAL_ARITHMETIC_OP_EQB1950_TO_EQJ2000:
     case GAL_ARITHMETIC_OP_EQB1950_TO_ECB1950:
     case GAL_ARITHMETIC_OP_EQB1950_TO_ECJ2000:
@@ -4756,6 +4763,7 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     /* Binary function operators. */
     case GAL_ARITHMETIC_OP_POW:
     case GAL_ARITHMETIC_OP_ATAN2:
+    case GAL_ARITHMETIC_OP_SBLIM_DIFF:
     case GAL_ARITHMETIC_OP_MAG_TO_SB:
     case GAL_ARITHMETIC_OP_SB_TO_MAG:
     case GAL_ARITHMETIC_OP_JY_TO_COUNTS:

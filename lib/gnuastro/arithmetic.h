@@ -162,6 +162,7 @@ enum gal_arithmetic_operators
   GAL_ARITHMETIC_OP_ZEROPOINT_CHANGE, /* Change the zero point. */
   GAL_ARITHMETIC_OP_COUNTS_TO_NANOMAGGY,/* Counts to SDSS nanomaggies. */
   GAL_ARITHMETIC_OP_NANOMAGGY_TO_COUNTS,/* SDSS nanomaggies to counts. */
+  GAL_ARITHMETIC_OP_SBLIM_DIFF,   /* Calculate surface bright. on new image. */
   GAL_ARITHMETIC_OP_AU_TO_PC,     /* Astronomical units (AU) to Parsecs (PC). */
   GAL_ARITHMETIC_OP_PC_TO_AU,     /* Parsecs (PC) to Astronomical units (AU). */
   GAL_ARITHMETIC_OP_LY_TO_PC,     /* Astronomical units (AU) to Parsecs (PC). */

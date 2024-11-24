@@ -547,6 +547,16 @@ gal_units_mag_to_jy(double mag)
 
 
 
+double
+gal_units_sblim_diff(double r_frac, double t_frac)
+{
+  return 2.5*log10(r_frac*sqrt(t_frac));
+}
+
+
+
+
+
 
 
 

@@ -122,6 +122,9 @@ double
 gal_units_mag_to_jy(double mag);
 
 double
+gal_units_sblim_diff(double r_frac, double t_frac);
+
+double
 gal_units_au_to_pc(double au);
 
 double

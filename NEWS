@@ -7,6 +7,16 @@ See the end of the file for license conditions.
 ** New publications
 ** New features
 
+*** Arithmetic
+
+  - New Operators:
+
+    - sblim-diff: calculate the expected difference in surface brighntess
+      limit (purely based on exposed area (of the telescope) and exposure
+      time (assuming the same filter, sky conditions and assuming no
+      correlated noise). This can be used for planning projects with
+      different telescopes, but be careful about the assumptions.
+
 *** ConvertType
 
   --cmapblankcolor: Name of color to use for blank values when showing
@@ -50,6 +60,10 @@ See the end of the file for license conditions.
     implemented by Ignacio Ruiz Cejudo.
 
 *** Library
+
+  - gal_units_sblim_diff: calculate the difference in surface brighntess
+    limit only assuming a different effective radius of a different
+    telescope and/or a different exposure time.
 
   - gal_units_wavelength_flux_density_to_jy: convert given wavelength flux
     density (erg/s/cm^2/A) to Janskys.

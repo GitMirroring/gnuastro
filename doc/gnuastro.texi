@@ -12119,7 +12119,7 @@ To install all the necessary @TeX{} packages for a successful Gnuastro bootstrap
 @example
 $ sudo su
 # tlmgr install epsf jknapltx caption biblatex biber iftex \
-                etoolbox logreq xstring xkeyval pgf ms     \
+                etoolbox logreq xstring xkeyval pgf \
                 xcolor pgfplots times rsfs ps2eps epspdf
 @end example
 
@@ -22059,6 +22059,42 @@ Replacing @mymath{d\nu/d\lambda} from above we get:
 Convert wavelength flux density (in units of @mymath{erg/cm^2/s/\AA}) to Janskys at a certain wavelength (given in units of Angstroms).
 For details and usage examples, see the description of @code{jy-to-wavelength-flux-density} (the inverse of this function).
 
+@item sblim-diff
+Calculate the difference in surface brightness limit after using a different exposed radius (of a different telescope) or a different exposure time.
+The filter used, the multiple of sigma and the extrapolated area of the derived surface brightness limit will be the same as your reference surface brighntess limit.
+For more on the surface brightness limit, the exposed radius, the extrapolated area and the equation behind this operator, see @ref{Surface brightness limit of image}.
+
+For example, we know that in the rSDSS filter, the SDSS survey reaches a @mymath{3\sigma} surface brightness limit of 26.5 mag/arcsec@mymath{^2} over 100 arcsec@mymath{^2}.
+Let's use this to find the expected surface brighntess limit of the LSST survey (after its observations have been completed).
+To do this, we need to know the exposed radius and exposure time of SDSS and LSST to feed into the command below:
+@itemize
+@item
+The SDSS telescope has an exposed radius of @mymath{\sqrt{2.5^2-1.08^2}=2.25} meters and it had a 1 minute (60 seconds) exposure time.
+@item
+The Vera C. Rubin telescope (used for LSST) has an exposed radius of @mymath{\sqrt{8.4^2-5.0^2}=6.75} meters and at its end, it will have 8 hours (28800 seconds) of total exposure on all observed regions@footnote{@url{https://www.lsst.org/sites/default/files/docs/ivezic_086.02.pdf}} (in all filters).
+Because it has 6 filters, in the rSDSS filter it will have a total exposure time of about @mymath{28800/6=4800} seconds in its observed regions.
+@end itemize
+
+@example
+$ astarithmetic 6.75 2.25 / 4800 60 / sblim-diff 26.5 +
+3.00716656205391e+01
+Arithmetic finished in 0.012210 seconds
+@end example
+
+To have an easy to read number, you can pipe it to the Table program and use the @option{-Y} option.
+But the time-reporting feature of Arithmetic will be problematic, so you should also pass @option{--quiet} (or @option{-q}) to Arithmetic.
+
+@example
+$ astarithmetic 6.75 2.25 / 4800 60 / sblim-diff 26.5 + -q \
+                asttable -Y
+30.071666
+@end example
+
+Therefore, juduging purely based on exposed area and time (too idealistic!), the LSST will reach a @mymath{3\sigma} surface brighntess limit of 30.07 over 100 arcsec@mymath{^2}.
+
+A simple note for the second command: this trick is only useful for operators like this that are sure to produce numbers that are larger than @mymath{10^{-2}}.
+You will loose precision for values smaller than that and using the default scientific notation is best.
+
 @item au-to-pc
 @cindex Parsecs
 @cindex Astronomical Units (AU)
@@ -29983,11 +30019,6 @@ As you wait and make more observations/exposures, the mud settles down and the @
 As a result, more and more summits become visible and the lower parts of the hills (parts with lower surface brightness) can be seen more clearly.
 In this analogy@footnote{Note that this muddy water analogy is not perfect, because while the water-level remains the same all over a peak, in data analysis, the Poisson noise increases with the level of data.}, height (from the ground) is the @emph{surface brightness} and the height of the muddy water at the moment you combine your data, is your @emph{surface brightness limit} for that moment.
 
-@cindex Data's depth
-The outputs of NoiseChisel include the Sky standard deviation (@mymath{\sigma}) on every group of pixels (a tile) that were calculated from the undetected pixels in each tile, see @ref{Tessellation} and @ref{NoiseChisel output}.
-Let's take @mymath{\sigma_m} as the median @mymath{\sigma} over the successful meshes in the image (prior to interpolation or smoothing).
-It is recorded in the @code{MEDSTD} keyword of the @code{SKY_STD} extension of NoiseChisel's output.
-
 @cindex ACS camera
 @cindex Surface brightness limit
 @cindex Limit, surface brightness
@@ -29997,6 +30028,7 @@ Therefore, increasing the pixel resolution (or decreasing the width of a pixel) 
 Nevertheless, irrespective of its sky coverage, a pixel is our unit of data collection.
 
 To start with, we define the low-level Surface brightness limit or @emph{depth}, in units of magnitude/pixel with the equation below (assuming the image has zero point magnitude @mymath{z} and we want the @mymath{n}th multiple of @mymath{\sigma_m}).
+Where @mymath{\sigma_m} is the median of the measured sky standard deviation in the image.
 
 @dispmath{SB_{n\sigma,\rm pixel}=-2.5\times\log_{10}{(n\sigma_m)}+z \quad\quad [mag/pixel]}
 
@@ -30021,15 +30053,28 @@ On the other hand, noise is added in RMS@footnote{If you add three datasets with
 In this case, the area @mymath{A} is covered by @mymath{A/p} pixels, so the noise level is @mymath{\sigma_t=\sigma\sqrt{A/p}}.}, hence the noise level in @mymath{A} arcsec@mymath{^2} is @mymath{n\sigma_m\sqrt{A/p}}.
 But we want the result in units of arcsec@mymath{^2}, so we should divide this by @mymath{A} arcsec@mymath{^2}:
 @mymath{n\sigma_m\sqrt{A/p}/A=n\sigma_m\sqrt{A/(pA^2)}=n\sigma_m/\sqrt{pA}}.
-Plugging this into the magnitude equation, we get the @mymath{n\sigma} surface brightness limit, over an area of A arcsec@mymath{^2}, in units of magnitudes/arcsec@mymath{^2}:
+Plugging this into the magnitude equation, we get the @mymath{n\sigma} surface brightness limit, over an area of A arcsec@mymath{^2}, in units of magnitudes/arcsec@mymath{^2} (see the end of this section on how to derive this using Gnuastro):
 
 @dispmath{SB_{{n\sigma,\rm A arcsec}^2}=-2.5\times\log_{10}{\left(n\sigma_m\over \sqrt{pA}\right)+z} \quad\quad [mag/arcsec^2]}
 
-@cindex World Coordinate System (WCS)
-MakeCatalog will calculate the input dataset's @mymath{SB_{n\sigma,\rm pixel}} and @mymath{SB_{{n\sigma,\rm A arcsec}^2}} and will write them as the @code{SBLMAGPIX} and @code{SBLMAG} keywords the output catalog(s), see @ref{MakeCatalog output}.
-You can set your desired @mymath{n}-th multiple of @mymath{\sigma} and the @mymath{A} arcsec@mymath{^2} area using the following two options respectively: @option{--sfmagnsigma} and @option{--sfmagarea} (see @ref{MakeCatalog output}).
-Just note that @mymath{SB_{{n\sigma,\rm A arcsec}^2}} is only calculated if the input has World Coordinate System (WCS).
-Without WCS, the pixel scale cannot be derived.
+Since the surface brightness limit is a theoretical extrapolation of one pixel's noise level, we can use a reference image's surface brightness limit (@mymath{SB_r}) to derive an expected/theoretical surface brightness limit of another image (on another telescope with another exposure time, but with @emph{the same} filter; let's call it @mymath{SB_i}).
+Assuming no correlated noise (which is only valid on a single exposure!), the @mymath{\sigma_m} described above is purely due to the Poisson noise of the background signal (for example Zodiacal light, light pollution or etc).
+Therefore, taking @mymath{S} to be the exposed surface of the telescope's primary mirror (or lens) and @mymath{t} to be the exposure time, the signal of the background will increase with @mymath{S\times t} and therefore @mymath{\sigma_m\propto \sqrt{St}}.
+Plugging this into two instances of the equation above, allows us to derive @mymath{SB_i} from @mymath{SB_r}
+
+@dispmath{SB_i = SB_r + 2.5\log_{10}\left( {n_i \over n_r} \sqrt{{S_i \over S_r}{t_i \over t_r}{A_i \over A_r}} \right)}
+
+@cindex LSST
+@cindex Vera C. Rubin Observatory
+@cindex Observatory: Vera C. Rubin
+@cindex Rubin (Vera C.) Observatory
+Since almost all mirrors are circular, we can simplify the relation above by replacing the exposed surface with the exposed radius (accounting for the non-exposed area in most reflective telescopes due to the secondary mirror) as shown in the quation below.
+Note that we didn't simply say ``radius'' (and the equation does not have @mymath{r}), but ``exposed radius'' (@mymath{r_e} in the equation).
+This is a very important factor to have in mind.
+For example in the Vera C. Rubin Observatory (that will be conducting the LSST survey) the primary mirror has a diameter of 8.4 meters, however, the inner cicular area of radius 5 meters is not used (due to the second and third mirrors)@footnote{@url{https://commons.wikimedia.org/wiki/File:LSSToptics.jpg}}.
+Therefore, the useful surface of the Vera C. Rubin telescope is @mymath{\pi(8.4^2-5.0^2)=\pi45.56=\pi6.75^2}, giving it an exposed radius of @mymath{r_e=6.75m} (for an easy implementation of this equation in Gnuastro, see the @code{sblim-diff} operator of @ref{Unit conversion operators}).
+
+@dispmath{SB_i = SB_r + 2.5\log_{10}\left( {r_{ei} \over r_{er}}{n_i \over n_r} \sqrt{{t_i \over t_r}{A_i \over A_r}} \right)}
 
 @cindex Correlated noise
 @cindex Noise, correlated
@@ -30038,6 +30083,27 @@ In other words, all pixels are treated independently in the measurement of the s
 It therefore implicitly assumes that the noise is the same in all of the pixels.
 But this only happens in individual exposures: reduced data will have correlated noise because they are a stack of many individual exposures that have been warped (thus mixing the pixel values).
 A more accurate measure which will provide a realistic value for every labeled region is known as the @emph{upper-limit magnitude}, which is discussed in the next section (@ref{Upper limit surface brightness of image}).
+
+Within Gnuastro, measuring the surface brighntess limit of the image is very easy: the outputs of NoiseChisel include the Sky standard deviation (@mymath{\sigma}) on every group of pixels (a tile) that were calculated from the undetected pixels in each tile, see @ref{Tessellation} and @ref{NoiseChisel output}.
+The @mymath{\sigma_m} used above is recorded in the @code{MEDSTD} keyword of the @code{SKY_STD} extension of NoiseChisel's output.
+Therefore, the first thing you need to do is to run NoiseChisel on the image.
+
+@cindex World Coordinate System (WCS)
+MakeCatalog will then calculate the input dataset's @mymath{SB_{n\sigma,\rm pixel}} and @mymath{SB_{{n\sigma,\rm A arcsec}^2}} and will write them as the @code{SBLMAGPIX} and @code{SBLMAG} keywords the output catalog(s), see @ref{MakeCatalog output}.
+You can set your desired @mymath{n}-th multiple of @mymath{\sigma} and the @mymath{A} arcsec@mymath{^2} area using the following two options respectively: @option{--sfmagnsigma} and @option{--sfmagarea} (see @ref{MakeCatalog output}).
+Just note that @mymath{SB_{{n\sigma,\rm A arcsec}^2}} is only calculated if the input has World Coordinate System (WCS).
+Without WCS, the pixel scale cannot be derived.
+
+The series of commands to find the surface brightness limit in Gnuastro are given below (assuming your image is called @file{image.fits} and its zero point magnitude is 25).
+For a more detailed hands-on introduction, see @ref{Image surface brightness limit} (which is part of a larger tutorial).
+
+@example
+$ zp=25.0
+$ astnoisechisel image.fits -o nc.fits
+$ astmkcatalog nc.fits -hDETECTIONS --sn --zeropoint=$zp \
+               --output=cat.fits
+$ astfits cat.fits --keyvalue=SBLMAG --quiet | asttable -Y
+@end example
 
 @node Upper limit surface brightness of image,  , Surface brightness limit of image, Quantifying measurement limits
 @subsubsection Upper limit surface brightness of image
