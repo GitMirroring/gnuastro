@@ -195,6 +195,8 @@ Options:
                           Current status: $check_status
 
  -i, --install            Run 'sudo make install' after the build.
+                          The prefix of the installation will be taken
+                          from the existing Gnuastro installation.
                           Current status: $install_status
 
  -D, --dist               Build a compressed tarball and PDF manual.
@@ -514,6 +516,13 @@ cd $build_dir
 
 # If a 'Makefile' doesn't exist, then configure Gnuastro.
 if [ ! -f Makefile ]; then
+
+    # If '--install' was activated, then check the prefix based on a
+    # previously installed Gnuastro instance
+    if [ x$install = x1 ]; then
+        prefix=$(which astnoisechisel \
+                     | sed -e's|/bin/astnoisechisel||')
+    fi
 
     # Set the proper flags.
     if [ x$debug = x1 ]; then
