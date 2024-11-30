@@ -55,4 +55,8 @@ Name=astscript-fits-view
 Comment=View FITS images with DS9 and tables with TopCat
 Terminal=false
 Categories=Graphics;RasterGraphics;2DGraphics;3DGraphics
+
+# High-density (4K) monitor:
+#Exec=@PREFIX@/bin/astscript-fits-view --topcat4k --quiet %F
+# Non-High-Density monitor:
 Exec=@PREFIX@/bin/astscript-fits-view --quiet %F

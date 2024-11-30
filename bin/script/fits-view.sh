@@ -43,6 +43,7 @@ hdu=""
 quiet=0
 prefix=""
 ds9mode=""
+topcat4k=0
 ds9scale=""
 ds9extra=""
 ds9center=""
@@ -104,6 +105,7 @@ $scriptname options:
   -r, --ds9region=STR[,...] DS9 region(s) to load.
   -O, --ds9mode=img/wcs   Coord system to interpret '--ds9center' (img/wcs).
   -m, --ds9colorbarmulti  Separate color bars for each loaded image.
+  -k, --topcat4k          TOPCAT UI is scaled by double (for 4K displays).
   -p, --prefix=STR        Directory containing DS9 or TOPCAT executables.
 
  Operating mode:
@@ -224,6 +226,9 @@ do
         -O*)                  ds9mode=$(echo "$1"  | sed -e's/-O//');  check_v "$1" "$ds9mode"; shift;;
         -m|--ds9colorbarmulti)    ds9colorbarmulti=1; shift;;
         -m*|--ds9colorbarmulti=*) on_off_option_error --ds9colorbarmulti -m;;
+        -k|--topcat4k)        topcat4k=1;                         check_v "$1" "$topcat4k"; shift;;
+        -k=*|--topcat4k=*)    on_off_option_error --topcat4k -k;;
+        -k*)                  on_off_option_error --topcat4k -k;;
         -p|--prefix)          prefix="$2";                         check_v "$1" "$prefix"; shift;shift;;
         -p=*|--prefix=*)      prefix="${1#*=}";                    check_v "$1" "$prefix"; shift;;
         -p*)                  prefix=$(echo "$1"  | sed -e's/-p//');  check_v "$1" "$prefix"; shift;;
@@ -535,8 +540,17 @@ else
                     done
                 fi
 
-                # TOPCAT command.
-                execom="$topcatexec $inwithhdu"
+                # TOPCAT command. There are two ways according to this:
+                # https://www.star.bristol.ac.uk/mbt/topcat/faq.html#scaledLAF
+                #    - topcat -Dsun.java2d.uiScale=2 file.fits
+                #    - GDK_SCALE=2 topcat file.fits
+                # The second is only for FreeDesktop based GUIs, so we are
+                # using the lower-level Java option here.
+                if [ $topcat4k = 1 ]; then
+                    execom="$topcatexec -Dsun.java2d.uiScale=2 $inwithhdu"
+                else
+                    execom="$topcatexec $inwithhdu"
+                fi
             fi
 
             # Run the final command and print it if not in '--quiet' mode.

@@ -22065,19 +22065,19 @@ The filter used, the multiple of sigma and the extrapolated area of the derived 
 For more on the surface brightness limit, the exposed radius, the extrapolated area and the equation behind this operator, see @ref{Surface brightness limit of image}.
 
 For example, we know that in the rSDSS filter, the SDSS survey reaches a @mymath{3\sigma} surface brightness limit of 26.5 mag/arcsec@mymath{^2} over 100 arcsec@mymath{^2}.
-Let's use this to find the expected surface brighntess limit of the LSST survey (after its observations have been completed).
+Let's use this to find the expected surface brighntess limit of the LSST survey in the same filter (after its observations have been completed).
 To do this, we need to know the exposed radius and exposure time of SDSS and LSST to feed into the command below:
 @itemize
 @item
-The SDSS telescope has an exposed radius of @mymath{\sqrt{2.5^2-1.08^2}=2.25} meters and it had a 1 minute (60 seconds) exposure time.
+The SDSS telescope@footnote{@url{https://voyages.sdss.org/preflight/capturing-recording-light/sdss-telescope}} has an exposed radius of @mymath{\sqrt{1.25^2-0.54^2}=1.13} meters and it had a 1 minute (60 seconds) exposure time.
 @item
-The Vera C. Rubin telescope (used for LSST) has an exposed radius of @mymath{\sqrt{8.4^2-5.0^2}=6.75} meters and at its end, it will have 8 hours (28800 seconds) of total exposure on all observed regions@footnote{@url{https://www.lsst.org/sites/default/files/docs/ivezic_086.02.pdf}} (in all filters).
+The Vera C. Rubin telescope@footnote{https://www.lsst.org/sites/default/files/docs/ivezic_086.02.pdf} (used for LSST) has an exposed radius of @mymath{\sqrt{4.2^2-2.5^2}=3.37} meters and at its end, it will have 8 hours (28800 seconds) of total exposure on all observed regions@footnote{@url{https://www.lsst.org/sites/default/files/docs/ivezic_086.02.pdf}} (in all filters).
 Because it has 6 filters, in the rSDSS filter it will have a total exposure time of about @mymath{28800/6=4800} seconds in its observed regions.
 @end itemize
 
 @example
-$ astarithmetic 6.75 2.25 / 4800 60 / sblim-diff 26.5 +
-3.00716656205391e+01
+$ astarithmetic 3.37 1.13 / 4800 60 / sblim-diff 26.5 +
+3.00652410811219e+01
 Arithmetic finished in 0.012210 seconds
 @end example
 
@@ -22085,9 +22085,9 @@ To have an easy to read number, you can pipe it to the Table program and use the
 But the time-reporting feature of Arithmetic will be problematic, so you should also pass @option{--quiet} (or @option{-q}) to Arithmetic.
 
 @example
-$ astarithmetic 6.75 2.25 / 4800 60 / sblim-diff 26.5 + -q \
-                asttable -Y
-30.071666
+$ astarithmetic 3.37 1.13 / 4800 60 / sblim-diff 26.5 + -q \
+                | asttable -Y
+30.065241
 @end example
 
 Therefore, juduging purely based on exposed area and time (too idealistic!), the LSST will reach a @mymath{3\sigma} surface brighntess limit of 30.07 over 100 arcsec@mymath{^2}.
@@ -34558,6 +34558,11 @@ Right-click on a FITS file, and choose these items in order (based on GNOME, may
 @end enumerate
 @end cartouche
 
+@cartouche
+@noindent
+@strong{TOPCAT on 4K GUI:} by default, the desktop file that you install for this script (to be able to double click on a FITS file and open it in DS9 or TOPCAT) doesn't include the @option{--topcat4k} option.
+If you want to have this option when double-clicking on a FITS file, open @file{~/.local/share/applications/astscript-fits-view.desktop} in your favorite text editor, comment the default @code{Exec} file and un-comment the line with this option.
+@end cartouche
 
 @noindent
 This script takes the following options
@@ -34640,6 +34645,13 @@ Before calling DS9, this script will print the command that it executes so you c
 Since DS9 does not recognize a @key{=} between the option name and value, a @key{SPACE} is usually necessary.
 Therefore, be sure to put them in a single string within double quotes (so the spaces are preserved and passed to DS9 correctly).
 For example usage of this option within this manual, see @ref{Column statistics color-magnitude diagram} or @ref{Subtracting the PSF}.
+
+@item -k
+@item --topcat4k
+@cindex 4K monitors
+Scale the TOPCAT window by 2 so it becomes easily usable on smaller 4K monitors (for example laptops).
+By default, TOPCAT will use the native pixels, which can become prohibitively small on such monitors.
+
 @end table
 
 
