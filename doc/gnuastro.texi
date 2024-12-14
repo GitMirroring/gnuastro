@@ -2630,7 +2630,7 @@ $ astscript-fits-view z-vs-tandist.fits
 @end example
 
 After TOPCAT opens, you will see the name of the table @file{z-vs-tandist.fits} in the left panel.
-On the top menu bar, select the ``Graphics'' menu, then select ``Plain plot'' to visualize the two columns printed above as a plot and get a better impression of the turn over point of the image cosmological coverage.
+On the top menu bar, select the ``Graphics'' menu, then select ``Plane plot'' to visualize the two columns printed above as a plot and get a better impression of the turn over point of the image cosmological coverage.
 
 
 
@@ -2673,7 +2673,7 @@ main(void)
   /* Constants from Plank 2018 (arXiv:1807.06209, Table 2) */
   double H0=67.66, olambda=0.6889, omatter=0.3111, oradiation=0;
 
-  /* Do the same thing for all redshifts (z) between 0.1 and 5. */
+  /* Do the same thing for all redshifts (z) between 0.1 and 10. */
   for(z=0.1; z<10; z+=0.01)
     @{
       /* Calculate the angular diameter distance. */
@@ -2918,7 +2918,7 @@ $ astscript-fits-view flat-ir/xdf-f160w.fits xdf-f160w_rotated.fits
 @end example
 
 Warp can generally be used for many kinds of pixel grid manipulation (warping), not just rotations.
-For example, the outputs of the commands below will have larger pixels respectively (new resolution being one quarter the original resolution), get shifted by 2.8 (by sub-pixel), get a shear of 2, and be tilted (projected).
+For example, the outputs of the commands below will have larger pixels respectively (new resolution being one quarter the original resolution), get shifted by 2.8 (by sub-pixel), get a shear of 0.2, and be tilted (projected).
 Run each of them and open the output file to see the effect, they will become handy for you in the future.
 
 @example
