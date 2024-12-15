@@ -31932,6 +31932,10 @@ The extension/HDU of the second input if it is a FITS file.
 When it is not a FITS file, this option's value is ignored.
 For the first input, the common option @option{--hdu} must be used.
 
+@item -A STR
+@itemx --arrange=STR
+The arrangement of rows in the output; for more details, see @ref{Arranging match output}.
+
 @item -k STR
 @itemx --kdtree=STR
 Select the algorithm and/or the way to construct or import the k-d tree.
