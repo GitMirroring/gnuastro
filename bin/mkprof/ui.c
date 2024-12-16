@@ -272,7 +272,8 @@ parse_opt(int key, char *arg, struct argp_state *state)
          'arg' will be an empty string! We don't want to account for such
          cases (and give a clear error that no input has been given). */
       if(p->catname)
-        argp_error(state, "only one argument (input catalog) may be given");
+        argp_error(state, "only one argument (input catalog) may be "
+                   "given; the extra argument is '%s'", arg);
       else
         if(arg[0]!='\0') p->catname=arg;
       break;

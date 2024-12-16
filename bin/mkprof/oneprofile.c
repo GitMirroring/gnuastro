@@ -425,8 +425,8 @@ oneprofile_pix_by_pix(struct mkonthread *mkp)
 
           /* For a check:
           printf("coord: %g, %g\n", mkp->coord[0], mkp->coord[1]);
-          printf("r_rand: %g (rand: %g, center: %g)\n\n", mkp->r, array[p],
-                 approx);
+          printf("r_rand: %g (rand: %g, center: %g)\n\n", mkp->r,
+                 array[p], approx);
           */
 
           /* Save the peak flux if this is the first pixel: */
@@ -477,8 +477,14 @@ oneprofile_pix_by_pix(struct mkonthread *mkp)
           continue;
         }
 
-      /* Find the value for this pixel: */
+      /* Find the value for this pixel. */
       array[p]=profile(mkp);
+
+      /* In case the pixel value is non-zero and close to the floating
+         point limit, change the truncation radius so no more pixels go
+         this far. The non-zero check is because some profiles may actually
+         have a 0.0 value (for example the radial or custom profiles). */
+      if( array[p]!=0.0 && array[p]<10*FLT_MIN ) truncr=mkp->r;
 
       /* For a check:
       printf("r_center: %g\n", mkp->r);
