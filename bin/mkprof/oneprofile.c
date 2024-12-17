@@ -358,7 +358,7 @@ oneprofile_pix_by_pix(struct mkonthread *mkp)
   struct builtqueue *ibq=mkp->ibq;
   size_t ndim=ibq->image->ndim, *dsize=ibq->image->dsize;
 
-  uint8_t *byt;
+  uint8_t *byt, notfirst=0;
   gal_list_sizet_t *Q=NULL;
   int use_rand_points=1, ispeak=1;
   double tolerance=mkp->p->tolerance;
@@ -405,10 +405,13 @@ oneprofile_pix_by_pix(struct mkonthread *mkp)
           oneprofile_r_el(mkp);
 
           /* If the pixel is outside the truncation radius, ignore it. But
-             not if this is the first pixel that is being placed: when
-             truncation radius can be smaller than one pixel, see
-             https://savannah.gnu.org/bugs/index.php?66216*/
-          if(lQ && mkp->r > truncr) continue;
+             not if this is the first pixel: when the truncation radius can
+             be smaller than a pixel, see
+             https://savannah.gnu.org/bugs/index.php?66216 and for the
+             'notfirst' variable see
+             https://savannah.gnu.org/bugs/?66572.*/
+          if(notfirst && mkp->r > truncr) continue;
+          notfirst=1;
 
           /* Set the range for this pixel. */
           for(i=0;i<ndim;++i)
