@@ -680,9 +680,9 @@ gal_blank_flag_not(gal_data_t *input)
 #define NMM_CRDS(IT) {                                                  \
   IT b, *a=input->array, *as=a, *af=a+input->size;                      \
   gal_blank_write(&b, input->type);                                     \
-  if(b==b) /* Blank value can be checked with the equal. */             \
+  if(b==b) /* Integers: blank value can be checked with the equal. */   \
     do { if(*a!=b)  {NMM_CRDS_CHECK} } while(++a<af);                   \
-  else     /* Blank value will fail with the equal comparison. */       \
+  else     /* Floats: blank value will fail with the equal to itself. */ \
     do { if(*a==*a) {NMM_CRDS_CHECK} } while(++a<af);                   \
   }
 
@@ -699,8 +699,8 @@ gal_blank_not_minmax_coords(gal_data_t *input)
      dataset (note that the 'max' dataset has already been "clear"ed to
      zero; which is what we want). */
   ndim=input->ndim;
-  min=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0, __func__, "min");
-  max=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 1, __func__, "max");
+  min=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim,   0, __func__, "min");
+  max=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim,   1, __func__, "max");
   out=gal_pointer_allocate(GAL_TYPE_SIZE_T, 2*ndim, 0, __func__, "out");
   for(i=0;i<ndim;++i) min[i]=GAL_BLANK_SIZE_T;
 
@@ -757,7 +757,15 @@ gal_blank_not_minmax_coords(gal_data_t *input)
       /* Write the values into the output. For the maximum ranges, we are
          adding by one so the callers can simply calculate the number of
          pixels by subtracting the two (since counting starts from 0). */
-      for(i=0;i<ndim;++i) { out[i*2]=min[i]; out[i*2+1]=max[i]+1; }
+      for(i=0;i<ndim;++i)
+        {
+          /* In case all pixels were blank, the min and max values will not
+             change from their initial values.*/
+          if( min[i]==GAL_BLANK_SIZE_T && max[i]==0 )
+            out[i*2]=out[i*2+1]=0;
+          else
+            { out[i*2]=min[i]; out[i*2+1]=max[i]+1; }
+        }
     }
 
   /* Input had no blanks, just fill the output using the size of the
@@ -801,7 +809,8 @@ gal_blank_trim(gal_data_t *input, int inplace)
           "for %zu-dimensional inputs", __func__, PACKAGE_BUGREPORT,
           ndim);
 
-  /* Find the smallest/largest coordinates containing the  */
+  /* Find the smallest/largest coordinates containing the non-blank
+     pixels.*/
   mmc=gal_blank_not_minmax_coords(input);
 
   /* In case the extrema cover the full image, then just return the input
@@ -813,6 +822,30 @@ gal_blank_trim(gal_data_t *input, int inplace)
   for(i=0;i<ndim;++i)
     coversall *= mmc[i*2]==0 && mmc[i*2+1]==input->dsize[i];
   if(coversall) return input;
+
+  /* In case the whole image was blank, the output should be zero-sized
+     array of the same dimensions and type as the input */
+  if(mmc[0]==0 && mmc[1]==0 && mmc[2]==0 && mmc[3]==0)
+    {
+      if(inplace)
+        {
+          out=input;
+          out->size=0;
+          free(out->array); out->array=NULL;
+          for(i=0;i<ndim;++i) out->dsize[i]=0;
+        }
+      else
+        {
+          odsize=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0, __func__,
+                                      "odsize");
+          for(i=0;i<ndim;++i) odsize[i]=0;
+          out=gal_data_alloc(NULL, input->type, input->ndim, odsize, NULL,
+                             0, -1, 1, NULL, NULL, NULL);
+          free(odsize);
+        }
+      free(mmc);
+      return out;
+    }
 
   /* Triming is necessary, so prepare the output. If the input can be
      freed, then we'll just use its already allocated space. Otherwise,

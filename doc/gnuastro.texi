@@ -38443,8 +38443,10 @@ Return a ``flag'' dataset with the same size as the input, but with an @code{uin
 @deftypefun {size_t *} gal_blank_not_minmax_coords (gal_data_t @code{*input})
 Find the minimum and maximum coordinates of the non-blank regions within the input dataset.
 The coordinates are in C order: starting from 0, and with the slowest dimension being first.
-The output is an allocated array (that should be freed later) with @mymath{2\times N} elements; where @mymath{N} is the number of dimensions.
+The output is an allocated array (that should be freed later) with @mymath{2\times N} elements (@mymath{N} is the number of dimensions).
 The first two elements contain the minimum and maximum of regions containing non-blank elements along the 0-th dimension (the slowest), the second two elements contain the next dimension's extrema; and so on.
+
+When all the elements/pixels of the input are blank, the all the elements of the output will have a value of 0.
 @end deftypefun
 
 @deftypefun {gal_data_t *} gal_blank_trim (gal_data_t @code{*input}, int @code{inplace})

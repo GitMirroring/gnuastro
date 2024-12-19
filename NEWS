@@ -126,6 +126,9 @@ See the end of the file for license conditions.
   - bug #66572: MakeProfiles continues adding pixels after truncation when
     the profile is small (a couple of pixels), and the gradient is strong.
 
+  - bug #66588: Arithmetic's 'trim' operator does not produce 0x0 image
+    when all the image is blank.
+
 
 
 
