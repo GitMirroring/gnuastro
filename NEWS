@@ -97,6 +97,11 @@ See the end of the file for license conditions.
 ** Removed features
 ** Changed features
 
+*** All programs
+
+  --cite: also prints the citation for the Gnuastro book/manual (using the
+    Zenodo DOI for that release).
+
 *** Library
 
   - gal_match_kdtree: a new 'arrange' argument has been added to define the

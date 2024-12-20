@@ -274,8 +274,16 @@ gal_options_print_citation(struct argp_option *option, char *arg,
   struct gal_options_common_params *cp=(struct gal_options_common_params *)pa;
   char *gnuastro_acknowledgement;
   char *gnuastro_bibtex=
-    "First paper introducing Gnuastro\n"
-    "--------------------------------\n"
+    "Main Gnuastro paper\n"
+    "-------------------\n"
+    "The paper below was the first published resource that introduced "
+    "Gnuastro. Its focus is only three of the Gnuastro programs "
+    "(NoiseChisel, Segment and MakeCatalog), but we have not yet had "
+    "time write a dedicated paper for Gnuastro. Until a high-level "
+    "paper that describes the whole of Gnuastro is published, this is "
+    "the main paper that Gnuastro's citations will be counted against. "
+    "Therefore, please cite this, even if you have not used those "
+    "programs.\n\n"
     "  @ARTICLE{gnuastro,\n"
     "     author = {{Akhlaghi}, Mohammad and {Ichikawa}, Takashi},\n"
     "      title = \"{Noise-based Detection and Segmentation of Nebulous "
@@ -295,7 +303,18 @@ gal_options_print_citation(struct argp_option *option, char *arg,
     "        doi = {10.1088/0067-0049/220/1/1},\n"
     "     adsurl = {https://ui.adsabs.harvard.edu/abs/2015ApJS..220....1A},\n"
     "    adsnote = {Provided by the SAO/NASA Astrophysics Data System}\n"
-    "  }";
+    "  }\n\n\n"
+    "Gnuastro book\n"
+    "-------------\n"
+    "If you want to cite any part of the book (in any of the programs), "
+    "please use the BibTeX entry below:\n\n"
+    "  @BOOK{gnuastrobook,\n"
+    "     author = {{Akhlaghi}, Mohammad},\n"
+    "      title = {GNU Astronomy Utilities (version "PACKAGE_VERSION")},\n"
+    "       year = 2024,\n"
+    "  publisher = {Free Software Foundation},\n"
+    "        doi = {10.5281/zenodo.12738457}\n"
+    "  }\n";
 
 
   /* Print the statements. */

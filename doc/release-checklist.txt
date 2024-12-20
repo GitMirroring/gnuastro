@@ -143,6 +143,17 @@ all the commits needed for this release have been completed.
    Akhlaghi'.
 
 
+ - [STABLE] Click on the "New version" button of Gnuastro's page on Zenodo
+   (https://doi.org/10.5281/zenodo.3483064), and click on the "Get a DOI
+   now!" button at the start of the "Basic information" section. Using
+   this, you need to update the information for the "Gnuastro book" section
+   of the string in 'gal_options_print_citation':
+     - year: set the year that you are making the release.
+     - doi: Copy the DOI from Zenodo here.
+   Later (when the new Gnuastro version is released) you can complete the
+   Zenodo submission (there is an item at the end of this list).
+
+
  - Commit all these changes:
 
      $ git add -u
@@ -288,13 +299,15 @@ all the commits needed for this release have been completed.
      $ git branch -D XXXX-dev
      $ git push fork --delete XXXX-dev
 
+   - In the Zenodo "New version" page that you made before, upload the PDF,
+     'tar.gz' and 'tar.gz.sig' and publish, so the DOI becomes active.
+
    - Update/edit the following URLs with the latest version (where
      necessary, may be updated already):
      - https://savannah.gnu.org/news/submit.php?group=gnuastro
        - After submitting, approve in this link:
          https://savannah.gnu.org/news/approve.php?group=gnuastro
      - https://directory.fsf.org/wiki/Gnuastro
-     - https://doi.org/10.5281/zenodo.3483064
 
    - Open 'configure.ac' and increment 'GAL_CURRENT' for the next
      release. See the 'Updating library version information' section of the
