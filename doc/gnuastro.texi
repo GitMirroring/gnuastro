@@ -19043,7 +19043,7 @@ You can use it to merge multiple columns that are available in this stage to a s
 For more, see @ref{Vector columns}.
 
 @item Column arithmetic
-Once the final rows are selected in the requested order, column arithmetic is done (if requested).
+Once the final columns are selected in the requested order, column arithmetic is done (if requested).
 For more on column arithmetic, see @ref{Column arithmetic}.
 
 @end table

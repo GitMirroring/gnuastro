@@ -93,7 +93,6 @@ scriptname=@SCRIPT_NAME@
 
 
 
-# Output of `--usage' and `--help':
 print_usage() {
     cat <<EOF
 $scriptname: run with '--help' for list of options
@@ -172,11 +171,6 @@ Report bugs to bug-gnuastro@gnu.org.
 EOF
 }
 
-
-
-
-
-# Output of `--version':
 print_version() {
     cat <<EOF
 $scriptname (GNU Astronomy Utilities) $version
@@ -189,7 +183,6 @@ Written/developed by Raul Infante-Sainz and Mohammad Akhlaghi.
 EOF
 }
 
-
 print_citation() {
     empty="" # needed for the ascii art!
     cat <<EOF
@@ -199,6 +192,44 @@ Thank you for using $scriptname (GNU Astronomy Utilities) $version
 Citations and acknowledgement are vital for the continued work on Gnuastro.
 
 Please cite the following record(s) and add the acknowledgement statement below in your work to support us. Please note that different Gnuastro programs may have different corresponding papers. Hence, please check all the programs you used. Don't forget to also include the version as shown above for reproducibility.
+
+Main Gnuastro paper
+-------------------
+The paper below was the first published resource that introduced Gnuastro. Its focus is only three of the Gnuastro programs (NoiseChisel, Segment and MakeCatalog), but we have not yet had time write a dedicated paper for Gnuastro. Until a high-level paper that describes the whole of Gnuastro is published, this is the main paper that Gnuastro's citations will be counted against. Therefore, please cite this, even if you have not used those programs.
+
+  @ARTICLE{gnuastro,
+     author = {{Akhlaghi}, Mohammad and {Ichikawa}, Takashi},
+      title = "{Noise-based Detection and Segmentation of Nebulous Objects}",
+    journal = {ApJS},
+  archivePrefix = "arXiv",
+     eprint = {1505.01664},
+   primaryClass = "astro-ph.IM",
+   keywords = {galaxies: irregular, galaxies: photometry,
+               galaxies: structure, methods: data analysis,
+               techniques: image processing, techniques: photometric},
+       year = 2015,
+      month = sep,
+     volume = 220,
+        eid = {1},
+      pages = {1},
+        doi = {10.1088/0067-0049/220/1/1},
+     adsurl = {https://ui.adsabs.harvard.edu/abs/2015ApJS..220....1A},
+    adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+  }
+
+
+Gnuastro book
+-------------
+If you want to cite any part of the book (in any of the programs), please use the BibTeX entry below:
+
+  @BOOK{gnuastrobook,
+     author = {{Akhlaghi}, Mohammad},
+      title = {GNU Astronomy Utilities (version $version)},
+       year = 2024,
+  publisher = {Free Software Foundation},
+        doi = {10.5281/zenodo.12738457}
+  }
+
 
 Paper introducing this script
 -----------------------------
@@ -221,24 +252,6 @@ Paper introducing this script
         adsnote = {Provided by the SAO/NASA Astrophysics Data System}
   }
 
-Paper introducing Gnuastro (currently main citation)
-----------------------------------------------------
-  @ARTICLE{gnuastro,
-     author = {{Akhlaghi}, M. and {Ichikawa}, T.},
-      title = "{Noise-based Detection and Segmentation of Nebulous Objects}",
-    journal = {ApJS},
-  archivePrefix = "arXiv",
-     eprint = {1505.01664},
-   primaryClass = "astro-ph.IM",
-       year = 2015,
-      month = sep,
-     volume = 220,
-        eid = {1},
-      pages = {1},
-        doi = {10.1088/0067-0049/220/1/1},
-     adsurl = {https://ui.adsabs.harvard.edu/abs/2015ApJS..220....1A},
-    adsnote = {Provided by the SAO/NASA Astrophysics Data System}
-  }
 
 Acknowledgement
 ---------------
