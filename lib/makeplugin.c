@@ -57,9 +57,11 @@ int plugin_is_GPL_compatible=1;
 
 /* Basic text functions */
 static char *text_prev=MAKEPLUGIN_FUNC_PREFIX"-text-prev";
+static char *text_next=MAKEPLUGIN_FUNC_PREFIX"-text-next";
 static char *text_to_upper=MAKEPLUGIN_FUNC_PREFIX"-text-to-upper";
 static char *text_to_lower=MAKEPLUGIN_FUNC_PREFIX"-text-to-lower";
 static char *text_prev_batch=MAKEPLUGIN_FUNC_PREFIX"-text-prev-batch";
+static char *text_next_words=MAKEPLUGIN_FUNC_PREFIX"-text-next-words";
 static char *text_prev_batch_by_ram=MAKEPLUGIN_FUNC_PREFIX"-text-prev-batch-by-ram";
 static char *text_contains_name=MAKEPLUGIN_FUNC_PREFIX"-text-contains";
 static char *text_not_contains_name=MAKEPLUGIN_FUNC_PREFIX"-text-not-contains";
@@ -375,6 +377,88 @@ makeplugin_text_prev_batch_work(char *target, size_t num_in_batch,
 
 
 
+/* Given one of the words of the input list, this function will return a
+   string containing the previous batch of words. */
+static char *
+makeplugin_text_next_work(char *target, size_t num_in_batch,
+                          char *list)
+{
+  int target_found=0;
+  size_t numw=0, starti, outlen;
+  char *startend[2]={NULL, NULL};
+  char *cp, *token, *saveptr=NULL, *out=NULL, *delimiters=" ";
+
+  /* Small sanity check. */
+  if(num_in_batch==0)
+    {
+      fprintf(stderr, "%s: a bug! Please contact us at '%s' to "
+              "find and fix the problem. The value to 'num_in_batch' is 0",
+              __func__, PACKAGE_BUGREPORT);
+      exit(1);
+    }
+
+  /* Parse the line to find the desired element, but first copy the input
+     list into a new editable space with 'strdupa'. */
+  gal_checkset_allocate_copy(list, &cp);
+  token=strtok_r(cp, delimiters, &saveptr);
+  do
+    {
+      /* If the target has not yet been found, we should just check for the
+         target. */
+      if( target_found==0 && !strcmp(target, token) ) target_found=1;
+
+      /* The target has been found and we are no longer on the actual
+         target. */
+      if( target_found && strcmp(target, token) )
+        {
+          /* If this is the first token, keep its start. */
+          if(numw==0) startend[0]=token;
+
+          /* If this is the last desired token, keep its ending. Note that
+             'numw' is counting from zero (hence the need for the '-1'). */
+          if(numw==num_in_batch-1)
+            { startend[1]=token+strlen(token); break; }
+
+          /* For a check.
+          printf("%s: %zu, %s\n", __func__, numw, token);
+          */
+
+          /* Keep a count on the number of words. */
+          ++numw;
+        }
+
+      /* Go to the next token. */
+      token=strtok_r(NULL, delimiters, &saveptr);
+    }
+  while(token);
+
+  /* If the token couldn't be found at all, simply return a NULL
+     pointer. */
+  if(target_found && startend[0])
+    {
+      /* If the end is still NULL, then  */
+      starti=startend[0]-cp;
+      outlen = ( startend[1]
+                 ? startend[1]-startend[0]
+                 : strlen(list)-starti );
+
+      /* Allocate the output and copy the input into it. */
+      out=gal_pointer_allocate(GAL_TYPE_STRING, outlen+1, 0, __func__,
+                               "out");
+      memcpy(out, &list[starti], outlen);
+      out[outlen]='\0';
+    }
+  else out=NULL;
+
+  /* Clean up and return. */
+  free(cp);
+  return out;
+}
+
+
+
+
+
 /* Return the previous word in the given list. */
 static char *
 makeplugin_text_prev(const char *caller, unsigned int argc, char **argv)
@@ -392,13 +476,30 @@ makeplugin_text_prev(const char *caller, unsigned int argc, char **argv)
 
 
 
-/* Return the previous word in the given list. */
+/* Return the next word in the given list. */
 static char *
-makeplugin_text_prev_batch(const char *caller, unsigned int argc,
-                           char **argv)
+makeplugin_text_next(const char *caller, unsigned int argc, char **argv)
 {
-  size_t num=0;
+  char *target=argv[0], *list=argv[1];
+
+  /* Sanity check. */
+  if(makeplugin_sanity_check(argv, 2)) return NULL;
+
+  /* Parse the input list. */
+  return makeplugin_text_next_work(target, 1, list);
+}
+
+
+
+
+
+/* Return the previous batch of words in the given list. */
+static char *
+makeplugin_text_batch(const char *caller, unsigned int argc,
+                      char **argv)
+{
   void *nptr;
+  size_t num=0;
   char *target=argv[0], *numstr=argv[1], *list=argv[2];
 
   /* Sanity check. */
@@ -408,22 +509,31 @@ makeplugin_text_prev_batch(const char *caller, unsigned int argc,
   nptr=&num;
   if( gal_type_from_string(&nptr, numstr, GAL_TYPE_SIZE_T) )
     {
-      fprintf(stderr, "ast-text-prev-batch: '%s' could not be read as "
-              "an unsigned integer", numstr);
+      fprintf(stderr, "%s: '%s' could not be read as an unsigned "
+              "(positive) integer", caller, numstr);
       exit(1);
     }
 
   /* In case the number is 0, return an error message. */
   if(num==0)
     {
-      fprintf(stderr, "ast-text-prev-batch: the given number of "
-              "elements in each batch (0) is undefined, please give a "
-              "positive integer");
+      fprintf(stderr, "%s: the given number of elements in each batch "
+              "(0) is undefined, please give a positive integer", caller);
       exit(1);
     }
 
   /* Generate the outputs.*/
-  return makeplugin_text_prev_batch_work(target, num, list);
+  if( !strcmp(caller, text_prev_batch) )
+    return makeplugin_text_prev_batch_work(target, num, list);
+  else if ( !strcmp(caller, text_next_words) )
+    return makeplugin_text_next_work(target, num, list);
+  else
+    {
+      fprintf(stderr, "%s: a bug! Please contact us at '%s' to fix "
+              "the problem. The value '%s' is not recognized for the "
+              "'caller'", __func__, PACKAGE_BUGREPORT, caller);
+      exit(1);
+    }
 }
 
 
@@ -647,8 +757,16 @@ libgnuastro_make_gmk_setup()
   gmk_add_function(text_prev, makeplugin_text_prev, 2, 2,
                    GMK_FUNC_DEFAULT);
 
+  /* Select next item in list*/
+  gmk_add_function(text_next, makeplugin_text_next, 2, 2,
+                   GMK_FUNC_DEFAULT);
+
   /* Select batch of previous 'num' elements in list. */
-  gmk_add_function(text_prev_batch, makeplugin_text_prev_batch,
+  gmk_add_function(text_prev_batch, makeplugin_text_batch,
+                   3, 3, GMK_FUNC_DEFAULT);
+
+  /* Select batch of previous 'num' elements in list. */
+  gmk_add_function(text_next_words, makeplugin_text_batch,
                    3, 3, GMK_FUNC_DEFAULT);
 
   /* Select batch  */

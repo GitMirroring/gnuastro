@@ -85,6 +85,14 @@ See the end of the file for license conditions.
     azimuthal ranges (all other pixels are ignored). Suggested and
     implemented by Ignacio Ruiz Cejudo.
 
+*** Makefile extensions
+
+  - $(ast-text-next TARGET, LIST): returns the next word (after TARGET) in
+    the input LIST; see the documentation for more.
+
+  - $(ast-text-next-words TARGET, NUM, LIST): returns the next NUM words
+    after TARGET from LIST.
+
 *** Library
 
   - gal_units_sblim_diff: calculate the difference in surface brighntess

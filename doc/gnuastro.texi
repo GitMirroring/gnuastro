@@ -5173,9 +5173,10 @@ Due to its more peculiar low surface brightness structure/features, we will focu
 @node Downloading and validating input data, NoiseChisel optimization, Detecting large extended targets, Detecting large extended targets
 @subsection Downloading and validating input data
 
-To get the image, you can use the @url{https://dr12.sdss.org/fields, simple field search} tool of SDSS.
+To get the image, you can use the @url{https://skyserver.sdss.org/dr18/SearchTools/IQS, Imaging search} tool of SDSS.
 As long as it is covered by the SDSS, you can find an image containing your desired target either by providing a standard name (if it has one), or its coordinates.
-To access the dataset we will use here, write @code{NGC5195} in the ``Object Name'' field and press ``Submit'' button.
+To access the dataset we will use here, under ``position constraints'' section, select ``cone''.
+Fill the declination (47.194444) and right ascention (202.467917) of NGC5195 in the respective box and click on ``Submit''.
 
 @cartouche
 @noindent
@@ -5185,10 +5186,13 @@ This will help simulate future situations when you are processing your own datas
 @end cartouche
 
 @cindex GNU Wget
-You can see the list of available filters under the color image.
+You can see the list of available filters by clicking on the ``Get Wget'' file button at the bottom of the page.
 For this demonstration, we will use the r-band filter image.
-By clicking on the ``r-band FITS'' link, you can download the image.
-Alternatively, you can just run the following command to download it with GNU Wget@footnote{To make the command easier to view on screen or in a page, we have defined the top URL of the image as the @code{topurl} shell variable.
+
+The original version of this tutorial was written for the previous (DR12) version of SDSS's interface.
+Fortuantely while their web interface has changed, the data sets from DR12 have not been deleted/removed.
+To ensure reproducibility, let's use the same data set that this tutorial was initially written.
+You can do that by running the following command to download it with GNU Wget@footnote{To make the command easier to view on screen or in a page, we have defined the top URL of the image as the @code{topurl} shell variable.
 You can just replace the value of this variable with @code{$topurl} in the @command{wget} command.}.
 To keep things clean, let's also put it in a directory called @file{ngc5195}.
 With the @option{-O} option, we are asking Wget to save the downloaded file with a more manageable name: @file{r.fits.bz2} (this is an r-band image of NGC 5195, which was the directory name).
@@ -36482,6 +36486,15 @@ It assumes that the libraries are in the same base directory as the programs (wh
 $ which astfits | sed -e's|bin/astfits|lib/libgnuastro_make.so|'
 @end example
 
+The problem with the command above is that it is not in the Makefile and has to be run by the user when running it (adding more complexity and therefore potential for bugs).
+Therefore a more generic way to have a portable Makefile (that will run independent of where the host's Gnuastro is installed), you can implement the command above in Make like below.
+For the @code{:=}, see @ref{Makefile functions of Gnuastro}.
+
+@example
+gnuastro-prefix := $(subst bin/astfits,,$(shell which astfits))
+load $(gnuastro-prefix)/lib/libgnuastro_make.so
+@end example
+
 @node Makefile functions of Gnuastro,  , Loading the Gnuastro Make functions, Makefile extensions
 @section Makefile functions of Gnuastro
 
@@ -36575,8 +36588,18 @@ all:
 Returns the word in @code{LIST} that is previous to @code{TARGET}.
 If @code{TARGET} is the first word of the list, or is not within it at all, this function will return an empty string (nothing).
 If any of the arguments are an empty string (or only contain space characters like `@key{SPACE}', `@key{TAB}', new-line and etc), this function will return an empty string (having no effect in Make).
+The simple example below shows a minimal usage scenario where the output will be @code{fooo}.
 
-One scenario when this function can be useful is when you want a list of higher-level targets to always be executed in sequence (even when Make is run in parallel).
+@example
+load /usr/local/lib/libgnuastro_make.so
+
+list = fooo baar bAaz uggh Aah
+all:
+     echo $(ast-text-prev baar, $(list))
+@end example
+
+This function is useful in many other scenarios.
+For example, one scenario when this function can be useful is when you want a list of higher-level targets to always be executed in sequence (even when Make is run in parallel).
 But you want their lower-level prerequisites to be executed in parallel.
 
 The fully working example below shows this in practice: the ``final'' target depends on the sub-components @file{a.fits}, @file{b.fits}, @file{c.fits} and @file{d.fits}.
@@ -36752,6 +36775,33 @@ After the regular outputs of the program, you will see a number on the last line
 This number is the maximum used RAM (in @emph{kilobytes}) during the execution of the program.
 Later, you can convert this to Gigabytes (to feed into this function) by dividing it to @mymath{10^6}.
 @end cartouche
+
+@item $(ast-text-next TARGET, LIST)
+
+Returns the word in @code{LIST} that is next to @code{TARGET}.
+Its operation is very similar to the @code{ast-text-prev} function defined above.
+The output of the example below (that uses this function) is @code{bAaz}.
+
+@example
+load /usr/local/lib/libgnuastro_make.so
+
+list = fooo baar bAaz uggh Aah
+all:
+     echo $(ast-text-next baar, $(list))
+@end example
+
+@item $(ast-text-next-words TARGET, NUM, LIST)
+
+Returns the next @code{NUM} words in @code{LIST} (after @code{TARGET}).
+The output of the example below (that uses this function) is @code{bAaz uggh}.
+
+@example
+load /usr/local/lib/libgnuastro_make.so
+
+list = fooo baar bAaz uggh Aah
+all:
+     echo $(ast-text-next baar, 2, $(list))
+@end example
 
 @end table
 
