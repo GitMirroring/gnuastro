@@ -191,6 +191,9 @@ gal_table_col_vector_extract(gal_data_t *vector, gal_list_sizet_t *indexs);
 gal_data_t *
 gal_table_cols_to_vector(gal_data_t *list);
 
+void
+gal_table_sort(gal_data_t *table, gal_data_t *sortcol, uint8_t descending);
+
 __END_C_DECLS    /* From C++ preparations */
 
 #endif           /* __GAL_TABLE_H__ */

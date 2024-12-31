@@ -95,6 +95,8 @@ See the end of the file for license conditions.
 
 *** Library
 
+  - gal_table_sort: sort the given table by a given column.
+
   - gal_units_sblim_diff: calculate the difference in surface brighntess
     limit only assuming a different effective radius of a different
     telescope and/or a different exposure time.

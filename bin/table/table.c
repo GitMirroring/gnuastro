@@ -74,41 +74,6 @@ table_error_no_column(char *optionname, char *id)
 
 
 static void
-table_apply_permutation(gal_data_t *table, size_t *permutation,
-                        size_t permsize, int inverse)
-{
-  gal_data_t *tmp;
-
-  for(tmp=table;tmp!=NULL;tmp=tmp->next)
-    {
-      /* Apply the permutation. */
-      if(inverse)
-        {
-          if(tmp->ndim==1)
-            gal_permutation_apply_inverse(tmp, permutation);
-          else
-            error(EXIT_FAILURE, 0, "%s: inverse permutation on "
-                  "vector columns is not yet supported. Please "
-                  "get in touch with us at '%s' to add this "
-                  "feature", __func__, PACKAGE_BUGREPORT);
-        }
-      else
-        {
-          if(tmp->ndim==1) gal_permutation_apply(tmp, permutation);
-          else    gal_permutation_apply_onlydim0(tmp, permutation);
-        }
-
-      /* Correct the size. */
-      tmp->dsize[0]=permsize;
-      tmp->size = tmp->dsize[0] * (tmp->ndim==1 ? 1 : tmp->dsize[1]);
-    }
-}
-
-
-
-
-
-static void
 table_bring_to_top(gal_data_t *table, gal_data_t *rowids)
 {
   char **strarr;
@@ -567,102 +532,6 @@ table_select_by_value(struct tableparams *p)
   free(p->freeselect);
   gal_data_free(mask);
   gal_data_free(rowids);
-}
-
-
-
-
-
-static void
-table_sort(struct tableparams *p)
-{
-  gal_data_t *perm;
-  size_t c=0, *s, *sf, dsize0=p->table->dsize[0];
-  int (*qsortfn)(const void *, const void *)=NULL;
-
-  /* In case there are no columns to sort, skip this function. */
-  if(p->table->size==0 || p->table->array==NULL || p->table->dsize==NULL)
-    return;
-
-  /* Allocate the permutation array and fill it. Note that we need 'dsize0'
-     because the first column may be a vector column (which is 2D). */
-  perm=gal_data_alloc(NULL, GAL_TYPE_SIZE_T, 1, &dsize0, NULL, 0,
-                      p->cp.minmapsize, p->cp.quietmmap, NULL, NULL, NULL);
-  sf=(s=perm->array)+perm->size; do *s=c++; while(++s<sf);
-
-  /* For string columns, print a descriptive message. Note that some FITS
-     tables were found that do actually have numbers stored in string
-     types! */
-  if(p->sortcol->type==GAL_TYPE_STRING)
-    error(EXIT_FAILURE, 0, "sort column has a string type, but it can "
-          "(currently) only work on numbers.\n\n"
-          "TIP: if you know the columns contents are all numbers that are "
-          "just stored as strings, you can use this program to save the "
-          "table as a text file, modify the column meta-data (for example "
-          "to type 'i32' or 'f32' instead of 'strN'), then use this "
-          "program again to save it as a FITS table.\n\n"
-          "For more on column metadata in plain text format, please run "
-          "the following command (or see the 'Gnuastro text table format "
-          "section of the book/manual):\n\n"
-          "    $ info gnuastro \"gnuastro text table format\"");
-
-  /* Set the proper qsort function. */
-  if(p->descending)
-    switch(p->sortcol->type)
-      {
-      case GAL_TYPE_UINT8:   qsortfn=gal_qsort_index_single_uint8_d;   break;
-      case GAL_TYPE_INT8:    qsortfn=gal_qsort_index_single_int8_d;    break;
-      case GAL_TYPE_UINT16:  qsortfn=gal_qsort_index_single_uint16_d;  break;
-      case GAL_TYPE_INT16:   qsortfn=gal_qsort_index_single_int16_d;   break;
-      case GAL_TYPE_UINT32:  qsortfn=gal_qsort_index_single_uint32_d;  break;
-      case GAL_TYPE_INT32:   qsortfn=gal_qsort_index_single_int32_d;   break;
-      case GAL_TYPE_UINT64:  qsortfn=gal_qsort_index_single_uint64_d;  break;
-      case GAL_TYPE_INT64:   qsortfn=gal_qsort_index_single_int64_d;   break;
-      case GAL_TYPE_FLOAT32: qsortfn=gal_qsort_index_single_float32_d; break;
-      case GAL_TYPE_FLOAT64: qsortfn=gal_qsort_index_single_float64_d; break;
-      default:
-        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to fix "
-              "the problem. The code '%u' wasn't recognized as a data type",
-              __func__, PACKAGE_BUGREPORT, p->sortcol->type);
-      }
-  else
-    switch(p->sortcol->type)
-      {
-      case GAL_TYPE_UINT8:   qsortfn=gal_qsort_index_single_uint8_i;   break;
-      case GAL_TYPE_INT8:    qsortfn=gal_qsort_index_single_int8_i;    break;
-      case GAL_TYPE_UINT16:  qsortfn=gal_qsort_index_single_uint16_i;  break;
-      case GAL_TYPE_INT16:   qsortfn=gal_qsort_index_single_int16_i;   break;
-      case GAL_TYPE_UINT32:  qsortfn=gal_qsort_index_single_uint32_i;  break;
-      case GAL_TYPE_INT32:   qsortfn=gal_qsort_index_single_int32_i;   break;
-      case GAL_TYPE_UINT64:  qsortfn=gal_qsort_index_single_uint64_i;  break;
-      case GAL_TYPE_INT64:   qsortfn=gal_qsort_index_single_int64_i;   break;
-      case GAL_TYPE_FLOAT32: qsortfn=gal_qsort_index_single_float32_i; break;
-      case GAL_TYPE_FLOAT64: qsortfn=gal_qsort_index_single_float64_i; break;
-      default:
-        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to fix "
-              "the problem. The code '%u' wasn't recognized as a data type",
-              __func__, PACKAGE_BUGREPORT, p->sortcol->type);
-      }
-
-  /* Sort the indexs from the values. */
-  gal_qsort_index_single=p->sortcol->array;
-  qsort(perm->array, perm->size, sizeof *s, qsortfn);
-
-  /* For a check (only on float32 type 'sortcol'):
-  {
-    float *f=p->sortcol->array;
-    sf=(s=perm->array)+perm->size;
-    do printf("%f\n", f[*s]); while(++s<sf);
-    exit(0);
-  }
-  */
-
-  /* Sort all the output columns with this permutation. */
-  table_apply_permutation(p->table, perm->array, perm->size, 0);
-
-  /* Clean up. */
-  gal_data_free(perm);
-  if(p->freesort) gal_data_free(p->sortcol);
 }
 
 
@@ -1567,7 +1436,11 @@ table_row(struct tableparams *p)
   if(p->selection) table_select_by_value(p);
 
   /* Sort it (if required). */
-  if(p->sort) table_sort(p);
+  if(p->sort)
+    {
+      gal_table_sort(p->table, p->sortcol, p->descending);
+      if(p->freesort) gal_data_free(p->sortcol);
+    }
 
   /* If the output number of rows is limited, apply them. */
   if(    p->rowrange

@@ -40242,6 +40242,11 @@ All the input datasets have to have the same size and type.
 For more on vector columns in tables, see @ref{Vector columns}.
 @end deftypefun
 
+@deftypefun void gal_table_sort (gal_data_t @code{*table}, gal_data_t @code{*sortcol}, uint8_t @code{descending})
+Sort the given @code{table} by the @code{sortcol} column in ascending order (descending, if @code{descending} is non-zero).
+To sort only a single column in place, see @code{gal_statistics_sort_*} of @ref{Statistical operations}.
+@end deftypefun
+
 
 
 
@@ -43638,13 +43643,13 @@ input->flag &= ~GAL_DATA_FLAG_SORT_CH;
 @end deftypefun
 
 @deftypefun void gal_statistics_sort_increasing (gal_data_t @code{*input})
-Sort the input dataset (in place) in an increasing order and toggle the
-sort-related bit flags accordingly.
+Sort the input dataset (in place) in an increasing order and toggle the sort-related bit flags accordingly.
+To sort a table (many columns) based on one column, see @code{gal_table_sort} in @ref{Table input output}.
 @end deftypefun
 
 @deftypefun void gal_statistics_sort_decreasing (gal_data_t @code{*input})
-Sort the input dataset (in place) in a decreasing order and toggle the
-sort-related bit flags accordingly.
+Sort the input dataset (in place) in a decreasing order and toggle the sort-related bit flags accordingly.
+To sort a table (many columns) based on one column, see @code{gal_table_sort} in @ref{Table input output}.
 @end deftypefun
 
 @deftypefun {gal_data_t *} gal_statistics_no_blank_sorted (gal_data_t @code{*input}, int @code{inplace})
