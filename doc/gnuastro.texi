@@ -8021,7 +8021,7 @@ From the position of the @url{https://en.wikipedia.org/wiki/Balmer_jump, Balmer 
 @item
 To confirm that this is H-alpha, you can select the ``Edit'' menu in the spectrum window and select ``Zoom''.
 @item
-Double-click and hold (for next step also) somewhere before the strongest line and slightly above the continuum (for example at @code{8E-07} in the horizontal and @mymath{60\times10^{-20}}erg/Angstrom/cm@mymath{^2}/s on the vertical).
+Double-click and hold (for next step also) somewhere before the strongest line and slightly above the continuum (for example at @code{8E-07} in the horizontal and @mymath{50\times10^{-20}}erg/Angstrom/cm@mymath{^2}/s on the vertical).
 As you move your cursor (while holding), you will see a rectangular box getting created.
 @item
 Move the bottom-left corner of the box to somewhere after the strongest line and below the continuum.
@@ -8189,7 +8189,7 @@ With the second command below, let's view the input @emph{and} continuum-subtrac
 $ astarithmetic a370-crop.fits set-i --output=no-continuum.fits \
                 i 3 0.2 1 1 100 i filter-sigclip-median -
 
-$ astscript-fits-view a370-crop.fits no-continuum.fits -h1 \
+$ astscript-fits-view a370-crop.fits no-continuum.fits -g1 \
                       --ds9scale="limits -5 20"
 @end example
 
@@ -8296,8 +8296,8 @@ The first detection pops up in the 55th slice for the galaxy on the top of this 
 As you press ``Next'' you will see that the detection fades away and other detections pop up.
 Spend a few minutes shifting between the different slices and comparing the detected voxels with the emission lines in the continuum-subtracted cube (the @code{INPUT-NO-SKY} extension).
 
-Go ahead to slice 2815 and press ``Next'' a few times.
-You will notice that the detections suddenly start covering the whole slice and until slice 2859 where the detection map becomes normal (no extra detections!).
+Go ahead to slice 2933 and press ``Next'' a few times.
+You will notice that the detections suddenly start covering the whole slice and until slice 2943 where the detection map becomes normal (no extra detections!).
 This is the effect of the sky lines we mentioned before in @ref{Sky lines in optical IFUs}.
 The increased noise makes the reduction very hard and as a result, a lot of artifacts appear.
 To reduce the effect of sky lines, we can divide the cube by its standard deviation (the square root of the variance or @code{STAT} extension; see  @ref{Sky lines in optical IFUs}) and run NoiseChisel afterwards.
@@ -8311,7 +8311,7 @@ $ astnoisechisel-3d sn.fits --output=det.fits
 $ astscript-fits-view det.fits
 @end example
 
-After the new detection map opens have another look at the specific slices mentioned above (from slice 2851 to 2859).
+After the new detection map opens have another look at the specific slices mentioned above (from slice 2933 to 2943).
 You will see that there are no more detection maps that cover the whole field of view.
 Scroll the slide counter across the whole cube, you will rarely see such effects by Sky lines any more.
 But this is just a crude solution and doesn't remove all sky line artifacts.
@@ -8344,7 +8344,7 @@ For example, with the command below, let's get the flux-weighted center (in the 
 There isn't usually a standard name for the third WCS dimension (unlike Ra/Dec).
 So in Gnuastro, we just call it @option{--w3}.
 With the second command, we are having a look at the first 5 rows.
-Note that we are not using @option{-Y} with @command{asttable} anymore because it the wavelength column would only be shown as zero (since it is in meters!).
+Note that we are not using @option{-Y} with @command{asttable} anymore because the wavelength column would only be shown as zero (since it is in meters!).
 
 @example
 $ astmkcatalog seg.fits --ids --ra --dec --w3 --sum --output=cat.fits
@@ -8387,11 +8387,11 @@ So the values to use for the measurement of each label should come from the @fil
 @example
 $ astmkcatalog seg.fits --ids --ra --dec --w3 --sum  \
                --area-in-slice --sum-in-slice --output=cat.fits \
-               --valuesfile=no-continuum.fits
+               --valuesfile=no-continuum.fits --valueshdu=1
 
 $ asttable -i cat.fits
 --------
-seg_cat.fits (hdu: 1)
+cat.fits (hdu: 1)
 -------          -----       ----          -------
 No.Name          Units       Type          Comment
 -------          -----       ----          -------
@@ -8403,7 +8403,7 @@ No.Name          Units       Type          Comment
 6  AREA-IN-SLICE counter     int32(3681)   Number of pix. in each slice.
 7  SUM-IN-SLICE  input-units float32(3681) Sum of values in each slice.
 --------
-Number of rows: 211
+Number of rows: 194
 --------
 @end example
 
@@ -8417,7 +8417,7 @@ That emission line was around 8565.93 Angstroms, so let's look for the objects w
 
 @example
 $ asttable cat.fits --range=AWAV,8.560e-7,8.570e-7 -cobj_id,ra,dec -Y
-198    39.965897   -1.589279
+181    39.965897   -1.589279
 @end example
 
 From the command above, we see that at this wavelength, there was only one object.
@@ -8481,14 +8481,14 @@ $ astscript-fits-view seg.fits
 
 After DS9 opens with the last command above, go to slice 3044 (which is the first non-NaN slice in the spectrum above).
 In the @code{OBJECTS} extension of this slice, you see several non-zero pixels.
-The few non-zero pixels on the bottom have a label of 197 and the single non-zero pixel at a higher Y axis position has a label of 198 (which as we saw above, was the label of the H-alpha emission of this galaxy).
+The few non-zero pixels on the bottom have a label of 180 and the single non-zero pixel at a higher Y axis position has a label of 181 (which as we saw above, was the label of the H-alpha emission of this galaxy).
 The few 197 labeled pixels in this slice are the last voxels of the NII emission that is just blue-ward of H-alpha.
 
 The single pixel you see in slice 3044 is why you see a value of 1 in the @code{AREA-IN-SLICE} column.
 As you go to the next slices, if you count the pixels, you will see they add up to the same number you see in that column.
 The values in the @code{SUM-IN-SLICE} are the sum of values in the continuum-subtracted cube for those same voxels.
 You should now be able to understand why the @option{--sum-in-slice} column has NaN values in all other slices: because this label doesn't exist in any other slice!
-Also, within slices that contain label 198, this column only uses the voxels that have the label.
+Also, within slices that contain label 181, this column only uses the voxels that have the label.
 So as you see in the second column above, the area that is used in each changes.
 
 Therefore @option{--sum-in-slice} or @option{area-in-slice} are the raw 3D spectrum of each 3D emission-line.
@@ -8500,7 +8500,8 @@ To see the effect, let's also ask MakeCatalog to measure this projected sum colu
 @example
 $ astmkcatalog seg.fits --ids --ra --dec --w3 --sum  \
                --area-in-slice --sum-in-slice --sum-proj-in-slice \
-               --output=cat.fits --valuesfile=no-continuum.fits
+               --output=cat.fits --valuesfile=no-continuum.fits \
+               --valueshdu=1
 $ asttable cat.fits --range=AWAV,8.560e-7,8.570e-7 -O \
            -carea-in-slice,sum-in-slice,sum-proj-in-slice \
            --transpose \
@@ -8534,7 +8535,7 @@ $ asttable cat.fits --range=AWAV,8.560e-7,8.570e-7 -O \
 ...[[truncated]]...
 @end example
 
-As you see, in the new @code{SUM-PROJ-IN-SLICE} column, we have a measurement in each slice: including slices that do not have the label of 198 at all.
+As you see, in the new @code{SUM-PROJ-IN-SLICE} column, we have a measurement in each slice: including slices that do not have the label of 181 at all.
 Also, the area used to measure this sum is the same in all slices (similar to a classical spectrometer's output).
 
 However, there is a big problem: have a look at the sums in slices 3040 and 3041: the values are increasing!
@@ -8546,7 +8547,7 @@ Finally, in case you want the spectrum with the continuum, you just have to chan
 @example
 $ astmkcatalog seg.fits --ids --ra --dec --w3 --sum  \
                --area-in-slice --sum-in-slice --sum-proj-in-slice \
-               --valuesfile=a370-crop.fits \
+               --valuesfile=a370-crop.fits --valueshdu=1 \
                --output=cat-with-continuum.fits
 @end example
 
@@ -8554,7 +8555,7 @@ $ astmkcatalog seg.fits --ids --ra --dec --w3 --sum  \
 @subsection Extracting a single spectrum and plotting it
 
 In @ref{3D measurements and spectra} we measured the spectra of all the objects with the MUSE data cube of this demonstration tutorial.
-Let's now write the resulting spectra for our object 198 into a file to view our measured spectra in TOPCAT for a more visual inspection.
+Let's now write the resulting spectra for our object 181 into a file to view our measured spectra in TOPCAT for a more visual inspection.
 But we don't want slice numbers (which are specific to MUSE), we want the horizontal axis to be in Angstroms.
 To do that, we can use the WCS information:
 
@@ -8598,11 +8599,11 @@ $ asttable cat.fits --range=AWAV,8.560e-7,8.570e-7 -O \
        -carea-in-slice,sum-in-slice,sum-proj-in-slice \
        --transpose \
        | asttable -c'arith $1 counter '$sr' - '$d' x '$lr' + f32 swap' \
-                  -c2,3 --output=spectrum-obj-198.fits \
+                  -c2,3 --output=spectrum-obj-181.fits \
                   --colmetadata=1,WAVELENGTH,m,"Wavelength of slice." \
                   --colmetadata=2,"AREA-IN-SLICE",voxel,"No. of voxels."
 
-$ astscript-fits-view spectrum-obj-198.fits
+$ astscript-fits-view spectrum-obj-181.fits
 @end example
 
 Once TOPCAT opens, take the following steps:
@@ -8621,7 +8622,7 @@ Un-select the ``Mark'' item that was originally selected.
 @end enumerate
 
 @noindent
-Of course, the table in @file{spectrum-obj-198.fits} can be plotted using any other plotting tool you prefer to use in your scientific papers.
+Of course, the table in @file{spectrum-obj-181.fits} can be plotted using any other plotting tool you prefer to use in your scientific papers.
 In the next section (@ref{Cubes with logarithmic third dimension}), we'll review the necessary modifications to the recipes in this section for cubes where the third dimension is logarithmic, not linear (as in MUSE cubes).
 Finally, in @ref{Cubes with logarithmic third dimension}, you'll see how you can make narrow-band images of your desired target around your desired emission line.
 
@@ -8674,11 +8675,11 @@ For more on the @code{eval}-based shell trick we used here, see @ref{Separate sh
 Finally, we are running Crop and viewing the cropped 3D cube.
 
 @example
-$ asttable cat-ranges.fits --equal=OBJ_ID,198 \
+$ asttable cat-ranges.fits --equal=OBJ_ID,181 \
                   -cMIN_X,MAX_X,MIN_Y,MAX_Y,MIN_Z,MAX_Z
 56     101    11     61     3044   3060
 
-$ eval $(asttable cat-ranges.fits --equal=OBJ_ID,198 \
+$ eval $(asttable cat-ranges.fits --equal=OBJ_ID,181 \
                   -cMIN_X,MAX_X,MIN_Y,MAX_Y,MIN_Z,MAX_Z \
                   | xargs printf "section=%s:%s,%s:%s,%s:%s; ")
 
@@ -8717,8 +8718,8 @@ With the second command, we are opening the two collapsed images together:
 @example
 $ astarithmetic crop-no-continuum.fits set-i \
                 crop-obj.fits          set-o \
-                i o 198 ne nan where 3 collapse-sum \
-                --output=collapsed-obj.fits
+                i o 181 ne nan where 3 collapse-sum \
+                -g1 --output=collapsed-obj.fits
 
 $ astscript-fits-view collapsed-all.fits collapsed-obj.fits \
                       --ds9extra="-lock scalelimits yes -blink"
@@ -8729,13 +8730,12 @@ But this is a little hard to appreciate in the 2D image.
 To see it better practice, let's get the two radial profiles.
 We will approximately assume a position angle of -80 and axis ratio of 0.7@footnote{To derive the axis ratio and position angle automatically, you can take the following steps. Note that we are not using NoiseChisel because this crop has been intentionally selected to contain signal, so there is no raw noise inside of it.
 @example
-$ aststatistics collapsed-all.fits --sky --tilesize=5,5
-$ astarithmetic collapsed-all.fits -h1 collapsed-all_sky.fits -hSKY_STD / 5 gt \
-                -ocollapsed-lab.fits
-$ astmkcatalog collapsed-lab.fits -h1 --valuesfile=collapsed-all.fits \
-               --position-angle --axis-ratio
+$ aststatistics collapsed-all.fits --sky --tilesize=3,3
+$ astarithmetic collapsed-all.fits -h1 collapsed-all_sky.fits -hSKY_STD / 5 gt
+$ astmkcatalog collapsed-all_arith.fits -h1 --valuesfile=collapsed-all.fits \
+               --valueshdu=1 --position-angle --axis-ratio
 $ asttable collapsed-all_arith_cat.fits -Y
--78.817        0.694
+-79.100        0.700
 @end example
 }.
 With the final command below, we are opening both radial profiles in TOPCAT to visualize them.
