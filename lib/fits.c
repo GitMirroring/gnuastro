@@ -2554,7 +2554,7 @@ gal_fits_img_read(char *filename, char *hdu, size_t minmapsize,
 
 
   /* Check HDU for realistic conditions: */
-  fptr=gal_fits_hdu_open_format(filename, hdu, 0, NULL);
+  fptr=gal_fits_hdu_open_format(filename, hdu, 0, hdu_option_name);
 
 
   /* Get the info and allocate the data structure. */

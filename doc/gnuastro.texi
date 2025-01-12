@@ -921,7 +921,7 @@ FITS files (@file{fits.h})
 * CFITSIO and Gnuastro types::  Conversion between FITS and Gnuastro types.
 * FITS HDUs::                   Opening and getting information about HDUs.
 * FITS header keywords::        Reading and writing FITS header keywords.
-* FITS arrays::                 Reading and writing FITS images/arrays.
+* FITS arrays - images or cubes::  Reading and writing FITS images or cubes.
 * FITS tables::                 Reading and writing FITS tables.
 
 File input output
@@ -939,7 +939,7 @@ Tessellation library (@file{tile.h})
 
 Library demo programs
 
-* Library demo - reading a image::  Read a FITS image into memory.
+* Library demo - reading a FITS image::  Read a FITS image into memory.
 * Library demo - inspecting neighbors::  Inspect the neighbors of a pixel.
 * Library demo - multi-threaded operation::  Doing an operation on threads.
 * Library demo - reading and writing table columns::  Simple Column I/O.
@@ -38620,7 +38620,7 @@ The list below contains a description for each @code{gal_data_t} element.
 This is the pointer to the main array of the dataset containing the raw data (values).
 All the other elements in this data-structure are actually meta-data enabling us to use/understand the series of values in this array.
 It must allow data of any type (see @ref{Numeric data types}), so it is defined as a @code{void *} pointer.
-A @code{void *} array is not directly usable in C, so you have to cast it to proper type before using it, please see @ref{Library demo - reading a image} for a demonstration.
+A @code{void *} array is not directly usable in C, so you have to cast it to proper type before using it, please see @ref{Library demo - reading a FITS image} for a demonstration.
 
 @cindex @code{restrict}
 @cindex C: @code{restrict}
@@ -40273,7 +40273,7 @@ So you do not need to explicitly include @file{fitsio.h} anymore and can freely 
 * CFITSIO and Gnuastro types::  Conversion between FITS and Gnuastro types.
 * FITS HDUs::                   Opening and getting information about HDUs.
 * FITS header keywords::        Reading and writing FITS header keywords.
-* FITS arrays::                 Reading and writing FITS images/arrays.
+* FITS arrays - images or cubes::  Reading and writing FITS images or cubes.
 * FITS tables::                 Reading and writing FITS tables.
 @end menu
 
@@ -40430,7 +40430,7 @@ When your program needs one of these formats, you can call this function so if t
 
 
 
-@node FITS header keywords, FITS arrays, FITS HDUs, FITS files
+@node FITS header keywords, FITS arrays - images or cubes, FITS HDUs, FITS files
 @subsubsection FITS header keywords
 
 Each FITS extension/HDU contains a raw dataset which can either be a table or an image along with some header keywords.
@@ -40745,7 +40745,7 @@ For more on @code{hdu_option_name} see the description of @code{gal_array_read} 
 
 
 
-@node FITS arrays, FITS tables, FITS header keywords, FITS files
+@node FITS arrays - images or cubes, FITS tables, FITS header keywords, FITS files
 @subsubsection FITS arrays (images)
 
 Images (or multi-dimensional arrays in general) are one of the common data formats that is stored in FITS files.
@@ -40843,7 +40843,7 @@ So when writing FITS images in parallel, we cannot write the header keywords in 
 @end deftypefun
 
 
-@node FITS tables,  , FITS arrays, FITS files
+@node FITS tables,  , FITS arrays - images or cubes, FITS files
 @subsubsection FITS tables
 
 Tables are one of the common formats of data that is stored in FITS files.
@@ -45547,7 +45547,7 @@ If you do not have any FITS file to experiment on, you can use those that are ge
 
 
 @menu
-* Library demo - reading a image::  Read a FITS image into memory.
+* Library demo - reading a FITS image::  Read a FITS image into memory.
 * Library demo - inspecting neighbors::  Inspect the neighbors of a pixel.
 * Library demo - multi-threaded operation::  Doing an operation on threads.
 * Library demo - reading and writing table columns::  Simple Column I/O.
@@ -45555,7 +45555,7 @@ If you do not have any FITS file to experiment on, you can use those that are ge
 * Library demo - Warp to new grid::  Define a new pixel grid and WCS to resample the input.
 @end menu
 
-@node Library demo - reading a image, Library demo - inspecting neighbors, Library demo programs, Library demo programs
+@node Library demo - reading a FITS image, Library demo - inspecting neighbors, Library demo programs, Library demo programs
 @subsection Library demo - reading a FITS image
 
 The following simple program demonstrates how to read a FITS image into memory and use the @code{void *array} pointer in of @ref{Generic data container}.
@@ -45640,7 +45640,7 @@ main(void)
 @end example
 
 
-@node Library demo - inspecting neighbors, Library demo - multi-threaded operation, Library demo - reading a image, Library demo programs
+@node Library demo - inspecting neighbors, Library demo - multi-threaded operation, Library demo - reading a FITS image, Library demo programs
 @subsection Library demo - inspecting neighbors
 
 The following simple program shows how you can inspect the neighbors of a pixel using the @code{GAL_DIMENSION_NEIGHBOR_OP} function-like macro that was introduced in @ref{Dimensions}.

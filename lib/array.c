@@ -182,16 +182,17 @@ gal_array_read_one_ch(char *filename, char *extension,
       if(extension)
         {
           if( asprintf(&fname, "%s (hdu %s)", filename, extension)<0 )
-            error(EXIT_FAILURE, 0, "%s: asprintf allocation error", __func__);
+            error(EXIT_FAILURE, 0, "%s: asprintf allocation error",
+                  __func__);
         }
       else
         fname=filename;
 
       error(EXIT_FAILURE, 0, "%s: contains %zu channels (it isn't "
             "monochrome).\n\n"
-            "You can use Gnuastro's ConvertType program to separate the "
-            "(color) channels into separate extensions of a FITS file, with "
-            "a command like this:\n\n"
+            "You can use Gnuastro's ConvertType program to separate "
+            "the (color) channels into separate extensions of a FITS "
+            "file, with a command like this:\n\n"
             "    $ astconvertt %s -h%s --output=sep-ch.fits",
             fname, gal_list_data_number(out), filename, extension);
     }

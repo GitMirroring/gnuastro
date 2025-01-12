@@ -144,6 +144,9 @@ See the end of the file for license conditions.
   - bug #66588: Arithmetic's 'trim' operator does not produce 0x0 image
     when all the image is blank.
 
+  - bug #66657: gal_fits_img_read not passing hdu_option_name; found with
+    the help of Sepideh Eskandarlou.
+
 
 
 

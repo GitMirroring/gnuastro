@@ -447,9 +447,10 @@ ui_prepare_kernel(struct noisechiselparams *p)
 
           /* Make sure it has the same dimensions as the input. */
           if( p->kernel->ndim != p->input->ndim )
-            error(EXIT_FAILURE, 0, "%s (hdu %s): is %zuD, however, %s (%s) "
-                  "is a %zuD dataset", p->kernelname, p->khdu,
-                  p->kernel->ndim, p->inputname, p->cp.hdu, p->input->ndim);
+            error(EXIT_FAILURE, 0, "%s (hdu %s): is %zuD, however, %s "
+                  "(%s) is a %zuD dataset", p->kernelname, p->khdu,
+                  p->kernel->ndim, p->inputname, p->cp.hdu,
+                  p->input->ndim);
         }
       else
         p->kernel=NULL;
