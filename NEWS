@@ -147,6 +147,9 @@ See the end of the file for license conditions.
   - bug #66657: gal_fits_img_read not passing hdu_option_name; found with
     the help of Sepideh Eskandarlou.
 
+  - bug #66693: MakeProfile crashes with segmentation fault with when
+    --customimg is given and the oversampling factor is larger than 1.
+
 
 
 

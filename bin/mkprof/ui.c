@@ -592,6 +592,13 @@ ui_check_only_options(struct mkprofparams *p)
           "(same HDU in all images), or it should be called "
           "at least the same number of times that you have calld "
           "'--customimg'");
+
+  /* We do not over-sample the custom image, so when a custom image is
+     given, the oversample factor should be one. */
+  if(p->customimgname && p->oversample!=1)
+    error(EXIT_FAILURE, 0, "oversampling is not supported with "
+          "custom images (function column value of 10). Currently, "
+          "oversampling is set to %u", p->oversample);
 }
 
 
