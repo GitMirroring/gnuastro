@@ -39187,9 +39187,10 @@ free(dinc);
 
 @item operation
 Any C operation that you would like to do on the neighbor.
-This macro will provide you a @code{nind} variable that can be used as the index of the neighbor that is currently being studied.
-It is defined as `@code{size_t ndim;}'.
-Note that @code{operation} will be repeated the number of times there is a neighbor for this element.
+This macro will fill the @code{nind} variable that can be used as the index of the neighbor that is currently being studied.
+It is defined as `@code{size_t nind;}'.
+Your given @code{operation} will be repeated the number of times there is a neighbor for this element.
+See the example in @ref{Library demo - inspecting neighbors} for a fully working demo.
 @end table
 
 This macro works fully within its own @code{@{@}} block and except for the @code{nind} variable that shows the neighbor's index, all the variables within this macro's block start with @code{gdn_}.
@@ -45676,6 +45677,7 @@ The existing name of the original author of this example program is only for cas
  */
 
 #include <stdio.h>
+#include <error.h>
 #include <stdlib.h>
 
 #include <gnuastro/fits.h>
