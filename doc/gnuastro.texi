@@ -25461,10 +25461,10 @@ $ astconvolve observedimg.fits --kernel=psf.fits --domain=spatial
 $ astconvolve cube.fits --kernel=kernel3d.fits --domain=spatial \
               --tilesize=30,30,30 --numchannels=1,1,1
 
-## Find the kernel to match sharper and blurry PSF images (they both
-## have to have the same pixel size).
-$ astconvolve --kernel=sharperimage.fits --makekernel=10 \
-              blurryimage.fits
+## Find the kernel to convolve with a sharper PSF to become similar
+## to a broader PSF (they both have to have the same pixel size).
+$ astconvolve --kernel=sharper-psf.fits --makekernel=10 \
+              broader-psf.fits
 
 ## Convolve a Spectrum (column 14 in the FITS table below) with a
 ## custom kernel (the kernel will be normalized internally, so only
