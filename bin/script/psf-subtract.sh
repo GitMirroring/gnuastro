@@ -552,8 +552,8 @@ fi
 
 # To obtain the center of the PSF (in pixels), just divide by 2 the size of
 # the PSF image.
-xpsfcenter=$(astarithmetic $xpsfaxis float32 2.0 / --quiet)
-ypsfcenter=$(astarithmetic $ypsfaxis float32 2.0 / --quiet)
+xpsfcenter=$(echo $xpsfaxis | awk '{print int($1/2+1)}')
+ypsfcenter=$(echo $ypsfaxis | awk '{print int($1/2+1)}')
 
 
 
@@ -565,8 +565,14 @@ ypsfcenter=$(astarithmetic $ypsfaxis float32 2.0 / --quiet)
 # In order to allocate the PSF into the center coordinates provided by the
 # user, it is necessary to compute the appropiate offsets along the X and Y
 # axis. After that, the PSF image is warped using that offsets.
-xdiff=$(astarithmetic $xcenter float32 $xpsfcenter float32 - --quiet)
-ydiff=$(astarithmetic $ycenter float32 $ypsfcenter float32 - --quiet)
+xdiff=$(echo "$xcenter $xpsfcenter" \
+      | awk '{xdiff=$1-$2; xdec=$1-int($1); \
+              if(xdec>=0.5){xout=xdiff+(1-xdec)} else {xout=xdiff-xdec}; \
+              printf("%f\n", xout)}')
+ydiff=$(echo "$ycenter $ypsfcenter" \
+      | awk '{ydiff=$1-$2; ydec=$1-int($1); \
+              if(ydec>=0.5){yout=ydiff+(1-ydec)} else {yout=ydiff-ydec}; \
+              printf("%f\n", yout)}')
 
 psftranslated=$tmpdir/psf-translated-$objectid.fits
 astwarp $psffluxscaled --translate=$xdiff,$ydiff \
@@ -590,16 +596,15 @@ xrange=$(echo "$xdiff $xaxis $xcenter" \
                         d=-1*i+1; \
                         min=d; max=$2+d-1;} \
                       else {min=1; max=$2} \
-                      i=int($3); {min=min+1; max=max+1}
+                      i=int($3); {min=min; max=max}
                       printf "%d:%d", min, max}')
-
 yrange=$(echo "$ydiff $yaxis $ycenter" \
               | awk '{if($1<0) \
                        {i=int($1); \
                         d=-1*i+1; \
                         min=d; max=$2+d-1;} \
                       else {min=1; max=$2} \
-                      i=int($3); {min=min+1; max=max+1}
+                      i=int($3); {min=min; max=max}
                       printf "%d:%d", min, max}')
 
 # Once the necessary crop parameters have been computed, use the option

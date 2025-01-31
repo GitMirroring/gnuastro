@@ -119,6 +119,8 @@ See the end of the file for license conditions.
 
 ** Bugs fixed
 
+  - bug #66043: One pixel offset in PSF subtraction.
+
   - bug #66216: NaN values in MakeProfile outputs for very small profiles
     (smaller than a pixel even after accounting for the truncation
     factor). Reported by Alejandro Camazón Pinilla.

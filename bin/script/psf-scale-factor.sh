@@ -516,11 +516,11 @@ fi
 # maximum radius for computing the flux factor. This is the maximum radius
 # that is needed for computing the flux value.
 if [ x"$widthinpix" = x ]; then
-    xwidthinpix=$(astarithmetic $normradiusmax float32 2.0 x 1.0 + --quiet)
-    ywidthinpix=$(astarithmetic $normradiusmax float32 2.0 x 1.0 + --quiet)
+    xwidthinpix=$(echo $normradiusmax | awk '{print int(2*$1+1)}')
+    ywidthinpix=$(echo $normradiusmax | awk '{print int(2*$1+1)}')
 else
-    xwidthinpix=$(echo $widthinpix | awk '{print $1}')
-    ywidthinpix=$(echo $widthinpix | awk '{print $2}')
+    xwidthinpix=$(echo $widthinpix | awk '{print int($1)}')
+    ywidthinpix=$(echo $widthinpix | awk '{print int($2)}')
 fi
 
 
@@ -727,10 +727,10 @@ if [ $nocentering = 0 ]; then
     #     and add final value to one.
     warpcoord=$(echo "$stmcoord" \
           | awk '{x=$1-int($1); y=$2-int($2); \
-                  if(x>0.5){x=1-x; xshift=1} else {x*=-1; xshift=0}; \
-                  if(y>0.5){y=1-y; yshift=1} else {y*=-1; yshift=0}; \
+                  if(x>=0.5){x=1-x; xshift=1} else {x*=-1; xshift=0}; \
+                  if(y>=0.5){y=1-y; yshift=1} else {y*=-1; yshift=0}; \
                   printf("%f,%f %d,%d\n", x, y, \
-                  int($1)+xshift+1, int($2)+yshift+1)}')
+                  int($1)+xshift, int($2)+yshift)}')
 
     # Warp image based on the measured displacement (first component of the
     # output above).
@@ -755,12 +755,14 @@ fi
 
 
 
-# Crop the PSF image with the same size.
+# Crop the PSF image with the same size. The PSF must have an odd number of
+# pixels, so its core pixel is at the center of the central pixel of the
+# PSF image.
 psfcropped=$tmpdir/cropped-psf-$objectid.fits
-psfxcenter=$(astfits $psf -h$psfhdu --keyvalue=NAXIS1 --quiet \
-                     | awk '{print $1/2+1}')
-psfycenter=$(astfits $psf -h$psfhdu --keyvalue=NAXIS2 --quiet \
-                     | awk '{print $1/2+1}')
+psfxcenter=$(astfits $psf --hdu=$psfhdu --keyvalue=NAXIS1 --quiet \
+                     | awk '{print int($1/2+1)}')
+psfycenter=$(astfits $psf --hdu=$psfhdu --keyvalue=NAXIS2 --quiet \
+                     | awk '{print int($1/2+1)}')
 astcrop $psf --hdu=$psfhdu --mode=img \
         --center=$psfxcenter,$psfycenter \
         --width=$xwidthinpix,$ywidthinpix \
@@ -772,8 +774,8 @@ astcrop $psf --hdu=$psfhdu --mode=img \
 
 # Build a radial profile image. It will be used to only select pixels
 # within the requested radial range.
-xradcenter=$(echo $xwidthinpix | awk '{print $1/2+1}')
-yradcenter=$(echo $ywidthinpix | awk '{print $1/2+1}')
+xradcenter=$(echo $xwidthinpix | awk '{print int($1/2+1)}')
+yradcenter=$(echo $ywidthinpix | awk '{print int($1/2+1)}')
 maxradius=$(printf "$xwidthinpix\n$ywidthinpix" \
                    | aststatistics --maximum --quiet)
 radcropped=$tmpdir/cropped-radial-$objectid.fits
@@ -792,16 +794,16 @@ astarithmetic $centermsk -h1 set-i \
               $radcropped -h1 set-r \
               r $normradiusmin lt r $normradiusmax ge or set-m \
               i p / m nan where --output $multipimg $quiet
-multifactor=$(aststatistics $multipimg --sigclip-median \
-                            --sclipparams=$sigmaclip --quiet)
+multifactor=$(aststatistics $multipimg --sclipparams=$sigmaclip \
+	                    --sigclip-median --quiet)
 
 
 
 
 
 # Print the multiplication factor in standard output or in a given file
-if [ x"$output" = x ]; then echo $multifactor
-else                        echo $multifactor > $output
+if [ x"$output" = x ]; then echo "$multifactor"
+else                        echo "$multifactor" > $output
 fi
 
 
