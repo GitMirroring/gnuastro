@@ -795,7 +795,7 @@ astarithmetic $centermsk -h1 set-i \
               r $normradiusmin lt r $normradiusmax ge or set-m \
               i p / m nan where --output $multipimg $quiet
 multifactor=$(aststatistics $multipimg --sclipparams=$sigmaclip \
-	                    --sigclip-median --quiet)
+	                    --sigclip-median --sigclip-std --quiet)
 
 
 

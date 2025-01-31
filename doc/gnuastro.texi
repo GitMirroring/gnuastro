@@ -6983,18 +6983,22 @@ $ astscript-fits-view stack_psfmodelscalefactor/cropped-*.fits \
 With the second command, you see the four steps of the process: the first two images show the cropped outer and inner stacks (to same width image).
 The third shows the radial position of each pixel (which is used to only keep the pixels within the desired radial range).
 The fourth shows the per-pixel division of the outer by the inner within the requested radii.
-The sigma-clipped median of these pixels is finally reported.
+The sigma-clipped median and standard deviation of these pixels is finally reported.
+The standard deviation is useful, for example, if you consider different center positions (with small offsets) and consider that one that provides the lowest standard deviation value.
 Unlike the radial profile method (which averages over a circular/elliptical annulus for each radius), this method imposes no a-priori shape on the PSF.
 This makes it very useful for complex PSFs (like the case here).
 
-To continue, let's remove the temporary directory and re-run the script but with @option{--quiet} mode so we can put the output in a shell variable.
+To continue, let's remove the temporary directory and re-run the script but with @option{--quiet} mode so we can put the outputs in a shell variable.
 
 @example
 $ rm -r stack_psfmodelscalefactor
-$ scale=$(astscript-psf-scale-factor outer/stack.fits \
-                   --psf=inner/stack.fits --center=501,501 \
-                   --mode=img --normradii=10,15 --quiet)
-$ echo $scale
+$ values=$(astscript-psf-scale-factor outer/stack.fits \
+                    --psf=inner/stack.fits --center=501,501 \
+                    --mode=img --normradii=10,15 --quiet)
+
+$ scale=$(echo $values | awk '@{print $1@}')
+$ stdval=$(echo $values | awk '@{print $2@}')
+$ echo "$scale $stdval"
 @end example
 
 Now that we know the scaling factor, we are ready to unite the outer and the inner part of the PSF.
@@ -7027,9 +7031,11 @@ So let's choose a bad normalization radial range (50 to 60 pixels) and unite the
 The last command will open the two PSFs together in DS9, you should be able to immediately see the discontinuity in the union radius.
 
 @example
-$ scale=$(astscript-psf-scale-factor outer/stack.fits \
+$ values=$(astscript-psf-scale-factor outer/stack.fits \
                    --psf=inner/stack.fits --center=501,501 \
                    --mode=img --normradii=50,60 --quiet)
+
+$ scale=$(echo $values | awk '@{print $1@}')
 
 $ astscript-psf-unite outer/stack.fits \
            --inner=inner/stack.fits --radius=55 \
@@ -7092,15 +7098,18 @@ $ center=$(asttable flat/67510-bright.fits --sort phot_g_mean_mag \
 $ echo $center
 @end example
 
-With the center position of that star, let's obtain the flux factor using the same normalization ring we used for the creation of the outer part of the PSF:
+With the center position of that star, let's obtain the flux factor using the same normalization ring we used for the creation of the outer part of the PSF.
+Remember that two values are computed: the median and the standard deviation values, see @ref{Invoking astscript-psf-scale-factor}.
 
 @example
-$ scale=$(astscript-psf-scale-factor label/67510-seg.fits \
+$ values=$(astscript-psf-scale-factor label/67510-seg.fits \
                    --mode=wcs --quiet \
                    --psf=psf.fits \
                    --center=$center \
                    --normradii=10,15 \
                    --segment=label/67510-seg.fits)
+
+$ scale=$(echo $values | awk '@{print $1@}')
 @end example
 
 Now we have all the information necessary to model the star using the PSF: the position on the sky and the flux factor.
@@ -7150,12 +7159,14 @@ $ center=$(asttable flat/67510-bright.fits --sort phot_g_mean_mag \
                     --column=ra,dec --tail 1 \
                     | awk '@{printf "%s,%s", $1, $2@}')
 
-$ scale=$(astscript-psf-scale-factor label/67510-seg.fits \
+$ values=$(astscript-psf-scale-factor label/67510-seg.fits \
                    --mode=wcs --quiet \
                    --psf=psf.fits \
                    --center=$center \
                    --normradii=10,15 \
                    --segment=label/67510-seg.fits)
+
+$ scale=$(echo $values | awk '@{print $1@}')
 $ echo $scale
 
 $ astscript-psf-subtract label/67510-seg.fits \
@@ -7218,12 +7229,14 @@ asttable flat/67510-bright.fits -cra,dec --sort phot_g_mean_mag  \
     center=$(echo $ra $dec | awk '@{printf "%s,%s", $1, $2@}')
 
     # Calculate the scale value
-    scale=$(astscript-psf-scale-factor label/67510-seg.fits \
+    values=$(astscript-psf-scale-factor label/67510-seg.fits \
                    --mode=wcs --quiet\
                    --psf=psf.fits \
                    --center=$center \
                    --normradii=10,15 \
                    --segment=label/67510-seg.fits)
+
+    scale=$(echo $values | awk '@{print $1@}')
 
     # Subtract this star if the scale factor is less than the S/N
     # level calculated above.
@@ -15641,10 +15654,6 @@ Fortunately the FITS Binary table format also accepts ASCII strings as column ty
 So your dataset can also contain non-numerical columns.
 
 @end table
-
-@menu
-* Gnuastro text table format::  Reading plain text tables
-@end menu
 
 @node Gnuastro text table format, Selecting table columns, Recognized table formats, Tables
 @subsection Gnuastro text table format
@@ -36236,6 +36245,7 @@ This option is useful for debugging and checking the outputs of internal steps.
 @subsection Invoking astscript-psf-scale-factor
 This installed script will compute the multiplicative factor (scale) that is necessary to match the PSF to a given star.
 The match in flux is done within a ring of pixels.
+The standard deviation of that ring of pixels is also provided as an output.
 It can also be used to compute the scale factor to multiply the inner part of the PSF with the outer part during the creation of a PSF.
 A complete tutorial is available to show the operation of this script as a modular component to extract the PSF of a dataset: @ref{Building the extended PSF}.
 The executable name is @file{astscript-psf-scale-factor}, with the following general template:
@@ -36265,9 +36275,10 @@ $ asttable catalog.fits | while read -r ra dec mag; do \
 @end example
 
 The input should be an image containing the star that you want to match in flux with the PSF.
-The output will be a single number that is printed on the command-line.
-That number is the multiplicative factor to scale the PSF image (given to @option{--psf}) to match in flux with the given star (which is located in @option{--center} coordinate of the input image).
+The output will be two numbers that are printed on the command-line.
+The first number is the multiplicative factor to scale the PSF image (given to @option{--psf}) to match in flux with the given star (which is located in @option{--center} coordinate of the input image).
 The scale factor will be calculated within the ring of pixels specified by the option @option{--normradii}.
+The second number is the standard deviation value (sigma-clipped) of such a ring of pixels.
 
 All the pixels within this ring will be separated from both the PSF and input images.
 For the input image, around the selected coordinate; while masking all other sources (see @option{--segment}).
