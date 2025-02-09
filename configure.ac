@@ -36,13 +36,17 @@
 # Definitions:
 AC_PREREQ([2.69])
 AC_INIT([GNU Astronomy Utilities],
-         m4_esyscmd([bootstrapped/build-aux/git-version-gen    \
-                        .tarball-version --prefix "gnuastro_v"]),
-        [bug-gnuastro@gnu.org], [gnuastro],
+        [dummy-according-to-Propagating-the-package-version-in-Gnulib],
+        [bug-gnuastro@gnu.org],
+        [gnuastro],
         [http://www.gnu.org/software/gnuastro/])
-AC_CONFIG_AUX_DIR([bootstrapped/build-aux])
-AM_INIT_AUTOMAKE([-Wall subdir-objects gnu])
 AC_CONFIG_SRCDIR([lib/fits.c])
+AC_CONFIG_AUX_DIR([bootstrapped/build-aux])
+VERSION_NUMBER=`cd $srcdir \
+                && bootstrapped/build-aux/git-version-gen \
+                          .tarball-version --prefix "gnuastro_v"`
+gl_INIT_PACKAGE_VERSION([$VERSION_NUMBER])
+AM_INIT_AUTOMAKE([-Wall subdir-objects gnu])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIRS([bootstrapped/m4])
 
@@ -1193,6 +1197,7 @@ AC_SUBST(GUIDEMESSAGE, [$enable_guide_message])
 
 
 
+
 # Build the man page directory. Note that this is the cleanest and most
 # portable way of building this directory. We don't want to do it in any of
 # the Makefiles.
@@ -1202,7 +1207,14 @@ AC_CONFIG_COMMANDS([man page directory], [$MKDIR_P doc/man])
 
 
 
-# Prepare the Makefiles.
+# For the version stamp file ('.version').
+gl_CONFIG_VERSION_STAMP
+
+
+
+
+
+# Build the Makefiles.
 AC_OUTPUT
 
 
