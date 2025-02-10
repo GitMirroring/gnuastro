@@ -12112,28 +12112,77 @@ So the @file{./boostrap} script will run @LaTeX{} to build the figures.
 The best way to install @LaTeX{} and all the necessary packages is through @url{https://www.tug.org/texlive/, @TeX{} live} which is a package manager for @TeX{} related tools that is independent of any operating system.
 It is thus preferred to the @TeX{} Live versions distributed by your operating system.
 
-To install @TeX{} Live, go to the web page and download the appropriate installer by following the ``download'' link.
-Note that by default the full package repository will be downloaded and installed (around 4 Gigabytes) which can take @emph{very} long to download and to update later.
-However, most packages are not needed by everyone, it is easier, faster and better to install only the ``Basic scheme'' (consisting of only the most basic @TeX{} and @LaTeX{} packages, which is less than 200 Mega bytes)@footnote{You can also download the DVD iso file at a later time to keep as a backup for when you do not have internet connection if you need a package.}.
-
-After the installation, be sure to set the environment variables as suggested in the end of the outputs.
-Any time you confront (need) a package you do not have, simply install it with a command like below (similar to how you install software from your operating system's package manager)@footnote{After running @TeX{}, or @LaTeX{}, you might get a warning complaining about a @file{missingfile}.
-Run `@command{tlmgr info missingfile}' to see the package(s) containing that file which you can install.}.
-To install all the necessary @TeX{} packages for a successful Gnuastro bootstrap, run this command:
+To install @TeX{} Live, first download its installer, unpack it, enter the unpacked directoy (which includes the date it was generated!),
 
 @example
-$ sudo su
-# tlmgr install epsf jknapltx caption biblatex biber iftex \
-                etoolbox logreq xstring xkeyval pgf \
-                xcolor pgfplots times rsfs ps2eps epspdf
+$ baseurl=http://mirrors.rit.edu/CTAN/systems/texlive/tlnet
+$ wget $baseurl/install-tl-unx.tar.gz
+$ tar -xf install-tl-unx.tar.gz
+$ cd install-tl-20*
+$ ./install-tl
 @end example
 
-To check that you have a working @LaTeX{} executable in your system, you can try this command (this just checks if @LaTeX{} exists, as described above, if you have a missing package, you can easily identify it from the output and install it with @command{tlmgr}):
+The output of the last command above is an interactive shell that will allow you to customize the installation.
+There are two important parts which you need to edit:
+
+@table @asis
+@item Basic scheme
+Befault the full package repository will be downloaded and installed (around 9 Gigabytes!) which can take @emph{very} long to download and to update later.
+However, most packages are not needed by everyone!
+So it is easier, faster and better to install only the ``Basic scheme'' (consisting of only the most basic @TeX{} and @LaTeX{} packages, which is almost 300 Megabytes).
+To do this, from the top interactive installer environment press the following keys:
+@enumerate
+@item
+`@key{S}' to select the installation scheme.
+@item
+`@key{d}` to select the basic scheme.
+@item
+`@key{R}` to return to the main menu.
+@end enumerate
+
+@item Installation path
+By default, TeXLiv will try to install in a system-wide location which will require root permissions.
+A better solution is to install TeXLive in your user-accessible directories to avoid the need to become root when installing packages or updating.
+This also helps in using servers where you do not have root access at all. To install it in another directory take the following steps from the main menu:
+@enumerate
+@item
+`@key{D}` to enter the directory settings.
+@item
+`@key{1}` to select the ``main tree'' (base of all the other directories by default).
+@item
+You will be prompted to enter a new directory.
+
+To get the directory name, let's open a new/different terminal.
+Run the following commands to make and get the absolute location of the directory (no problem if the first command says that @file{$HOME/.local} already exists).
+If you already have a different place to host custom-built software, you can modify this step accordingly.
+@example
+$ mkdir $HOME/.local; mkdir $HOME/.local/texlive
+$ cd $HOME/.local/texlive
+$ pwd
+@end example
+Copy the result of the last command above, come back to the terminal with the TeXlive interactive installation and paste the directory there.
+Afterwards, you can close the temporary directory.
+@item
+`@key{R}' to return to the main menu.
+@end enumerate
+@end table
+
+After the customizations above are implemented simply press the `@key{I}' key to start the installation of TeXLive.
+After the installation finishes, be sure to set the environment variables as suggested in the end of the outputs.
+For more on how to insert the given directories for the given environment PATHs, see @ref{Installation directory}.
+
+After the installation and setup of the PATHs are complete, you need install all the necessary @TeX{} packages for a successful Gnuastro bootstrap.
+To do that, run the command below (in case it complains about not finding @code{tlmgr}, there is a problem in the PATHs above).
 
 @example
-$ latex --version
+$ tlmgr install epsf jknapltx caption biblatex biber \
+                logreq xstring xkeyval pgf xcolor \
+                pgfplots times rsfs ps2eps epspdf
 @end example
 
+Generally (outside of Gnuastro's development), any time you confront (need) a package you do not have@footnote{After running @TeX{}, or @LaTeX{}, you might get a warning complaining about a @file{missingfile}.
+Run `@command{tlmgr info missingfile}' to see the package(s) containing that file which you can install.}, simply install it with the @code{tlmgr} command above.
+It is very similar to how you install software from your operating system's package manager).
 
 @item ImageMagick (@command{imagemagick})
 @cindex ImageMagick
