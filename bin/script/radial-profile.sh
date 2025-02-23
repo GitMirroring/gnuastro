@@ -642,16 +642,31 @@ fi
 
 # Correct the central position (to cropped image)
 # -----------------------------------------------
-dxy=$(astfits $crop -h0 \
-          | grep ICF1PIX \
-          | sed -e"s/'/ /g" -e's/\:/ /g' -e's/,/ /' \
-          | awk '{print $3-1, $5-1}')
-xcenter=$(echo "$xcenter $cropwidth $dxy" \
-              | awk '{ if($1>int($2/2)) print $1-$3; \
-                       else             print int($2/2)+$1-int($1) }')
-ycenter=$(echo "$ycenter $cropwidth $dxy" \
-              | awk '{ if($1>int($2/2)) print $1-$4; \
-                       else             print int($2/2)+$1-int($1) }')
+#
+# After 'astcrop' above, the image is going to have an odd width and the
+# central pixel of the crop contains our desired central coordinate (which
+# can be a floating point). However, the FITS standard sets the center of a
+# pixel to be an integer, not its edge (as we would inherently assume!). So
+# for example the bottom-left corner of the bottom-left pixel in the image
+# has a coordinate of (0.5,0.5).
+#
+# When correcting the original center to the center of the crop this needs
+# to be taken into account: below, we show the original center with 'c',
+# and its non-integer part with 'f'. We will also show the cropped image's
+# central pixel (an integer) with 'cci'.  When 'f<=0.5', we can simply add
+# 'f' to 'cci'. But when 'f>0.5', we need to subtract one from 'cci', then
+# add the fractional value. In both cases the coordinate will fall in the
+# same pixel, this is just because of the FITS standard's definition!
+correct_center() {
+    astfits $crop -h1 --keyvalue=NAXIS$1 --quiet \
+              | awk '{c='$2'; ic=int(c); \
+                      f=c-ic; cci=int($1/2)+1; \
+                      if(f>0.5) cc=(cci-1)+f; \
+                      else      cc=cci+f; \
+                      print cc}'
+}
+xcenter=$(correct_center 1 $xcenter)
+ycenter=$(correct_center 2 $ycenter)
 
 
 
