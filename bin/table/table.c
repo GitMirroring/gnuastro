@@ -346,7 +346,8 @@ table_selection_equal_or_notequal(struct tableparams *p, gal_data_t *col,
           /* Read the stored string as a float64. */
           if( gal_type_from_string(&varr, strarr[i], GAL_TYPE_FLOAT64) )
             {
-              fprintf(stderr, "%s couldn't be read as a number.\n", strarr[i]);
+              fprintf(stderr, "%s couldn't be read as a number.\n",
+                      strarr[i]);
               exit(EXIT_FAILURE);
             }
 
@@ -427,12 +428,13 @@ table_select_by_value(struct tableparams *p)
       for(col=p->table;col!=NULL;col=col->next)
         if(tmp->col->dsize[0]!=col->dsize[0])
           error(EXIT_FAILURE, 0, "the number of rows in the column given "
-                "for selection by value (for example '--range' or '--equal') "
-                "is not the same as the number of rows in the table when "
-                "they are applied. This may happen due to operators like "
-                "'--transpose'. In such cases, you probably want row-based "
-                "operators to have precedence over column-based operators. "
-                "If this is your case, please call '--rowfirst'");
+                "for selection by value (for example '--range' or "
+                "'--equal') is not the same as the number of rows in the "
+                "table when they are applied. This may happen due to "
+                "operators like '--transpose'. In such cases, you "
+                "probably want row-based operators to have precedence "
+                "over column-based operators. If this is your case, "
+                "please call '--rowfirst'");
 
       /* Do the specific type of selection. */
       switch(tmp->type)
@@ -445,7 +447,7 @@ table_select_by_value(struct tableparams *p)
         case SELECT_TYPE_INPOLYGON:
         case SELECT_TYPE_OUTPOLYGON:
           addmask=table_selection_polygon(p, tmp->col, tmp->next->col,
-                                          tmp->type==SELECT_TYPE_INPOLYGON);
+                                      tmp->type==SELECT_TYPE_INPOLYGON);
           tmp=tmp->next;
           break;
 

@@ -245,15 +245,15 @@ ui_check_only_options(struct tableparams *p)
       {
         /* Range needs two input numbers. */
         if(tmp->size!=2)
-          error(EXIT_FAILURE, 0, "two values (separated by ':' or ',') are "
-                "necessary for '--range' in this format: "
+          error(EXIT_FAILURE, 0, "two values (separated by ':' or ',') "
+                "are necessary for '--range' in this format: "
                 "'--range=COLUMN,min:max'");
 
         /* The first must be smaller than the second. */
         darr=tmp->array;
         if( darr[0] > darr[1] )
-          error(EXIT_FAILURE, 0, "first value (%g) given to '--range' must "
-                "be smaller than the second (%g)", darr[0], darr[1]);
+          error(EXIT_FAILURE, 0, "first value (%g) given to '--range' "
+                "must be smaller than the second (%g)", darr[0], darr[1]);
       }
 
   /* Basic checks for '--inpolygon' or '--outpolygon'. */
@@ -322,10 +322,10 @@ ui_check_only_options(struct tableparams *p)
       if( darr[0] > darr[1] )
         error(EXIT_FAILURE, 0, "the first value to '--rowrange' (%g) is "
               "larger than the second (%g). This option's values defines "
-              "a row-counter interval, assuming the first value is the top "
-              "of the desired interval (smaller row counter) and the "
-              "second value is the bottom of the desired interval (larger "
-              "row counter)", darr[0], darr[1]);
+              "a row-counter interval, assuming the first value is the "
+              "top of the desired interval (smaller row counter) and the "
+              "second value is the bottom of the desired interval "
+              "(larger row counter)", darr[0], darr[1]);
     }
 
   /* If '--colmetadata' is given, make sure none of the given options have
@@ -333,9 +333,10 @@ ui_check_only_options(struct tableparams *p)
   if(p->colmetadata)
     for(tmp=p->colmetadata;tmp!=NULL;tmp=tmp->next)
       if(tmp->size>3)
-        error(EXIT_FAILURE, 0, "at most three values can be given to each "
-              "call of '--colmetadata' ('-m') after the original columns "
-              "name or number. But %zu strings have been given", tmp->size);
+        error(EXIT_FAILURE, 0, "at most three values can be given to "
+              "each call of '--colmetadata' ('-m') after the original "
+              "columns name or number. But %zu strings have been given",
+              tmp->size);
 
   /* If '--catcolumns' is given (to only concatenate certain columns), but
      no file has been given for appending from (to '--catcolumnfile'), then
@@ -388,11 +389,11 @@ ui_check_options_and_arguments(struct tableparams *p)
   if(p->filename)
     {
       if( gal_fits_file_recognized(p->filename) && p->cp.hdu==NULL )
-        error(EXIT_FAILURE, 0, "no HDU specified. When the input is a FITS "
-              "file, a HDU must also be specified, you can use the '--hdu' "
-              "('-h') option and give it the HDU number (starting from "
-              "zero), extension name, or anything acceptable by CFITSIO");
-
+        error(EXIT_FAILURE, 0, "no HDU specified. When the input is a "
+              "FITS file, a HDU must also be specified, you can use the "
+              "'--hdu' ('-h') option and give it the HDU number "
+              "(starting from zero), extension name, or anything "
+              "acceptable by CFITSIO");
     }
 }
 
@@ -545,8 +546,8 @@ ui_colpack_add_new_to_end(struct column_pack **list)
   errno=0;
   node=malloc(sizeof *node);
   if(node==NULL)
-    error(EXIT_FAILURE, errno, "%s: couldn't allocate new node (%zu bytes)",
-          __func__, sizeof *node);
+    error(EXIT_FAILURE, errno, "%s: couldn't allocate new node (%zu "
+          "bytes)", __func__, sizeof *node);
 
   /* Initialize its elements. */
   node->next=NULL;
@@ -739,7 +740,7 @@ ui_columns_prepare(struct tableparams *p, gal_list_str_t *lines)
   struct column_pack *node, *last;
   gal_list_str_t *tmp, *colstoread=NULL;
   size_t i, totcalled=0, numcols, numrows, numsimple;
-  char *c, *str, countstr[11]; /* an un-signed 32-bit integer takes 10 chars */
+  char *c, *str, countstr[11]; /* un-signed 32-bit int takes 10 chars */
 
   /* Go over the list of requested columns from the main input. */
   for(tmp=p->columns;tmp!=NULL;tmp=tmp->next)
@@ -782,8 +783,8 @@ ui_columns_prepare(struct tableparams *p, gal_list_str_t *lines)
               if(numcols>999)
                 error(EXIT_FAILURE, 0, "the '$_all' feature is currently "
                       "only implemented for tables with fewer than 999 "
-                      "columns. Please contact us at %s to add more columns",
-                      PACKAGE_BUGREPORT);
+                      "columns. Please contact us at %s to add more "
+                      "columns", PACKAGE_BUGREPORT);
 
               /* Repeat the arithmetic command for each column. */
               for(i=1;i<=numcols;++i)
@@ -791,8 +792,8 @@ ui_columns_prepare(struct tableparams *p, gal_list_str_t *lines)
                   gal_checkset_allocate_copy(str, &tstr);
                   sprintf(tstr+arithallind+1, "%-3zu", i);
                   tstr[arithallind+4]=' ';
-                  ui_columns_prepare_arith(p, colinfo, &colstoread, &totcalled,
-                                           numcols, tstr);
+                  ui_columns_prepare_arith(p, colinfo, &colstoread,
+                                           &totcalled, numcols, tstr);
                   free(tstr);
                 }
             }
@@ -870,7 +871,8 @@ ui_columns_prepare(struct tableparams *p, gal_list_str_t *lines)
                   {
                     printf("\tOperator: %d\n", atmp->operator);
                     if(atmp->name_def)
-                      printf("\t\t(Name definition: %s)\n", atmp->name_def);
+                      printf("\t\t(Name definition: %s)\n",
+                             atmp->name_def);
                   }
                 else if(atmp->constant) printf("\tConstant number\n");
                 else if(atmp->name_use) printf("\tName usage: %s\n",
@@ -1095,10 +1097,10 @@ ui_check_select_sort_before(struct tableparams *p, gal_list_str_t *lines,
     for(i=0;i<*nselect;++i)
       if(selectind[i]!=GAL_BLANK_SIZE_T && selectind[i]>=numcols)
         error(EXIT_FAILURE, 0, "%s has %zu columns, less than the column "
-              "number given to  '--range', '--inpolygon', '--outpolygon', "
-              "'--equal', or '--sort' (%zu)",
-              gal_fits_name_save_as_string(p->filename, p->cp.hdu), numcols,
-              selectind[i]);
+              "number given to  '--range', '--inpolygon', "
+              "'--outpolygon', '--equal', or '--sort' (%zu)",
+              gal_fits_name_save_as_string(p->filename, p->cp.hdu),
+              numcols, selectind[i]);
 
 
   /* If any of the columns isn't specified by an index, go over the table

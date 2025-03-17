@@ -165,6 +165,11 @@ See the end of the file for license conditions.
   - bug #66693: MakeProfile crashes with segmentation fault with when
     --customimg is given and the oversampling factor is larger than 1.
 
+  - bug #66867: Example added in book to show how to remove outputs of
+    Query's '--overlapwith' option when sources outside of the image are
+    also retrieved (for example due to a rotated image or the server not
+    accounting for spherical distortion). Reported by Raul Infante-Sainz.
+
   - bug #66869: Crop segmentation fault leading to unpredictable return
     values. Reported by Raul Infante-Sainz.
 

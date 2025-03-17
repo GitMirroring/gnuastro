@@ -20339,8 +20339,34 @@ Based on the image's WCS and pixel size, the sky coverage of the image is estima
 Hence this option cannot be used with @code{--center}, @code{--width} or @code{--radius}.
 Also, since it internally generates the query, it cannot be used with @code{--query}.
 
+If the image is rotated in relation to RA/DEC, or the image has a large coverage on the sky, or it has WCS distortions (that the server can't know about), the retrieved catalog may not overlap with the image, or correspond to a larger area in the sky.
+To be sure that the final catalog you use actually has sources within the image, use the commands below (the last two commands are just for validation).
+
+@example
+$ astquery gaia --dataset=dr3 --overlapwith=image.fits \
+           -cra,dec --output=gaia.fits
+
+$ astcrop image.fits --catalog=gaia.fits --coordcol=ra \
+          --coordcol=dec --mode=wcs --width=1 \
+          --widthinpix --log --oneelemstdout --quiet \
+          --output=crop-log.fits > /dev/null
+
+$ asttable gaia.fits --catcolumnfile=crop-log.fits \
+           --catcolumns=NUM_INPUTS -O \
+           | asttable --equal=NUM_INPUTS,1 \
+                      --output=gaia-in-image.fits
+
+$ astscript-ds9-region gaia-in-image.fits -cra,dec \
+                       --radius=5 --width=5 \
+                       --output=stars-in.reg
+
+$ astscript-fits-view image.fits --region=stars-in.reg
+@end example
+
 Note that if the image has WCS distortions and the reference point for the WCS is not within the image, the WCS will not be well-defined.
 Therefore the resulting catalog may not overlap, or correspond to a larger/small area in the sky.
+
+
 
 @item -C FLT,FLT
 @itemx --center=FLT,FLT
