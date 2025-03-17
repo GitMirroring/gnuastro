@@ -112,10 +112,23 @@ See the end of the file for license conditions.
   --cite: also prints the citation for the Gnuastro book/manual (using the
     Zenodo DOI for that release).
 
+*** Crop
+
+  - The log-file name (created when run with '--log') is based on the
+    output file name (see the description of '--log' under the Crop program
+    for the details) and is a FITS table with a suffix '-log.fits'. Until
+    now, the log file was always called 'astcrop.log' and it was created in
+    the running directory. This would cause problems for parallel
+    executions. Also, it was a plain-text file which is less efficient:
+    slower to read and write and would be larger for longer catalog inputs.
+
 *** Library
 
   - gal_match_kdtree: a new 'arrange' argument has been added to define the
     arrangement of the output.
+
+  - gal_table_write_log: a new 'format' argument is added to allow setting
+    the format of the table (until now, it was always plain-text).
 
 ** Bugs fixed
 
@@ -151,6 +164,9 @@ See the end of the file for license conditions.
 
   - bug #66693: MakeProfile crashes with segmentation fault with when
     --customimg is given and the oversampling factor is larger than 1.
+
+  - bug #66869: Crop segmentation fault leading to unpredictable return
+    values. Reported by Raul Infante-Sainz.
 
 
 

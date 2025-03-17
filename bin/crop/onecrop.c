@@ -387,6 +387,15 @@ onecrop_name(struct onecropparams *crp)
   struct cropparams *p=crp->p;
   struct gal_options_common_params *cp=&p->cp;
 
+  /* If '--oneelemstdout' was called, then no actual file is created, we
+     just need to the row number.*/
+  if(p->oneelemstdout)
+    {
+      if( asprintf(&crp->name, "%zu", crp->out_ind)<0 )
+        error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
+      return;
+    }
+
   /* Set the output name and crop sides: */
   if(p->catname)
     {
@@ -728,6 +737,7 @@ onecrop(struct onecropparams *crp)
       /* Make the output FITS image and initialize it with an array of NaN
          or BLANK values. But only when '--oneelemstdout' isn't called and
          the output is single-element. */
+      crp->outfits=NULL;
       crp->outinstdout=0;
       if(crp->outfits==NULL && !( p->oneelemstdout && hasoneelem) )
         onecrop_make_array(crp, fpixel_i, lpixel_i, fpixel_o, lpixel_o);

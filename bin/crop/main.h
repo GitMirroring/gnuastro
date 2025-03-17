@@ -38,7 +38,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 
 /* Macros */
-#define LOGFILENAME             PROGRAM_EXEC".log"
+#define DEFAULTOUTPUT           "./"
 #define FILENAME_BUFFER_IN_VERB 30
 #define MAXDIM                  3
 

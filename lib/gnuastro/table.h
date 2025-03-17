@@ -178,7 +178,7 @@ gal_table_write(gal_data_t *cols, struct gal_fits_list_key_t *keylist,
 void
 gal_table_write_log(gal_data_t *logll, char *program_string,
                     time_t *rawtime, gal_list_str_t *comments,
-                    char *filename, int quiet);
+                    char *filename, int quiet, int format);
 
 
 

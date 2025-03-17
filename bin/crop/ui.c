@@ -464,10 +464,9 @@ ui_check_options_and_arguments(struct cropparams *p)
 
   /* If no output name is given, set it to the current directory. */
   if(p->cp.output==NULL)
-    gal_checkset_allocate_copy("./", &p->cp.output);
+    gal_checkset_allocate_copy(DEFAULTOUTPUT, &p->cp.output);
 
-  /* Only catalog mode needs multiple threads and a directory for the
-     output. */
+  /* Catalog mode needs multiple threads and a directory for the output. */
   if(p->catname)
     {
       /* When multiple threads need to access a file, CFITSIO needs to be
@@ -499,8 +498,10 @@ ui_check_options_and_arguments(struct cropparams *p)
         }
 #endif
 
-      /* Make sure the given output is a directory. */
-      gal_checkset_check_dir_write_add_slash(&p->cp.output);
+      /* Make sure the given output is a directory; but only when
+         '--oneelemstdout' has not been given. */
+      if(p->oneelemstdout==0)
+        gal_checkset_check_dir_write_add_slash(&p->cp.output);
     }
   else
     {

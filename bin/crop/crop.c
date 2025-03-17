@@ -129,10 +129,13 @@ crop_verbose_final(struct cropparams *p)
           }
 
       /* Print the basic information. */
-      if( asprintf(&msg, "%zu crops created.", numcrops)<0 )
-        error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
-      gal_timing_report(NULL, msg, 1);
-      free(msg);
+      if(p->oneelemstdout==0)
+        {
+          if( asprintf(&msg, "%zu crops created.", numcrops)<0 )
+            error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
+          gal_timing_report(NULL, msg, 1);
+          free(msg);
+        }
 
       /* Only if the user wanted to check the center. */
       if(p->checkcenter)
@@ -224,39 +227,49 @@ crop_mode_img(void *inparam)
       crp->numimg=1;   /* In Image mode there is only one input image. */
       onecrop_name(crp);
 
-      /* Crop the image. */
-      onecrop(crp);
-
-      /* If there was no overlap, then no FITS pointer is created, so
-         'numimg' should be set to zero. */
-      if(crp->outfits==NULL) crp->numimg=0;
-
-      /* Check the final output: */
-      if(crp->numimg)
+      /* If there was overlap 'onecrop' will return a non-zero value. */
+      if( onecrop(crp) )
         {
-          /* Check if the center of the crop is filled or not. */
-          crp->centerfilled=onecrop_center_filled(crp);
+          /* The desired output was made (either printed on 'stdout' or as
+             a FITS file), we can set this output's flag as 1. */
+          p->outmade[crp->out_ind]=1;
 
-          /* Close output FITS image. */
-          status=0;
-          if( fits_close_file(crp->outfits, &status) )
-            gal_fits_io_error(status, "CFITSIO could not close "
-                              "the opened file");
-
-          /* Remove the output image if its center was not filled. */
-          if(crp->centerfilled==0)
+          /* If a FITS image was made, we need to check the central
+             value. */
+          if(crp->outfits)
             {
-              errno=0;
-              if(unlink(crp->name))
-                error(EXIT_FAILURE, errno, "can't delete %s (center"
-                      "was blank)", crp->name);
+              /* Check if the center of the crop is filled or not. */
+              crp->centerfilled=onecrop_center_filled(crp);
+
+              /* Close output FITS image. */
+              status=0;
+              if( fits_close_file(crp->outfits, &status) )
+                gal_fits_io_error(status, "CFITSIO could not close "
+                                  "the opened file");
+
+              /* Remove the output image if its center was not filled. */
+              if(crp->centerfilled==0)
+                {
+                  errno=0;
+                  if(unlink(crp->name))
+                    error(EXIT_FAILURE, errno, "can't delete %s (center"
+                          "was blank)", crp->name);
+                  p->outmade[crp->out_ind]=0;
+                }
             }
 
+          /* The output was written to standard output: we don't have a
+             center checking problem! */
+          else crp->centerfilled=1;
         }
-      else crp->centerfilled=0;
+      else
+        {
+          crp->numimg=0;
+          crp->centerfilled=0;
+          p->outmade[crp->out_ind]=0;
+        }
 
       /* Status update (for return value and standard output or log).*/
-      p->outmade[crp->out_ind] = crp->outfits || crp->outinstdout;
       if(!p->cp.quiet) crop_verbose_info(crp);
       if(p->cp.log)    crop_write_to_log(crp);
     }
@@ -378,6 +391,65 @@ crop_mode_wcs(void *inparam)
 
 
 
+void
+crop_log(struct cropparams *p)
+{
+  gal_list_str_t *comments=NULL;
+  char *tmp, *lname, *out=p->cp.output;
+  char *suffix = p->oneelemstdout ? ".fits" : "-log.fits";
+
+  /* Add a sentence on the size of the central region check. */
+  if(p->checkcenter)
+    {
+      if( asprintf(&tmp, "Width of central check box (in pixels): %zu",
+                   p->checkcenter)<0 )
+        error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
+      gal_list_str_add(&comments, tmp, 0);
+    }
+
+  /* Set the name of log file: if the output name is the default string, it
+     means that the user didn't give an output name, so we'll just use
+     'astcrop.log'. */
+  if( !strcmp(out, DEFAULTOUTPUT) )
+    gal_checkset_allocate_copy("astcrop-log.fits", &lname);
+
+  /* An output name was given. */
+  else
+    {
+      /* If the last character of 'output' is '/' (a directory), then
+         remove it to build the log name. */
+      if( out[strlen(out)-1]=='/' )
+        {
+          gal_checkset_allocate_copy(out, &tmp);
+          tmp[strlen(tmp)-1]='\0';
+          lname=gal_checkset_malloc_cat(tmp, suffix);
+          free(tmp);
+        }
+
+      /* The given output is a file (not directory) name. But if we are in
+         '--oneelemstdout' mode, then just use the given name. */
+      else
+        lname = ( p->oneelemstdout
+                  ? p->cp.output
+                  : gal_checkset_automatic_output(&p->cp, p->cp.output,
+                                                  suffix) );
+    }
+
+  /* Make sure the log file is writable. */
+  gal_checkset_writable_remove(lname, NULL, 0, p->cp.dontdelete);
+
+  /* Write the log file and inform the user. */
+  gal_table_write_log(p->log, PROGRAM_STRING, &p->rawtime, comments,
+                      lname, p->cp.quiet, GAL_TABLE_FORMAT_BFITS);
+
+  /* Clean up. */
+  if(lname!=p->cp.output) free(lname);
+  gal_list_str_free(comments, 1);
+}
+
+
+
+
 
 
 
@@ -403,7 +475,6 @@ crop_mode_wcs(void *inparam)
 int
 crop(struct cropparams *p)
 {
-  char *tmp;
   pthread_t t; /* We don't use the thread id, so all are saved here. */
   char *mmapname;
   int err=0, out;
@@ -411,7 +482,6 @@ crop(struct cropparams *p)
   pthread_barrier_t b;
   struct onecropparams *crp;
   size_t i, *indexs, thrdcols;
-  gal_list_str_t *comments=NULL;
   size_t nt=p->cp.numthreads, nb;
   void *(*modefunction)(void *)=NULL;
 
@@ -429,7 +499,7 @@ crop(struct cropparams *p)
   if(crp==NULL)
     error(EXIT_FAILURE, errno, "%s: allocating %zu bytes for 'crp'",
           __func__, nt*sizeof *crp);
-  p->outmade=gal_pointer_allocate(GAL_TYPE_UINT8, p->numin, 1, __func__,
+  p->outmade=gal_pointer_allocate(GAL_TYPE_UINT8, p->numout, 1, __func__,
                                   "p->outmade");
 
 
@@ -478,27 +548,15 @@ crop(struct cropparams *p)
     }
 
 
-  /* Print the log file. */
-  if(p->cp.log)
-    {
-      if(p->checkcenter)
-        {
-          if( asprintf(&tmp, "Width of central check box (in pixels): %zu",
-                       p->checkcenter)<0 )
-            error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
-          gal_list_str_add(&comments, tmp, 0);
-        }
-      gal_checkset_writable_remove(LOGFILENAME, NULL, 0, p->cp.dontdelete);
-      gal_table_write_log(p->log, PROGRAM_STRING, &p->rawtime, comments,
-                          LOGFILENAME, p->cp.quiet);
-      gal_list_str_free(comments, 1);
-    }
+  /* Build the log file. */
+  if(p->cp.log) crop_log(p);
 
 
-  /* Prepare the return value: if any outputs were made, return
-     EXIT_SUCCESS, otherwise, return EXIT_FAILURE. */
+  /* Prepare the return value: if even one of the outputs has been
+     successfully done (as a FITS file or to stdout), return EXIT_SUCCESS,
+     otherwise, return EXIT_FAILURE. */
   out=EXIT_FAILURE;
-  for(i=0;i<p->numin;++i) if(p->outmade[i]) { out=EXIT_SUCCESS; break; }
+  for(i=0;i<p->numout;++i) if(p->outmade[i]) { out=EXIT_SUCCESS; break; }
 
 
   /* Print the final verbose info, save log, and clean up: */

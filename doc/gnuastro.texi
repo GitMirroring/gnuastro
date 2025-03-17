@@ -21029,7 +21029,7 @@ In other words, the file in the first column will not actually be created, but t
 Square box width of region in the center of the image to check for blank values.
 If any of the pixels in this central region of a crop (defined by its center) are blank, then it will not be stored in an output file.
 If the value to this option is zero, no checking is done.
-This check is only applied when the cropped region(s) are defined by their center (not by the vertices, see @ref{Crop modes}).
+This check is only applied when the cropped region(s) are defined by their center (not by the vertices, see @ref{Crop modes}) and when FITS files are made (@option{--oneelemstdout} is not called).
 
 The units of the value are interpreted based on the @option{--mode} value (in WCS or pixel units).
 The ultimate checked region size (in pixels) will be an odd integer around the center (converted from WCS, or when an even number of pixels are given to this option).
@@ -21053,6 +21053,21 @@ This option only applies only in Image mode, see @ref{Crop modes}.
 In float or double images, it is common to give the value of zero to blank pixels.
 If the input image type is one of these two types, such pixels will also be considered as blank.
 You can disable this behavior with this option, see @ref{Blank pixels}.
+
+@item --log
+Generate a log file that contains the status of each of each crop in three columns: the name of the crop, if its center overlapped with the input(s) and if the central pixels were blank or not.
+The name of the log file will be based on the output file name:
+@itemize
+@item
+If no output file name is given, it will be @file{astcrop-log.fits}.
+@item
+If there is only a single crop and the output is a FITS image, the log file will have the same base name as the output crop, but with a @file{-log.fits} suffix.
+In case @option{--oneelemstdout} is called with a single-pixel width then no output file will be created, so the log-file's name will be the string given to @option{--output}.
+@item
+If the output is a directory name (when a catalog is given), the log file name will be the directory name along with a @file{-log.fits} suffix.
+In case @option{--oneelemstdout} is called with a single-pixel width then no output file will be created, so the log-file's name will be the string given to @option{--output}.
+@end itemize
+
 @end table
 
 
@@ -40286,9 +40301,10 @@ When printing to the standard output, the column information can be piped into a
 In such cases, you only print the column values by passing @code{0} to @code{colinfoinstdout}.
 @end deftypefun
 
-@deftypefun void gal_table_write_log (gal_data_t @code{*logll}, char @code{*program_string}, time_t @code{*rawtime}, gal_list_str_t @code{*comments}, char @code{*filename}, int @code{quiet})
+@deftypefun void gal_table_write_log (gal_data_t @code{*logll}, char @code{*program_string}, time_t @code{*rawtime}, gal_list_str_t @code{*comments}, char @code{*filename}, int @code{quiet}, int @code{format})
 Write the @code{logll} list of datasets into a table in @code{filename} (see @ref{List of gal_data_t}).
 This function is just a wrapper around @code{gal_table_comments_add_intro} and @code{gal_table_write} (see above).
+The @code{format} should be one of the @code{GAL_TABLE_FORMAT_*} macros above.
 If @code{quiet} is non-zero, this function will print a message saying that the @code{filename} has been created.
 @end deftypefun
 
