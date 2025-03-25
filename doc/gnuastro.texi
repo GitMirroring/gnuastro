@@ -20339,12 +20339,15 @@ Based on the image's WCS and pixel size, the sky coverage of the image is estima
 Hence this option cannot be used with @code{--center}, @code{--width} or @code{--radius}.
 Also, since it internally generates the query, it cannot be used with @code{--query}.
 
-If the image is rotated in relation to RA/DEC, or the image has a large coverage on the sky, or it has WCS distortions (that the server can't know about), the retrieved catalog may not overlap with the image, or correspond to a larger area in the sky.
-To be sure that the final catalog you use actually has sources within the image, use the commands below (the last two commands are just for validation).
+If the image is rotated in relation to RA/DEC, or the image has a large coverage on the sky, or it has WCS distortions (that the server can't know about), the retrieved catalog may not fully overlap with the image (correspond to a larger area in the sky).
+To be sure that the final catalog you use actually has sources within the image, use the commands below.
+Two points to have in mind in the example below: 1) use the @code{cols} variable to specify the names of the columns you want (this is necessary since this list of column names is necessary in two places of the commands below). 2) The last two commands are just for visual validation, they are not necessary in a script.
 
 @example
+$ cols=source_id,ra,dec,phot_g_mean_mag
+
 $ astquery gaia --dataset=dr3 --overlapwith=image.fits \
-           -cra,dec --output=gaia.fits
+           --column=$cols --output=gaia.fits
 
 $ astcrop image.fits --catalog=gaia.fits --coordcol=ra \
           --coordcol=dec --mode=wcs --width=1 \
@@ -20354,9 +20357,10 @@ $ astcrop image.fits --catalog=gaia.fits --coordcol=ra \
 $ asttable gaia.fits --catcolumnfile=crop-log.fits \
            --catcolumns=NUM_INPUTS -O \
            | asttable --equal=NUM_INPUTS,1 \
+                      --column=$cols \
                       --output=gaia-in-image.fits
 
-$ astscript-ds9-region gaia-in-image.fits -cra,dec \
+$ astscript-ds9-region gaia-in-image.fits --column=ra,dec \
                        --radius=5 --width=5 \
                        --output=stars-in.reg
 
