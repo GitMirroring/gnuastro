@@ -530,19 +530,17 @@ fi
 # Crop the original image around the object
 # -----------------------------------------
 #
-# Crop the object around its center with the given stamp size width.
+# Crop the object around its center with the given stamp size width.  If
+# Crop creates the output file, then continue. Otherwise, if the cropped
+# image is not created, we set the nan values manually to allow the
+# execution of this script within large pipelines without crashing.
 cropped=$tmpdir/cropped-$objectid.fits
-astcrop $inputs --hdu=$hdu --mode=img \
-        --center=$xcenter,$ycenter \
-        --width=$xwidthinpix,$ywidthinpix\
-        --output=$cropped $quiet
+if ! astcrop $inputs --hdu=$hdu  \
+           --center=$xcenter,$ycenter \
+           --width=$xwidthinpix,$ywidthinpix \
+           --mode=img --output=$cropped $quiet; then
 
-# If the cropped image is not generated, it may happen that it does not
-# overlap with the input image. Save a nan value as the output and
-# continue.
-if ! [ -f $cropped ]; then
-
-    multifactor=nan
+    multifactor="nan nan"
 
     # Let the user know what happened.
     if [ x"$quiet" = x ]; then all_nan_warning; fi
@@ -558,8 +556,8 @@ if ! [ -f $cropped ]; then
         rm -r $tmpdir
     fi
 
+    # Return successfully and continue
     exit 0
-
 fi
 
 

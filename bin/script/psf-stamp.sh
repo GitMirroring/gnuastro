@@ -585,18 +585,18 @@ fi
 # Crop the object around its center with the given stamp size width. It may
 # happen that the given coordinate is fully outside of the image (within
 # the requested stamp-width). In this case Crop won't generate any output,
-# so we are checking the existance of the '$cropped' file. If not created
-# we will create a fully NaN-valued image that can be ignored in stacks.
+# in this case we will create a fully NaN-valued image that can be ignored
+# in stacks within large pipelines that should not stop in this situations.
 #
 # We are setting '--checkcenter=0' in Crop so it doesn't check if the
 # central pixel is covered or not (we may be interested in the outer parts
 # of the PSF of a star that is centered outside of the image).
 cropped=$tmpdir/cropped.fits
-astcrop $inputs --hdu=$hdu --mode=img --checkcenter=0 \
-        --width=$xwidthinpix,$ywidthinpix \
-        --center=$xcenter,$ycenter \
-        --output=$cropped $quiet
-if ! [ -f $cropped ]; then
+if ! astcrop $inputs --hdu=$hdu \
+             --mode=img \
+             --center=$xcenter,$ycenter \
+             --width=$xwidthinpix,$ywidthinpix \
+             --checkcenter=0 --output=$cropped $quiet; then
 
     # 'makenew' will generate a fully 0-valued image. Adding (with '+') any
     # number by NaN will be NaN. Therefore the output of the Arithmetic
@@ -610,7 +610,13 @@ if ! [ -f $cropped ]; then
     # Let the user know what happened.
     if [ x"$quiet" = x ]; then all_nan_warning; fi
 
-    # Return successfully and don't continue
+    # If the user does not specify to keep the temporal files with the option
+    # `--keeptmp', then remove the whole directory.
+    if [ $keeptmp = 0 ]; then
+        rm -r $tmpdir
+    fi
+
+    # Return successfully and continue
     exit 0
 fi
 
