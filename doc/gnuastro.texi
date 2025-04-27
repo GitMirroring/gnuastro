@@ -10915,11 +10915,6 @@ Scroll your mouse or touchpad to zoom into the image.
 
 @noindent
 You clearly see that the stacked image is deeper and that there is no Moir@'e pattern, while you have slightly @emph{improved} the spatial resolution of the output compared to the input.
-In case you want the stack to have the original pixel resolution, you just need one more warp:
-
-@example
-$ astwarp jplus-stack.fits --cdelt=$cdelt -ojplus-stack-origres.fits
-@end example
 
 For optimal results, the oversampling should be determined by the dithering pattern of the observation:
 For example if you only have two dither points, you want the pixels with maximum value in the @code{MAX-FRAC} image of one exposure to fall on those with a minimum value in the other exposure.
