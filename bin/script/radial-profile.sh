@@ -57,10 +57,10 @@ zeropoint=""
 sigmaclip=""
 measuretmp=""
 oversample=""
-undersample=""
 positionangle=0
 zeroisnotblank=""
 version=@VERSION@
+undersample=1.000000
 scriptname=@SCRIPT_NAME@
 
 
@@ -904,21 +904,28 @@ fi
 # number of pixels on each aperture (at each radius) will be larger. Most
 # of times this option is good to average over a larger number of pixels
 # and increase the signal-to-noise ratio of the measurement.
+#
+# Undersampling by 1 means doing nothing. However, it may happen that the
+# user provide this value as a result of automatic pipelines where this
+# value is considered. Here, a check to ensure that undersample is
+# different from 1.000000 is performed. This ensures the non-trivial
+# undersampling.
 aperturesbase=apertures.fits
 apertures=$tmpdir/$aperturesbase
-if [ x"$undersample" != x ]; then
+undersample_precision=$(printf "%.6f\n" $undersample)
+if [ x"$undersample_precision" != x"1.000000" ]; then
 
     # Divide by the undersampling factor (multiplied by the precision
     # factor: multiple of 10).
-    astarithmetic $aperturesraw $undersample $precfactor  x / \
-                  $quiet int16 --output $apertures.fits
+    astarithmetic $aperturesraw $undersample $precfactor x / \
+                  $quiet int16 --output=$apertures.fits
 
     # The integer division above will re-create the 0-valued hole in the
     # center! So we need to fill it like above.
     astarithmetic $apertures.fits set-i \
                   i 0 ne 1 fill-holes set-good \
                   i good i 1 + where \
-                  $quiet --output $apertures
+                  $quiet --output=$apertures
 else
     cd $tmpdir; ln -fs $aperturesrawbase $aperturesbase; cd $curdir
 fi

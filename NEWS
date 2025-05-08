@@ -173,6 +173,10 @@ See the end of the file for license conditions.
   - bug #66869: Crop segmentation fault leading to unpredictable return
     values. Reported by Raul Infante-Sainz.
 
+  - bug #67105: astscript-radial-profile produced unreasonable output when
+    undersample was given as one. Reported by Samane Raji and fixed by Raul
+    Infante-Sainz.
+
   - bug #67106: Crash during build when Ghostscript is not
     present. Reported by Faezeh Bidjarchian.
 
