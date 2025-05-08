@@ -104,7 +104,6 @@ gal_pdf_write(gal_data_t *in, char *filename, float widthincm,
               uint32_t borderwidth, uint8_t bordercolor,
               int dontoptimize, gal_data_t *marks)
 {
-  int execstat=0;
   size_t w_h_in_pt[2];
   gal_list_str_t *command=NULL;
   char *device, *devwp, *devhp, *devopt;
@@ -133,31 +132,45 @@ gal_pdf_write(gal_data_t *in, char *filename, float widthincm,
 
   /* Run Ghostscript (if the command changes, also change the command in
      the error message).  */
-  gal_list_str_add(&command, PATH_GHOSTSCRIPT, 0);
-  gal_list_str_add(&command, "-q", 0);
-  gal_list_str_add(&command, "-o", 0);
-  gal_list_str_add(&command, filename, 0);
-  gal_list_str_add(&command, devopt, 0);
-  gal_list_str_add(&command, devwp, 0);
-  gal_list_str_add(&command, devhp, 0);
-  gal_list_str_add(&command, "-dPDFFitPage", 0);
-  gal_list_str_add(&command, epsname, 0);
-  gal_list_str_reverse(&command);
-  execstat=gal_checkset_exec(PATH_GHOSTSCRIPT, command);
-  if(execstat)
-    error(EXIT_FAILURE, 0, "the Ghostscript command (printed at the "
-          "end of this message) to convert/compile the EPS file (made "
-          "by Gnuastro) to PDF was not successful (Ghostscript returned "
-          "with status %d; its error message is shown above)! The EPS "
-          "file ('%s') is left if you want to convert it through any "
-          "other means (for example the 'epspdf' program). The "
-          "Ghostscript command was: %s", execstat, epsname,
-          gal_list_str_cat(command, ' '));
-
+#ifdef PATH_GHOSTSCRIPT
+  {
+    int execstat=0;
+    gal_list_str_add(&command, PATH_GHOSTSCRIPT, 0);
+    gal_list_str_add(&command, "-q", 0);
+    gal_list_str_add(&command, "-o", 0);
+    gal_list_str_add(&command, filename, 0);
+    gal_list_str_add(&command, devopt, 0);
+    gal_list_str_add(&command, devwp, 0);
+    gal_list_str_add(&command, devhp, 0);
+    gal_list_str_add(&command, "-dPDFFitPage", 0);
+    gal_list_str_add(&command, epsname, 0);
+    gal_list_str_reverse(&command);
+    execstat=gal_checkset_exec(PATH_GHOSTSCRIPT, command);
+    if(execstat)
+      error(EXIT_FAILURE, 0, "the Ghostscript command (printed at the "
+            "end of this message) to convert/compile the EPS file (made "
+            "by Gnuastro) to PDF was not successful (Ghostscript returned "
+            "with status %d; its error message is shown above)! The EPS "
+            "file ('%s') is left if you want to convert it through any "
+            "other means (for example the 'epspdf' program). The "
+            "Ghostscript command was: %s", execstat, epsname,
+            gal_list_str_cat(command, ' '));
+  }
   /* Delete the EPS file. */
   errno=0;
   if(unlink(epsname))
     error(EXIT_FAILURE, errno, "%s", epsname);
+
+  /* When Ghostscript was not found at configure time. */
+#else
+  error(EXIT_FAILURE, 0, "%s: Ghostscript was not found during the "
+        "configuration of %s on this system. To create PDF files, "
+        "Ghostscript is required. Please install Ghostscript, then "
+        "configure, make and install Gnuastro again. However, '%s' "
+        "(in EPS format) has been created which you can convert to PDF"
+        "with other tools until you rebuild Gnuastro with a workin "
+        "Ghostscript", __func__, PACKAGE_STRING, PACKAGE_STRING);
+#endif
 
   /* Clean up the command list and delete the EPS file. */
   free(devhp);
