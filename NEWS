@@ -183,6 +183,9 @@ See the end of the file for license conditions.
   - bug #67106: Crash during build when Ghostscript is not
     present. Reported by Faezeh Bidjarchian.
 
+  - #67128: Maskfilled operators wrong output with zero scatter (can happen
+    in integer images, for example in the creation of master dark frames).
+
 
 
 

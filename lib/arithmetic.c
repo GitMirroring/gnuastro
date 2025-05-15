@@ -2124,6 +2124,13 @@ arithmetic_multioperand_number_write(struct multioperandparams *p,
         j=tprm->indexs[tind]; /* desired pixel's index */               \
         MULTIOPERAND_PIXS_USE;                                          \
                                                                         \
+        /* For a check */                                               \
+        /* if(j==3){                                             */     \
+        /*   uint16_t *u=cont->array;                            */     \
+        /*   for(size_t k=0; k<cont->size;++k)                   */     \
+        /*     printf("%s: %u, j=%zu\n", __func__, u[k], j);     */     \
+        /* }                                                     */     \
+                                                                        \
         /* If there are any usable elements, do the measurement. */     \
         if(n)                                                           \
           {                                                             \
@@ -2557,7 +2564,7 @@ arithmetic_multioperand_clip_mask_worker(void *in_prm)
       tmp=gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, aflags,
                          gal_arithmetic(GAL_ARITHMETIC_OP_GT, 1, aflags,
                                         use, p->upper),
-                         gal_arithmetic(GAL_ARITHMETIC_OP_LE, 1, aflags,
+                         gal_arithmetic(GAL_ARITHMETIC_OP_LT, 1, aflags,
                                         use, p->lower));
 
       /* For a 1D array, start with erosion because a two single elements
@@ -2603,29 +2610,42 @@ arithmetic_multioperand_clip_mask(struct multioperandparams *p,
                                   int operator, gal_data_t *list,
                                   size_t numthreads)
 {
-  size_t one=1;
-  gal_data_t *tmp, *multip;
+  float l, h, *c, *s, *ss;
   struct arithmetic_multioperand_clip_mask_params fp;
-  int aflags=GAL_ARITHMETIC_FLAG_NUMOK; /* Don't free the inputs. */
+
+  /* Multiply the "spread" with the desired multiple. The 'p->center' and
+     'p->spread' are directly written from the outputs of the
+     'gal_statistics_clip_sigma' function. So they should be float32. In
+     case the types change later, it will be a bug, so we'll crash the
+     caller with an informative error message to help track the problem. */
+  if(p->center->type==GAL_TYPE_FLOAT32
+     && p->spread->type==GAL_TYPE_FLOAT32)
+    {
+      c=p->center->array;
+      ss=(s=p->spread->array)+p->spread->size;
+      do
+        {
+          if(*s==0.0) { l=-INFINITY; h=INFINITY; }
+          else        { l=*c-*s;     h=*c+*s;    }
+          *c=l; *s=h; /* Write the lower and higher values in the */
+          ++c;        /* 'center' and 'spread' arrays (we don't need */
+        }             /* them any more after this! */
+      while(++s<ss);
+    }
+  else
+    error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+          "fix the problem. The types of 'p->center' and 'p->spread' "
+          "is not float32\n", __func__, PACKAGE_BUGREPORT);
 
   /* Find the upper and lower thresholds based on the user's desired
      multiple. */
-  multip=gal_data_alloc(NULL, GAL_TYPE_FLOAT32, 1, &one, NULL, 0, -1, 1,
-                        NULL, NULL, NULL);
-  ((float *)(multip->array))[0]=p->p1;
-  tmp=gal_arithmetic(GAL_ARITHMETIC_OP_MULTIPLY, 1, aflags,
-                     p->spread, multip);
-  fp.upper=gal_arithmetic(GAL_ARITHMETIC_OP_PLUS, 1, aflags,
-                          p->center, tmp);
-  fp.lower=gal_arithmetic(GAL_ARITHMETIC_OP_MINUS, 1, aflags,
-                          p->center, tmp);
-  gal_data_free(tmp);
+  fp.upper=p->spread;
+  fp.lower=p->center;
 
   /* For a check.
-  gal_fits_img_write(lower, "test.fits", NULL, NULL);
-  gal_fits_img_write(upper, "test.fits", NULL, NULL);
-  printf("%s: GOOD\n", __func__); exit(0);
-  */
+  gal_fits_img_write(fp.lower, "test.fits", NULL, 1);
+  gal_fits_img_write(fp.upper, "test.fits", NULL, 1);
+  printf("%s: GOOD\n", __func__); exit(0); */
 
   /* Spin-off the threads to mask pixels that were outside the clip
      parameters. */
@@ -2633,10 +2653,8 @@ arithmetic_multioperand_clip_mask(struct multioperandparams *p,
   gal_threads_spin_off(arithmetic_multioperand_clip_mask_worker,
                        &fp, gal_list_data_number(list), numthreads,
                        list->minmapsize, list->quietmmap);
-  gal_data_free(fp.upper);    /* We are freeing these here to avoid*/
-  gal_data_free(fp.lower);    /* keeping extra RAM. */
 
-  /* Free the out, center and spreads (no longer necessary). */
+  /* Free the 'center' and 'spread' arrays (no longer necessary). */
   gal_data_free(p->center); p->center=NULL;
   gal_data_free(p->spread); p->spread=NULL;
 }
@@ -2666,7 +2684,7 @@ arithmetic_multioperand(int operator, int flags, gal_data_t *list,
   p.operator=operator;
   arithmetic_multioperand_prepare(&p, flags, params);
 
-  /* Spin off the threads apply the operator. */
+  /* Spin off the threads to apply the operator. */
   gal_threads_spin_off(multioperand_on_thread, &p, list->size,
                        numthreads, list->minmapsize, list->quietmmap);
 
