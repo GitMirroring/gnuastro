@@ -202,9 +202,9 @@ threshold_write_sn_table(struct noisechiselparams *p, gal_data_t *insn,
     {
       /* Remove blank elements. */
       ind=gal_data_copy(inind);
+      gal_blank_remove(ind,1);
       sn=gal_data_copy(insn);
-      gal_blank_remove(ind);
-      gal_blank_remove(sn);
+      gal_blank_remove(sn,1);
     }
   else
     {

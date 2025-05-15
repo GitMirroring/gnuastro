@@ -38622,13 +38622,14 @@ This is thus a good parameter to check after calling this function to see if the
 This check is highly recommended because it will avoid strange bugs in later steps.
 @end deftypefun
 
-@deftypefun void gal_blank_remove (gal_data_t @code{*input})
+@deftypefun void gal_blank_remove (gal_data_t @code{*input}, int @code{free_if_all_blank})
 Remove blank elements from a dataset, convert it to a 1D dataset, adjust the size properly (the number of non-blank elements), and toggle the blank-value-related bit-flags.
 In practice this function does not@code{realloc} the input array (see @code{gal_blank_remove_realloc} for shrinking/re-allocating also), it just shifts the blank elements to the end and adjusts the size elements of the @code{gal_data_t}, see @ref{Generic data container}.
 
 If all the elements were blank, then @code{input->size} will be zero.
-This is thus a good parameter to check after calling this function to see if there actually were any non-blank elements in the input or not and take the appropriate measure.
-This check is highly recommended because it will avoid strange bugs in later steps.
+In case @code{free_if_all_blank==1} is also zero, then @code{input->array} will also be freed and set to @code{NULL}.
+To see if there actually were any non-blank elements in the input or not and take the appropriate measure, the most generic parameter to check after calling this function is therefore @code{input->size}.
+This check is highly recommended in followup functions because it will avoid strange bugs in later steps of your code (reading a possibly freed space!).
 @end deftypefun
 
 @deftypefun void gal_blank_remove_realloc (gal_data_t @code{*input})

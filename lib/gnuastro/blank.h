@@ -141,7 +141,7 @@ void
 gal_blank_flag_apply(gal_data_t *input, gal_data_t *flag);
 
 void
-gal_blank_remove(gal_data_t *data);
+gal_blank_remove(gal_data_t *data, int free_if_all_blank);
 
 void
 gal_blank_remove_realloc(gal_data_t *input);

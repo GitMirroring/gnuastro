@@ -934,7 +934,7 @@ arithmetic_to_oned(int operator, int flags, gal_data_t *input)
       break;
     case GAL_ARITHMETIC_OP_NOBLANK:
       out = inplace ? input : gal_data_copy(input);
-      gal_blank_remove(out);
+      gal_blank_remove(out, 1);
       break;
     default:
       error(EXIT_FAILURE, 0, "%s: a bug! please contact us at "

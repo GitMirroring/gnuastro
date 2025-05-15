@@ -1245,7 +1245,7 @@ ui_preparations(struct statisticsparams *p)
          column, we need to move the same rows in both (otherwise their
          widths won't be equal). */
       if(p->input->next) gal_blank_remove_rows(p->input, NULL, 0);
-      else               gal_blank_remove(p->input);
+      else               gal_blank_remove(p->input, 1);
 
       /* If all elements are blank and the user has not asked for
          Statistics to be quiet, then let the user know. */

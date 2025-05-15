@@ -124,6 +124,9 @@ See the end of the file for license conditions.
 
 *** Library
 
+  - gal_blank_remove: new 'free_if_all_blank' to enable optional freeing of
+    the input array when all elements are blank.
+
   - gal_match_kdtree: a new 'arrange' argument has been added to define the
     arrangement of the output.
 

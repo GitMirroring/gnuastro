@@ -1747,9 +1747,14 @@ gal_statistics_no_blank_sorted(gal_data_t *input, int inplace)
       if( gal_blank_present(contig, 1) )
         {
           /* See if we should allocate a new dataset to remove blanks or if
-             we can use the actual contiguous patch of memory. */
+             we can use the actual contiguous patch of memory. When the
+             operation is inplace, we only want to change the metadata, not
+             to free the array (when all elements are blank). The second
+             operator of 'gal_blank_remove' is 'free_if_all_blank', so only
+             when we are not working in place it should free array when all
+             elements are blank. */
           noblank = inplace ? contig : gal_data_copy(contig);
-          gal_blank_remove(noblank);
+          gal_blank_remove(noblank, !inplace);
         }
       else noblank=contig;
 
