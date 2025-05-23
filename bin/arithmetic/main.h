@@ -83,9 +83,9 @@ struct arithmeticparams
   char          *globalhdu;  /* Single HDU for all inputs.              */
   uint8_t      onedasimage;  /* Write 1D outputs as an image not table. */
   uint8_t     onedonstdout;  /* Write 1D outputs on stdout, not table.  */
-  char           *metaname;  /* FITS name (EXTNAME keyword) of output.  */
-  char           *metaunit;  /* FITS name (BUNIT keyword) of output.    */
-  char        *metacomment;  /* FITS comment of output.                 */
+  gal_list_str_t *metaname;  /* FITS name (EXTNAME keyword) of output.  */
+  gal_list_str_t *metaunit;  /* FITS name (BUNIT keyword) of output.    */
+  gal_list_str_t *metacomment; /* FITS comment of output.               */
   uint8_t         writeall;  /* Write all outputs.                      */
   uint8_t           append;  /* Don't delete output file.               */
 

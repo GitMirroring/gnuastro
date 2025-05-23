@@ -1696,6 +1696,7 @@ struct multioperandparams
 {
   gal_data_t       *list;        /* List of input datasets.           */
   gal_data_t        *out;        /* Output dataset.                   */
+  gal_data_t   *out_more;        /* More output datasets.             */
   size_t            dnum;        /* Number of input dataset.          */
   int           operator;        /* Operator to use.                  */
   uint8_t      *hasblank;        /* Array of 0s or 1s for each input. */
@@ -1720,7 +1721,7 @@ struct multioperandparams
     if(cont->array==NULL)                                               \
       error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "         \
             "'%s' to fix the problem. The 'cont' array should "         \
-            "not be NULL", __func__, PACKAGE_BUGREPORT);                \
+            "not be NULL", "MULTIOPERAND_PIXS_USE", PACKAGE_BUGREPORT); \
                                                                         \
     /* Loop over each array, 'i' is input dataset's index, 'n' is */    \
     /* the number of useful values to use. */                           \
@@ -1734,8 +1735,16 @@ struct multioperandparams
                   : ( a[i][j]==a[i][j] ? 1 : 0 ) );  /* Float   */      \
         else use=1;                                                     \
                                                                         \
-        /* Put the value into the array of values. */                   \
+        /* Put the value into the contiguous array of values. */        \
         if(use) pixs[n++]=a[i][j];                                      \
+                                                                        \
+        /* For a check (on a certain operator and certain input type)*/ \
+        /* if(p->operator==GAL_ARITHMETIC_OP_SIGCLIP_ALL)            */ \
+        /*   {                                                       */ \
+        /*     uint16_t ftmp=(uint16_t)(pixs[n-1]);                  */ \
+        /*     printf("MULTIOPERAND_PIXS_USE-after: %zu, %zu, %u\n", */ \
+        /*            i, j, ftmp);                                   */ \
+        /*   }                                                       */ \
       }                                                                 \
                                                                         \
     /* Since later operations are done in place, the size and flags */  \
@@ -2112,24 +2121,37 @@ arithmetic_multioperand_number_write(struct multioperandparams *p,
     float *carr, *o=p->out?p->out->array:NULL;                          \
     float *center=p->center?p->center->array:NULL;                      \
     float *spread=p->spread?p->spread->array:NULL;                      \
-    TYPE *pixs=gal_pointer_allocate(p->list->type, p->dnum, 0,          \
-                                    __func__, "pixs");                  \
-    gal_data_t *cont=gal_data_alloc(pixs, p->list->type, 1, &p->dnum,   \
-                                    NULL, 0, -1, 1, NULL, NULL, NULL);  \
+    float *std=p->out_more?p->out_more->array:NULL;                     \
+    float *median=p->out_more?p->out_more->next->array:NULL;            \
+    float *mad=p->out_more?p->out_more->next->next->array:NULL;         \
+    gal_data_t *cont=gal_data_alloc(NULL, p->list->type, 1, &p->dnum,   \
+                                    NULL, 1, -1, 1, NULL, NULL, NULL);  \
+                                                                        \
+    /* For easy access to the contiguous array.  */                     \
+    TYPE *pixs=cont->array;                                             \
                                                                         \
     /* Go over all the pixels assigned to this thread. */               \
     for(tind=0; tprm->indexs[tind] != GAL_BLANK_SIZE_T; ++tind)         \
       {                                                                 \
+                                                                        \
         /* Initialize and set the pixels to use in the macro. */        \
         j=tprm->indexs[tind]; /* desired pixel's index */               \
+                                                                        \
+        /* Extract the pixels from each input into the contiguous */    \
+        /* (or 'cont') array. */                                        \
         MULTIOPERAND_PIXS_USE;                                          \
                                                                         \
-        /* For a check */                                               \
-        /* if(j==3){                                             */     \
-        /*   uint16_t *u=cont->array;                            */     \
-        /*   for(size_t k=0; k<cont->size;++k)                   */     \
-        /*     printf("%s: %u, j=%zu\n", __func__, u[k], j);     */     \
-        /* }                                                     */     \
+        /* For a check on a certain output pixel for a certain  */      \
+        /* operator (in case this is a multi-operator problem). */      \
+        /* if(p->operator==GAL_ARITHMETIC_OP_SIGCLIP_ALL)       */      \
+        /*   if(j==0)                                           */      \
+        /*     {                                                */      \
+        /*       size_t k=0;                                    */      \
+        /*       for(k=0; k<cont->size;++k)                     */      \
+        /*         printf("MULTIOPERAND_CLIP-before-pix-use: "  */      \
+        /*                "%u (j=%zu, k=%zu)\n",                */      \
+        /*                ((uint16_t *)pixs)[k], j, k);         */      \
+        /*     }                                                */      \
                                                                         \
         /* If there are any usable elements, do the measurement. */     \
         if(n)                                                           \
@@ -2159,10 +2181,17 @@ arithmetic_multioperand_number_write(struct multioperandparams *p,
                 case GAL_ARITHMETIC_OP_SIGCLIP_MEDIAN:                  \
                 case GAL_ARITHMETIC_OP_MADCLIP_MEDIAN:                  \
                   o[j]=carr[GAL_STATISTICS_CLIP_OUTCOL_MEDIAN]; break;  \
+                case GAL_ARITHMETIC_OP_SIGCLIP_ALL:                     \
+                case GAL_ARITHMETIC_OP_MADCLIP_ALL:                     \
+                  o[j]=carr[GAL_STATISTICS_CLIP_OUTCOL_MEAN];           \
+                  std[j]=carr[GAL_STATISTICS_CLIP_OUTCOL_STD];          \
+                  mad[j]=carr[GAL_STATISTICS_CLIP_OUTCOL_MAD];          \
+                  median[j]=carr[GAL_STATISTICS_CLIP_OUTCOL_MEDIAN];    \
+                  break;                                                \
                 default:                                                \
                   error(EXIT_FAILURE, 0, "%s: a bug! the code %d is "   \
                         "not valid for sigma-clipping results",         \
-                        __func__, p->operator);                         \
+                        "MULTIOPERAND_CLIP", p->operator);              \
                 }                                                       \
                                                                         \
             /* Put the number of elements into the numbers array. */    \
@@ -2181,7 +2210,7 @@ arithmetic_multioperand_number_write(struct multioperandparams *p,
             gal_data_free(clip);                                        \
           }                                                             \
                                                                         \
-        /* No usable elements. */                                       \
+        /* No usable elements; write a NaN in the desired type. */      \
         else                                                            \
           {                                                             \
             if(o) o[j]=NAN;                                             \
@@ -2257,6 +2286,7 @@ arithmetic_multioperand_number_write(struct multioperandparams *p,
                                                                         \
       case GAL_ARITHMETIC_OP_SIGCLIP_MAD:                               \
       case GAL_ARITHMETIC_OP_SIGCLIP_STD:                               \
+      case GAL_ARITHMETIC_OP_SIGCLIP_ALL:                               \
       case GAL_ARITHMETIC_OP_SIGCLIP_MEAN:                              \
       case GAL_ARITHMETIC_OP_SIGCLIP_MEDIAN:                            \
       case GAL_ARITHMETIC_OP_SIGCLIP_MASKFILLED:                        \
@@ -2265,6 +2295,7 @@ arithmetic_multioperand_number_write(struct multioperandparams *p,
                                                                         \
       case GAL_ARITHMETIC_OP_MADCLIP_MAD:                               \
       case GAL_ARITHMETIC_OP_MADCLIP_STD:                               \
+      case GAL_ARITHMETIC_OP_MADCLIP_ALL:                               \
       case GAL_ARITHMETIC_OP_MADCLIP_MEAN:                              \
       case GAL_ARITHMETIC_OP_MADCLIP_MEDIAN:                            \
       case GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED:                        \
@@ -2351,6 +2382,7 @@ arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
   p->dnum=1;
   p->clipflags=0;
   p->p1=p->p2=NAN;
+  p->out_more=p->center=p->spread=NULL;
 
   /* If any parameters are given, prepare them. */
   for(tmp=params; tmp!=NULL; tmp=tmp->next)
@@ -2379,7 +2411,6 @@ arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
         }
     }
 
-
   /* Do a simple sanity check, comparing the operand on top of the list to
      the rest of the operands within the list. */
   for(tmp=p->list->next;tmp!=NULL;tmp=tmp->next)
@@ -2404,7 +2435,6 @@ arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
               "'%s' operator must be same", __func__,
               gal_arithmetic_operator_string(p->operator));
     }
-
 
   /* Set the type of the output and any other operator-specific setting. */
   switch(p->operator)
@@ -2437,9 +2467,16 @@ arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
     case GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED:
     case GAL_ARITHMETIC_OP_SIGCLIP_MASKFILLED:
       otype=GAL_TYPE_INVALID; break;
+    case GAL_ARITHMETIC_OP_SIGCLIP_ALL:
+    case GAL_ARITHMETIC_OP_MADCLIP_ALL:
+      p->clipflags = (   GAL_STATISTICS_CLIP_OUTCOL_STD
+                       | GAL_STATISTICS_CLIP_OUTCOL_MAD
+                       | GAL_STATISTICS_CLIP_OUTCOL_MEAN
+                       | GAL_STATISTICS_CLIP_OUTCOL_MEDIAN );
+      otype=GAL_TYPE_FLOAT32; break;
     default:
-      error(EXIT_FAILURE, 0, "%s: operator code %d isn't recognized",
-            __func__, p->operator);
+      error(EXIT_FAILURE, 0, "%s: operator code %d isn't recognized "
+            "(when setting the output type)", __func__, p->operator);
     }
 
   /* Set the output data structure. */
@@ -2447,7 +2484,11 @@ arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
     p->out=NULL;
   else
     {
-      if( (flags & GAL_ARITHMETIC_FLAG_INPLACE) && otype==p->list->type)
+
+      if( (flags & GAL_ARITHMETIC_FLAG_INPLACE)
+          && otype==p->list->type
+          && p->operator!=GAL_ARITHMETIC_OP_MADCLIP_ALL
+          && p->operator!=GAL_ARITHMETIC_OP_SIGCLIP_ALL )
         p->out = p->list;             /* The top element in the list. */
       else
         p->out = gal_data_alloc(NULL, otype, p->list->ndim,
@@ -2463,7 +2504,7 @@ arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
      remove all the other input data that must be stacked! */
   switch(p->operator)
     {
-    /* Don't need a numbers output. */
+    /* Don't need any extra allocations. */
     case GAL_ARITHMETIC_OP_MIN:
     case GAL_ARITHMETIC_OP_MAX:
     case GAL_ARITHMETIC_OP_SUM:
@@ -2473,9 +2514,43 @@ arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
     case GAL_ARITHMETIC_OP_NUMBER:
     case GAL_ARITHMETIC_OP_MEDIAN:
     case GAL_ARITHMETIC_OP_QUANTILE:
+      p->clipoutnum=NULL; break;
+
+    /* The filled clipping operators need two extra allocations (and don't
+       need numbers). */
     case GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED:
     case GAL_ARITHMETIC_OP_SIGCLIP_MASKFILLED:
-      p->clipoutnum=NULL; break;
+      p->clipoutnum=NULL;
+      p->center = gal_data_alloc(NULL, GAL_TYPE_FLOAT32, p->list->ndim,
+                                 p->list->dsize, p->list->wcs, 0,
+                                 p->list->minmapsize, p->list->quietmmap,
+                                 NULL, NULL, NULL);
+      p->spread = gal_data_alloc(NULL, GAL_TYPE_FLOAT32, p->list->ndim,
+                                 p->list->dsize, p->list->wcs, 0,
+                                 p->list->minmapsize, p->list->quietmmap,
+                                 NULL, NULL, NULL);
+      break;
+
+    /* Operators that need more output arrays, but also need the numbers
+       image that gets added in the 'default' mode). So we don't have a
+       'break' here. For the '*clip-all' operators, we'll assume 'p->out'
+       contains the mean and keep the median, standard deviation and MAD in
+       the 'p->out_more'. */
+    case GAL_ARITHMETIC_OP_SIGCLIP_ALL:
+    case GAL_ARITHMETIC_OP_MADCLIP_ALL:
+      gal_list_data_add_alloc(&p->out_more, NULL, GAL_TYPE_FLOAT32,
+                              p->list->ndim, p->list->dsize, p->list->wcs,
+                              0, p->list->minmapsize, p->list->quietmmap,
+                              NULL, NULL, NULL);
+      gal_list_data_add_alloc(&p->out_more, NULL, GAL_TYPE_FLOAT32,
+                              p->list->ndim, p->list->dsize, p->list->wcs,
+                              0, p->list->minmapsize, p->list->quietmmap,
+                              NULL, NULL, NULL);
+      gal_list_data_add_alloc(&p->out_more, NULL, GAL_TYPE_FLOAT32,
+                              p->list->ndim, p->list->dsize, p->list->wcs,
+                              0, p->list->minmapsize, p->list->quietmmap,
+                              NULL, NULL, NULL);
+
 
     /* All clipping operators that need a numbers output. */
     default:
@@ -2490,24 +2565,6 @@ arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
                                     p->list->minmapsize,
                                     p->list->quietmmap, NULL, NULL, NULL);
       break;
-    }
-
-
-  /* The filled clipping operators need to extra allocations. */
-  switch(p->operator)
-    {
-    case GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED:
-    case GAL_ARITHMETIC_OP_SIGCLIP_MASKFILLED:
-      p->center = gal_data_alloc(NULL, GAL_TYPE_FLOAT32, p->list->ndim,
-                                 p->list->dsize, p->list->wcs, 0,
-                                 p->list->minmapsize, p->list->quietmmap,
-                                 NULL, NULL, NULL);
-      p->spread = gal_data_alloc(NULL, GAL_TYPE_FLOAT32, p->list->ndim,
-                                 p->list->dsize, p->list->wcs, 0,
-                                 p->list->minmapsize, p->list->quietmmap,
-                                 NULL, NULL, NULL);
-      break;
-    default: p->center=p->spread=NULL;
     }
 
   /* hasblank is used to see if a blank value should be checked for each
@@ -2567,6 +2624,13 @@ arithmetic_multioperand_clip_mask_worker(void *in_prm)
                          gal_arithmetic(GAL_ARITHMETIC_OP_LT, 1, aflags,
                                         use, p->lower));
 
+      /* For a check.
+      char testname[20];
+      sprintf(testname, "test-%zu.fits", index);
+      gal_fits_img_write(use, testname, NULL, 0);
+      gal_fits_img_write(tmp, testname, NULL, 0);
+      exit(1); */
+
       /* For a 1D array, start with erosion because a two single elements
          outside the range can mask a very large portion of the input
          (after "filling" holes). */
@@ -2588,12 +2652,6 @@ arithmetic_multioperand_clip_mask_worker(void *in_prm)
          input. */
       gal_blank_flag_apply(use, tmp);
       gal_data_free(tmp);
-
-      /* For a check.
-      char testname[20];
-      sprintf(testname, "test-%zu.fits", index);
-      gal_fits_img_write(use, testname, NULL, 0);
-      */
     }
 
   /* Wait for all the other threads to finish, then return. */
@@ -2625,11 +2683,19 @@ arithmetic_multioperand_clip_mask(struct multioperandparams *p,
       ss=(s=p->spread->array)+p->spread->size;
       do
         {
+          /* If the spread was zero, then all the values were the same (can
+             happen in integer datasets). So no clipping is necessary and
+             we'll set the "low" and "high" values to -+ infinity. */
           if(*s==0.0) { l=-INFINITY; h=INFINITY; }
-          else        { l=*c-*s;     h=*c+*s;    }
-          *c=l; *s=h; /* Write the lower and higher values in the */
-          ++c;        /* 'center' and 'spread' arrays (we don't need */
-        }             /* them any more after this! */
+          else        { l=*c-(*s*p->p1); h=*c+(*s*p->p1);    }
+
+          /* For a check.
+          printf("%s: l (%f) and h (%f)\n", __func__, l, h); */
+
+          /* Write the lower and higher values in the 'center' and 'spread'
+             arrays (we don't need them any more after this). */
+          *c=l; *s=h; ++c;
+        }
       while(++s<ss);
     }
   else
@@ -2719,8 +2785,12 @@ arithmetic_multioperand(int operator, int flags, gal_data_t *list,
     }
   free(p.hasblank);
 
-  /* If a "number" array has been prepared, add it to the output. */
+  /* If an 'out_more' or number array has been prepared, add it to the
+     output. */
+  if(p.out_more)   gal_list_data_last(p.out)->next=p.out_more;
   if(p.clipoutnum) gal_list_data_last(p.out)->next=p.clipoutnum;
+
+  /* Return the output array. */
   return p.out;
 }
 
@@ -4260,6 +4330,10 @@ gal_arithmetic_set_operator(char *string, size_t *num_operands)
     { op=GAL_ARITHMETIC_OP_MADCLIP_MAD;       *num_operands=-1; }
   else if (!strcmp(string, "madclip-std"))
     { op=GAL_ARITHMETIC_OP_MADCLIP_STD;       *num_operands=-1; }
+  else if (!strcmp(string, "sigclip-all"))
+    { op=GAL_ARITHMETIC_OP_SIGCLIP_ALL;       *num_operands=-1; }
+  else if (!strcmp(string, "madclip-all"))
+    { op=GAL_ARITHMETIC_OP_MADCLIP_ALL;       *num_operands=-1; }
 
   /* To one-dimension (only based on values). */
   else if (!strcmp(string, "unique"))
@@ -4533,6 +4607,8 @@ gal_arithmetic_operator_string(int operator)
     case GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED:return "madclip-maskfilled";
     case GAL_ARITHMETIC_OP_MADCLIP_MAD:     return "madclip-mad";
     case GAL_ARITHMETIC_OP_MADCLIP_STD:     return "madclip-std";
+    case GAL_ARITHMETIC_OP_SIGCLIP_ALL:     return "sigclip-all";
+    case GAL_ARITHMETIC_OP_MADCLIP_ALL:     return "madclip-all";
 
     case GAL_ARITHMETIC_OP_MKNOISE_SIGMA:   return "mknoise-sigma";
     case GAL_ARITHMETIC_OP_MKNOISE_SIGMA_FROM_MEAN:
@@ -4848,6 +4924,8 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_NUMBER:
     case GAL_ARITHMETIC_OP_MEDIAN:
     case GAL_ARITHMETIC_OP_QUANTILE:
+    case GAL_ARITHMETIC_OP_SIGCLIP_ALL:
+    case GAL_ARITHMETIC_OP_MADCLIP_ALL:
     case GAL_ARITHMETIC_OP_SIGCLIP_MAD:
     case GAL_ARITHMETIC_OP_MADCLIP_MAD:
     case GAL_ARITHMETIC_OP_SIGCLIP_STD:

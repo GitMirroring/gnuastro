@@ -22528,6 +22528,32 @@ $ astarithmetic a.fits b.fits c.fits -g1 \
 @itemx madclip-median
 Similar to the @option{sigclip-*} operators, but using Median Absolute Deviation (MAD) clipping.
 See the description of @option{sigclip-*} for usage details; just remember that o1 MAD is equivalent to @mymath{0.67449\sigma}; see @ref{MAD clipping} and more generally @ref{Clipping outliers}.
+
+@item sigclip-all
+@item madclip-all
+Similar to the @option{sigclip-*} or @option{madclip-*} operators, but instead of returning only a single measured statistic (mean, STD, median or MAD) all of them are returned (along with the numbers image).
+This will greatly speed up your analysis pipelines when more than one statistic is required (for example you need both the mean and the standard deviation).
+Just note that as described under the sigma-clip operators, @option{--writeall} will be necessary if you want them all to be put in the output.
+
+For example, let's assume you want the mean and standard deviation after a sigma-clipping like the examples before (not just one of them).
+In that case, the cleanest way is to add metadata to each output in the same Arithmetic call.
+Afterwards, copy the HDUs you want in your output and delete the intermediate file like below:
+
+@example
+$ astarithmetic a.fits b.fits c.fits -g1 --writeall \
+                3 5 0.01 madclip-maskfilled \
+                3 4 0.1  sigclip-mean \
+                --output=out-arith.fits \
+                --metaname=MEAN,STD,MEDIAN,MAD,NUMBER
+$ astfits out-arith.fits --copy=MEAN --copy=STD \
+          --output=out.fits
+$ rm out-arith.fits
+@end example
+
+Different combinations of the various statistics are commonly necessary for differnet purposes.
+The rason we haven't specified an option for each combination is because that would dramatically increase the operator-count and would confuse the developers and users.
+On the other hand, the process of maskfilling or even just clipping is much more computationally expensive on large datasets than these measurements combined.
+We therefore recommend the process above to extract the statistics you want.
 @end table
 
 
@@ -24577,26 +24603,30 @@ This is very important for obtaining reproducible results, for more see @ref{Gen
 If the output file already exists, do not delete it; add the output data to new HDUs at the end of that file.
 You can use the @option{--meta*} options below to give a name, unit or comments to this HDUs (to easily distinguish it from other HDUs).
 
-@item -n STR
-@itemx --metaname=STR
-Metadata (name) of the output dataset.
+@item -n STR[,STR,[...]]
+@itemx --metaname=STR[,STR,[...]]
+Metadata (name) of the output dataset(s).
+Multiple strings can be given (separated by a coma), in multiple calls to this option when you have multiple datasets in the output (and @option{--writeall} is necessary).
 For a FITS image or table, the string given to this option is written in the @code{EXTNAME} or @code{TTYPE1} keyword (respectively).
 
+In the case of tables, recall that the Arithmetic program only outputs a single column, you should use column arithmetic in Table for more than one column (see @ref{Column arithmetic}).
 If this keyword is present in a FITS extension, it will be printed in the table output of a command like @command{astfits image.fits} (for images) or @command{asttable table.fits -i} (for tables).
 This metadata can be very helpful for yourself in the future (when you have forgotten the details), so it is recommended to use this option for files that should be archived or shared with colleagues.
 
-@item -u STR
-@itemx --metaunit=STR
-Metadata (units) of the output dataset.
+@item -u STR[,STR,[...]]
+@itemx --metaunit=STR[,STR,[...]]
+Metadata (unit) of the output dataset(s).
+Multiple strings can be given (separated by a coma), in multiple calls to this option when you have multiple datasets in the output (and @option{--writeall} is necessary).
 For a FITS image or table, the string given to this option is written in the @code{BUNIT} or @code{TTYPE1} keyword respectively.
-In the case of tables, recall that the Arithmetic program only outputs a single column, you should use column arithmetic in Table for more than one column (see @ref{Column arithmetic}).
 For more on the importance of metadata, see the description of @option{--metaname}.
 
-@item -c STR
-@itemx --metacomment=STR
-Metadata (comments) of the output dataset.
+@item -c STR[,STR,[...]]
+@itemx --metacomment=STR[,STR,[...]]
+Metadata (comments) of the output dataset(s).
+Multiple strings can be given (separated by a coma), in multiple calls to this option when you have multiple datasets in the output (and @option{--writeall} is necessary).
+In case your comment has a coma within it, be sure to quote it with a `@key{\}', for example @option{--metacomment="My comment\, with a coma"}.
+
 For a FITS image or table, the string given to this option is written in the @code{COMMENT} or @code{TCOMM1} keyword respectively.
-In the case of tables, recall that the Arithmetic program only outputs a single column, you should use column arithmetic in Table for more than one column (see @ref{Column arithmetic}).
 For more on the importance of metadata, see the description of @option{--metaname}.
 
 @item -O

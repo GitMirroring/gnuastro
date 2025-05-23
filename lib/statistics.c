@@ -404,6 +404,11 @@ statistics_mad_in_sorted_no_blank(gal_data_t *sorted, gal_data_t *med,
           __func__, gal_type_name(sorted->type, 1),
           gal_type_name(med->type, 1));
 
+  /* In case the sorted array has a size of zero, just write a blank value
+     in the allocated output space and return. */
+  if(sorted->size==0)
+    { gal_blank_write(mad_o, sorted->type); return; }
+
   /* After subtracting, we will need to sort the array, so a copy is
      necessary (the input should not be touched). Furthermore, if the input
      is an un-signed integer, convert it to a signed integer of the next

@@ -246,6 +246,11 @@ ui_check_only_options(struct arithmeticparams *p)
               "to '--wcsfile')! Please use '--wcshdu' to specify a "
               "HDU/extension to read from", p->wcsfile);
     }
+
+  /* In case meta information are given, correct them into simple lists. */
+  gal_options_merge_list_of_csv(&p->metaname);
+  gal_options_merge_list_of_csv(&p->metaunit);
+  gal_options_merge_list_of_csv(&p->metacomment);
 }
 
 
@@ -542,10 +547,10 @@ ui_free_report(struct arithmeticparams *p, struct timeval *t1)
   /* Free the simple strings. */
   free(p->cp.output);
   if(p->wcshdu) free(p->wcshdu);
-  if(p->metaname) free(p->metaname);
-  if(p->metaunit) free(p->metaunit);
   if(p->globalhdu) free(p->globalhdu);
-  if(p->metacomment) free(p->metacomment);
+  if(p->metaname) gal_list_str_free(p->metaname, 1);
+  if(p->metaunit) gal_list_str_free(p->metaunit, 1);
+  if(p->metacomment) gal_list_str_free(p->metacomment, 1);
 
   /* If there are any remaining HDUs in the hdus linked list, then
      free them. */

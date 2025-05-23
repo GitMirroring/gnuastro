@@ -136,7 +136,7 @@ struct argp_option program_options[] =
       "Internal name (FITS images: EXTNAME keyword).",
       GAL_OPTIONS_GROUP_OUTPUT,
       &p->metaname,
-      GAL_TYPE_STRING,
+      GAL_TYPE_STRLL,
       GAL_OPTIONS_RANGE_ANY,
       GAL_OPTIONS_NOT_MANDATORY,
       GAL_OPTIONS_NOT_SET
@@ -149,7 +149,7 @@ struct argp_option program_options[] =
       "Internal units (FITS images: BUNIT keyword).",
       GAL_OPTIONS_GROUP_OUTPUT,
       &p->metaunit,
-      GAL_TYPE_STRING,
+      GAL_TYPE_STRLL,
       GAL_OPTIONS_RANGE_ANY,
       GAL_OPTIONS_NOT_MANDATORY,
       GAL_OPTIONS_NOT_SET
@@ -162,7 +162,7 @@ struct argp_option program_options[] =
       "Internal comments (FITS images: COMMENT keyword).",
       GAL_OPTIONS_GROUP_OUTPUT,
       &p->metacomment,
-      GAL_TYPE_STRING,
+      GAL_TYPE_STRLL,
       GAL_OPTIONS_RANGE_ANY,
       GAL_OPTIONS_NOT_MANDATORY,
       GAL_OPTIONS_NOT_SET

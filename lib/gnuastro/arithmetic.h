@@ -194,11 +194,13 @@ enum gal_arithmetic_operators
   GAL_ARITHMETIC_OP_SIGCLIP_STD,  /* Sigma-clipped STD of multiple arrays. */
   GAL_ARITHMETIC_OP_SIGCLIP_MAD,  /* Sigma-clipped STD of multiple arrays. */
   GAL_ARITHMETIC_OP_SIGCLIP_MASKFILLED, /* Mask clipped elem. of each in.  */
+  GAL_ARITHMETIC_OP_SIGCLIP_ALL,   /* Sigma-clip all statistics.           */
   GAL_ARITHMETIC_OP_MADCLIP_MEAN,  /* MAD-clipped mean of multiple arrays. */
   GAL_ARITHMETIC_OP_MADCLIP_MEDIAN,/* MAD-clipped median of mult. arrays.  */
   GAL_ARITHMETIC_OP_MADCLIP_STD,   /* MAD-clipped STD of multiple arrays.  */
   GAL_ARITHMETIC_OP_MADCLIP_MAD,   /* MAD-clipped STD of multiple arrays.  */
   GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED, /* Mask clipped elem. of each in.  */
+  GAL_ARITHMETIC_OP_MADCLIP_ALL,   /* Sigma-clip all statistics.           */
 
   GAL_ARITHMETIC_OP_MKNOISE_SIGMA,/* Fixed-sigma noise to every element.   */
   GAL_ARITHMETIC_OP_MKNOISE_SIGMA_FROM_MEAN, /* Sigma calculated from mean.*/

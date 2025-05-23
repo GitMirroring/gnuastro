@@ -17,6 +17,12 @@ See the end of the file for license conditions.
       correlated noise). This can be used for planning projects with
       different telescopes, but be careful about the assumptions.
 
+    - sigclip-all: return all available statistics after doing the
+      sigma-clip (mean, std, median and MAD and number of used
+      datasets).
+
+    - madclip-all: similar to 'sigclip-all', but after MAD-clipping.
+
 *** ConvertType
 
   --cmapblankcolor: Name of color to use for blank values when showing
@@ -111,6 +117,15 @@ See the end of the file for license conditions.
 
   --cite: also prints the citation for the Gnuastro book/manual (using the
     Zenodo DOI for that release).
+
+*** Arithmetic
+
+  --metaname: can now accept multiple values (names of each HDU for
+    multi-output calls of Arithmetic).
+
+  --metaunit: similar to '--metaname'
+
+  --metacomment: similar to '--metaname'
 
 *** Crop
 

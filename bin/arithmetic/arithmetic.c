@@ -87,6 +87,8 @@ pop_number_of_operands(struct arithmeticparams *p, int op,
     case GAL_ARITHMETIC_OP_SIGCLIP_STD:
     case GAL_ARITHMETIC_OP_MADCLIP_MAD:
     case GAL_ARITHMETIC_OP_SIGCLIP_MAD:
+    case GAL_ARITHMETIC_OP_SIGCLIP_ALL:
+    case GAL_ARITHMETIC_OP_MADCLIP_ALL:
     case GAL_ARITHMETIC_OP_MADCLIP_MEAN:
     case GAL_ARITHMETIC_OP_SIGCLIP_MEAN:
     case GAL_ARITHMETIC_OP_MADCLIP_MEDIAN:
@@ -1926,6 +1928,44 @@ arithmetic_final_data(struct arithmeticparams *p)
 
 
 
+/* Add any metadata in case the user wanted to do so. We are treating each
+   metadata entry separately because the user may not want to specify them
+   all for all outputs and the looping is not computationally expensive.*/
+static void
+arithmetic_out_metadata(struct arithmeticparams *p, gal_data_t *data)
+{
+  gal_data_t *d;
+  gal_list_str_t *s;
+
+  /* Loop over 'metaname' and add each item to the output dataset(s). */
+  d=data;
+  for(s=p->metaname; s!=NULL && d!=NULL; s=s->next, d=d->next)
+    {
+      if(d->name) free(d->name);
+      gal_checkset_allocate_copy(s->v, &d->name);
+    }
+
+  /* Similar to 'metaname' but for meta units. */
+  d=data;
+  for(s=p->metaunit; s!=NULL && d!=NULL; s=s->next, d=d->next)
+    {
+      if(d->unit) free(d->unit);
+      gal_checkset_allocate_copy(s->v, &d->unit);
+    }
+
+  /* Similar to 'metaname' but for meta comments. */
+  d=data;
+  for(s=p->metacomment; s!=NULL && d!=NULL; s=s->next, d=d->next)
+    {
+      if(d->comment) free(d->comment);
+      gal_checkset_allocate_copy(s->v, &d->comment);
+    }
+}
+
+
+
+
+
 /* This function implements the reverse polish algorithm as explained
    in the Wikipedia page.
 
@@ -2044,20 +2084,11 @@ reversepolish(struct arithmeticparams *p)
     {
       /* If the user has requested a name, units or comments for the FITS
          file, insert them into the dataset here. */
-      if(p->metaname)
-        { if(data->name) free(data->name);
-          gal_checkset_allocate_copy(p->metaname, &data->name); }
-      if(p->metaunit)
-        { if(data->unit) free(data->unit);
-          gal_checkset_allocate_copy(p->metaunit, &data->unit); }
-      if(p->metacomment)
-        { if(data->comment) free(data->comment);
-          gal_checkset_allocate_copy(p->metacomment, &data->comment); }
+      arithmetic_out_metadata(p, data);
 
       /* Put a copy of the WCS structure from the reference image, it will
          be freed while freeing 'data'. But start the file with the 0-th
          HDU keywords.*/
-
       if(data->ndim==1 && p->onedasimage==0)
         {
           /* The keywords HDU should only be created when a FITS file is to

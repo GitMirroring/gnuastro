@@ -799,7 +799,8 @@ gal_data_copy_to_new_type(gal_data_t *in, uint8_t newtype)
                      0, in->minmapsize, in->quietmmap, in->name,
                      in->unit, in->comment);
 
-  /* Fill in the output array: */
+  /* Fill in the output array. */
+
   gal_data_copy_to_allocated(in, out);
 
   /* Return the created array */
@@ -868,13 +869,13 @@ gal_data_copy_to_allocated(gal_data_t *in, gal_data_t *out)
      output is not smaller than the input. Note that the type is irrelevant
      because we will be doing type conversion if they differ.*/
   if( out->size < in->size  )
-    error(EXIT_FAILURE, 0, "%s: the output dataset must be equal or larger "
-          "than the input. the sizes are %zu and %zu respectively", __func__,
-          out->size, in->size);
+    error(EXIT_FAILURE, 0, "%s: the output dataset must be equal or "
+          "larger than the input. the sizes are %zu and %zu respectively",
+          __func__, out->size, in->size);
   if( out->ndim != in->ndim )
-    error(EXIT_FAILURE, 0, "%s: the output dataset must have the same number "
-          "of dimensions, the dimensions are %zu and %zu respectively",
-          __func__, out->ndim, in->ndim);
+    error(EXIT_FAILURE, 0, "%s: the output dataset must have the same "
+          "number of dimensions, the dimensions are %zu and %zu "
+          "respectively", __func__, out->ndim, in->ndim);
 
   /* Free possibly allocated meta-data strings. */
   if(out->name)    free(out->name);
@@ -891,8 +892,10 @@ gal_data_copy_to_allocated(gal_data_t *in, gal_data_t *out)
   gal_checkset_allocate_copy(in->unit,    &out->unit);
   gal_checkset_allocate_copy(in->comment, &out->comment);
 
-  /* Do the copying. */
-  if(in->array)
+  /* Do the copying (only when 'array!=NULL' and size==0). Note that when
+     working in-place, it can happen that array is not NULL, but size is
+     zero. */
+  if(in->array && in->size>0)
     switch(out->type)
       {
       case GAL_TYPE_UINT8:   COPY_OT_SET( uint8_t  );      break;
