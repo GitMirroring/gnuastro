@@ -11444,10 +11444,14 @@ $ aststatistics build/in-1.fits --std --mad | awk '@{print $2/$1@}'
 0.673735
 @end example
 
-The algorithm of MAD-clipping is identical to @mymath{\sigma}-clipping, except that instead of @mymath{\sigma}, it uses the median absolute deviation.
+The algorithm of MAD-clipping is identical to @mymath{\sigma}-clipping, except that instead of @mymath{\sigma}, it uses the median absolute deviation (also see the next paragraph).
 Since the median absolute deviation is smaller than the standard deviation by roughly 0.67, if you regularly use @mymath{3\sigma} there, you should use @mymath{(3/0.67)\rm{MAD}=(4.48)\rm{MAD}} when doing MAD-clipping.
 The usual tolerance should also be changed due to the differing (discrete) nature of the median absolute deviation (based on sorted differences) in relation to the standard deviation (based on the sum of squared differences; which is more smooth).
 A tolerance of 0.01 is better suited to the termination criteria of MAD-clipping.
+
+Another difference of the MAD-clipping algorithm in Gnuastro with @mymath{\sigma}-clipping is a special condition when the MAD becomes zero (will be more common in integer datasets).
+This can happen when the median value is repeated in the input dataset.
+In such cases, we will find the two elements before and after the median that have a different value than the median; it will then use their difference as the MAD@footnote{For more specialized conditions in Gnuastro's implementation of MAD-clipping, see the heavily commented code of @code{MAD_ALTERNATIVE} in @file{lib/statistics.c} of Gnuastro's source.}.
 
 To demonstrate the steps in practice, let's assume you have the original script in @ref{Building inputs and analysis without clipping} with the changes shown in the first command below and With the second command we'll execute the script.
 
@@ -22526,8 +22530,9 @@ $ astarithmetic a.fits b.fits c.fits -g1 \
 @itemx madclip-std
 @itemx madclip-mean
 @itemx madclip-median
-Similar to the @option{sigclip-*} operators, but using Median Absolute Deviation (MAD) clipping.
-See the description of @option{sigclip-*} for usage details; just remember that o1 MAD is equivalent to @mymath{0.67449\sigma}; see @ref{MAD clipping} and more generally @ref{Clipping outliers}.
+Similar to the @option{sigclip-*} operators, but using Median Absolute Deviation (MAD) as the measure of spread.
+See @ref{MAD clipping} and more generally @ref{Clipping outliers}.
+See the description of @option{sigclip-*} for usage details; just remember that o1 MAD is equivalent to @mymath{0.67449\sigma}.
 
 @item sigclip-all
 @item madclip-all
@@ -43624,6 +43629,10 @@ The numerical datatype of the output is the same as @code{input}.
 @deftypefun {gal_data_t *} gal_statistics_maximum (gal_data_t @code{*input})
 Return a single-element dataset containing the maximum non-blank value in @code{input}.
 The numerical datatype of the output is the same as @code{input}.
+@end deftypefun
+
+@deftypefun {gal_data_t *}  gal_statistics_range_double (gal_data_t @code{*input})
+return the difference between the minimum and maximum as a double-precision floating point of a dataset (with any type).
 @end deftypefun
 
 @cindex Sum

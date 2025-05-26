@@ -230,8 +230,8 @@ gal_statistics_outlier_bydistance(int pos1_neg0, gal_data_t *input,
 gal_data_t *
 gal_statistics_outlier_flat_cfp(gal_data_t *input, size_t numprev,
                                 float sigclip_multip, float sigclip_param,
-                                float thresh, size_t numcontig, int inplace,
-                                int quiet, size_t *index);
+                                float thresh, size_t numcontig,
+                                int inplace, int quiet, size_t *index);
 
 
 

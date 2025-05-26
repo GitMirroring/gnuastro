@@ -85,19 +85,49 @@ gal_data_t *
 gal_statistics_minimum(gal_data_t *input)
 {
   size_t dsize=1, n=0;
+  size_t imin=GAL_BLANK_SIZE_T;
   gal_data_t *out=gal_data_alloc(NULL, gal_tile_block(input)->type, 1,
-                                 &dsize, NULL, 1, -1, 1, NULL, NULL, NULL);
+                                 &dsize, NULL, 1, -1, 1, NULL, NULL,
+                                 NULL);
 
   /* See if the input actually has any elements. */
   if(input->size)
     {
-      /* Initialize the output with the maximum possible value. */
-      gal_type_max(out->type, out->array);
+      /* Check if the input has no blank values and it is sorted (if so,
+         then 'imin'; the index of the minimum value) will not be blank. */
+      if(    (input->flag & GAL_DATA_FLAG_BLANK_CH)
+         && !(input->flag & GAL_DATA_FLAG_HASBLANK)
+         &&  (input->flag & GAL_DATA_FLAG_SORT_CH)  )
+        {
+          if(input->flag & GAL_DATA_FLAG_SORTED_I)
+            imin=0;
+          else if(input->flag & GAL_DATA_FLAG_SORTED_D)
+            imin=(input->size-1);
+        }
 
-      /* Parse the full input. A NaN value will always fail a conditional
-         (as if it was larger); so NaNs will not cause problems here. */
-      GAL_TILE_PARSE_OPERATE( input, out, 0, 1,
-                              {*o = *i < *o ? *i : *o; ++n;} );
+      /* The input array is not sorted or has blanks. */
+      if(imin==GAL_BLANK_SIZE_T)
+        {
+          /* Initialize the output with the maximum possible value. */
+          gal_type_max(out->type, out->array);
+
+          /* Parse the full input. A NaN value will always fail a
+             conditional (as if it was larger); so NaNs will not cause
+             problems here. */
+          GAL_TILE_PARSE_OPERATE( input, out, 0, 1,
+                                  {*o = *i < *o ? *i : *o; ++n;} );
+        }
+
+      /* The input array is sorted and has no blanks, so we should just
+         pick up the element in 'imin' (index containing the minimum
+         value). */
+      else
+        {
+          n=input->size;
+          memcpy(out->array, gal_pointer_increment(input->array,
+                                                   imin, input->type),
+                 gal_type_sizeof(input->type));
+        }
     }
 
   /* If there were no usable elements, set the output to blank, then
@@ -116,23 +146,84 @@ gal_data_t *
 gal_statistics_maximum(gal_data_t *input)
 {
   size_t dsize=1, n=0;
+  size_t imax=GAL_BLANK_SIZE_T;
   gal_data_t *out=gal_data_alloc(NULL, gal_tile_block(input)->type, 1,
-                                 &dsize, NULL, 1, -1, 1, NULL, NULL, NULL);
+                                 &dsize, NULL, 1, -1, 1, NULL, NULL,
+                                 NULL);
+
   /* See if the input actually has any elements. */
   if(input->size)
     {
-      /* Initialize the output with the minimum possible value. */
-      gal_type_min(out->type, out->array);
+      /* Check if the input has no blank values and it is sorted (if so,
+         then 'imax'; the index of the maximum value) will not be blank. */
+      if(    (input->flag & GAL_DATA_FLAG_BLANK_CH)
+         && !(input->flag & GAL_DATA_FLAG_HASBLANK)
+         &&  (input->flag & GAL_DATA_FLAG_SORT_CH)  )
+        {
+          if(input->flag & GAL_DATA_FLAG_SORTED_I)
+            imax=(input->size-1);
+          else if(input->flag & GAL_DATA_FLAG_SORTED_D)
+            imax=0;
+        }
 
-      /* Parse the full input. A NaN value will always fail a conditional
-         (as if it was smaller); so NaNs will not cause problems here. */
-      GAL_TILE_PARSE_OPERATE(input, out, 0, 1,
-                             {*o = *i > *o ? *i : *o; ++n;});
+      /* The input array is not sorted or has blanks. */
+      if(imax==GAL_BLANK_SIZE_T)
+        {
+          /* Initialize the output with the minimum possible value. */
+          gal_type_min(out->type, out->array);
+
+          /* Parse the full input. A NaN value will always fail a
+             conditional (as if it was smaller); so NaNs will not cause
+             problems here. */
+          GAL_TILE_PARSE_OPERATE(input, out, 0, 1,
+                                 {*o = *i > *o ? *i : *o; ++n;});
+        }
+
+      /* The input array is sorted and has no blanks, so we should just
+         pick up the element in 'imax' (index containing the maximum
+         value). */
+      else
+        {
+          n=input->size;
+          memcpy(out->array, gal_pointer_increment(input->array,
+                                                   imax, input->type),
+                 gal_type_sizeof(input->type));
+        }
     }
 
   /* If there were no usable elements, set the output to blank, then
      return. */
   if(n==0) gal_blank_write(out->array, out->type);
+  return out;
+}
+
+
+
+
+
+/* Return the maximum (non-blank) value of a dataset in the same type as
+   the dataset. */
+double
+gal_statistics_range_double(gal_data_t *input)
+{
+  double out=NAN;
+  gal_data_t *mind, *maxd;
+
+  /* Check the values if we actually have elements. */
+  if(input->size)
+    {
+      /* Get the minimum and maximum values as 'double' 'gal_data_t's. */
+      mind=gal_data_copy_to_new_type_free(gal_statistics_minimum(input),
+                                          GAL_TYPE_FLOAT64);
+      maxd=gal_data_copy_to_new_type_free(gal_statistics_maximum(input),
+                                          GAL_TYPE_FLOAT64);
+
+      /* Find the range. */
+      out = (   ((double *)(maxd->array))[0]
+              - ((double *)(mind->array))[0] );
+    }
+
+  /* Return the output. */
   return out;
 }
 
@@ -389,10 +480,142 @@ gal_statistics_median(gal_data_t *input, int inplace)
 
 
 
-static void
+/* Return 1 if the returned value is zero (for any type). */
+static int
+statistics_mad_in_sorted_no_blank_is_zero(gal_data_t *in)
+{
+  int8_t   *i8=in->array;   uint8_t   *u8=in->array;
+  int16_t *i16=in->array;   uint16_t *u16=in->array;
+  int32_t *i32=in->array;   uint32_t *u32=in->array;
+  int64_t *i64=in->array;   uint64_t *u64=in->array;
+  float   *f=in->array;     double   *d=in->array;
+
+  switch(in->type)
+    {
+    case GAL_TYPE_UINT8:   return  *u8==0 ? 1 : 0;
+    case GAL_TYPE_INT8:    return  *i8==0 ? 1 : 0;
+    case GAL_TYPE_UINT16:  return *u16==0 ? 1 : 0;
+    case GAL_TYPE_INT16:   return *i16==0 ? 1 : 0;
+    case GAL_TYPE_UINT32:  return *u32==0 ? 1 : 0;
+    case GAL_TYPE_INT32:   return *i32==0 ? 1 : 0;
+    case GAL_TYPE_UINT64:  return *u64==0 ? 1 : 0;
+    case GAL_TYPE_INT64:   return *i64==0 ? 1 : 0;
+    case GAL_TYPE_FLOAT32: return *f==0.0 ? 1 : 0;
+    case GAL_TYPE_FLOAT64: return *d==0.0 ? 1 : 0;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "find and fix this issue. The type code '%u' is not "
+            "recognized for the input dataset", __func__,
+            PACKAGE_BUGREPORT, in->type);
+    }
+}
+
+
+
+
+
+/* Return an alternative for the MAD when it's raw value is zero:
+    1. Find the values immediately before and after the median.
+    2. Use their difference instead of MAD. */
+#define MAD_ALTERNATIVE(IT) {                                           \
+    IT a, b;                                                            \
+    IT *i=in->array, *ii=i+in->size, *m=med->array, *o=out->array;      \
+                                                                        \
+    /* Initialize the 'a' and 'b' with NaNs. */                         \
+    gal_blank_write(&a, in->type);                                      \
+    gal_blank_write(&b, in->type);                                      \
+                                                                        \
+    /* Parse the sorted array from the start to find the */             \
+    /* smallest element before the median, put it in 'a'. */            \
+    while(*i<=*m && i!=ii){ if(*i<*m) { a=*i; } ++i; }                  \
+                                                                        \
+    /* The next element after the previous loop (in case it */          \
+    /* exists!) is the first largest element after the median */        \
+    if(i!=ii) b=*i;                                                     \
+                                                                        \
+    /* If both 'a' and 'b' are blank, all elements in the array */      \
+    /* have a single value and there is no way to find an */            \
+    /* alternative to the MAD, so the returned value ('ret') of the */  \
+    /* function should be be 0.*/                                       \
+    if( gal_blank_is(&a, t) && gal_blank_is(&b, t) ) { *o=0; ret=0; }   \
+                                                                        \
+    /* If only 'b' is blank, then the difference between the median */  \
+    /* and 'a' can be defined as the dispersion. However, if the */     \
+    /* data look like this, we will have the outlier: 1,25,25,25,25. */ \
+    /* To avoid cases like this, assuming Poisson noise, we'll make */  \
+    /* sure that the difference is not larger than the square root */   \
+    /* of the median. */                                                \
+    else if( gal_blank_is(&a, t) )                                      \
+      { db=b-*m; sqrtm=sqrt(fabs((double)*m)); *o=db>sqrtm?sqrtm:db; }  \
+                                                                        \
+    /* If only 'a' is blank, we can use the difference between the */   \
+    /* median and 'b'. The condition is similar to the above. */        \
+    else if( gal_blank_is(&b, t) )                                      \
+      { da=*m-a; sqrtm=sqrt(fabs((double)*m)); *o=da>sqrtm?sqrtm:da; }  \
+                                                                        \
+    /* Both 'a' and 'b' were found, so return their difference. */      \
+    /* However, it can happen that either 'a' or 'b' are very */        \
+    /* distant from the median; for example '8,9,9,9,9,1000' or */      \
+    /* '10,500,500,500,501. So we should first make sure that 'a' or */ \
+    /* 'b' are not outliers themselves! */                              \
+    else                                                                \
+      {                                                                 \
+        da=*m-a; db=b-*m;                                               \
+        if(da/db>3) *o=db; else if(db/da>3) *o=da; else *o=b-a;         \
+      }                                                                 \
+                                                                        \
+    /* For a check. */                                                  \
+    /* printf("MAD_ALTERNATIVE: (med=%g) %g, %g (out=%g)\n", */         \
+    /*       (float)*m, (float)a, (float)b, (float)*o);      */         \
+  }
+
+/* Return 1 if a successful alternative was found. Otherwise, return 0. */
+static int
+statistics_mad_in_sorted_no_blank_alternative(gal_data_t *in,
+                                              gal_data_t *med,
+                                              gal_data_t *out)
+{
+  int ret=1;
+  double da, db, sqrtm;
+  uint8_t t=in->type; /* Also used in the macro! */
+
+  /* Call macro based on type. */
+  switch(t)
+    {
+    case GAL_TYPE_INT8:    MAD_ALTERNATIVE(int8_t);   break;
+    case GAL_TYPE_INT16:   MAD_ALTERNATIVE(int16_t);  break;
+    case GAL_TYPE_INT32:   MAD_ALTERNATIVE(int32_t);  break;
+    case GAL_TYPE_INT64:   MAD_ALTERNATIVE(int64_t);  break;
+    case GAL_TYPE_UINT8:   MAD_ALTERNATIVE(uint8_t);  break;
+    case GAL_TYPE_UINT16:  MAD_ALTERNATIVE(uint16_t); break;
+    case GAL_TYPE_UINT32:  MAD_ALTERNATIVE(uint32_t); break;
+    case GAL_TYPE_UINT64:  MAD_ALTERNATIVE(uint64_t); break;
+    case GAL_TYPE_FLOAT32: MAD_ALTERNATIVE(float);    break;
+    case GAL_TYPE_FLOAT64: MAD_ALTERNATIVE(double);   break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "find and fix this issue. The type code '%u' is not "
+            "recognized for the input dataset", __func__,
+            PACKAGE_BUGREPORT, in->type);
+    }
+
+  /* Return the final 'ret' value. */
+  return ret;
+}
+
+
+
+
+
+/* If the returned integer is 1, then the raw MAD was 0 and we are
+   reporting the full range (max-min); necessary for MAD-clipping for
+   example. When the alternative MAD is not necessary, you can check with
+   an 'if' and set it back to zero. */
+static int
 statistics_mad_in_sorted_no_blank(gal_data_t *sorted, gal_data_t *med,
                                   void *mad_o)
 {
+  int out=0;
   uint8_t type;
   gal_data_t *use, *mad;
   int flags=GAL_ARITHMETIC_FLAG_INPLACE | GAL_ARITHMETIC_FLAG_NUMOK;
@@ -407,7 +630,7 @@ statistics_mad_in_sorted_no_blank(gal_data_t *sorted, gal_data_t *med,
   /* In case the sorted array has a size of zero, just write a blank value
      in the allocated output space and return. */
   if(sorted->size==0)
-    { gal_blank_write(mad_o, sorted->type); return; }
+    { gal_blank_write(mad_o, sorted->type); return 0; }
 
   /* After subtracting, we will need to sort the array, so a copy is
      necessary (the input should not be touched). Furthermore, if the input
@@ -440,14 +663,23 @@ statistics_mad_in_sorted_no_blank(gal_data_t *sorted, gal_data_t *med,
   /* For a check:
   {
     size_t i;
-    double *u=use->array;
-    double *ma=med->array, *Ma=mad->array, *s=sorted->array;
+    uint16_t *u=use->array;
+    uint16_t *ma=med->array, *Ma=mad->array, *s=sorted->array;
     for(i=0;i<sorted->size;++i)
-      printf("%-15g    %-15g\n", s[i], u[i]);
-    printf("Median: %g\n", ma[0]);
-    printf("MAD:    %g\n", Ma[0]);
-    exit(0);
+      printf("%-15u    %-15u\n", s[i], u[i]);
+    printf("Median: %u\n", ma[0]);
+    printf("MAD:    %u\n", Ma[0]);
   } */
+
+  /* In case the MAD value is zero, find an alternative measure of spread
+     (necessary in MAD-clipping; where a MAD of 0 is not infrequent
+     especially with integer data!). But return 1 so the user knows about
+     this. */
+  if( statistics_mad_in_sorted_no_blank_is_zero(mad) )
+    {
+      out=1;
+      statistics_mad_in_sorted_no_blank_alternative(sorted, med, mad);
+    }
 
   /* Copy the MAD value into the output pointer. */
   memcpy(mad_o, mad->array, gal_type_sizeof(mad->type));
@@ -455,6 +687,44 @@ statistics_mad_in_sorted_no_blank(gal_data_t *sorted, gal_data_t *med,
   /* Clean up. */
   gal_data_free(mad);
   gal_data_free(use);
+
+  /* Return zero if the raw MAD is reported, and 1 if we are using the mean
+     distance. */
+  return out;
+}
+
+
+
+
+
+/* Return 1 if the returned value is zero (for any type). */
+static void
+statistics_median_mad_fill_zero(gal_data_t *in)
+{
+  int8_t   *i8=in->array;   uint8_t   *u8=in->array;
+  int16_t *i16=in->array;   uint16_t *u16=in->array;
+  int32_t *i32=in->array;   uint32_t *u32=in->array;
+  int64_t *i64=in->array;   uint64_t *u64=in->array;
+  float     *f=in->array;   double     *d=in->array;
+
+  switch(in->type)
+    {
+    case GAL_TYPE_UINT8:    *u8=0; break;
+    case GAL_TYPE_INT8:     *i8=0; break;
+    case GAL_TYPE_UINT16:  *u16=0; break;
+    case GAL_TYPE_INT16:   *i16=0; break;
+    case GAL_TYPE_UINT32:  *u32=0; break;
+    case GAL_TYPE_INT32:   *i32=0; break;
+    case GAL_TYPE_UINT64:  *u64=0; break;
+    case GAL_TYPE_INT64:   *i64=0; break;
+    case GAL_TYPE_FLOAT32: *f=0.0; break;
+    case GAL_TYPE_FLOAT64: *d=0.0; break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "find and fix this issue. The type code '%u' is not "
+            "recognized for the input dataset", __func__,
+            PACKAGE_BUGREPORT, in->type);
+    }
 }
 
 
@@ -484,8 +754,11 @@ statistics_median_mad(gal_data_t *input, int inplace, int onlymad)
   /* Calculate the median. */
   med = gal_statistics_median(in, 1);
 
-  /* Write the MAD into the allocated space. */
-  statistics_mad_in_sorted_no_blank(in, med, mad->array);
+  /* Write the MAD into the allocated space. Note that here, we just want
+     to report the raw MAD, so if the returned value is non-zero
+     statistics_mad_in_sorted_no_blank, we should over-write it with 0. */
+  if( statistics_mad_in_sorted_no_blank(in, med, mad->array) )
+    statistics_median_mad_fill_zero(mad);
 
   /* If the caller wanted both the median and the MAD, write the median and
      MAD into the output dataset. */
@@ -548,7 +821,8 @@ gal_statistics_quantile_index(size_t size, double quantile)
   floatindex=(double)(size-1)*quantile;
 
   /*
-  printf("quantile: %f, size: %zu, findex: %f\n", quantile, size, floatindex);
+  printf("quantile: %f, size: %zu, findex: %f\n", quantile, size,
+         floatindex);
   */
   /* Note that in the conversion from float to size_t, the floor
      integer value of the float will be used. */
@@ -2534,35 +2808,42 @@ statistics_clip_prepare(gal_data_t *input, gal_data_t *nbs, float multip,
 
   /* Allocate the necessary spaces (spread is only necessary for MAD). */
   out=gal_data_alloc(NULL, GAL_TYPE_FLOAT32, 1, &osize, NULL, 0,
-                     input->minmapsize, input->quietmmap, NULL, NULL, NULL);
+                     input->minmapsize, input->quietmmap, NULL, NULL,
+                     NULL);
   *center=gal_data_alloc(NULL, type, 1, &one, NULL, 0, input->minmapsize,
                          input->quietmmap, NULL, NULL, NULL);
-  *spread = ( sig1_mad0
-              ? NULL
-              : gal_data_alloc(NULL, type, 1, &one, NULL, 0,
-                               input->minmapsize, input->quietmmap,
-                               NULL, NULL, NULL) );
+  *spread=( sig1_mad0
+            ? NULL
+            : gal_data_alloc(NULL, type, 1, &one, NULL, 0,
+                             input->minmapsize, input->quietmmap,
+                             NULL, NULL, NULL) );
 
   /* Set all the output values to NaN to start with. */
   oa=out->array;
   for(i=0;i<GAL_STATISTICS_CLIP_OUT_SIZE;++i) oa[i]=NAN;
 
-  /* Prepare the column names if the user gave quiet=0. */
+  /* Print the column names if the user wants to see the steps */
   if(quiet==0)
     {
-      if(sig1_mad0)
+      switch(sig1_mad0)
         {
+        case 0: /* MAD-clipping */
           if( asprintf(colnames, "%-5s %-10s %-12s %-12s",
-                       "round", "number", "median", "STD")<0 )
+                       "Round", "number", "median", "MAD")<0 )
             error(EXIT_FAILURE, 0, "%s: asprintf allocation1 error",
                   __func__);
-        }
-      else
-        {
+          break;
+        case 1: /* Sigma-clipping */
           if(asprintf(colnames, "%-5s %-10s %-12s %-12s",
-                      "round", "number", "median", "MAD")<0)
+                      "round", "number", "median", "STD")<0)
             error(EXIT_FAILURE, 0, "%s: asprintf allocation2 error",
                   __func__);
+          break;
+        default:
+          error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' "
+                "to find and fix the problem. The value '%d' is not "
+                "recognized for the 'sig1_mad0' variale", __func__,
+                PACKAGE_BUGREPORT, sig1_mad0);
         }
     }
 
@@ -2664,13 +2945,15 @@ statistics_clip_stats_extra(gal_data_t *nbs, float *oa, uint8_t extrastats)
 
 static gal_data_t *
 statistics_clip(gal_data_t *input, float multip, float param,
-                uint8_t extrastats, int inplace, int quiet, int sig1_mad0)
+                uint8_t extrastats, int inplace, int quiet,
+                int sig1_mad0)
 {
   float *oa;
+  int madzero=0;
   char *colnames;
   gal_data_t *spread_d;
   void *start, *nbs_array;
-  size_t i, num=0, size, oldsize;
+  size_t i, num=0, size, oldsize=-1;
   uint8_t type=gal_tile_block(input)->type;
   uint8_t bytolerance = param>=1.0f ? 0 : 1;
   double center=NAN, spread=NAN, oldspread=NAN;
@@ -2691,6 +2974,7 @@ statistics_clip(gal_data_t *input, float multip, float param,
   nbs_array=nbs->array;
   switch(nbs->size)
     {
+
     /* There was nothing in the input! */
     case 0:
       if(!quiet)
@@ -2713,8 +2997,8 @@ statistics_clip(gal_data_t *input, float multip, float param,
       size=1;
       oa[ GAL_STATISTICS_CLIP_OUTCOL_MEDIAN ] = center;
       oa[ GAL_STATISTICS_CLIP_OUTCOL_NUMBER_USED ] = size;
-      oa[ GAL_STATISTICS_CLIP_OUTCOL_MAD ] = sig1_mad0 ? NAN : spread;
       oa[ GAL_STATISTICS_CLIP_OUTCOL_STD ] = sig1_mad0 ? spread : NAN;
+      oa[ GAL_STATISTICS_CLIP_OUTCOL_MAD ] = sig1_mad0 ? NAN : spread;
 
       /* Print the comments (if requested). */
       if(!quiet)
@@ -2738,23 +3022,28 @@ statistics_clip(gal_data_t *input, float multip, float param,
              steps (like writing values in a table); dsize[0] is
              important.*/
           nbs->array = start;
-          nbs->dsize[0] = nbs->size = oldsize = size;
+          nbs->dsize[0] = nbs->size = size;
 
           /* For a detailed check, just correct the type).
           if(!quiet)
             {
               size_t iii;
-              printf("nbs->size: %zu\n", nbs->size);
+              printf("%s: nbs->size: %zu\n", __func__, nbs->size);
               for(iii=0;iii<nbs->size;++iii)
-                printf("%f\n", ((float *)(nbs->array))[iii]);
+                printf("%u\n", ((uint32_t *)(nbs->array))[iii]);
             }
           */
 
-          /* Find the center and disperson. */
+          /* Find the center and spread. */
           statistics_median_in_sorted_no_blank(nbs, center_i->array);
-          if(sig1_mad0) spread_i=gal_statistics_std(nbs);
-          else statistics_mad_in_sorted_no_blank(nbs, center_i,
-                                                 spread_i->array);
+          if(sig1_mad0)
+            { madzero=0; spread_i=gal_statistics_std(nbs); }
+          else
+            madzero=statistics_mad_in_sorted_no_blank(nbs, center_i,
+                                                      spread_i->array);
+
+          /* Convert the new center and spread to double-precision floating
+             point. */
           center_d=gal_data_copy_to_new_type(center_i, GAL_TYPE_FLOAT64);
           spread_d=gal_data_copy_to_new_type(spread_i, GAL_TYPE_FLOAT64);
           if(sig1_mad0) { gal_data_free(spread_i); spread_i=NULL; }
@@ -2763,25 +3052,37 @@ statistics_clip(gal_data_t *input, float multip, float param,
           center = ((double *)(center_d->array))[0];
           spread = ((double *)(spread_d->array))[0];
 
-          /* If the user wanted to view the steps, show it to them. */
+          /* If the user wanted to view the steps, print them. */
           if(!quiet)
-            printf("%-5zu %-10zu %-12.5e %-12.5e\n", num+1, size, center,
-                   spread);
+            printf("%-5zu %-10zu %-12.5e %-12.5e%s\n", num+1, size,
+                   center, spread, madzero?" (MAD=0; distance of "
+                   "nearest to median)":"");
 
-          /* See if we should break out of the loop:
+          /* Break out of the loop in these cases:
              - When the spread is zero we should break out in any case (if
                it is by tolerance or number of clips): this can happen in
                two situtaions: when all the elements are identical after
                the clip (resulting in both MAD and STD to be zero), or when
                we have three numbers (for example) and two of them are the
                same (resulting in a MAD of zero).
+
+             - If 'madzero==1' (we were on MAD-clipping and most elements
+               have a similar value; so the MAD is one), then the 'spread'
+               is meaningless for this check, so we should just check if
+               and the size has changed or not (note that we need the
+               spread to clip after this for the next round.
+
              - If we are working by tolerance, normally, 'oldspread' should
                be larger than 'spread', because the possible outliers have
                been removed. If it is not, it means that we have clipped
                too much and must stop anyway, so we don't need an absolute
                value on the difference! */
-          if( spread==0 || (bytolerance && num>0) )
-            if( spread==0 || ((oldspread - spread) / spread) < param )
+          if(    spread==0
+              || (madzero==1 && size==oldsize)
+              || (madzero==0
+                  && bytolerance
+                  && num>0
+                  && ((oldspread - spread) / spread) < param ) )
               {
                 if(spread==0) oldspread=spread;
                 gal_data_free(spread_d); gal_data_free(center_d);
@@ -2791,6 +3092,7 @@ statistics_clip(gal_data_t *input, float multip, float param,
           /* Clip all the elements outside of the desired range: since the
              array is sorted, this means to just change the starting
              pointer and size of the array. */
+          oldsize = size;  /* 'size' gets changed in 'CLIPALL' */
           switch(type)
             {
             case GAL_TYPE_UINT8:    CLIPALL( uint8_t  );   break;
@@ -2810,7 +3112,7 @@ statistics_clip(gal_data_t *input, float multip, float param,
 
           /* Set the values from this round in the old elements, so the
              next round can compare with, and return then if necessary. */
-          oldspread  = spread;
+          oldspread = spread;
           ++num;
 
           /* Clean up: */
@@ -2830,8 +3132,9 @@ statistics_clip(gal_data_t *input, float multip, float param,
         {
           oa[ GAL_STATISTICS_CLIP_OUTCOL_MEDIAN ] = center;
           oa[ GAL_STATISTICS_CLIP_OUTCOL_NUMBER_USED ] = size;
-          oa[ GAL_STATISTICS_CLIP_OUTCOL_MAD ] = sig1_mad0 ? NAN : spread;
           oa[ GAL_STATISTICS_CLIP_OUTCOL_STD ] = sig1_mad0 ? spread : NAN;
+          oa[ GAL_STATISTICS_CLIP_OUTCOL_MAD ] =
+            sig1_mad0 ? NAN : (madzero ? 0.0 : spread);
         }
     }
 

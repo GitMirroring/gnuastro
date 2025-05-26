@@ -2143,14 +2143,14 @@ arithmetic_multioperand_number_write(struct multioperandparams *p,
                                                                         \
         /* For a check on a certain output pixel for a certain  */      \
         /* operator (in case this is a multi-operator problem). */      \
-        /* if(p->operator==GAL_ARITHMETIC_OP_SIGCLIP_ALL)       */      \
+        /* if(p->operator==GAL_ARITHMETIC_OP_MADCLIP_ALL)       */      \
         /*   if(j==0)                                           */      \
         /*     {                                                */      \
         /*       size_t k=0;                                    */      \
         /*       for(k=0; k<cont->size;++k)                     */      \
-        /*         printf("MULTIOPERAND_CLIP-before-pix-use: "  */      \
+        /*         printf("MULTIOPERAND_CLIP-after-pix-use: "   */      \
         /*                "%u (j=%zu, k=%zu)\n",                */      \
-        /*                ((uint16_t *)pixs)[k], j, k);         */      \
+        /*                ((uint32_t *)pixs)[k], j, k);         */      \
         /*     }                                                */      \
                                                                         \
         /* If there are any usable elements, do the measurement. */     \
