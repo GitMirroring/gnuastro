@@ -220,8 +220,8 @@ arithmetic_filter(void *in_prm)
   size_t *tsize, *dsize=input->dsize, *fsize=afp->fsize;
   size_t i, j, coord[ARITHMETIC_FILTER_DIM], ndim=input->ndim;
   size_t start[ARITHMETIC_FILTER_DIM], end[ARITHMETIC_FILTER_DIM];
-  gal_data_t *tile=gal_data_alloc(NULL, input->type, ndim, afp->fsize, NULL,
-                                  0, -1, 1, NULL, NULL, NULL);
+  gal_data_t *tile=gal_data_alloc(NULL, input->type, ndim, afp->fsize,
+                                  NULL, 0, -1, 1, NULL, NULL, NULL);
 
   /* Prepare the tile. */
   free(tile->array);
@@ -279,6 +279,16 @@ arithmetic_filter(void *in_prm)
       /* Do the necessary calculation. */
       switch(afp->operator)
         {
+        case ARITHMETIC_OP_FILTER_MINIMUM:
+          result=gal_statistics_minimum(tile);
+          break;
+
+
+        case ARITHMETIC_OP_FILTER_MAXIMUM:
+          result=gal_statistics_maximum(tile);
+          break;
+
+
         case ARITHMETIC_OP_FILTER_MEDIAN:
           result=gal_statistics_median(tile, 0);
           break;
@@ -289,17 +299,32 @@ arithmetic_filter(void *in_prm)
           break;
 
 
+        case ARITHMETIC_OP_FILTER_SIGCLIP_STD:
+        case ARITHMETIC_OP_FILTER_MADCLIP_STD:
+        case ARITHMETIC_OP_FILTER_SIGCLIP_MAD:
+        case ARITHMETIC_OP_FILTER_MADCLIP_MAD:
         case ARITHMETIC_OP_FILTER_SIGCLIP_MEAN:
         case ARITHMETIC_OP_FILTER_MADCLIP_MEAN:
         case ARITHMETIC_OP_FILTER_SIGCLIP_MEDIAN:
         case ARITHMETIC_OP_FILTER_MADCLIP_MEDIAN:
-          /* The median is always available with a sigma-clip, but the mean
-             needs to be explicitly requested. */
-          if(afp->operator == ARITHMETIC_OP_FILTER_SIGCLIP_MEAN)
+
+          /* The mean needs to be explicitly requested. */
+          if(   afp->operator == ARITHMETIC_OP_FILTER_SIGCLIP_MEAN
+             || afp->operator == ARITHMETIC_OP_FILTER_MADCLIP_MEAN )
             clipflags = GAL_STATISTICS_CLIP_OUTCOL_OPTIONAL_MEAN;
 
+          /* The STD must be explicitly requested for MAD-clipping. */
+          if( afp->operator == ARITHMETIC_OP_FILTER_MADCLIP_STD )
+            clipflags = GAL_STATISTICS_CLIP_OUTCOL_OPTIONAL_STD;
+
+          /* The MAD must be explicitly requested for sigma-clipping. */
+          if( afp->operator == ARITHMETIC_OP_FILTER_SIGCLIP_MAD )
+            clipflags = GAL_STATISTICS_CLIP_OUTCOL_OPTIONAL_STD;
+
           /* Do the main operation. */
-          if(    afp->operator==ARITHMETIC_OP_FILTER_SIGCLIP_MEAN
+          if(    afp->operator==ARITHMETIC_OP_FILTER_SIGCLIP_STD
+              || afp->operator==ARITHMETIC_OP_FILTER_SIGCLIP_MAD
+              || afp->operator==ARITHMETIC_OP_FILTER_SIGCLIP_MEAN
               || afp->operator==ARITHMETIC_OP_FILTER_SIGCLIP_MEDIAN )
             sigclip=gal_statistics_clip_sigma(tile, afp->sclip_multip,
                                               afp->sclip_param, clipflags,
@@ -312,6 +337,12 @@ arithmetic_filter(void *in_prm)
           /* Set the required index. */
           switch(afp->operator)
             {
+            case ARITHMETIC_OP_FILTER_SIGCLIP_STD:
+            case ARITHMETIC_OP_FILTER_MADCLIP_STD:
+              sind = GAL_STATISTICS_CLIP_OUTCOL_STD; break;
+            case ARITHMETIC_OP_FILTER_SIGCLIP_MAD:
+            case ARITHMETIC_OP_FILTER_MADCLIP_MAD:
+              sind = GAL_STATISTICS_CLIP_OUTCOL_MAD; break;
             case ARITHMETIC_OP_FILTER_SIGCLIP_MEAN:
             case ARITHMETIC_OP_FILTER_MADCLIP_MEAN:
               sind = GAL_STATISTICS_CLIP_OUTCOL_MEAN; break;
@@ -328,8 +359,7 @@ arithmetic_filter(void *in_prm)
           /* Allocate the output and write the value into it. */
           result=gal_data_alloc(NULL, GAL_TYPE_FLOAT32, 1, &one, NULL,
                                 0, -1, 1, NULL, NULL, NULL);
-          ((float *)(result->array))[0] =
-            ((float *)(sigclip->array))[sind];
+          ((float *)(result->array))[0]=((float *)(sigclip->array))[sind];
 
           /* Clean up. */
           gal_data_free(sigclip);
@@ -339,7 +369,7 @@ arithmetic_filter(void *in_prm)
         default:
           error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s "
                 "to fix the problem. 'afp->operator' code %d is not "
-                "recognized", PACKAGE_BUGREPORT, __func__,
+                "recognized", __func__, PACKAGE_BUGREPORT,
                 afp->operator);
         }
 
@@ -382,7 +412,11 @@ wrapper_for_filter(struct arithmeticparams *p, char *token, int operator)
   size_t fsize[ARITHMETIC_FILTER_DIM];
   gal_data_t *tmp, *tmp2, *zero, *comp, *params_list=NULL;
   size_t hnfsize[ARITHMETIC_FILTER_DIM], hpfsize[ARITHMETIC_FILTER_DIM];
-  int isclip=(   operator==ARITHMETIC_OP_FILTER_SIGCLIP_MEAN
+  int isclip=(   operator==ARITHMETIC_OP_FILTER_SIGCLIP_STD
+              || operator==ARITHMETIC_OP_FILTER_MADCLIP_STD
+              || operator==ARITHMETIC_OP_FILTER_SIGCLIP_MAD
+              || operator==ARITHMETIC_OP_FILTER_MADCLIP_MAD
+              || operator==ARITHMETIC_OP_FILTER_SIGCLIP_MEAN
               || operator==ARITHMETIC_OP_FILTER_MADCLIP_MEAN
               || operator==ARITHMETIC_OP_FILTER_SIGCLIP_MEDIAN
               || operator==ARITHMETIC_OP_FILTER_MADCLIP_MEDIAN );
@@ -525,21 +559,27 @@ wrapper_for_filter(struct arithmeticparams *p, char *token, int operator)
       switch(operator)
         {
         case ARITHMETIC_OP_FILTER_MEDIAN:
+        case ARITHMETIC_OP_FILTER_MINIMUM:
+        case ARITHMETIC_OP_FILTER_MAXIMUM:
         case ARITHMETIC_OP_FILTER_SIGCLIP_MEDIAN:
         case ARITHMETIC_OP_FILTER_MADCLIP_MEDIAN:
           type=afp.input->type;
           break;
 
         case ARITHMETIC_OP_FILTER_MEAN:
+        case ARITHMETIC_OP_FILTER_SIGCLIP_STD:
+        case ARITHMETIC_OP_FILTER_MADCLIP_STD:
+        case ARITHMETIC_OP_FILTER_SIGCLIP_MAD:
+        case ARITHMETIC_OP_FILTER_MADCLIP_MAD:
         case ARITHMETIC_OP_FILTER_SIGCLIP_MEAN:
         case ARITHMETIC_OP_FILTER_MADCLIP_MEAN:
           type=GAL_TYPE_FLOAT64;
           break;
 
         default:
-          error(EXIT_FAILURE, 0, "%s: a bug! please contact us at %s to "
-                "fix the problem. The 'operator' code %d is not recognized",
-                PACKAGE_BUGREPORT, __func__, operator);
+          error(EXIT_FAILURE, 0, "%s: a bug! please contact us at %s "
+                "to fix the problem. The 'operator' code %d is not "
+                "recognized", __func__, PACKAGE_BUGREPORT, operator);
         }
 
 
@@ -648,12 +688,14 @@ arithmetic_erode_dilate(struct arithmeticparams *p, char *token, int op)
   /* Do the operation. */
   switch(op)
     {
-    case ARITHMETIC_OP_ERODE:  gal_binary_erode(in,  1, conn_int, 1); break;
-    case ARITHMETIC_OP_DILATE: gal_binary_dilate(in, 1, conn_int, 1); break;
+    case ARITHMETIC_OP_ERODE:  gal_binary_erode(in,  1, conn_int, 1);
+      break;
+    case ARITHMETIC_OP_DILATE: gal_binary_dilate(in, 1, conn_int, 1);
+      break;
     default:
-      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to fix the "
-            "problem. The operator code %d not recognized", __func__,
-            PACKAGE_BUGREPORT, op);
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "
+            "fix the problem. The operator code %d not recognized",
+            __func__, PACKAGE_BUGREPORT, op);
     }
 
   /* Push the result onto the stack. */
@@ -748,10 +790,10 @@ arithmetic_invert(struct arithmeticparams *p, char *token)
   /* Do the inversion based on type. */
   switch(in->type)
     {
-    case GAL_TYPE_UINT8:  do *u8  = UINT8_MAX-*u8;   while(++u8<u8f);   break;
-    case GAL_TYPE_UINT16: do *u16 = UINT16_MAX-*u16; while(++u16<u16f); break;
-    case GAL_TYPE_UINT32: do *u32 = UINT32_MAX-*u32; while(++u32<u32f); break;
-    case GAL_TYPE_UINT64: do *u64 = UINT64_MAX-*u64; while(++u64<u64f); break;
+    case GAL_TYPE_UINT8:  do *u8=UINT8_MAX-*u8;   while(++u8<u8f);   break;
+    case GAL_TYPE_UINT16: do *u16=UINT16_MAX-*u16;while(++u16<u16f); break;
+    case GAL_TYPE_UINT32: do *u32=UINT32_MAX-*u32;while(++u32<u32f); break;
+    case GAL_TYPE_UINT64: do *u64=UINT64_MAX-*u64;while(++u64<u64f); break;
     default:
       error(EXIT_FAILURE, 0, "'invert' operand has %s type. 'invert' can "
             "only take unsigned integer types.\n\nYou can use any of the "
@@ -779,14 +821,17 @@ arithmetic_invert(struct arithmeticparams *p, char *token)
           GAL_DIMENSION_NEIGHBOR_OP(i, in->ndim, in->dsize, in->ndim,   \
                                     dinc,                               \
             {                                                           \
-              if(in->type==GAL_TYPE_FLOAT32 || in->type==GAL_TYPE_FLOAT64) \
+              if(   in->type==GAL_TYPE_FLOAT32                          \
+                 || in->type==GAL_TYPE_FLOAT64 )                        \
                 { if( a[nind] OP m[l[i]] ) m[l[i]]=a[nind]; }           \
               else                                                      \
-                { if( a[nind]!=b && a[nind] OP m[l[i]] ) m[l[i]]=a[nind]; } \
+                { if( a[nind]!=b && a[nind] OP m[l[i]] )                \
+                    m[l[i]]=a[nind]; }                                  \
             });                                                         \
       }                                                                 \
     for(i=0;i<in->size;++i) if( l[i]>0 ) { a[i]=m[l[i]]; }              \
 }
+
 #define INTERPOLATE_REGION_OP(TYPE) {                                   \
     switch(operator)                                                    \
       {                                                                 \
@@ -1386,8 +1431,10 @@ arithmetic_add_dimension(struct arithmeticparams *p, char *token,
           break;
         case ARITHMETIC_OP_ADD_DIMENSION_FAST:
           for(j=0;j<tmp->size;++j)
-            memcpy(gal_pointer_increment(out->array, j*num+num-i-1, out->type),
-                   gal_pointer_increment(tmp->array, j, out->type), nbytes);
+            memcpy(gal_pointer_increment(out->array, j*num+num-i-1,
+                                         out->type),
+                   gal_pointer_increment(tmp->array, j, out->type),
+                   nbytes);
 
           break;
         }
@@ -1474,6 +1521,18 @@ arithmetic_set_operator(char *string, size_t *num_operands, int *inlib)
         { op=ARITHMETIC_OP_FILTER_MEAN;           *num_operands=0; }
       else if (!strcmp(string, "filter-median"))
         { op=ARITHMETIC_OP_FILTER_MEDIAN;         *num_operands=0; }
+      else if (!strcmp(string, "filter-minimum"))
+        { op=ARITHMETIC_OP_FILTER_MINIMUM;        *num_operands=0; }
+      else if (!strcmp(string, "filter-maximum"))
+        { op=ARITHMETIC_OP_FILTER_MAXIMUM;        *num_operands=0; }
+      else if (!strcmp(string, "filter-sigclip-std"))
+        { op=ARITHMETIC_OP_FILTER_SIGCLIP_STD;   *num_operands=0; }
+      else if (!strcmp(string, "filter-sigclip-mad"))
+        { op=ARITHMETIC_OP_FILTER_SIGCLIP_MAD;   *num_operands=0; }
+      else if (!strcmp(string, "filter-madclip-std"))
+        { op=ARITHMETIC_OP_FILTER_MADCLIP_STD;   *num_operands=0; }
+      else if (!strcmp(string, "filter-madclip-mad"))
+        { op=ARITHMETIC_OP_FILTER_MADCLIP_MAD;   *num_operands=0; }
       else if (!strcmp(string, "filter-sigclip-mean"))
         { op=ARITHMETIC_OP_FILTER_SIGCLIP_MEAN;   *num_operands=0; }
       else if (!strcmp(string, "filter-madclip-mean"))
@@ -1755,6 +1814,12 @@ arithmetic_operator_run(struct arithmeticparams *p, int operator,
         {
         case ARITHMETIC_OP_FILTER_MEAN:
         case ARITHMETIC_OP_FILTER_MEDIAN:
+        case ARITHMETIC_OP_FILTER_MINIMUM:
+        case ARITHMETIC_OP_FILTER_MAXIMUM:
+        case ARITHMETIC_OP_FILTER_SIGCLIP_STD:
+        case ARITHMETIC_OP_FILTER_MADCLIP_STD:
+        case ARITHMETIC_OP_FILTER_SIGCLIP_MAD:
+        case ARITHMETIC_OP_FILTER_MADCLIP_MAD:
         case ARITHMETIC_OP_FILTER_SIGCLIP_MEAN:
         case ARITHMETIC_OP_FILTER_MADCLIP_MEAN:
         case ARITHMETIC_OP_FILTER_SIGCLIP_MEDIAN:

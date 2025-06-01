@@ -22656,11 +22656,17 @@ $ astarithmetic image.fits -h1        set-in \
 
 @item filter-median
 Apply @url{https://en.wikipedia.org/wiki/Median_filter, median filtering} on the input dataset.
-This is very similar to @command{filter-mean}, except that instead of the mean value of the box pixels, the median value is used to replace a pixel value.
+This is very similar to @command{filter-mean}, except that instead of the mean value of the box pixels, the median value is used to replace a pixel's value.
 For more on how to use this operator, please see @command{filter-mean}.
 
 The median is less susceptible to outliers compared to the mean.
 As a result, after median filtering, the pixel values will be more discontinuous than mean filtering.
+
+@item  filter-minimum
+@itemx filter-maximum
+Apply a minimum/maximum filter to the input.
+This is very similar to @command{filter-mean}, except that instead of the mean value of the box pixels, the minimum/maximum value is used to replace a pixel's value.
+For more on how to use this operator, please see @command{filter-mean}.
 
 @item filter-sigclip-mean
 Apply a @mymath{\sigma}-clipped mean filtering onto the input dataset.
@@ -22679,10 +22685,13 @@ The median (which needs a sorted dataset) is necessary for @mymath{\sigma}-clipp
 However, if there are strong outliers in the dataset that you want to ignore (for example, emission lines on a spectrum when finding the continuum), this is a much better solution.
 Note that @mymath{\sigma}-clipping is easily biased by outliers, so @code{filter-madclip-mean} is more robust.
 
-@item filter-sigclip-median
-Apply a @mymath{\sigma}-clipped median filtering onto the input dataset.
+@item  filter-sigclip-std
+@itemx filter-sigclip-mad
+@itemx filter-sigclip-median
+Apply a @mymath{\sigma}-clipped STD/MAD/median filtering onto the input dataset.
 This operator and its necessary operands are almost identical to @code{filter-sigclip-mean}, except that after @mymath{\sigma}-clipping, the median value (which is less affected by outliers than the mean) is added back to the stack.
 Note that @mymath{\sigma}-clipping is easily biased by outliers, so @code{filter-madclip-median} is more robust.
+
 
 @item filter-madclip-mean
 Apply a MAD-clipped mean filtering onto the input dataset.
@@ -22692,8 +22701,10 @@ This operator is called in a similar way to @code{filter-madclip-mean}, for exam
 $ astarithmetic 4 0.01 5 5 image.fits filter-madclip-mean
 @end example
 
-@item filter-madclip-median
-Apply a MAD-clipped median filtering onto the input dataset; see the description of @code{filter-madclip-mean} for more.
+@item  filter-madclip-std
+@itemx filter-madclip-mad
+@itemx filter-madclip-median
+Apply a MAD-clipped STD/MAD/median filtering onto the input dataset; see the description of @code{filter-madclip-mean} for more.
 @end table
 
 @node Pooling operators, Interpolation operators, Filtering operators, Arithmetic operators

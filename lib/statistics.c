@@ -140,6 +140,66 @@ gal_statistics_minimum(gal_data_t *input)
 
 
 
+/* Return a single dataset with the two smallest values
+   (non-repetative). In the returned dataset:
+    - Element 0 is the third smallest non-repeated value.
+    - Element 1 is the second smallest non-repeated value.
+    - Element 2 is the smallest value. */
+gal_data_t *
+gal_statistics_minimums_three(gal_data_t *input)
+{
+  size_t three=3;
+  gal_data_t *out=gal_data_alloc(NULL, gal_tile_block(input)->type, 1,
+                                 &three, NULL, 1, -1, 1, NULL, NULL,
+                                 NULL);
+
+  /* Initialize the output with the maximum possible value on the first  */
+  gal_type_max(out->type, out->array);
+  gal_type_max(out->type,
+               gal_pointer_increment(out->array, 1, out->type));
+  gal_type_max(out->type,
+               gal_pointer_increment(out->array, 2, out->type));
+
+  /* Parse the full input.  */
+  GAL_TILE_PARSE_OPERATE( input, out, 0, 1,
+     {
+       /* For a check.
+       printf("%u: before: %u, %u, %u\n", (uint32_t)(*i),
+              (uint32_t)(o[0]), (uint32_t)(o[1]),
+              (uint32_t)(o[2]));
+       */
+
+       /* Check if this value should be kept. */
+       if(*i<o[0])
+         {
+           if(*i<o[1])
+             {
+               if(*i<o[2])        /* e.g., *i=25; o=[50,40,30] */
+                 { o[0]=o[1]; o[1]=o[2]; o[2]=*i; }
+               else if (*i!=o[2]) /* e.g., *i=25; o=[50,40,30] */
+                 { o[0]=o[1]; o[1]=*i; }
+             }
+           else if(*i!=o[1]) o[0]=*i;
+         }
+
+       /* For a check.
+       printf("%u: after:  %u, %u, %u\n", (uint32_t)(*i),
+              (uint32_t)(o[0]), (uint32_t)(o[1]),
+              (uint32_t)(o[2]));
+       */
+     } );
+
+  /* For a check.
+  printf("\n\n"); */
+
+  /* Return the output dataset. */
+  return out;
+}
+
+
+
+
+
 /* Return the maximum (non-blank) value of a dataset in the same type as
    the dataset. */
 gal_data_t *

@@ -9,24 +9,32 @@ See the end of the file for license conditions.
 
 *** Arithmetic
 
-  - New Operators:
+  - New Operators: similar operators are grouped; groups are sorted
+    alphabetically by first operator in the group
 
-    - madclip-all: similar to 'sigclip-all', but after MAD-clipping.
+    - filter-minimum:
+    - filter-maximum:
+    - filter-sigclip-std:
+    - filter-madclip-mad:
+    - filter-sigclip-std:
+    - filter-madclip-mad:
+      Replace each pixel with the respective statistic of the pixels in the
+      given filter size. These are useful when you need to measure the
+      spread of nearby pixels (in the presence of outliers).
 
     - luminosity-to-mag:
-    - mag-to-luminosity: Convert apparent magnitude to luminosity (in units
-      of solar luminosity) and vice-versa. Implemented by Sepideh
-      Eskandarlou.
+    - mag-to-luminosity: Convert apparent magnitude to luminosity and
+      vice-versa. Implemented by Sepideh Eskandarlou.
+
+    - madclip-all:
+    - sigclip-all: return all available statistics after clipping outliers
+      (mean, std, median and MAD and number of used datasets).
 
     - sblim-diff: calculate the expected difference in surface brighntess
       limit (purely based on exposed area (of the telescope) and exposure
       time (assuming the same filter, sky conditions and assuming no
       correlated noise). This can be used for planning projects with
-      different telescopes, but be careful about the assumptions.
-
-    - sigclip-all: return all available statistics after doing the
-      sigma-clip (mean, std, median and MAD and number of used
-      datasets).
+      different telescopes, but be careful about filters and atmosphere.
 
 *** ConvertType
 
@@ -126,6 +134,9 @@ See the end of the file for license conditions.
   - gal_data_append_second_array_to_first_free: for easily appending
     (adding the contents of the second array into the first) in
     single-dimensional datasets.
+
+  - gal_statistics_minimums_three: return the three smallest values of the
+    given dataset.
 
   - gal_statistics_range_double: return the difference between the minimum
     and maximum as a double-precision floating point of a dataset (with any

@@ -94,6 +94,9 @@ gal_data_t *
 gal_statistics_minimum(gal_data_t *input);
 
 gal_data_t *
+gal_statistics_minimums_three(gal_data_t *input);
+
+gal_data_t *
 gal_statistics_maximum(gal_data_t *input);
 
 gal_data_t *
