@@ -11,6 +11,13 @@ See the end of the file for license conditions.
 
   - New Operators:
 
+    - madclip-all: similar to 'sigclip-all', but after MAD-clipping.
+
+    - luminosity-to-mag:
+    - mag-to-luminosity: Convert apparent magnitude to luminosity (in units
+      of solar luminosity) and vice-versa. Implemented by Sepideh
+      Eskandarlou.
+
     - sblim-diff: calculate the expected difference in surface brighntess
       limit (purely based on exposed area (of the telescope) and exposure
       time (assuming the same filter, sky conditions and assuming no
@@ -20,8 +27,6 @@ See the end of the file for license conditions.
     - sigclip-all: return all available statistics after doing the
       sigma-clip (mean, std, median and MAD and number of used
       datasets).
-
-    - madclip-all: similar to 'sigclip-all', but after MAD-clipping.
 
 *** ConvertType
 

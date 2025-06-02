@@ -80,6 +80,12 @@ double
 gal_units_mag_to_counts(double mag, double zeropoint);
 
 double
+gal_units_mag_to_luminosity(double mag, double distance_modulus);
+
+double
+gal_units_luminosity_to_mag(double luminosity, double distance_modulus);
+
+double
 gal_units_mag_to_sb(double mag, double area_arcsec2);
 
 double

@@ -3183,6 +3183,10 @@ arithmetic_function_binary_flt(int operator, int flags, gal_data_t *il,
       BINFUNC_F_OPERATOR_SET( gal_units_counts_to_mag, +0 ); break;
     case GAL_ARITHMETIC_OP_MAG_TO_COUNTS:
       BINFUNC_F_OPERATOR_SET( gal_units_mag_to_counts, +0 ); break;
+    case GAL_ARITHMETIC_MAG_TO_LUMINOSITY:
+      BINFUNC_F_OPERATOR_SET( gal_units_mag_to_luminosity, +0 ); break;
+    case GAL_ARITHMETIC_LUMINOSITY_TO_MAG:
+      BINFUNC_F_OPERATOR_SET( gal_units_luminosity_to_mag, +0 ); break;
     case GAL_ARITHMETIC_OP_COUNTS_TO_JY:
       BINFUNC_F_OPERATOR_SET( gal_units_counts_to_jy, +0 ); break;
     case GAL_ARITHMETIC_OP_JY_TO_COUNTS:
@@ -4172,6 +4176,10 @@ gal_arithmetic_set_operator(char *string, size_t *num_operands)
     { op=GAL_ARITHMETIC_OP_COUNTS_TO_MAG;     *num_operands=2;  }
   else if (!strcmp(string, "mag-to-counts"))
     { op=GAL_ARITHMETIC_OP_MAG_TO_COUNTS;     *num_operands=2;  }
+  else if (!strcmp(string, "mag-to-luminosity"))
+    { op=GAL_ARITHMETIC_MAG_TO_LUMINOSITY;    *num_operands=2;  }
+    else if (!strcmp(string, "luminosity-to-mag"))
+    { op=GAL_ARITHMETIC_LUMINOSITY_TO_MAG;    *num_operands=2;  }
   else if (!strcmp(string, "sb-to-mag"))
     { op=GAL_ARITHMETIC_OP_SB_TO_MAG;         *num_operands=2;  }
   else if (!strcmp(string, "mag-to-sb"))
@@ -4554,6 +4562,8 @@ gal_arithmetic_operator_string(int operator)
     case GAL_ARITHMETIC_OP_DEGREE_TO_DEC:   return "degree-to-dec";
     case GAL_ARITHMETIC_OP_COUNTS_TO_MAG:   return "counts-to-mag";
     case GAL_ARITHMETIC_OP_MAG_TO_COUNTS:   return "mag-to-counts";
+    case GAL_ARITHMETIC_LUMINOSITY_TO_MAG:  return "luminosity-to-mag";
+    case GAL_ARITHMETIC_MAG_TO_LUMINOSITY:  return "mag-to-luminosity";
     case GAL_ARITHMETIC_OP_SB_TO_MAG:       return "sb-to-mag";
     case GAL_ARITHMETIC_OP_MAG_TO_SB:       return "mag-to-sb";
     case GAL_ARITHMETIC_OP_COUNTS_TO_SB:    return "counts-to-sb";
@@ -4864,6 +4874,8 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_COUNTS_TO_JY:
     case GAL_ARITHMETIC_OP_COUNTS_TO_MAG:
     case GAL_ARITHMETIC_OP_MAG_TO_COUNTS:
+    case GAL_ARITHMETIC_LUMINOSITY_TO_MAG:
+    case GAL_ARITHMETIC_MAG_TO_LUMINOSITY:
     case GAL_ARITHMETIC_OP_NANOMAGGY_TO_COUNTS:
     case GAL_ARITHMETIC_OP_COUNTS_TO_NANOMAGGY:
     case GAL_ARITHMETIC_OP_JY_TO_WAVELENGTH_FLUX_DENSITY:
