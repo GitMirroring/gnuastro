@@ -224,6 +224,10 @@ See the end of the file for license conditions.
   - bug #67190: Sorting an empty plain-text table gives segmentation
     fault. Reported by Sepideh Eskandarlou.
 
+  - bug #67191: Arithmetic does not parse '-inf' as a number on the
+    command-line and complains with an invalid '-i' option! Reported by
+    Sepideh Eskandarlou.
+
 
 
 

@@ -80,9 +80,9 @@ doc[] = GAL_STRINGS_TOP_HELP_INFO PROGRAM_NAME" will do arithmetic "
   "\n\n"PROGRAM_NAME" recognizes a large collection of standard operators, "
   "including basic arithmetic (e.g., +, -, x, /), mathematical (e.g., abs, "
   "pow, sqrt, log), statistical (minvalue, min, max, average), comparison "
-  "(e.g., lt, le, gt), logical (e.g., and, or, not), the full set of bitwise "
-  "operators, and numeric type conversion operators to all known types. "
-  "Please run the command below for a complete list describing all "
+  "(e.g., lt, le, gt), logical (e.g., and, or, not), the full set of "
+  "bitwise operators, and numeric type conversion operators to all known "
+  "types. Please run the command below for a complete list describing all "
   "operators (press the 'SPACE' keyboard key, or arrow keys, to go down "
   "and 'q' to return to the command-line):\n\n"
   "     $ info gnuastro \"Arithmetic operators\"\n"
@@ -230,6 +230,20 @@ parse_opt(int key, char *arg, struct argp_state *state)
 /**************************************************************/
 /***************       Sanity Check         *******************/
 /**************************************************************/
+static int
+ui_check_dash_is_negative(char *string)
+{
+  if( isdigit(string[1])  /* We already know 'string[0]' is '-' */
+      || !strcmp(string, "-nan")
+      || !strcmp(string, "-inf") )
+    return 1;
+  else return 0;
+}
+
+
+
+
+
 /* Check ONLY the options. When arguments are involved, do the check
    in 'ui_check_options_and_arguments'. */
 static void
@@ -349,7 +363,8 @@ ui_check_options_and_arguments(struct arithmeticparams *p)
           /* This token is a number. Check if a negative dash was present
              that has been temporarily replaced with 'NEG_DASH_REPLACE'
              before option parsing. */
-          else if(token->v[0]==NEG_DASH_REPLACE && isdigit(token->v[1]) )
+          else if( token->v[0]==NEG_DASH_REPLACE
+                   && ui_check_dash_is_negative(token->v) )
             token->v[0]='-';
         }
     }
@@ -455,7 +470,8 @@ ui_preparations(struct arithmeticparams *p)
 /************         Set the parameters          *************/
 /**************************************************************/
 void
-ui_read_check_inputs_setup(int argc, char *argv[], struct arithmeticparams *p)
+ui_read_check_inputs_setup(int argc, char *argv[],
+                           struct arithmeticparams *p)
 {
   size_t i;
   struct gal_options_common_params *cp=&p->cp;
@@ -481,7 +497,7 @@ ui_read_check_inputs_setup(int argc, char *argv[], struct arithmeticparams *p)
      if any one starts with a dash and is followed by a number, then the
      dash is replaced by NEG_DASH_REPLACE. */
   for(i=0;i<argc;++i)
-    if(argv[i][0]=='-' && isdigit(argv[i][1]))
+    if( argv[i][0]=='-' && ui_check_dash_is_negative(argv[i]) )
       argv[i][0]=NEG_DASH_REPLACE;
 
 
