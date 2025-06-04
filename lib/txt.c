@@ -1255,10 +1255,9 @@ txt_read_prepare_table(gal_data_t *info, size_t *indsize,
          allocated spaces and correct the size. */
       if(indsize[0]==0)
         {
-          out->size=0;
+          out->dsize[0]=out->size=0;
           free(out->array);
-          free(out->dsize);
-          out->dsize=out->array=NULL;
+          out->array=NULL;
         }
 
       /* Find the input token (of each line) that each input column starts
