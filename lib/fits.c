@@ -659,6 +659,7 @@ gal_fits_open_to_write(char *filename)
 {
   int status=0;
   long naxes=0;
+  char *c, *msg;
   fitsfile *fptr;
 
   /* When the file exists just open it. Otherwise, create the file. But we
@@ -669,7 +670,28 @@ gal_fits_open_to_write(char *filename)
     {
       /* Create the file. */
       if( fits_create_file(&fptr, filename, &status) )
-        gal_fits_io_error(status, NULL);
+        {
+          /* Parse the file name to see if there are parenthesis (for a
+             useful error message to the user). */
+          msg=NULL;
+          for(c=filename; *c!='\0'; ++c)
+            if(*c=='(')
+              {
+                if( asprintf(&msg, "CFITSIO has special meaning for "
+                             "a parenthesis in the file name, which "
+                             "was not met in the given output file "
+                             "name '%s'. Either use a different "
+                             "character instead of the parenthesis, "
+                             "or make sure it satsfies the usage of "
+                             "parenthesis in CFITSIO file name "
+                             "convention", filename)<0 )
+                  error(EXIT_FAILURE, 0, "%s: could not allocate "
+                        "string", __func__);
+              }
+
+          /* Print the standard message. */
+          gal_fits_io_error(status, msg);
+        }
 
       /* Create blank extension. */
       if( fits_create_img(fptr, BYTE_IMG, 0, &naxes, &status) )
