@@ -277,7 +277,7 @@ Tutorials
 * Color images with full dynamic range::  Bright pixels with color, faint pixels in grayscale.
 * Zero point of an image::      Estimate the zero point of an image.
 * Pointing pattern design::     Optimizing the pointings of your observations.
-* Moire pattern in stacking and its correction::  How to avoid this grid-based artifact.
+* Moire pattern in coadding and its correction::  How to avoid this grid-based artifact.
 * Clipping outliers::           How to avoid outliers in your measurements.
 
 General program usage tutorial
@@ -574,7 +574,7 @@ Arithmetic operators
 * Coordinate conversion operators::  For example equatorial J2000 to Galactic.
 * Unit conversion operators::   Various unit conversions necessary.
 * Statistical operators::       Statistics of a single dataset (for example, mean).
-* Stacking operators::          Coadding or combining multiple datasets into one.
+* Coadding operators::          Coadding or combining multiple datasets into one.
 * Filtering operators::         Smoothing a dataset through mixing pixel with neighbors.
 * Pooling operators::           Reducing size through statistics of pixels in window.
 * Interpolation operators::     Giving blank pixels a value.
@@ -779,7 +779,7 @@ Installed scripts
 * SAO DS9 region files from table::  Create ds9 region file from a table.
 * Viewing FITS file contents with DS9 or TOPCAT::  Open DS9 (images/cubes) or TOPCAT (tables).
 * Zero point estimation::       Zero point of an image from reference catalog or image(s).
-* Pointing pattern simulation::  Simulate a stack with a given series of pointings.
+* Pointing pattern simulation::  Simulate a coadd with a given series of pointings.
 * Color images with gray faint regions::  Color for bright pixels and grayscale for faint.
 * PSF construction and subtraction::  Set of scripts to create extended PSF of an image.
 
@@ -820,8 +820,8 @@ PSF construction and subtraction
 
 * Overview of the PSF scripts::  Summary of concepts and methods
 * Invoking astscript-psf-select-stars::  Select good starts within an image.
-* Invoking astscript-psf-stamp::  Make a stamp of each star to stack.
-* Invoking astscript-psf-unite::  Merge stacks of different regions of PSF.
+* Invoking astscript-psf-stamp::  Make a stamp of each star to coadd.
+* Invoking astscript-psf-unite::  Merge coadds of different regions of PSF.
 * Invoking astscript-psf-scale-factor::  Calculate factor to scale PSF to star.
 * Invoking astscript-psf-subtract::  Put the PSF in the image to subtract.
 
@@ -1177,7 +1177,7 @@ They can be run just like a program and behave very similarly (with minor differ
 (see @ref{Viewing FITS file contents with DS9 or TOPCAT}) Given any number of FITS files, this script will either open SAO DS9 (for images or cubes) or TOPCAT (for tables) to view them in a graphic user interface (GUI).
 
 @item astscript-pointing-simulate
-(See @ref{Pointing pattern simulation}) Given a table of pointings on the sky, create and a reference image that contains your camera's distortions and properties, generate a stacked exposure map.
+(See @ref{Pointing pattern simulation}) Given a table of pointings on the sky, create and a reference image that contains your camera's distortions and properties, generate a coadded exposure map.
 This is very useful in testing the coverage of dither patterns when designing your observing strategy and it is highly customizable.
 See Akhlaghi @url{https://arxiv.org/abs/2310.15006,2023}, or the dedicated tutorial in @ref{Pointing pattern design}.
 
@@ -2062,7 +2062,7 @@ But they need to be as realistic as possible, so this tutorial is dedicated to t
 There are other tutorials also, on things that are commonly necessary in astronomical research:
 In @ref{Detecting lines and extracting spectra in 3D data}, we use MUSE cubes (an IFU dataset) to show how you can subtract the continuum, detect emission-line features, extract spectra and build synthetic narrow-band images.
 In @ref{Color channels in same pixel grid} we demonstrate how you can warp multiple images into a single pixel grid (often necessary with multi-wavelength data), and build a single color image.
-In @ref{Moire pattern in stacking and its correction} we show how you can avoid the unwanted Moir@'e pattern which happens when warping separate exposures to build a stacked/co-add deeper image.
+In @ref{Moire pattern in coadding and its correction} we show how you can avoid the unwanted Moir@'e pattern which happens when warping separate exposures to build a coadded deeper image.
 In @ref{Zero point of an image} we review the process of estimating the zero point of an image using a reference image or catalog.
 Finally, in @ref{Pointing pattern design} we show the process by which you can simulate a dither pattern to find the best observing strategy for your next exciting scientific project.
 
@@ -2081,7 +2081,7 @@ For an explanation of the conventions we use in the example codes through the bo
 * Color images with full dynamic range::  Bright pixels with color, faint pixels in grayscale.
 * Zero point of an image::      Estimate the zero point of an image.
 * Pointing pattern design::     Optimizing the pointings of your observations.
-* Moire pattern in stacking and its correction::  How to avoid this grid-based artifact.
+* Moire pattern in coadding and its correction::  How to avoid this grid-based artifact.
 * Clipping outliers::           How to avoid outliers in your measurements.
 @end menu
 
@@ -3567,7 +3567,7 @@ It is very important to have a feeling of what your dataset looks like, and how 
 Generally, they look very small with different levels of diffuse-ness!
 Those that are sharper make more visual sense (to be @mymath{5\sigma} detections), but the more diffuse ones extend over a larger area.
 Furthermore, the noise is measured on individual pixel measurements.
-However, during the reduction many exposures are co-added and stacked, mixing the pixels like a small convolution (creating ``correlated noise'').
+However, during the reduction many exposures are co-added, mixing the pixels like a small convolution (creating ``correlated noise'').
 Therefore you clearly see two main issues with the detection limit as defined above: it depends on the morphology, and it does not take into account the correlated noise.
 
 @cindex Upper-limit
@@ -5410,7 +5410,7 @@ $ astnoisechisel r.fits -h0 --tilesize=100,100 -P | grep erode
 
 @noindent
 We see that the value of @code{erode} is @code{2}.
-The default NoiseChisel parameters are primarily targeted to processed images (where there is correlated noise due to all the processing that has gone into the warping and stacking of raw images, see @ref{NoiseChisel optimization for detection}).
+The default NoiseChisel parameters are primarily targeted to processed images (where there is correlated noise due to all the processing that has gone into the warping and coadding of raw images, see @ref{NoiseChisel optimization for detection}).
 In those scenarios 2 erosions are commonly necessary.
 But here, we have a single-exposure image where there is no correlated noise (the pixels are not mixed).
 So let's see how things change with only one erosion:
@@ -5928,7 +5928,7 @@ ds9 r_detected.fits[DETECTIONS]   -regions load ds9.reg
 
 In this example, we were looking at a single-exposure image that has no correlated noise.
 Because of this, the surface brightness limit and the upper-limit surface brightness are very close.
-They will have a bigger difference on deep datasets with stronger correlated noise (that are the result of stacking many individual exposures).
+They will have a bigger difference on deep datasets with stronger correlated noise (that are the result of coadding many individual exposures).
 As an exercise, please try measuring the upper-limit surface brightness level and surface brightness limit for the deep HST data that we used in the previous tutorial (@ref{General program usage tutorial}).
 
 @node Achieved surface brightness level, Extract clumps and objects, Image surface brightness limit, Detecting large extended targets
@@ -6399,7 +6399,7 @@ Since the number of points at the extreme end are increasing (from 1 to 2), We t
 A more reasonable saturation level for this image would be 2200!
 As an exercise, you can try automating this selection with AWK.
 
-Therefore, we can set the saturation level in this image@footnote{In raw exposures, this value is usually around 65000 (close to @mymath{2^{16}}, since most CCDs have 16-bit pixels; see @ref{Numeric data types}). But that is not the case here, because this is a processed/stacked image that has been calibrated.} to be 2200.
+Therefore, we can set the saturation level in this image@footnote{In raw exposures, this value is usually around 65000 (close to @mymath{2^{16}}, since most CCDs have 16-bit pixels; see @ref{Numeric data types}). But that is not the case here, because this is a processed/coadded image that has been calibrated.} to be 2200.
 Let's mask all such pixels with the command below:
 
 @example
@@ -6685,7 +6685,7 @@ To do these, we will use @file{astscript-psf-stamp} (for more on this script see
 One of the most important parameters for this script is the normalization radii @code{--normradii}.
 This parameter defines a ring for the flux normalization of each star stamp.
 The normalization of the flux is necessary because each star has a different brightness, and consequently, it is crucial for having all the stamps with the same flux level in the same region.
-Otherwise the final stack of the different stamps would have no sense.
+Otherwise the final coadd of the different stamps would have no sense.
 Depending on the PSF shape, internal reflections, ghosts, saturated pixels, and other systematics, it would be necessary to choose the @code{--normradii} appropriately.
 
 The selection of the normalization radii is something that requires a good understanding of the data.
@@ -6766,9 +6766,9 @@ $ asttable outer/67510-6-10.fits \
              done
 @end example
 
-After the stamps are created, we need to stack them together with a simple Arithmetic command (see @ref{Stacking operators}).
-The stack is done using the sigma-clipped mean operator that will preserve more of the signal, while rejecting outliers (more than @mymath{3\sigma} with a tolerance of @mymath{0.2}, for more on sigma-clipping see @ref{Sigma clipping}).
-Just recall that we need to specify the number of inputs into the stacking operators, so we are reading the list of images and counting them as separate variables before calling Arithmetic.
+After the stamps are created, we need to coadd them together with a simple Arithmetic command (see @ref{Coadding operators}).
+The coadd is done using the sigma-clipped mean operator that will preserve more of the signal, while rejecting outliers (more than @mymath{3\sigma} with a tolerance of @mymath{0.2}, for more on sigma-clipping see @ref{Sigma clipping}).
+Just recall that we need to specify the number of inputs into the coadding operators, so we are reading the list of images and counting them as separate variables before calling Arithmetic.
 
 @c We are not using something like 'ls' because on some systems, 'ls'
 @c always prints outputs on a one-file-per-line format and this will cause
@@ -6777,23 +6777,23 @@ Just recall that we need to specify the number of inputs into the stacking opera
 @example
 $ numimgs=$(echo outer/stamps/*.fits | wc -w)
 $ astarithmetic outer/stamps/*.fits $numimgs 3 0.2 sigclip-mean \
-                -g1 --output=outer/stack.fits --wcsfile=none \
+                -g1 --output=outer/coadd.fits --wcsfile=none \
                 --writeall
 @end example
 
 @noindent
 Did you notice the @option{--wcsfile=none} option above?
-With it, the stacked image no longer has any WCS information.
-This is natural, because the stacked image does not correspond to any specific region of the sky any more.
-Also note the @code{--writeall} option: it is necessary because @code{sigclip-mean} will return two datasets: the actual stacked image and an image showing how many images were ultimately used for each pixel.
+With it, the coadded image no longer has any WCS information.
+This is natural, because the coadded image does not correspond to any specific region of the sky any more.
+Also note the @code{--writeall} option: it is necessary because @code{sigclip-mean} will return two datasets: the actual coadded image and an image showing how many images were ultimately used for each pixel.
 Because of this, the output has two HDUs, containing both these images respectiely.
 This is a good check to help improve/debug your results.
 
-Let's compare this stacked PSF with the images of the individual stars that were used to create it.
+Let's compare this coadded PSF with the images of the individual stars that were used to create it.
 You can clearly see that the number of masked pixels is significantly decreased and the PSF is much more ``cleaner''.
 
 @example
-$ astscript-fits-view outer/stack.fits outer/stamps/*.fits
+$ astscript-fits-view outer/coadd.fits outer/stamps/*.fits
 @end example
 
 However, the saturation in the center still remains.
@@ -6814,9 +6814,9 @@ In fact, the J-PLUS DR2 image ID of the field above was intentionally preserved 
 @node Inner part of the PSF, Uniting the different PSF components, Building outer part of PSF, Building the extended PSF
 @subsection Inner part of the PSF
 
-In @ref{Building outer part of PSF}, we were able to create a stack of the outer-most behavior of the PSF in a J-PLUS survey image.
+In @ref{Building outer part of PSF}, we were able to create a coadd of the outer-most behavior of the PSF in a J-PLUS survey image.
 But the central part that was affected by saturation and non-linearity is still remaining, and we still do not have a ``complete'' PSF!
-In this section, we will use the same steps before to make stacks of more inner regions of the PSF to ultimately unite them all into a single PSF in @ref{Uniting the different PSF components}.
+In this section, we will use the same steps before to make coadds of more inner regions of the PSF to ultimately unite them all into a single PSF in @ref{Uniting the different PSF components}.
 
 For the outer PSF, we selected stars in the magnitude range of 6 to 10.
 So let's have a look and see how many stars we have in the magnitude range of 12 to 13 with a more relaxed condition on the minimum distance for neighbors, @option{--mindistdeg=0.01} (36 arcsec, since these stars are fainter), and use the ds9 region script to visually inspect them:
@@ -6834,8 +6834,8 @@ $ astscript-ds9-region inner/67510-12-13.fits -cra,dec \
 
 We have 41 stars, but if you zoom into their centers, you will see that they do not have any major bleeding-vertical saturation any more.
 Only the very central core of some of the stars is saturated.
-We can therefore use these stars to fill the strong bleeding footprints that were present in the outer stack of @file{outer/stack.fits}.
-Similar to before, let's build ready-to-stack crops of these stars.
+We can therefore use these stars to fill the strong bleeding footprints that were present in the outer coadd of @file{outer/coadd.fits}.
+Similar to before, let's build ready-to-coadd crops of these stars.
 To get a better feeling of the normalization radii, follow the same steps of @ref{Building outer part of PSF} (setting @option{--tmpdir} and @option{--keeptmp}).
 In this case, since the stars are fainter, we can set a smaller size for the individual stamps, @option{--widthinpix=500,500}, to speed up the calculations:
 
@@ -6858,13 +6858,13 @@ $ asttable inner/67510-12-13.fits \
 
 $ numimgs=$(echo inner/stamps/*.fits | wc -w)
 $ astarithmetic inner/stamps/*.fits $numimgs 3 0.2 sigclip-mean \
-                -g1 --output=inner/stack.fits --wcsfile=none \
+                -g1 --output=inner/coadd.fits --wcsfile=none \
                 --writeall
-$ astscript-fits-view inner/stack.fits inner/stamps/*.fits
+$ astscript-fits-view inner/coadd.fits inner/stamps/*.fits
 @end example
 
 @noindent
-We are now ready to unite the two stacks we have constructed: the outer and the inner parts.
+We are now ready to unite the two coadds we have constructed: the outer and the inner parts.
 
 
 
@@ -6881,13 +6881,13 @@ We are now ready to unite the two stacks we have constructed: the outer and the 
 In @ref{Building outer part of PSF} we built the outer part of the extended PSF and the inner part was built in @ref{Inner part of the PSF}.
 The outer part was built with very bright stars, and the inner part using fainter stars to not have saturation in the core of the PSF.
 The next step is to join these two parts in order to have a single PSF.
-First of all, let's have a look at the two stacks and also to their radial profiles to have a good feeling of the task.
+First of all, let's have a look at the two coadds and also to their radial profiles to have a good feeling of the task.
 Note that you will need to have TOPCAT to run the last command and plot the radial profile (see @ref{TOPCAT}).
 
 @example
-$ astscript-fits-view outer/stack.fits inner/stack.fits
-$ astscript-radial-profile outer/stack.fits -o outer/profile.fits
-$ astscript-radial-profile inner/stack.fits -o inner/profile.fits
+$ astscript-fits-view outer/coadd.fits inner/coadd.fits
+$ astscript-radial-profile outer/coadd.fits -o outer/profile.fits
+$ astscript-radial-profile inner/coadd.fits -o inner/profile.fits
 $ astscript-fits-view outer/profile.fits inner/profile.fits
 @end example
 
@@ -6919,7 +6919,7 @@ On the ``Layers'' menu, select ``Add Position Control'' to allow adding the prof
 After it, you will see that a new red-blue scatter plot icon opened on the bottom-left menu (with a title of @code{<no table>}).
 @item
 On the bottom-right panel, in the drop-down menu in front of @code{Table:}, select @code{2: profile.fits}.
-Afterwards, you will see the radial profile of the inner stack as the newly added blue plot.
+Afterwards, you will see the radial profile of the inner coadd as the newly added blue plot.
 Our goal here is to find the factor that is necessary to multiply with the inner profile so it matches the outer one.
 @item
 On the bottom-right panel, in front of @code{Y:}, you will see @code{MEAN}.
@@ -6927,7 +6927,7 @@ Click in the white-space after it, and type this: @code{*100}.
 This will display the @code{MEAN} column of the inner profile, after multiplying it by 100.
 Afterwards, you will see that the inner profile (blue) matches more cleanly with the outer (red); especially in the smaller radii.
 At larger radii, it does not drop like the red plot.
-This is because of the extremely low signal-to-noise ratio at those regions in the fainter stars used to make this stack.
+This is because of the extremely low signal-to-noise ratio at those regions in the fainter stars used to make this coadd.
 @item
 Take your mouse cursor over the profile, in particular over the bump around a radius of 100 pixels.
 Scroll your mouse down-ward to zoom-in to the profile and up-ward to zoom-out.
@@ -6936,7 +6936,7 @@ This is particular helpful when you have zoomed-in to the profile.
 @item
 Zoom-in to the bump around a radius of 100 pixels until the horizontal axis range becomes around 50 to 130 pixels.
 @item
-You clearly see that the inner stack (blue) is much more noisy than the outer (red) stack.
+You clearly see that the inner coadd (blue) is much more noisy than the outer (red) coadd.
 By ``noisy'', we mean that the scatter of the points is much larger.
 If you further zoom-out, you will see that the shallow slope at the larger radii of the inner (blue) profile has also affected the height of this bump in the inner profile.
 This is a @emph{very important} point: this clearly shows that the inner profile is too noisy at these radii.
@@ -6966,21 +6966,21 @@ This is present in all CCDs and pixels beyond this level should not be used in m
 
 The items above were only listed so you get a good mental/visual understanding of the logic behind the operation of the next script (and to learn how to tune its parameters where necessary): @file{astscript-psf-scale-factor}.
 This script is more general than this particular problem, but can be used for this special case also.
-Its job is to take a model of an object (PSF, or inner stack in this case) and the position of an instance of that model (a star, or the outer stack in this case) in a larger image.
+Its job is to take a model of an object (PSF, or inner coadd in this case) and the position of an instance of that model (a star, or the outer coadd in this case) in a larger image.
 
 Instead of dealing with radial profiles (that enforce a certain shape), this script will put the centers of the inner and outer PSFs over each other and divide the outer by the inner.
 Let's have a look with the command below.
 Just note that we are running it with @option{--keeptmp} so the temporary directory with all the intermediate files remain for further clarification:
 
 @example
-$ astscript-psf-scale-factor outer/stack.fits \
-           --psf=inner/stack.fits --center=501,501 \
+$ astscript-psf-scale-factor outer/coadd.fits \
+           --psf=inner/coadd.fits --center=501,501 \
            --mode=img --normradii=10,15 --keeptmp
-$ astscript-fits-view stack_psfmodelscalefactor/cropped-*.fits \
-                      stack_psfmodelscalefactor/for-factor-*.fits
+$ astscript-fits-view coadd_psfmodelscalefactor/cropped-*.fits \
+                      coadd_psfmodelscalefactor/for-factor-*.fits
 @end example
 
-With the second command, you see the four steps of the process: the first two images show the cropped outer and inner stacks (to same width image).
+With the second command, you see the four steps of the process: the first two images show the cropped outer and inner coadds (to same width image).
 The third shows the radial position of each pixel (which is used to only keep the pixels within the desired radial range).
 The fourth shows the per-pixel division of the outer by the inner within the requested radii.
 The sigma-clipped median and standard deviation of these pixels is finally reported.
@@ -6991,9 +6991,9 @@ This makes it very useful for complex PSFs (like the case here).
 To continue, let's remove the temporary directory and re-run the script but with @option{--quiet} mode so we can put the outputs in a shell variable.
 
 @example
-$ rm -r stack_psfmodelscalefactor
-$ values=$(astscript-psf-scale-factor outer/stack.fits \
-                    --psf=inner/stack.fits --center=501,501 \
+$ rm -r coadd_psfmodelscalefactor
+$ values=$(astscript-psf-scale-factor outer/coadd.fits \
+                    --psf=inner/coadd.fits --center=501,501 \
                     --mode=img --normradii=10,15 --quiet)
 
 $ scale=$(echo $values | awk '@{print $1@}')
@@ -7008,20 +7008,20 @@ The inner part is first scaled, and all the pixels of the outer image within the
 Since the flux factor was computed for a ring of pixels between 10 and 15 pixels, let's set the junction radius to be 12 pixels (roughly in between 10 and 15):
 
 @example
-$ astscript-psf-unite outer/stack.fits \
-           --inner=inner/stack.fits --radius=12 \
+$ astscript-psf-unite outer/coadd.fits \
+           --inner=inner/coadd.fits --radius=12 \
            --scale=$scale --output=psf.fits
 @end example
 
 @noindent
-Let's have a look at the outer stack and the final PSF with the command below.
+Let's have a look at the outer coadd and the final PSF with the command below.
 Since we want several other DS9 settings to help you directly see the main point, we are using @option{--ds9extra}.
 After DS9 is opened, you can see that the center of the PSF has now been nicely filled.
 You can click on the ``Edit'' button and then the ``Colorbar'' and hold your cursor over the image and move it.
 You can see that besides filling the inner regions nicely, there is also no major discontinuity in the 2D image around the union radius of 12 pixels around the center.
 
 @example
-$ astscript-fits-view outer/stack.fits psf.fits --ds9scale=minmax \
+$ astscript-fits-view outer/coadd.fits psf.fits --ds9scale=minmax \
            --ds9extra="-scale limits 0 22000 -match scale" \
            --ds9extra="-lock scale yes -zoom 4 -scale log"
 @end example
@@ -7031,14 +7031,14 @@ So let's choose a bad normalization radial range (50 to 60 pixels) and unite the
 The last command will open the two PSFs together in DS9, you should be able to immediately see the discontinuity in the union radius.
 
 @example
-$ values=$(astscript-psf-scale-factor outer/stack.fits \
-                   --psf=inner/stack.fits --center=501,501 \
+$ values=$(astscript-psf-scale-factor outer/coadd.fits \
+                   --psf=inner/coadd.fits --center=501,501 \
                    --mode=img --normradii=50,60 --quiet)
 
 $ scale=$(echo $values | awk '@{print $1@}')
 
-$ astscript-psf-unite outer/stack.fits \
-           --inner=inner/stack.fits --radius=55 \
+$ astscript-psf-unite outer/coadd.fits \
+           --inner=inner/coadd.fits --radius=55 \
            --scale=$scale --output=psf-bad.fits
 
 $ astscript-fits-view psf-bad.fits psf.fits --ds9scale=minmax \
@@ -7143,10 +7143,10 @@ $ ls outer/stamps/*.fits | wc -l | awk '@{print sqrt($1)@}'
 You see that the scale is almost 19!
 As a result, the PSF has been multiplied by 19 before being subtracted.
 However, the outer part of the PSF was created with only a handful of star stamps.
-When you stack @mymath{N} images, the stack's signal-to-noise ratio (S/N) improves by @mymath{\sqrt{N}}.
+When you coadd @mymath{N} images, the coadd's signal-to-noise ratio (S/N) improves by @mymath{\sqrt{N}}.
 We had 8 images for the outer part, so the S/N has only improved by a factor of just under 3!
-When we multiply the final stacked PSF with 19, we are also scaling up the noise by that same factor (most importantly: in the outer most regions where there is almost no signal).
-So the stacked image's noise-level is @mymath{19/3=6.3} times larger than the noise of the input image.
+When we multiply the final coadded PSF with 19, we are also scaling up the noise by that same factor (most importantly: in the outer most regions where there is almost no signal).
+So the coadded image's noise-level is @mymath{19/3=6.3} times larger than the noise of the input image.
 This terrible noise-level is what you clearly see as the footprint of the PSF.
 
 To confirm this, let's use the commands below to subtract the faintest of the bright-stars catalog (note the use of @option{--tail} when finding the central position).
@@ -10036,7 +10036,7 @@ $ astscript-fits-view jplus-zeropoint.fits jplus-zeropoint-cat.fits \
 @end example
 
 
-@node Pointing pattern design, Moire pattern in stacking and its correction, Zero point of an image, Tutorials
+@node Pointing pattern design, Moire pattern in coadding and its correction, Zero point of an image, Tutorials
 @section Pointing pattern design
 
 @cindex Dithering
@@ -10052,7 +10052,7 @@ This is done for reasons like improving calibration, increasing resolution, expe
 Therefore, deciding a suitable pointing pattern is one of the most important steps when planning your observation strategy.
 
 There are commonly two types of pointings: ``dither'' and ``offset''.
-These are sometimes used interchangeably with ``pointing'' (especially when the final stack is roughly the same area as the field of view.
+These are sometimes used interchangeably with ``pointing'' (especially when the final coadd is roughly the same area as the field of view.
 Alternatively, ``dither'' and ``offset'' are used to distinguish pointings with large or small (on the scale of the field of view) movement compared to a previous one.
 When a pointing has a large distance to the previous pointing, it is known as an ``offset'', while pointings with a small displacement are known as a ``dither''.
 This distinction originates from the mechanics and optics of most modern telescopes: the overhead (for example the need to re-focus the camera) to make small movements is usually less than large movements.
@@ -10093,7 +10093,7 @@ However, the tools, methods, criteria or logic to check if your pointing pattern
 Therefore, you can use the same methods, tools or logic here to simulate or verify that your pointing pattern will produce the products you expect after the observation.
 
 To start simulating a pointing pattern for a certain telescope, you just need a single-exposure image of that telescope with WCS information.
-In other words, after astrometry, but before warping into any other pixel grid (to combine into a deeper stack).
+In other words, after astrometry, but before warping into any other pixel grid (to combine into a deeper coadd).
 The image will give us the default number of the camera's pixels, its pixel scale (width of pixel in arcseconds) and the camera distortion.
 These are reference parameters that are independent of the position of the image on the sky.
 
@@ -10114,13 +10114,13 @@ $ astscript-fits-view input/jplus-1050345.fits.fz
 @cartouche
 @noindent
 @strong{This is the first time I am using an instrument:} In case you haven't already used images from your desired instrument (to use as reference), you can find such images from their public archives; or contacting them.
-A single exposure images is rarely of any scientific value (post-processing and stacking is necessary to make high-level and science-ready products).
+A single exposure images is rarely of any scientific value (post-processing and coadding is necessary to make high-level and science-ready products).
 Therefore, they become publicly available very soon after the observation date; furthermore, calibration images are usually public immediately.
 @end cartouche
 
 As you see from the image above, the T80Cam images are large (9216 by 9232 pixels).
 Therefore, to speed up the pointing testing, let's down-sample the image by a factor of 10.
-This step is optional and you can safely use the full resolution, which will give you a more precise stack.
+This step is optional and you can safely use the full resolution, which will give you a more precise coadd.
 But it will be much slower (maybe good after you have an almost final solution on the down-sampled image).
 We will call the output @file{ref.fits} (since it is the ``reference'' for our test).
 We are putting these two ``input'' files (to the script) in a dedicated directory to keep the running directory clean (and be able to easily delete temporary/test files for a fresh start with a `@command{rm *.fits}').
@@ -10173,16 +10173,16 @@ $ rm pointing.fits
 @end example
 
 We are now ready to generate the exposure map of the pointing pattern above using the reference image that we downloaded before.
-Let's put the center of our final stack to be on the center of the galaxy, and we'll assume the stack has a size of 2 degrees.
-With the second command, you can see the exposure map of the final stack.
+Let's put the center of our final coadd to be on the center of the galaxy, and we'll assume the coadd has a size of 2 degrees.
+With the second command, you can see the exposure map of the final coadd.
 Recall that in this image, each pixel shows the number of input images that went into it.
 
 @example
-$ astscript-pointing-simulate pointing.txt --output=stack.fits \
+$ astscript-pointing-simulate pointing.txt --output=coadd.fits \
            --img=input/ref.fits --center=$center_ra,$center_dec \
            --width=2
 
-$ astscript-fits-view stack.fits
+$ astscript-fits-view coadd.fits
 @end example
 
 You will see that except for a thin boundary, we have a depth of 5 exposures over the area of the single exposure.
@@ -10193,7 +10193,7 @@ With the next command, let's view the deep region and with the last command belo
 
 @example
 $ deep_thresh=5
-$ astarithmetic stack.fits set-s s s $deep_thresh lt nan where trim \
+$ astarithmetic coadd.fits set-s s s $deep_thresh lt nan where trim \
                 --output=deep.fits
 
 $ astscript-fits-view deep.fits
@@ -10352,14 +10352,14 @@ echo $center_ra $center_dec \
             >> $pointingcat
 
 # Simulate the pointing pattern.
-stack=$bdir/stack.fits
-astscript-pointing-simulate $pointingcat --output=$stack \
+coadd=$bdir/coadd.fits
+astscript-pointing-simulate $pointingcat --output=$coadd \
            --img=input/ref.fits --center=$center_ra,$center_dec \
            --width=2
 
 # Trim the regions shallower than the threshold.
 deep=$bdir/deep.fits
-astarithmetic $stack set-s s s $deep_thresh lt nan where trim \
+astarithmetic $coadd set-s s s $deep_thresh lt nan where trim \
                --output=$deep
 
 # Calculate the area of each pixel on the curved celestial sphere:
@@ -10386,10 +10386,10 @@ Furthermore, @ref{Script with pointing simulation steps so far}, the steps were 
 
 After you change @code{step_arcmin=15} and re-run the script, you will get a total area (from counting of per-pixel areas) of approximately 0.96 degrees squared.
 This is just roughly half the previous area and will barely fit M94!
-To understand the cause, let's have a look at the full stack (not just the deepest area):
+To understand the cause, let's have a look at the full coadd (not just the deepest area):
 
 @example
-$ astscript-fits-view build/stack.fits
+$ astscript-fits-view build/coadd.fits
 @end example
 
 Compared to the first run (with @code{step_arcmin=1}), we clearly see how there are indeed fewer pixels that get photons in all 5 exposures.
@@ -10407,7 +10407,7 @@ For a complete discussion on the definition of the surface brightness limit, see
 
 @cindex Poisson noise
 Deep images will usually be dominated by @ref{Photon counting noise} (or Poisson noise).
-Therefore, if a single exposure image has a sky standard deviation of @mymath{\sigma_s}, and we combine @mymath{N} such exposures by taking their mean, the final/stacked sky standard deviation (@mymath{\sigma}) will be @mymath{\sigma=\sigma_s/\sqrt{N}}.
+Therefore, if a single exposure image has a sky standard deviation of @mymath{\sigma_s}, and we combine @mymath{N} such exposures by taking their mean, the final/coadded sky standard deviation (@mymath{\sigma}) will be @mymath{\sigma=\sigma_s/\sqrt{N}}.
 As a result, the surface brightness limit between the regions with @mymath{N} exposures and @mymath{M} exposures differs by @mymath{2.5\times log_{10}(\sqrt{N/M}) = 1.25\times log_{10}(N/M)} magnitudes.
 If we set @mymath{N=3} and @mymath{M=5}, we get a surface brightness magnitude difference of 0.28!
 
@@ -10416,27 +10416,27 @@ Therefore at the cost of decreasing our surface brightness limit by 0.28 magnitu
 
 The argument above didn't involve any image and was primarily theoretical.
 For the more visually-inclined readers, let's add raw Gaussian noise (with a @mymath{\sigma} of 100 counts) over each simulated exposure.
-We will then instruct @command{astscript-pointing-simulate} to stack them as we would stack actual data (by taking the sigma-clipped mean).
+We will then instruct @command{astscript-pointing-simulate} to coadd them as we would coadd actual data (by taking the sigma-clipped mean).
 The command below is identical to the previous call to the pointing simulation script with the following differences.
-Note that this is just for demonstration, so you should not include this in your script (unless you want to see the noisy stack every time; at double the processing time).
+Note that this is just for demonstration, so you should not include this in your script (unless you want to see the noisy coadd every time; at double the processing time).
 
 @table @option
 @item --output
 We are using a different output name, so we can compare the output of the new command with the previous one.
 
-@item --stack-operator
-This should be one of the Arithmetic program's @ref{Stacking operators}.
+@item --coadd-operator
+This should be one of the Arithmetic program's @ref{Coadding operators}.
 By default the value is @code{sum}; because by default, each pixel of each exposure is given a value of 1.
-When stacking is defined through the summation operator, we can obtain the exposure map that you have already seen above.
+When coadding is defined through the summation operator, we can obtain the exposure map that you have already seen above.
 
-But in this run, we are adding noise to each input exposure (through the hook that is described below) and stacking them (as we would stack actual science images).
+But in this run, we are adding noise to each input exposure (through the hook that is described below) and coadding them (as we would coadd actual science images).
 Since the purpose differs here, we are using this option to change the operator.
 
 @item --hook-warp-after
 @cindex Hook (programming)
 This is the most visible difference of this command the previous one.
 Through a ``hook'', you can give any arbitrarily long (series of) command(s) that will be added to the processing of this script at a certain location.
-This particular hook gets applied ``after'' the ``warp''ing phase of each exposure (when the pixels of each exposure are mapped to the final pixel grid; but not yet stacked).
+This particular hook gets applied ``after'' the ``warp''ing phase of each exposure (when the pixels of each exposure are mapped to the final pixel grid; but not yet coadded).
 
 Since the script runs in parallel (the actual work-horse is a Makefile!), you can't assume any fixed file name for the input(s) and output.
 Therefore the inputs to, and output(s) of, hooks are some pre-defined shell variables that you should use in the command(s) that you hook into the processing.
@@ -10451,20 +10451,20 @@ $ center_ra=192.721250
 $ center_dec=41.120556
 $ astscript-pointing-simulate build/pointing.txt --img=input/ref.fits \
            --center=$center_ra,$center_dec \
-           --width=2 --stack-operator="3 0.2 sigclip-mean swap free" \
-           --output=build/stack-noised.fits \
+           --width=2 --coadd-operator="3 0.2 sigclip-mean swap free" \
+           --output=build/coadd-noised.fits \
            --hook-warp-after='astarithmetic $WARPED set-i \
                                           i i 0 uint8 eq nan where \
                                           100 mknoise-sigma \
                                            --output=$TARGET'
 
-$ astscript-fits-view build/stack.fits build/stack-noised.fits
+$ astscript-fits-view build/coadd.fits build/coadd-noised.fits
 @end example
 
 When you visually compare the two images of the last command above, you will see that (at least by eye) it is almost impossible to distinguish the differing noise pattern in the regions with 3 exposures from the regions with 5 exposures.
 But the regions with a single exposure are clearly visible!
 This is because the surface brightness limit in the single-exposure regions is @mymath{1.25\times\log_{10}(1/5)=-0.87} magnitudes brighter.
-This almost one magnitude difference in surface brightness is significant and clearly visible in the stacked image (recall that magnitudes are measured in a logarithmic scale).
+This almost one magnitude difference in surface brightness is significant and clearly visible in the coadded image (recall that magnitudes are measured in a logarithmic scale).
 
 Thanks to the argument above, we can now have a sufficiently large area with a usable depth.
 However, each the center of each pointing will still contain the central part of the galaxy.
@@ -10535,15 +10535,15 @@ Therefore, the origin of this problem is that we done the additions and subtract
 
 To fix this problem, we need to convert our points from the flat RA/Dec into the spherical RA/Dec.
 In the FITS standard, we have the ``World Coordinate System'' (WCS) that defines this type of conversion, using pre-defined projections in the @code{CTYPEi} keyword (short for for ``Coordinate TYPE in dimension i'').
-Let's have a look at the stack to see the default projection of our final stack:
+Let's have a look at the coadd to see the default projection of our final coadd:
 
 @verbatim
-$ astfits build/stack.fits -h1 | grep CTYPE
+$ astfits build/coadd.fits -h1 | grep CTYPE
 CTYPE1  = 'RA---TAN'           / Right ascension, gnomonic projection
 CTYPE2  = 'DEC--TAN'           / Declination, gnomonic projection
 @end verbatim
 
-We therefore see that the default projection of our final stack is the @code{TAN} (short for ``tangential'') projection, which is more formally known as the @url{https://en.wikipedia.org/wiki/Gnomonic_projection, Gnomonic projection}.
+We therefore see that the default projection of our final coadd is the @code{TAN} (short for ``tangential'') projection, which is more formally known as the @url{https://en.wikipedia.org/wiki/Gnomonic_projection, Gnomonic projection}.
 This is the most commonly used projection in optical astronomy.
 Now that we know the final projection, we can do this conversion using Table's column arithmetic operator @option{eq-j2000-from-flat} like below:
 
@@ -10599,10 +10599,10 @@ We can't therefore change this by just changing the position of the pointings, w
 But rotation is not yet implemented in this script.
 
 You can construct any complex pointing pattern (with more than 5 points and in any shape) based on the logic and reasoning above to help extract the most science from the valuable telescope time that you will be getting.
-Since the output is a FITS file, you can easily download another FITS file of your target, open it with DS9 (and ``lock'' the ``WCS'') with the stack produced by this simulation to make sure that the deep parts correspond to the area of interest for your science case.
+Since the output is a FITS file, you can easily download another FITS file of your target, open it with DS9 (and ``lock'' the ``WCS'') with the coadd produced by this simulation to make sure that the deep parts correspond to the area of interest for your science case.
 
 Factors like the optimal exposure time are also critical for the final result@footnote{The exposure time will determine the Signal-to-noise ration on a single exposure level.}, but is was beyond the scope of this tutorial.
-One relevant factor however is the effect of vignetting: the pixels on the outer extremes of the field of view that are not exposed to light and should be removed from your final stack.
+One relevant factor however is the effect of vignetting: the pixels on the outer extremes of the field of view that are not exposed to light and should be removed from your final coadd.
 They effect your pointing pattern: by decreasing your total area, they act like a larger spacing between your points, causing similar shallow crosses as you saw when you set @code{step_arcmin} to 43 arc minutes.
 In @ref{Accounting for non-exposed pixels}, we will show how this can be done within the same test concept that we done here.
 
@@ -10614,10 +10614,10 @@ In @ref{Accounting for non-exposed pixels}, we will show how this can be done wi
 @cindex Baffle
 @cindex Vignetting
 @cindex Bad pixels
-At the end of @ref{Pointings that account for sky curvature} we were able to maximize the region of same depth in our stack.
-But we noticed that issues like strong @url{https://en.wikipedia.org/wiki/Vignetting,vignetting} can create discontinuity in our final stacked data product.
+At the end of @ref{Pointings that account for sky curvature} we were able to maximize the region of same depth in our coadd.
+But we noticed that issues like strong @url{https://en.wikipedia.org/wiki/Vignetting,vignetting} can create discontinuity in our final coadded data product.
 In this section, we'll review the steps to account for such effects.
-Generally, the full area of a detector is not usually used in the final stack.
+Generally, the full area of a detector is not usually used in the final coadd.
 Vignetting is one cause, it can be due to other problems also.
 For example due to baffles in the optical path (to block stray light), or large regions of bad (unusable or ``dead'') pixels that may be in any place on the detector@footnote{For an example of bad pixels over the detector, see Figures 4 and 6 of @url{https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2019/WFC3-2019-03.pdf, Instrument Science Report WFC3 2019-03} by the Space Telescope Science Institute.}.
 
@@ -10632,10 +10632,10 @@ For example on cameras that have multiple detectors on the field of view, in thi
 
 Therefore, within Gnuastro's @command{astscript-pointing-simulate} script there is no parameter for pre-defined vignetting shapes.
 Instead, you should define a mask that you can apply on each exposure through the provided hook (@option{--hook-warp-before}; recall that we previously used another hook in @ref{Larger steps sizes for better calibration}).
-Through the mask, you are free to set any vignetted or bad pixel to NaN (thus ignoring them in the stack) and applying it in any way that best suites your instrument and detector.
+Through the mask, you are free to set any vignetted or bad pixel to NaN (thus ignoring them in the coadd) and applying it in any way that best suites your instrument and detector.
 
 The mask image should be same size as the reference image, but only containing two values: 0 or 1.
-Pixels in each exposure that have a value of 1 in the mask will be set to NaN before the stacking process and will not contribute to the final stack.
+Pixels in each exposure that have a value of 1 in the mask will be set to NaN before the coadding process and will not contribute to the final coadd.
 Ideally, you can use the master flat field image of the previous reductions to create this mask: any pixel that has a low sensitivity in the master flat (for any reason) can be set to 1, and the rest of the pixels to 0.
 
 Let's build a simple mask by assuming that we only have strong vignetting that is affecting the outer 30 arc seconds of the individual exposures.
@@ -10683,12 +10683,12 @@ With the second command, let's compare the two outputs:
 
 @example
 $ astscript-pointing-simulate build/pointing-on-sky.fits \
-           --output=build/stack-with-trim.fits --img=input/ref.fits \
+           --output=build/coadd-with-trim.fits --img=input/ref.fits \
            --center=$center_ra,$center_dec --width=2 \
            --hook-warp-before='astarithmetic $EXPOSURE build/mask.fits \
                                              nan where -g1 -o$TOWARP'
 
-$ astscript-fits-view build/stack.fits build/stack-with-trim.fits
+$ astscript-fits-view build/coadd.fits build/coadd-with-trim.fits
 @end example
 
 As expected, due to the smaller area of the detector that is exposed to photons, the regions with 4 exposures have become much thinner and on the bottom, it has been removed.
@@ -10702,8 +10702,8 @@ So we will leave this as an exercise.
 
 
 
-@node Moire pattern in stacking and its correction, Clipping outliers, Pointing pattern design, Tutorials
-@section Moir@'e pattern in stacking and its correction
+@node Moire pattern in coadding and its correction, Clipping outliers, Pointing pattern design, Tutorials
+@section Moir@'e pattern in coadding and its correction
 
 @cindex Moir@'e pattern or fringes
 After warping some images with the default mode of Warp (see @ref{Align pixels with WCS considering distortions}) you may notice that the background noise is no longer flat.
@@ -10807,7 +10807,7 @@ For example, if you want an output pixel scale that is just 1.5 times larger tha
 In the @code{MAX-FRAC} extension, you will see that the range of pixel values is now between 0.56 to 1.0 (recall that originally, this was between 0.25 and 1.0).
 This shows that the pixels are more similarly mixed and in fact, when you look at the actual warped image, you can hardly distinguish any Moir@'e pattern in the noise.
 
-@cindex Stacking
+@cindex Coadding
 @cindex Pointing
 @cindex Coaddition
 However, deep astronomical data are usually built by several exposures (images), not a single one.
@@ -10817,7 +10817,7 @@ We do this for many reasons (for example tracking errors in the telescope, high 
 One of those ``etc.'' reasons is to correct the Moir@'e pattern in the final coadded deep image.
 
 The Moir@'e pattern is fixed to the grid of the image, slightly shifting the telescope will result in the pattern appearing in different parts of the sky.
-Therefore when we later stack, or coadd, the separate exposures into a deep image, the Moir@'e pattern will be decreased there.
+Therefore when we later coadd, or coadd, the separate exposures into a deep image, the Moir@'e pattern will be decreased there.
 However, dithering has possible drawbacks based on the scientific goal.
 For example when observing time-variable phenomena where cutting the exposures to several shorter ones is not feasible.
 If this is not the case for you (for example in galaxy evolution), continue with the rest of this section.
@@ -10884,12 +10884,12 @@ Open the ``Zoom'' menu (not button), and select ``Zoom 16''.
 Press the @key{TAB} key to flip through each exposure.
 @item
 Focus your eyes on the pixels with the largest value (white colored pixels), while pressing @key{TAB} to flip between the exposures.
-You will see that in each exposure they cover different pixels (nicely getting averaged out after stacking).
+You will see that in each exposure they cover different pixels (nicely getting averaged out after coadding).
 @end enumerate
 
-The exercise above shows that the Moir@'e pattern (that had already decreased significantly) will be further decreased after we stack the images.
-So let's stack these three images with the commands below.
-First, we need to remove the sky-level from each image using @ref{NoiseChisel}, then we'll stack the @code{INPUT-NO-SKY} extensions using filled MAD-clipping (to reject outliers, and especially diffuse outliers, robustly, see @ref{Clipping outliers}).
+The exercise above shows that the Moir@'e pattern (that had already decreased significantly) will be further decreased after we coadd the images.
+So let's coadd these three images with the commands below.
+First, we need to remove the sky-level from each image using @ref{NoiseChisel}, then we'll coadd the @code{INPUT-NO-SKY} extensions using filled MAD-clipping (to reject outliers, and especially diffuse outliers, robustly, see @ref{Clipping outliers}).
 
 @example
 $ for i in $(seq 3); do \
@@ -10897,16 +10897,16 @@ $ for i in $(seq 3); do \
   done
 
 $ astarithmetic jplus-nc*.fits 3 5 0.2 sigclip-mean swap free \
-                -gINPUT-NO-SKY -ojplus-stack.fits
+                -gINPUT-NO-SKY -ojplus-coadd.fits
 
-$ astscript-fits-view jplus-nc*.fits jplus-stack.fits
+$ astscript-fits-view jplus-nc*.fits jplus-coadd.fits
 @end example
 
 @noindent
-After opening the individual exposures and the final stack with the last command, take the following steps to see the comparisons properly:
+After opening the individual exposures and the final coadd with the last command, take the following steps to see the comparisons properly:
 @enumerate
 @item
-Click on the stack image so it is selected.
+Click on the coadd image so it is selected.
 @item
 Go to the ``Frame'' menu, then the ``Lock'' item, then activate ``Scale and Limits''.
 @item
@@ -10914,7 +10914,7 @@ Scroll your mouse or touchpad to zoom into the image.
 @end enumerate
 
 @noindent
-You clearly see that the stacked image is deeper and that there is no Moir@'e pattern, while you have slightly @emph{improved} the spatial resolution of the output compared to the input.
+You clearly see that the coadded image is deeper and that there is no Moir@'e pattern, while you have slightly @emph{improved} the spatial resolution of the output compared to the input.
 
 For optimal results, the oversampling should be determined by the dithering pattern of the observation:
 For example if you only have two dither points, you want the pixels with maximum value in the @code{MAX-FRAC} image of one exposure to fall on those with a minimum value in the other exposure.
@@ -10925,7 +10925,7 @@ Note that this discussion is on small shifts between pointings (dithers), not la
 
 
 
-@node Clipping outliers,  , Moire pattern in stacking and its correction, Tutorials
+@node Clipping outliers,  , Moire pattern in coadding and its correction, Tutorials
 @section Clipping outliers
 
 @cindex Outlier
@@ -10952,10 +10952,10 @@ $ echo " 19.8 20.1 20.5 19.9" \
 This difference of 0.61 magnitudes (or roughly 1.75 times) is significant (for the definition of magnitudes in astronomy, see @ref{Brightness flux magnitude}).
 In the simple example above, you can visually identify the ``outlier'' and manually remove it.
 But in most common situations you will not be so lucky!
-For example when you want to stack the five images of the five exposures above, and each image has @mymath{4000\times4000} (or 16 million!) pixels and not possible by hand in a reasonable time (an average human's lifetime!).
+For example when you want to coadd the five images of the five exposures above, and each image has @mymath{4000\times4000} (or 16 million!) pixels and not possible by hand in a reasonable time (an average human's lifetime!).
 
 This tutorial reviews the effect of outliers and different available ways to remove them.
-In particular, we will be looking at stacking of multiple datasets and collapsing one dataset along one of its dimensions.
+In particular, we will be looking at coadding of multiple datasets and collapsing one dataset along one of its dimensions.
 But the concepts and methods are applicable to any analysis that is affected by outliers.
 
 @menu
@@ -10971,12 +10971,12 @@ But the concepts and methods are applicable to any analysis that is affected by 
 As described in @ref{Clipping outliers}, the goal of this tutorial is to demonstrate the effects of outliers and show how to ``clip'' them from basic statistics measurements.
 This is best done on an actual dataset (rather than pure theory).
 In this section we will build nine noisy images with the script below, such that one of the images has a circle in the middle.
-We will then stack the 9 images into one final image based on different statistical measurements: the mean, median, standard deviation (STD), median absolute deviation (MAD) and number of inputs used in each pixel.
-We will then analyze the resulting stacks to demonstrate the problem with outliers.
+We will then coadd the 9 images into one final image based on different statistical measurements: the mean, median, standard deviation (STD), median absolute deviation (MAD) and number of inputs used in each pixel.
+We will then analyze the resulting coadds to demonstrate the problem with outliers.
 
 Put the script below into a plain-text file (assuming it is called @file{script.sh}), and run it with @command{bash ./script.sh}.
 For more on writing and good practices in shell scripts, see @ref{Writing scripts to automate the steps}.
-The last command of the script above calls DS9 to visualize the five output stacked images mentioned above.
+The last command of the script above calls DS9 to visualize the five output coadded images mentioned above.
 
 @verbatim
 # Constants
@@ -11021,7 +11021,7 @@ astarithmetic $nn $background + $sigma mknoise-sigma \
 	      --envseed -o$outlier
 
 
-# Build pure noise and add elements to the list of images to stack.
+# Build pure noise and add elements to the list of images to coadd.
 list=$outlier
 numnoise=$(echo $number | awk '{print $1-1}')
 for i in $(seq 1 $numnoise); do
@@ -11035,14 +11035,14 @@ for i in $(seq 1 $numnoise); do
 done
 
 
-# Stack the images.
+# Coadd the images.
 for op in mean median std mad; do
     if [ x"$clip_operator" = x ]; then    # No clipping.
-	out=$bdir/stack-$op.fits
+	out=$bdir/coadd-$op.fits
 	astarithmetic $list $number $op -g1 --output=$out
     else			          # With clipping.
 	operator=$clip_operator-$op
-	out=$bdir/stack-$operator.fits
+	out=$bdir/coadd-$operator.fits
 	astarithmetic $list $number $clip_multiple $clip_tolerance \
 		      $operator -g1 --writeall --output=$out
     fi
@@ -11066,11 +11066,11 @@ done
 
 @noindent
 After the script finishes, you can see the generated input images with the first command below.
-The second command shows the stacked images with the different statistics:
+The second command shows the coadded images with the different statistics:
 
 @example
 $ astscript-fits-view build/in-*.fits --ds9extra="-lock scalelimits yes"
-$ astscript-fits-view build/stack-*.fits
+$ astscript-fits-view build/coadd-*.fits
 @end example
 
 Color-blind readers may not clearly see the issue in the opened images with this color bar.
@@ -11096,7 +11096,7 @@ Therefore, the outlier value pushes the result to higher values and the circle i
 The median (second image in DS9) is also affected by the outlier; although much less significantly than the standard deviation or mean.
 At first sight the circle may not be too visible!
 To see it more clearly, click on the ``Analysis'' menu in DS9 and then the ``smooth'' item.
-After smoothing, you will see how the single outlier has leaked into the median stack.
+After smoothing, you will see how the single outlier has leaked into the median coadd.
 
 Intuitively, we would think that since the median is calculated from the middle element after sorting, the outlier goes to the end and won't affect the result.
 However, this is not the case as we see here: with 9 elements, the ``central'' element is the 5th (counting from 1; after sorting).
@@ -11134,8 +11134,8 @@ However, you see that the regions that were partly covered by the outlying circl
 This shows how the median is biased by outliers as their number increases.
 
 To see the problem more prominently, use the @code{collapse-mean} operator instead of the median.
-The reason that the mean is more strongly affected by the outlier is exactly the same as above for the stacking of the input images.
-In the subsections below, we will describe some of the available ways (in Gnuastro) to reject the effect of these outliers (and have better stacks or collapses).
+The reason that the mean is more strongly affected by the outlier is exactly the same as above for the coadding of the input images.
+In the subsections below, we will describe some of the available ways (in Gnuastro) to reject the effect of these outliers (and have better coadds or collapses).
 But the methodology is not limited to these types of data and can be generically applied; unless specified explicitly.
 
 @node Sigma clipping, MAD clipping, Building inputs and analysis without clipping, Clipping outliers
@@ -11277,8 +11277,8 @@ In the end, we see that the final median, mean and standard deviation are very s
 Therefore, through clipping we were able to remove the second ``outlier'' distribution from the bimodal histogram above (because it was so nicely separated from the main/noise).
 
 The example above provided a single statistic from a single dataset.
-Other scenarios where sigma-clipping becomes necessary are stacking and collapsing (that was the main goal of the script in @ref{Building inputs and analysis without clipping}).
-To generate @mymath{\sigma}-clipped stacks and collapsed tables, you just need to change the values of the three variables of the script (shown below).
+Other scenarios where sigma-clipping becomes necessary are coadding and collapsing (that was the main goal of the script in @ref{Building inputs and analysis without clipping}).
+To generate @mymath{\sigma}-clipped coadds and collapsed tables, you just need to change the values of the three variables of the script (shown below).
 After making this change in your favorite text editor, have a look at the outputs.
 By the way, if you have still not read (and understood) the commands in that script, this is a good time to do it so the steps below do not appear as a black box to you (for more on writing shell scripts, see @ref{Writing scripts to automate the steps}).
 
@@ -11290,21 +11290,21 @@ clip_tolerance=0.1       # operators of the next sections.
 
 $ bash ./script.sh
 
-$ astscript-fits-view build/stack-std.fits \
-                      build/stack-sigclip-std.fits \
-                      build/stack-*mean.fits \
-                      build/stack-*median.fits \
+$ astscript-fits-view build/coadd-std.fits \
+                      build/coadd-sigclip-std.fits \
+                      build/coadd-*mean.fits \
+                      build/coadd-*median.fits \
                       --ds9extra="-tile grid layout 2 3 -scale minmax"
 @end example
 
-You will see 6 images arranged in two columns: the first column is the normal stack (without @mymath{\sigma}-clipping) and the second column is the @mymath{\sigma}-clipped stack of the same statistic (first row: standard deviation, second row: mean, third row: median).
+You will see 6 images arranged in two columns: the first column is the normal coadd (without @mymath{\sigma}-clipping) and the second column is the @mymath{\sigma}-clipped coadd of the same statistic (first row: standard deviation, second row: mean, third row: median).
 
 It is clear that the @mymath{\sigma}-clipped (right column in DS9) results have improved in all three measures (compared to the left column).
 This was achieved by clipping/removing outliers.
-To see how many input images were used in each pixel of the clipped stack, you should look into the second HDU of any clipping output which shows the number of inputs that were used for each pixel:
+To see how many input images were used in each pixel of the clipped coadd, you should look into the second HDU of any clipping output which shows the number of inputs that were used for each pixel:
 
 @example
-$ astscript-fits-view build/stack-sigclip-median.fits \
+$ astscript-fits-view build/coadd-sigclip-median.fits \
                       --ds9extra="-scale minmax"
 @end example
 
@@ -11313,7 +11313,7 @@ The pixels in this image only have two values: 8 or 9.
 Over the footprint of the circle, most pixels have a value of 8: only 8 inputs were used for these (one of the inputs was clipped out).
 In the other regions of the image, you see that the pixels almost consistently have a value of 9 (except for some noisy pixels here and there).
 
-It is the ``holes'' (with value 9) within the footprint of the circle that keep the circle visible in the final stack of the output (as we saw previously in the 2-column DS9 command before).
+It is the ``holes'' (with value 9) within the footprint of the circle that keep the circle visible in the final coadd of the output (as we saw previously in the 2-column DS9 command before).
 Spoiler alert: in a later section of this tutorial (@ref{Contiguous outliers}) you will see how we fix this problem.
 But please be patient and continue reading and running the commands for now.
 
@@ -11395,21 +11395,21 @@ Statistics (after clipping):
 @end example
 
 We see that the median, mean and standard deviation are over estimated (each worse than the time when the circle was brighter!).
-Let's look at the @mymath{\sigma}-clipping stack:
+Let's look at the @mymath{\sigma}-clipping coadd:
 
 @example
-$ astscript-fits-view build/stack-std.fits \
-                      build/stack-sigclip-std.fits \
-                      build/stack-*mean.fits \
-                      build/stack-*median.fits \
+$ astscript-fits-view build/coadd-std.fits \
+                      build/coadd-sigclip-std.fits \
+                      build/coadd-*mean.fits \
+                      build/coadd-*median.fits \
                       --ds9extra="-tile grid layout 2 3 -scale minmax"
 @end example
 
-Compared to the previous run (where the outlying circle was brighter), we see that @mymath{\sigma}-clipping is now less successful in removing the outlying circle from the stacks; or in the single value measurements.
+Compared to the previous run (where the outlying circle was brighter), we see that @mymath{\sigma}-clipping is now less successful in removing the outlying circle from the coadds; or in the single value measurements.
 To see the reason, we can have a look at the numbers image (note that here, we are using @option{-h2} to only see the numbers image)
 
 @example
-$ astscript-fits-view build/stack-sigclip-median.fits -h2 \
+$ astscript-fits-view build/coadd-sigclip-median.fits -h2 \
                       --ds9extra="-scale minmax"
 @end example
 
@@ -11418,7 +11418,7 @@ There is only a very weak clustering of pixels with a value of 8 over the circle
 This has happened because the outliers have biased the standard deviation itself to a level that includes them with this multiple of the standard deviation.
 
 To gauge if @mymath{\sigma}-clipping will be useful for your dataset, you should inspect the bimodality of its histogram like we did above.
-But you can't do this manually in every case (as in the stacking which involved more than forty thousand separate @mymath{\sigma}-clippings: one for every output)!
+But you can't do this manually in every case (as in the coadding which involved more than forty thousand separate @mymath{\sigma}-clippings: one for every output)!
 Clipping outliers should be based on a different (from standard deviation) measure of scatter/dispersion, one that is more robust (less affected by outliers).
 Therefore, in Gnuastro we also have median absolute deviation (MAD) clipping which is described in the next section (@ref{MAD clipping}).
 
@@ -11494,42 +11494,42 @@ Statistics (after clipping):
 
 We see that the median, mean and standard deviation after MAD-clipping are much better than the @mymath{\sigma}-clipping (see @ref{Sigma clipping}): the median is now 10.3 (was 10.5 in @mymath{\sigma}-clipping), mean is 10.7 (was 10.11) and the standard deviation is 10.6 (was 10.12).
 
-Let's compare the MAD-clipped stacks with the results of the previous section.
+Let's compare the MAD-clipped coadds with the results of the previous section.
 Since we want the images shown in a certain order, we'll first construct the list of images (with a @code{for} loop that will fill the @file{imgs} variable).
 Note that this assumes you have ran and carefully read/understand all the commands in the previous sections (@ref{Building inputs and analysis without clipping} and @ref{Sigma clipping}).
 
 @example
 $ imgs=""
-$ p=build/stack   # 'p' is short for "prefix"
+$ p=build/coadd   # 'p' is short for "prefix"
 $ for m in std mean median mad; do \
    imgs="$imgs $p-$m.fits $p-sigclip-$m.fits $p-madclip-$m.fits"; \
   done
 $ astscript-fits-view $imgs --ds9extra="-tile grid layout 3 4"
 @end example
 
-The first column shows the non-clipped stacks for each statistic (generated in @ref{Building inputs and analysis without clipping}), the second column are @mymath{\sigma}-clipped stacks (generated in @ref{Sigma clipping}), and the third column shows the newly created MAD-clipped stacks.
-We see that the circle is much more weaker in the MAD-clipped stacks than in the @mymath{\sigma}-clipped stacks in all rows (different statistics).
+The first column shows the non-clipped coadds for each statistic (generated in @ref{Building inputs and analysis without clipping}), the second column are @mymath{\sigma}-clipped coadds (generated in @ref{Sigma clipping}), and the third column shows the newly created MAD-clipped coadds.
+We see that the circle is much more weaker in the MAD-clipped coadds than in the @mymath{\sigma}-clipped coadds in all rows (different statistics).
 Let's confirm this with the numbers images of the two clipping methods:
 
 @example
 $ astscript-fits-view -g2 \
-            build/stack-sigclip-median.fits \
-            build/stack-madclip-median.fits -g2 \
+            build/coadd-sigclip-median.fits \
+            build/coadd-madclip-median.fits -g2 \
             --ds9extra="-scale limits 1 9 -lock scalelimits yes"
 @end example
 
-In the numbers image of the MAD-clipped stack, you see the circle much more clearly.
-However, you also see that in the regions outside the circle, many random pixels have also been stacked with less than 9 input images!
+In the numbers image of the MAD-clipped coadd, you see the circle much more clearly.
+However, you also see that in the regions outside the circle, many random pixels have also been coadded with less than 9 input images!
 This is a caveat of MAD clipping and is expected: by nature MAD clipping is much more ``noisy''.
 With the command below, let's have a look at the statistics of the numbers image of the MAD-clipping.
 With the second, let's see how many pixels used fewer than 5 input images:
 
 @example
-$ aststatistics build/stack-madclip-median.fits -h2 \
+$ aststatistics build/coadd-madclip-median.fits -h2 \
                 --numasciibins=60
 Statistics (GNU Astronomy Utilities) @value{VERSION}
 -------
-Input: build/stack-madclip-median.fits (hdu: 2)
+Input: build/coadd-madclip-median.fits (hdu: 2)
 -------
   Number of elements:                      40401
   Minimum:                                 2
@@ -11551,17 +11551,17 @@ Input: build/stack-madclip-median.fits (hdu: 2)
  |*       *        *       *        *       *        *       *
  |------------------------------------------------------------
 
-$ aststatistics build/stack-madclip-median.fits -h2 \
+$ aststatistics build/coadd-madclip-median.fits -h2 \
                 --lessthan=5 --number
 686
 @end example
 
 Almost 700 pixels were made with less than 5 inputs!
-The large number of random pixels that have been clipped is not good and can make it hard to understand the noise statistics of the stack.
+The large number of random pixels that have been clipped is not good and can make it hard to understand the noise statistics of the coadd.
 
 Ultimately, even MAD-clipping is not perfect and even though the circle is weaker, we still see the circle in all four cases, even with the MAD-clipped median (more clearly: after smoothing/blocking).
 The reason is similar to what was described in @mymath{\sigma}-clipping (using the original @code{profsum=3e5}: the ``holes'' in the numbers image.
-Because the circle's pixel values are not too distant from the noise and the noisy nature of the MAD, some of its elements do not get clipped, and their stacked value gets systematically higher than the rest of the image.
+Because the circle's pixel values are not too distant from the noise and the noisy nature of the MAD, some of its elements do not get clipped, and their coadded value gets systematically higher than the rest of the image.
 
 Fortunately all is not lost!
 In Gnuastro, we have a fix for such contiguous outliers that is described fully in the next section (@ref{Contiguous outliers}).
@@ -11603,7 +11603,7 @@ All the foreground pixels of the binary images are set to NaN in the respective 
 @end enumerate
 
 Let's have a look at the output of this process with the first command below.
-Note that because @code{madclip-maskfilled} returns its main input operands back to the stack, we need to call Arithmetic with @option{--writeall} (which will produce a multi-HDU output file).
+Note that because @code{madclip-maskfilled} returns its main input operands back to the coadd, we need to call Arithmetic with @option{--writeall} (which will produce a multi-HDU output file).
 With the second, open the output in DS9:
 
 @example
@@ -11616,22 +11616,22 @@ $ astscript-fits-view inputs-masked.fits
 In the small ``Cube'' window, you will see that 9 HDUs are present in @file{inputs-masked.fits}.
 Click on the ``Next'' button to see each input.
 When you get to the last (9th) HDU, you will notice that the circle has been masked there (it is filled with NaN values).
-Now that all the contiguous outlier(s) of the inputs are masked, we can use more pure stacking operators (like @mymath{\sigma}-clipping) to remove any strong, single-pixel outlier:
+Now that all the contiguous outlier(s) of the inputs are masked, we can use more pure coadding operators (like @mymath{\sigma}-clipping) to remove any strong, single-pixel outlier:
 
 @example
 $ astarithmetic build/in-*.fits 9 4.5 0.01 madclip-maskfilled \
                 9 5 0.1 sigclip-mean \
-                -g1 --writeall --output=stack-good.fits
+                -g1 --writeall --output=coadd-good.fits
 
-$ astscript-fits-view stack-good.fits --ds9scale=minmax
+$ astscript-fits-view coadd-good.fits --ds9scale=minmax
 @end example
 
-You see a clean noisy stack in the first HDU (note that we used the @mymath{\sigma}-clipped mean here; which was strongly affected by outliers as we saw before in @ref{Sigma clipping}).
+You see a clean noisy coadd in the first HDU (note that we used the @mymath{\sigma}-clipped mean here; which was strongly affected by outliers as we saw before in @ref{Sigma clipping}).
 When you go to the next HDU, you see that over the circle only 8 images were used and that there are no ``holes'' there.
 But the operator that was most affected by outliers was the standard deviation.
 To test it, repeat the first command above and use @code{sigclip-std} instead of @code{sigclip-mean} and have a look at the output: again, you don't see any footprint of the circle.
 
-Of course, if the potential outlier signal can become weaker, there are some solutions: use more inputs if you can (to decrease the noise), or decrease the multiple MAD in the @code{madclip-maskfilled} call above: it will decrease your purity, but to some level, this may be fine (depends on your usage of the stack).
+Of course, if the potential outlier signal can become weaker, there are some solutions: use more inputs if you can (to decrease the noise), or decrease the multiple MAD in the @code{madclip-maskfilled} call above: it will decrease your purity, but to some level, this may be fine (depends on your usage of the coadd).
 
 @c Before we finish, recall that the original script of @ref{Building inputs and analysis without clipping} also generated collapsed columns.
 @c Let's have a look at those outputs:
@@ -21619,7 +21619,7 @@ Reading NaN as a floating point number in Gnuastro is not case-sensitive.
 * Coordinate conversion operators::  For example equatorial J2000 to Galactic.
 * Unit conversion operators::   Various unit conversions necessary.
 * Statistical operators::       Statistics of a single dataset (for example, mean).
-* Stacking operators::          Coadding or combining multiple datasets into one.
+* Coadding operators::          Coadding or combining multiple datasets into one.
 * Filtering operators::         Smoothing a dataset through mixing pixel with neighbors.
 * Pooling operators::           Reducing size through statistics of pixels in window.
 * Interpolation operators::     Giving blank pixels a value.
@@ -21665,12 +21665,12 @@ $ astarithmetic a.fits b.fits + c.fits + -osum.fits
 $ astarithmetic a.fits b.fits c.fits + + -osum.fits
 @end example
 
-However, this can get annoying/buggy if you have more than three or four images, in that case, a better way to sum data is to use the @code{sum} operator (which also ignores blank pixels), that is discussed in @ref{Stacking operators}.
+However, this can get annoying/buggy if you have more than three or four images, in that case, a better way to sum data is to use the @code{sum} operator (which also ignores blank pixels), that is discussed in @ref{Coadding operators}.
 
 @cartouche
 @noindent
 @strong{NaN values:} if a single argument of @code{+} has a NaN value, the output will also be NaN.
-To ignore NaN values, use the @code{sum} operator of @ref{Stacking operators}.
+To ignore NaN values, use the @code{sum} operator of @ref{Coadding operators}.
 You can see the difference with the two commands below:
 
 @example
@@ -21680,7 +21680,7 @@ $ astarithmetic --quiet 1.0 2.0 3.0 nan 4 sum
 6.000000e+00
 @end example
 
-The same goes for all the @ref{Stacking operators} so if your data may include NaN pixels, be sure to use the stacking operators.
+The same goes for all the @ref{Coadding operators} so if your data may include NaN pixels, be sure to use the coadding operators.
 @end cartouche
 
 @item -
@@ -22108,7 +22108,7 @@ $ astarithmetic image.fits 26.892 27.0 zeropoint-change
 @end example
 
 Note that the input or output zero points can also be an image (with the same size as the input image).
-This is very useful to correct situations where the zero point can change over the image (happens in single exposures) and you want to unify it across the whole image (to build a deep stacked image).
+This is very useful to correct situations where the zero point can change over the image (happens in single exposures) and you want to unify it across the whole image (to build a deep coadded image).
 
 @item counts-to-nanomaggy
 @cindex Nanomaggy
@@ -22269,7 +22269,7 @@ This operator takes a single argument which is interpreted to be the input AUs.
 For the conversion and a similar example, see the description of @code{ly-to-pc}.
 @end table
 
-@node Statistical operators, Stacking operators, Unit conversion operators, Arithmetic operators
+@node Statistical operators, Coadding operators, Unit conversion operators, Arithmetic operators
 @subsubsection Statistical operators
 
 The operators in this section take a single dataset as input, and will return the desired statistic as a single value.
@@ -22346,8 +22346,8 @@ If you are not yet familiar with @mymath{\sigma} or MAD clipping, it is recommen
 
 When more than 95@mymath{\%} of the area of an operand is masked, the full operand will be masked.
 This is necessary in like this: one of your inputs has many outliers (for example it is much more noisy than the rest or its sky level has not been subtracted properly).
-Because this operator fills holes between outlying pixels, most of the area of the input will be masked, but the thin edges (where there are no ``holes'') will remain, causing different statistics in those thin edges of that input in your final stack.
-Through this mask coverage fraction (which is currently hard-coded@footnote{Please get in touch with us at @code{bug-gnuastro@@gnu.org} if you notice this problem and feel the fraction needs to be lowered (or generally to be set in each run).}), we ensure that such thin edges do not cause artifacts in the final stack.
+Because this operator fills holes between outlying pixels, most of the area of the input will be masked, but the thin edges (where there are no ``holes'') will remain, causing different statistics in those thin edges of that input in your final coadd.
+Through this mask coverage fraction (which is currently hard-coded@footnote{Please get in touch with us at @code{bug-gnuastro@@gnu.org} if you notice this problem and feel the fraction needs to be lowered (or generally to be set in each run).}), we ensure that such thin edges do not cause artifacts in the final coadd.
 
 For example, with the second command below, we are masking the MAD clipped pixels of the 9 inputs (that are generated in @ref{Clipping outliers}) and writing them as separate HDUs of the output.
 The clipping is done with 5 times the MAD and the clipping starts when the relative difference between subsequent MADs is 0.01.
@@ -22367,9 +22367,9 @@ $ astfits clipped.fits --numhdus
 
 In the Arithmetic command above, @option{--writeall} is necessary because this operator puts all its inputs back on the stack of operands.
 This is because these are usually just intermediate operators.
-For example, after masking the outliers from each input, you may want to stack them into one deeper image (with the @ref{Stacking operators}.
-After the stacking is done, only one operand will be on the stack, and @option{--writeall} will no longer be necessary.
-For example if you want to see how many images were used in the final stack's pixels, you can use the @option{number} operator like below:
+For example, after masking the outliers from each input, you may want to coadd them into one deeper image (with the @ref{Coadding operators}.
+After the coadding is done, only one operand will be on the stack, and @option{--writeall} will no longer be necessary.
+For example if you want to see how many images were used in the final coadd's pixels, you can use the @option{number} operator like below:
 
 @example
 $ astarithmetic in-*.fits 9 5 0.01 madclip-maskfilled \
@@ -22406,31 +22406,36 @@ $ astarithmetic cropped.fits noblank --onedonstdout --quiet
 
 @end table
 
-@node Stacking operators, Filtering operators, Statistical operators, Arithmetic operators
-@subsubsection Stacking operators
+@node Coadding operators, Filtering operators, Statistical operators, Arithmetic operators
+@subsubsection Coadding operators
 
-@cindex Stacking
+@cindex Coadding
 @cindex Coaddition
-The operators in this section are used when you have multiple datasets that you would like to merge into one, commonly known as ``stacking'' or ``coaddition''.
+The operators in this section are used when you have multiple datasets that you would like to merge into one.
 For example, you have taken ten exposures of your scientific target, and you would like to combine them all into one deep stacked image that is deeper.
+This is commonly known as ``stacking'' or ``coaddition''.
+We use the latter in Gnuastro because ``stack'' refers to the intermediate 3D data set (if we are coadding 2D images).
+However, the final product of this operation has the same number of dimensions as each of the inputs.
+The astronomical community has traditionally used the term ``coadd'' to specify that the nature of the output 2D image is different from each of the input 2D images (it is created from them).
+Furthermore, within Arithmetic, ``Stack'' is already reserved for the stack of operands that the operators read from (see @ref{Reverse polish notation}).
 
 @cartouche
 @noindent
-@strong{Masking outliers (before stacking):} Outliers in one of the inputs (for example star ghosts, satellite trails, or cosmic rays, can leave their imprints in the final stack.
+@strong{Masking outliers (before coadding):} Outliers in one of the inputs (for example star ghosts, satellite trails, or cosmic rays, can leave their imprints in the final coadd.
 One good way to remove them is the @code{madclip-maskfilled} operator that can be called before the operators here.
 It is described in @ref{Statistical operators}; and a full tutorial on understanding outliers and how best to remove them is available in @ref{Clipping outliers}.
 @end cartouche
 
 @cartouche
 @noindent
-@strong{Hundreds or thousands of images to stack:} It can happen that you need to stack hundreds or thousands of images.
+@strong{Hundreds or thousands of images to coadd:} It can happen that you need to coadd hundreds or thousands of images.
 Added with the possibly long file/directory names, this can lead to an extremely long shell command that may cause an ``Argument list too long'' error in your shell.
 To avoid this, you should use Arithmetic's @option{--arguments} option, see @ref{Invoking astarithmetic}.
 @end cartouche
 
-When calling the stacking operators you should determine how many operands they should take in: unlike the rest of the operators that have a fixed number of input operands, these operators have a variable number of input operators.
+When calling the coadding operators you should determine how many operands they should take in: unlike the rest of the operators that have a fixed number of input operands, these operators have a variable number of input operators.
 As described in the first operand below, you do this through their first (or early) popped operands (which should be a single integer number that is larger than one).
-Below are Some important points for all the stacking operators described in this section:
+Below are some important points for all the coadding operators described in this section:
 
 @itemize
 
@@ -22439,7 +22444,7 @@ Below are Some important points for all the stacking operators described in this
 NaN/blank pixels will be ignored, see @ref{Blank pixels}.
 
 @item
-The operation will be multi-threaded, greatly speeding up the process if you have large and numerous data to stack.
+The operation will be multi-threaded, greatly speeding up the process if you have large and numerous data to coadd.
 You can disable multi-threaded operations with the @option{--numthreads=1} option (see @ref{Multi-threaded operations}).
 @end itemize
 
@@ -22488,12 +22493,12 @@ astarithmetic a.fits b.fits c.fits 3 0.7 quantile
 @itemx sigclip-mean
 @itemx sigclip-median
 @cindex Sigma-clipping
-@cindex Stacking through sigma-clipping
+@cindex Coadding through sigma-clipping
 Return the respective statistic after @mymath{\sigma}-clipping the values of the same pixel of all the input operands.
 The respective statistic will be stored in a 32-bit floating point number.
 The number of inputs used to make the desired measurement for each pixel is also returned as a second output operand; see below for more on how to deal with the second output operand.
 
-For a complete tutorial on clipping outliers when stacking images see @ref{Clipping outliers} (if you haven't read it yet, we encourage you to read through it before continuing).
+For a complete tutorial on clipping outliers when coadding images see @ref{Clipping outliers} (if you haven't read it yet, we encourage you to read through it before continuing).
 In particular, the most robust solution is to first use @code{madclip-maskfilled} (described in @ref{Statistical operators}), then use any of these.
 
 This operator is very similar to @command{min}, with the exception that it expects two extra operands (parameters for MAD-clipping) before the total number of inputs.
@@ -22503,14 +22508,14 @@ For example, in the command below, the first popped operand of @code{sigclip-mea
 If the termination criteria is larger than, or equal to 1, it is interpreted as the total number of clips.
 But if it is between 0 and 1, then it is the tolerance level on the change in the median absolute deviation (see @ref{Sigma clipping}).
 The second popped operand (@command{4}) is the multiple of sigma (STD) to use.
-The third popped operand (@command{3}) is number of datasets that should be stacked (similar to the first popped operand to @command{min}).
+The third popped operand (@command{3}) is number of datasets that should be coadded (similar to the first popped operand to @command{min}).
 Two other side-notes should be mentioned here:
 @itemize
 @item
 As mentioned above, before this operator, we are masking the filled MAD-clipped elements with @code{madclip-maskfilled}.
 As described in @ref{Clipping outliers}, this is very important for removing the types of outliers that we have in astronomical imaging.
 @item
-We are using @option{--writeall} because this operator places two operands on the stack: your desired statistics, and the number of inputs that were used in it (after clipping).
+We are using @option{--writeall} because this operator places two operands on the coadd: your desired statistics, and the number of inputs that were used in it (after clipping).
 @end itemize
 
 @example
@@ -22521,9 +22526,9 @@ $ astarithmetic a.fits b.fits c.fits -g1 --writeall \
 
 The numbers image has the smallest unsigned integer type that fits the total number of your input datasets (see @ref{Numeric data types}).
 For example if you have less than 255 input operands (not pixels!), then it will have an unsigned 8-bit integer type, if you have 1000 input operands (or any number less than 65534 inputs), it will be an unsigned 16-bit integer.
-Recall that when you have many input files to stack, it may be necessary to write the arguments into a text file and use @option{--arguments} (see @ref{Invoking astarithmetic}).
+Recall that when you have many input files to coadd, it may be necessary to write the arguments into a text file and use @option{--arguments} (see @ref{Invoking astarithmetic}).
 
-The numbers image is included by default because it is usually important in clipping based stacks (where the number of inputs used in the calculation of each pixel can be different from another pixel, and this affects the final output noise).
+The numbers image is included by default because it is usually important in clipping based coadds (where the number of inputs used in the calculation of each pixel can be different from another pixel, and this affects the final output noise).
 In case you are not interested in the numbers image, you should first @code{swap} the two output operands, then @code{free} the top operand like below.
 
 @example
@@ -22533,7 +22538,7 @@ $ astarithmetic a.fits b.fits c.fits -g1 \
                 --output=single-hdu.fits
 @end example
 
-In case you just want the numbers image, you can use @option{sigclip-median} (which is always calculated as part of the clipping process: no extra overhead), and @code{free} the top operand (without the @code{swap}: the median-stack image), leaving only the numbers image:
+In case you just want the numbers image, you can use @option{sigclip-median} (which is always calculated as part of the clipping process: no extra overhead), and @code{free} the top operand (without the @code{swap}: the median-coadd image), leaving only the numbers image:
 
 @example
 $ astarithmetic a.fits b.fits c.fits -g1 \
@@ -22580,7 +22585,7 @@ We therefore recommend the process above to extract the statistics you want.
 
 
 
-@node Filtering operators, Pooling operators, Stacking operators, Arithmetic operators
+@node Filtering operators, Pooling operators, Coadding operators, Arithmetic operators
 @subsubsection Filtering (smoothing) operators
 
 Image filtering is commonly used for smoothing: every pixel value in the output image is created by applying a certain statistic to the pixels in its vicinity.
@@ -23083,8 +23088,8 @@ If you have not done this tutorial yet, we recommend you to take an hour or so a
 
 When more than 95@mymath{\%} of the area of an operand is masked, the full operand will be masked.
 This is necessary in like this: one of your inputs has many outliers (for example it is much more noisy than the rest or its sky level has not been subtracted properly).
-Because this operator fills holes between outlying pixels, most of the area of the input will be masked, but the thin edges (where there are no ``holes'') will remain, causing different statistics in those thin edges of that input in your final stack.
-Through this mask coverage fraction (which is currently hard-coded@footnote{Please get in touch with us at @code{bug-gnuastro@@gnu.org} if you notice this problem and feel the fraction needs to be lowered (or generally to be set in each run).}), we ensure that such thin edges do not cause artifacts in the final stack.
+Because this operator fills holes between outlying pixels, most of the area of the input will be masked, but the thin edges (where there are no ``holes'') will remain, causing different statistics in those thin edges of that input in your final coadd.
+Through this mask coverage fraction (which is currently hard-coded@footnote{Please get in touch with us at @code{bug-gnuastro@@gnu.org} if you notice this problem and feel the fraction needs to be lowered (or generally to be set in each run).}), we ensure that such thin edges do not cause artifacts in the final coadd.
 
 For example, with the command below, the pixels of the input 2 dimensional @file{image.fits} will be collapsed to a single dimension output.
 The first popped operand is @code{2}, so it will collapse all the pixels that are vertically on top of each other.
@@ -23646,12 +23651,12 @@ The random values can be negative (which is not possible in a Poisson distributi
 @end itemize
 
 @cindex Coadds
-@cindex Stacking
+@cindex Coadding
 @cindex Photon-starved images
 Therefore to simulate photon-starved images (for example UV or X-ray data), the @code{mknoise-poisson} operator should always be used, not this one.
 However, in optical (or redder bands) data, the background is very bright (much brighter than 10 counts for example).
 In such cases (as the mean increases), the Poisson distributions becomes identical to the Gaussian distribution.
-Furthermore, processed co-add/stacked images are no longer integers, but floating points with the Sky-level already subtracted (see @ref{Sky value}).
+Furthermore, processed coadded images are no longer integers, but floating points with the Sky-level already subtracted (see @ref{Sky value}).
 Therefore if you are trying to simulate a processed, photon-rich dataset, you can safely use this operator.
 
 @cindex Dark night
@@ -24437,7 +24442,7 @@ $ astarithmetic image.fits 20 repeat 20 add-dimension-slow
 @item free
 Free the top operand from the stack and memory.
 This is useful in cases where the operator adds more than one operand on the stack.
-For example operators that do stacking by clipping in @ref{Stacking operators}; see the examples there for more.
+For example operators that do stacking by clipping in @ref{Coadding operators}; see the examples there for more.
 
 @item set-AAA
 Set the characters after the dash (@code{AAA} in the case shown here) as a name for the first popped operand on the stack.
@@ -24564,7 +24569,7 @@ This option is only relevant when no arguments are given on the command-line: if
 This is necessary when the set of of input files and operators (arguments; see @ref{Arguments and options}) are very long (thousands of long file names for example; usually generated within large pipelines).
 Such long arguments will cause the shell to abort with an @code{Argument list too long} error.
 In such cases, you can put the list into a plain-text file and use this option like below.
-Here we are assuming you want to stack all the files in a certain directory with the @code{mean} operator but after masking outliers; see @ref{Stacking operators} and @ref{Statistical operators}:
+Here we are assuming you want to coadd all the files in a certain directory with the @code{mean} operator but after masking outliers; see @ref{Coadding operators} and @ref{Statistical operators}:
 
 @example
 $ counter=0
@@ -26010,7 +26015,7 @@ The output's pixel value is derived by summing all these multiplications for the
 Through this process, pixels are treated as an area not as a point (which is how detectors create the image), also the brightness (see @ref{Brightness flux magnitude}) of an object will be fully preserved.
 Since it involves the mixing of the input's pixel values, this pixel mixing method is a form of @ref{Spatial domain convolution}.
 Therefore, after comparing the input and output, you will notice that the output is slightly smoothed, thus boosting the more diffuse signal, but creating correlated noise.
-In astronomical imaging the correlated noise will be decreased later when you stack many exposures@footnote{If you are working on a single exposure image and see pronounced Moir@'e patterns after Warping, check @ref{Moire pattern in stacking and its correction} for a possible way to reduce them}.
+In astronomical imaging the correlated noise will be decreased later when you coadd many exposures@footnote{If you are working on a single exposure image and see pronounced Moir@'e patterns after Warping, check @ref{Moire pattern in coadding and its correction} for a possible way to reduce them}.
 
 If there are very high spatial-frequency signals in the image (for example, fringes) which vary on a scale @emph{smaller than} your output image pixel size (this is rarely the case in astronomical imaging), pixel mixing can cause ailiasing@footnote{@url{http://en.wikipedia.org/wiki/Aliasing}}.
 Therefore, in case such fringes are present, they have to be calculated and removed separately (which would naturally be done in any astronomical reduction pipeline).
@@ -26045,16 +26050,16 @@ One line examples:
 ## Align image with celestial coordinates and remove any distortion
 $ astwarp image.fits
 
-## Align four exposures to same pixel grid and stack them with
+## Align four exposures to same pixel grid and coadd them with
 ## Arithmetic program's sigma-clipped mean operator (out of many
-## stacking operators, see Arithmetic's documentation).
+## coadding operators, see Arithmetic's documentation).
 $ grid="--center=1.234,5.678 --width=1001,1001 --widthinpix --cdelt=0.2/3600"
 $ astwarp a.fits $grid --output=A.fits
 $ astwarp b.fits $grid --output=B.fits
 $ astwarp c.fits $grid --output=C.fits
 $ astwarp d.fits $grid --output=D.fits
 $ astarithmetic A.fits B.fits C.fits D.fits 4 5 0.2 sigclip-mean \
-                -g1 --writeall --output=stack.fits
+                -g1 --writeall --output=coadd.fits
 
 ## Warp a previously created mock image to the same pixel grid as the
 ## real image (including any distortions).
@@ -26143,21 +26148,21 @@ In this case, the output's WCS and pixel grid will exactly match the image given
 
 @cartouche
 @noindent
-@cindex Stacking
+@cindex Coadding
 @cindex Coaddition
-@strong{Set @option{--cdelt} explicitly when you plan to stack many warped images:}
-To align some images and later stack them, it is necessary to be sure the pixel sizes of all the images are the same exactly.
+@strong{Set @option{--cdelt} explicitly when you plan to coadd many warped images:}
+To align some images and later coadd them, it is necessary to be sure the pixel sizes of all the images are the same exactly.
 Most of the time the measured (during astrometry) pixel scale of the separate exposures, will be different in the second or third digit number after the decimal point.
 It is a normal/statistical error in measuring the astrometry.
 On a large image, these slight differences can cause different output sizes (of one or two pixels on a very large image).
 
 You can fix this by explicitly setting the pixel scale of each warped exposure with Warp's @option{--cdelt} option that is described below.
-For good strategies of setting the pixel scale, see @ref{Moire pattern in stacking and its correction}.
+For good strategies of setting the pixel scale, see @ref{Moire pattern in coadding and its correction}.
 @end cartouche
 
 Another problem that may arise when aligning images to new pixel grids is the aliasing or visible Moir@'e patterns on the output image.
-This artifact should be removed if you are stacking several exposures, especially with a pointing pattern.
-If not see @ref{Moire pattern in stacking and its correction} for ways to mitigate the visible patterns.
+This artifact should be removed if you are coadding several exposures, especially with a pointing pattern.
+If not see @ref{Moire pattern in coadding and its correction} for ways to mitigate the visible patterns.
 See the description of @option{--gridfile} below for more.
 
 @cartouche
@@ -26391,7 +26396,7 @@ To visually inspect the curvature effect on pixel area of the input image, see o
 @item --checkmaxfrac
 Check each output pixel's maximum coverage on the input data and append as the `@code{MAX-FRAC}' HDU/extension to the output aligned image.
 This option provides an easy visual inspection for possible recurring patterns or fringes caused by aligning to a new pixel grid.
-For more detail about the origin of these patterns and how to mitigate them see @ref{Moire pattern in stacking and its correction}.
+For more detail about the origin of these patterns and how to mitigate them see @ref{Moire pattern in coadding and its correction}.
 
 Note that the `@code{MAX-FRAC}' HDU/extension is not showing the patterns themselves;
 It represents the largest area coverage on the input data for that particular pixel.
@@ -30123,7 +30128,7 @@ The standard deviation (@mymath{\sigma}) of that distribution can be used to qua
 @dispmath{M_{up,n\sigma}=-2.5\times\log_{10}{(n\sigma_m)}+z \quad\quad [mag/target]}
 
 @cindex Correlated noise
-Traditionally, faint/small object photometry was done using fixed circular apertures (for example, with a diameter of @mymath{N} arc-seconds) and there was not much processing involved (to make a deep stack).
+Traditionally, faint/small object photometry was done using fixed circular apertures (for example, with a diameter of @mymath{N} arc-seconds) and there was not much processing involved (to make a deep coadd).
 Hence, the upper limit was synonymous with the surface brightness limit discussed above: one value for the whole image.
 The problem with this simplified approach is that the number of pixels in the aperture directly affects the final distribution and thus magnitude.
 Also the image correlated noise might actually create certain patterns, so the shape of the object can also affect the final result.
@@ -30145,7 +30150,7 @@ $ astmkcatalog --help | grep -- --upperlimit
 Suppose we have taken two images of the same field of view with the same CCD, once with a smaller telescope, and once with a larger one.
 Because we used the same CCD, the noise will be very similar.
 However, the larger telescope has gathered more light, therefore the same star or galaxy will have a higher signal-to-noise ratio (S/N) in the image taken with the larger one.
-The same applies for a stacked image of the field compared to a single-exposure image of the same telescope.
+The same applies for a coadded image of the field compared to a single-exposure image of the same telescope.
 
 This concept is used by some researchers to define the ``magnitude limit'' or ``detection limit'' at a certain S/N (sometimes 10, 5 or 3 for example, also written as @mymath{10\sigma}, @mymath{5\sigma} or @mymath{3\sigma}).
 To do this, they measure the magnitude and signal-to-noise ratio of all the objects within an image and measure the mean (or median) magnitude of objects at the desired S/N.
@@ -30235,7 +30240,7 @@ Therefore, the useful surface of the Vera C. Rubin telescope is @mymath{\pi(8.4^
 As you saw in its derivation, the calculation above extrapolates the noise in one pixel over all the input's pixels!
 In other words, all pixels are treated independently in the measurement of the standard deviation.
 It therefore implicitly assumes that the noise is the same in all of the pixels.
-But this only happens in individual exposures: reduced data will have correlated noise because they are a stack of many individual exposures that have been warped (thus mixing the pixel values).
+But this only happens in individual exposures: reduced data will have correlated noise because they are a coadd of many individual exposures that have been warped (thus mixing the pixel values).
 A more accurate measure which will provide a realistic value for every labeled region is known as the @emph{upper-limit magnitude}, which is discussed in the next section (@ref{Upper limit surface brightness of image}).
 
 Within Gnuastro, measuring the surface brighntess limit of the image is very easy: the outputs of NoiseChisel include the Sky standard deviation (@mymath{\sigma}) on every group of pixels (a tile) that were calculated from the undetected pixels in each tile, see @ref{Tessellation} and @ref{NoiseChisel output}.
@@ -34077,7 +34082,7 @@ If you do confront such strange errors, please submit a bug report so we fix it 
 * SAO DS9 region files from table::  Create ds9 region file from a table.
 * Viewing FITS file contents with DS9 or TOPCAT::  Open DS9 (images/cubes) or TOPCAT (tables).
 * Zero point estimation::       Zero point of an image from reference catalog or image(s).
-* Pointing pattern simulation::  Simulate a stack with a given series of pointings.
+* Pointing pattern simulation::  Simulate a coadd with a given series of pointings.
 * Color images with gray faint regions::  Color for bright pixels and grayscale for faint.
 * PSF construction and subtraction::  Set of scripts to create extended PSF of an image.
 @end menu
@@ -35287,7 +35292,7 @@ For more, see @option{Operating mode options}.
 
 @cindex Depth of data
 Astronomical images are often composed of many single exposures.
-When the science topic does not depend on the time of observation (for example galaxy evolution), after completing the observations, we stack those single exposures into one ``deep'' image.
+When the science topic does not depend on the time of observation (for example galaxy evolution), after completing the observations, we coadd those single exposures into one ``deep'' image.
 Designing the strategy to take those single exposures is therefore a very important aspect of planning your astronomical observation.
 There are many reasons for taking many short exposures instead of one long exposure:
 
@@ -35307,7 +35312,7 @@ When an exposure is taken, the instrument/environment imprint a lot of artifacts
 One common example that we also see in normal cameras is @url{https://en.wikipedia.org/wiki/Vignetting, vignetting}; where the center receives a larger fraction of the incoming light than the periphery).
 In order to characterize and remove such artifacts (which depend on many factors at the precision that we need in astronomy!), we need to take many exposures of our science target.
 @item
-By taking many exposures we can build a stack that has a higher resolution; this is often done in under-sampled data, like those in the Hubble Space Telescope (HST) or James Webb Space Telescope (JWST).
+By taking many exposures we can build a coadd that has a higher resolution; this is often done in under-sampled data, like those in the Hubble Space Telescope (HST) or James Webb Space Telescope (JWST).
 @item
 The scientific target can be larger than the field of view of your telescope and camera.
 @end itemize
@@ -35316,7 +35321,7 @@ The scientific target can be larger than the field of view of your telescope and
 In the jargon of observational astronomers, each exposure is also known as a ``dither'' (literally/generally meaning ``trembling'' or ``vibration'').
 This name was chosen because two exposures are not usually taken on exactly the same position of the sky (known as ``pointing'').
 In order to improve all the item above, we often move the center of the field of view from one exposure to the next.
-In most cases this movement is small compared to the field of view, so most of the central part of the final stack has a fixed depth, but the edges are shallower (conveying a sense of vibration).
+In most cases this movement is small compared to the field of view, so most of the central part of the final coadd has a fixed depth, but the edges are shallower (conveying a sense of vibration).
 When the spacing between pointings is large, they are known as an ``offset''.
 A ``pointing'' is used to refer to either a dither or an offset.
 
@@ -35341,7 +35346,7 @@ For a practical tutorial on using this script, see @ref{Pointing pattern design}
 @node Invoking astscript-pointing-simulate,  , Pointing pattern simulation, Pointing pattern simulation
 @subsection Invoking astscript-pointing-simulate
 
-This installed script will simulate a final stacked image from a certain pointing pattern (given as a table).
+This installed script will simulate a final coadded image from a certain pointing pattern (given as a table).
 A general overview of this script has been published in @url{https://ui.adsabs.harvard.edu/abs/2023RNAAS...7..211A,Akhlaghi (2023)}; please cite it if this script proves useful in your research.
 The executable name is @file{astscript-pointing-simulate}, with the following general template:
 
@@ -35353,13 +35358,13 @@ $ astscript-pointing-simulate [OPTION...] pointings.fits
 Examples (for a tutorial, see @ref{Pointing pattern design}):
 
 @example
-$ astscript-pointing-simulate pointing.fits --output=stack.fits \
+$ astscript-pointing-simulate pointing.fits --output=coadd.fits \
            --img=image.fits --center=10,10 --width=1,1
 @end example
 
-The default output of this script is a stacked image that results from placing the given image (given to @option{--img}) in the pointings of a pointing pattern.
+The default output of this script is a coadded image that results from placing the given image (given to @option{--img}) in the pointings of a pointing pattern.
 The Right Ascension (RA) and Declination (Dec) of each pointing is given in the main input catalog (@file{pointing.fits} in the example above).
-The center and width of the final stack (both in degrees by default) should be specified using the @option{--width} option.
+The center and width of the final coadd (both in degrees by default) should be specified using the @option{--width} option.
 Therefore, in order to successfully run, this script at least needs the following four inputs:
 @table @asis
 @item Pointing positions
@@ -35368,17 +35373,17 @@ The actual column names that contain them can be set with the @option{--racol} a
 @item An image
 This is used for its distortion and rotation, its pixel values and position on the sky will be ignored.
 The file containing the image should be given to the @option{--img} option.
-@item Stack's central coordinate
-The central RA and Dec of the finally produced stack (given to the @option{--center} option).
-@item Stack's width
-The width (in degrees) of the final stack (given to the @option{--width} option).
+@item Coadd's central coordinate
+The central RA and Dec of the finally produced coadd (given to the @option{--center} option).
+@item Coadd's width
+The width (in degrees) of the final coadd (given to the @option{--width} option).
 @end table
 
 This script will ignore the pixel values of the reference image (given to @option{--img}) and the Reference coordinates (values to @code{CRVAL1} and @code{CRVAL2} in its WCS keywords).
 For each pointing pointing, this script will put the given RA and Dec into the @code{CRVAL1} and @code{CRVAL2} keywords of a copy of the input (not changing the input in anyway), and reset that input's pixel values to 1.
 The script will then warp the modified copy into the final pixel grid (correcting any rotation and distortions that are used from the original input).
 This process is done for all the pointing points in parallel.
-Finally, all the exposures in the pointing list are stacked together to produce an exposure map (showing how many exposures go into each pixel of the final stack.
+Finally, all the exposures in the pointing list are coadded together to produce an exposure map (showing how many exposures go into each pixel of the final coadd.
 
 Except for the table of pointing positions, the rest of the inputs and settings are configured through @ref{Options}, just note the restrictions in @ref{Installed scripts}.
 
@@ -35418,18 +35423,18 @@ The file containing the table is given to this script as its only argument.
 
 @item -C FLT,FLT
 @itemx --center=FLT,FLT
-The central RA and Declination of the final stack in degrees.
+The central RA and Declination of the final coadd in degrees.
 
 @item -w FLT,FLT
 @itemx --width=FLT,FLT
-The width of the final stack in degrees.
+The width of the final coadd in degrees.
 If @option{--widthinpix} is given, the two values given to this option will be interpreted as degrees.
 
 @item --widthinpix
 Interpret the values given to @option{--width} as number of pixels along each dimension), and not as degrees.
 
 @item --ctype=STR,STR
-The projection of the output stack (@code{CTYPEi} keyword in the FITS WCS standard).
+The projection of the output coadd (@code{CTYPEi} keyword in the FITS WCS standard).
 For more, see the description of the same option in @ref{Align pixels with WCS considering distortions}.
 
 @item --hook-warp-before='STR'
@@ -35452,7 +35457,7 @@ To develop your command, you can use @command{--hook-warp-before='...; echo GOOD
 All the files will be within the temporary directory (see @option{--tmpdir}).
 
 @item --hook-warp-after='STR'
-Command to run after the warp of each exposure into the output pixel grid, but before the stacking of all exposures.
+Command to run after the warp of each exposure into the output pixel grid, but before the coadding of all exposures.
 For more on hooks, see the description of @code{--hook-warp-before}, @ref{Pointing pattern design} and @ref{Accounting for non-exposed pixels}.
 
 @table @code
@@ -35461,12 +35466,12 @@ Input: name of file containing the warped exposure in the output pixel grid.
 @item $TOWARP
 Output: name of the expected output of your hook.
 If it is not created by your script, the script will complain and abort.
-This file will be stacked from the same file for all exposures into the final output.
+This file will be coadded from the same file for all exposures into the final output.
 @end table
 
-@item --stack-operator="STR"
-The operator to use for stacking the warped individual exposures into the final output of this script.
-For the full list, see @ref{Stacking operators}.
+@item --coadd-operator="STR"
+The operator to use for coadding the warped individual exposures into the final output of this script.
+For the full list, see @ref{Coadding operators}.
 By default it is the @code{sum} operator (to produce an output exposure map).
 For an example usage, see the tutorial in @ref{Pointing pattern design}.
 
@@ -35679,8 +35684,8 @@ In general, this parameter is chosen after setting @option{--qbright} to a low v
 @cartouche
 @noindent
 @strong{The asinh transformation.}
-The asinh transformation is done on the stacked R, G, B image.
-It consists in the modification of the stacked image (I) in order to show the entire dynamical range appropriately following the expression: @mymath{f(I) = asinh(} @option{qbright} @mymath{\cdot} @option{stretch} @mymath{\cdot I) /} @option{qbright}.
+The asinh transformation is done on the coadded R, G, B image.
+It consists in the modification of the coadded image (I) in order to show the entire dynamical range appropriately following the expression: @mymath{f(I) = asinh(} @option{qbright} @mymath{\cdot} @option{stretch} @mymath{\cdot I) /} @option{qbright}.
 See @ref{Color images with full dynamic range} for a complete tutorial that shows the intricacies of this transformation with step-by-step examples.
 @end cartouche
 
@@ -35714,7 +35719,7 @@ HDU name or counter (counting from 0) of the region image given to @option{--reg
 @strong{IMPORTANT NOTE.}
 The options @option{--colorval} and @option{--grayval} are related one to each other.
 They are defined from the threshold image (an image generated in the temporary directory) named @file{colorgray_threshold.fits}.
-By default, this image is computed from the stack and later asinh-transformation of the three R, G, B channels.
+By default, this image is computed from the coadd and later asinh-transformation of the three R, G, B channels.
 Its pixel values range between 100 (brightest) to 0 (faintest).
 The @option{--colorval} value computed by default is the median of this image.
 Pixels above this value are shown in color.
@@ -35807,8 +35812,8 @@ The tutorial uses a real dataset and includes all the logic and reasoning behind
 @menu
 * Overview of the PSF scripts::  Summary of concepts and methods
 * Invoking astscript-psf-select-stars::  Select good starts within an image.
-* Invoking astscript-psf-stamp::  Make a stamp of each star to stack.
-* Invoking astscript-psf-unite::  Merge stacks of different regions of PSF.
+* Invoking astscript-psf-stamp::  Make a stamp of each star to coadd.
+* Invoking astscript-psf-unite::  Merge coadds of different regions of PSF.
 * Invoking astscript-psf-scale-factor::  Calculate factor to scale PSF to star.
 * Invoking astscript-psf-subtract::  Put the PSF in the image to subtract.
 @end menu
@@ -35846,7 +35851,7 @@ For more on this script, see @ref{Invoking astscript-psf-select-stars}.
 Once the catalog of stars is constructed, another script is in charge of making appropriate stamps of the stars.
 Each stamp is a cropped image of the star with the desired size, normalization of the flux, and mask of the contaminant objects.
 For more on this script, see @ref{Invoking astscript-psf-stamp}
-After obtaining a set of star stamps, they can be stacked for obtaining the combined PSF from many stars (for example, with @ref{Stacking operators}).
+After obtaining a set of star stamps, they can be coadded for obtaining the combined PSF from many stars (for example, with @ref{Coadding operators}).
 
 In the combined PSF, the masked background objects of each star's image will be covered and the signal-to-noise ratio will increase, giving a very nice view of the ``clean'' PSF.
 However, it is usually necessary to obtain different regions of the same PSF from different stars.
@@ -35859,7 +35864,7 @@ For example, in Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020}
 In other cases, we even needed four groups of stars!
 But in the example dataset from the tutorial, only two groups are necessary (see @ref{Building the extended PSF}).
 
-Once clean stacks of different parts of the PSF have been constructed through the steps above, it is therefore necessary to blend them all into one.
+Once clean coadds of different parts of the PSF have been constructed through the steps above, it is therefore necessary to blend them all into one.
 This is done by finding a common radial region in both, and scaling the inner region by a factor to add with the outer region.
 This is not trivial, therefore, a third script is in charge of it, see @ref{Invoking astscript-psf-unite}.
 
@@ -36087,7 +36092,7 @@ If no normalization ring is considered, the output will not be normalized.
 @end itemize
 
 In the following cases, this script will produce a fully NaN-valued stamp (of the size given to @option{--widthinpix}).
-A fully NaN image can safely be used with the stacking operators of Arithmetic (see @ref{Stacking operators}) because they will be ignored.
+A fully NaN image can safely be used with the coadding operators of Arithmetic (see @ref{Coadding operators}) because they will be ignored.
 In case you do not want to waste storage with fully NaN images, you can compress them with @code{gzip --best output.fits}, and give the resulting @file{.fits.gz} file to Arithmetic.
 @itemize
 @item
@@ -36170,11 +36175,11 @@ This threshold is applied prior to the possible normalization or centering of th
 After all pixels below the given threshold are masked, the mask is also dilated by one level to avoid single pixels above the threshold (which are mainly due to noise when the threshold is lower).
 
 After applying the signal-to-noise threshold (if it is requested), any extra pixels that are not connected to the central target are also masked.
-Such pixels can remain in rivers between bright clumps and will cause problem in the final stack, if they are not masked.
+Such pixels can remain in rivers between bright clumps and will cause problem in the final coadd, if they are not masked.
 
-This is useful for increasing the S/N of inner parts of each region of the finally stacked PSF.
-As the stars (that are to be stacked) become fainter, the S/N of their outer parts (at a fixed radius) decreases.
-The stack of a higher-S/N image with a lower-S/N image will have an S/N that is lower than the higher one.
+This is useful for increasing the S/N of inner parts of each region of the finally coadded PSF.
+As the stars (that are to be coadded) become fainter, the S/N of their outer parts (at a fixed radius) decreases.
+The coadd of a higher-S/N image with a lower-S/N image will have an S/N that is lower than the higher one.
 But we can still use the inner parts of those fainter stars (that have sufficiently high S/N).
 
 @item -N STR
@@ -37033,7 +37038,7 @@ science := $(filter-out $(calib), \
 @end example
 
 The @code{science} variable will now contain the unique science targets that were observed in your selected FITS images.
-You can use it to group the various exposures together in the next stages to make separate stacks of deep images for each science target (you can select FITS files based on their keyword values using the @code{ast-fits-with-keyvalue} function, which is described separately in this section).
+You can use it to group the various exposures together in the next stages to make separate coadds of deep images for each science target (you can select FITS files based on their keyword values using the @code{ast-fits-with-keyvalue} function, which is described separately in this section).
 @end table
 
 
@@ -42281,7 +42286,7 @@ The output type is a single integer.
 
 @deffn Macro GAL_ARITHMETIC_OP_SWAP
 Return the first dataset, but with the second dataset being placed in the @code{next} element of the first.
-This is useful to swap the operators on the stacks of the higher-level programs that call the arithmetic library.
+This is useful to swap the operators on the coadds of the higher-level programs that call the arithmetic library.
 @end deffn
 
 @deffn  Macro GAL_ARITHMETIC_OP_EQB1950_TO_EQJ2000
@@ -44975,7 +44980,7 @@ This dataset should have a type of @code{GAL_TYPE_FLOAT64} and contain exactly t
 @item uint8_t checkmaxfrac
 When this is non-zero, the output will be a two-element @ref{List of gal_data_t}.
 The second element shows the @url{https://en.wikipedia.org/wiki/Moir%C3%A9_pattern, Moir@'e pattern} of the warp.
-For more, see @ref{Moire pattern in stacking and its correction}.
+For more, see @ref{Moire pattern in coadding and its correction}.
 
 @end table
 @end deftp
@@ -46668,7 +46673,7 @@ Since they are now separated, you can easily break a long literal string into se
 @cindex Header file
 @item
 The headers required by each source file (ending with @file{.c}) should be defined inside of it.
-All the headers a complete program needs should @emph{not} be stacked in another header to include in all source files (for example @file{main.h}).
+All the headers a complete program needs should @emph{not} be coadded in another header to include in all source files (for example @file{main.h}).
 Although most `professional' programmers choose this single header method, Gnuastro is primarily written for professional/inquisitive astronomers (who are generally amateur programmers).
 The list of header files included provides valuable general information and helps the reader.
 @file{main.h} may only include the header file(s) that define types that the main program structure needs, see @file{main.h} in @ref{Program source}.

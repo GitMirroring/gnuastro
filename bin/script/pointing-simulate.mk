@@ -94,7 +94,7 @@ $(exposures): $(tmpdir)/exp-%.fits: $(img) | $(tmpdir)
 
 
 
-# Build the stack
+# Build the coadd
 $(output): $(exposures)
 	astarithmetic $(exposures) $(words $(exposures)) \
-	               $(stack-operator) -g1 --output=$@ $(quiet)
+	               $(coadd-operator) -g1 --output=$@ $(quiet)

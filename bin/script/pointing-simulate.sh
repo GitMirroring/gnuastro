@@ -43,7 +43,7 @@ numthreads=0
 version=@VERSION@
 hook_warp_after=""
 hook_warp_before=""
-stack_operator="sum"
+coadd_operator="sum"
 scriptname=@SCRIPT_NAME@
 ctype="RA---TAN,DEC--TAN"
 output=pointing-simulate.fits
@@ -61,8 +61,8 @@ Usage: $scriptname positions-cat.fits --center=1.23,4.56 \
 Given a set of dithering positions ('positions-cat.fits' in the example
 above), and an image ('image.fits' which can be from any part of the sky,
 only its distortion and orientation are important), build the exposure map
-of the output stack after applying that dither (where each pixel contains
-the number of exposures that were used in it). The field of the final stack
+of the output coadd after applying that dither (where each pixel contains
+the number of exposures that were used in it). The field of the final coad
 can be set with the '--center' and '--width' options.
 
 $scriptname options:
@@ -81,12 +81,12 @@ $scriptname options:
                           Input: '$WARPED'. Output: '$TARGET'.
 
  Output:
-  -o, --output=STR        Name of finally stacked image.
+  -o, --output=STR        Name of finally coadded image.
   -C, --center=FLT,FLT    Center of output stack (in RA,Dec).
-  -w, --width=FLT,FLT     Width of output stack (in WCS).
+  -w, --width=FLT,FLT     Width of output coadd (in WCS).
       --ctype=STR,STR     Projection of output (CTYPEi in WCS).
       --widthinpix        Interpret '--width' values in pixels.
-      --stack-operator="STR" Arithmetic operator to use for stacking.
+      --coadd-operator="STR" Arithmetic operator to use for coadding.
   -t, --tmpdir=STR        Directory to keep temporary files.
   -k, --keeptmp           Keep temporal/auxiliar files.
 
@@ -296,8 +296,8 @@ do
     --ctype=*)       ctype="${1#*=}";                             check_v "$1" "$ctype";  shift;;
     --widthinpix)    widthinpix=1;                                                        shift;;
     --widthinpix=*)  on_off_option_error --quiet -q;;
-    --stack-operator) stack_operator="$2";                        check_v "$1" "$stack_operator";  shift;shift;;
-    --stack-operator=*) stack_operator="${1#*=}";                 check_v "$1" "$stack_operator";  shift;;
+    --coadd-operator) coadd_operator="$2";                        check_v "$1" "$coadd_operator";  shift;shift;;
+    --coadd-operator=*) coadd_operator="${1#*=}";                 check_v "$1" "$coadd_operator";  shift;;
     -k|--keeptmp)           keeptmp=1; shift;;
     -k*|--keeptmp=*)        on_off_option_error --keeptmp -k;;
     -t|--tmpdir)            tmpdir="$2";                                  check_v "$1" "$tmpdir";  shift;shift;;
@@ -347,13 +347,13 @@ if [ x"$img" = x ]; then
     echo "$scriptname: no reference image given to '--img'"; exit 1
 fi
 if [ x"$width" = x ]; then
-    echo "$scriptname: no stack width given to '--width'"; exit 1
+    echo "$scriptname: no coadd width given to '--width'"; exit 1
 fi
 if [ x"$ctype" = x ]; then
     echo "$scriptname: no projection given to '--ctype'"; exit 1
 fi
 if [ x"$center" = x ]; then
-    echo "$scriptname: no stack center given to '--center'"; exit 1
+    echo "$scriptname: no coadd center given to '--center'"; exit 1
 else
     ncenter=$(echo $center | awk 'BEGIN{FS=","}\
                                   {for(i=1;i<=NF;++i) c+=$i!=""}\
@@ -416,7 +416,7 @@ echo "center = $center" >> $config
 echo "output = $output" >> $config
 echo "imghdu = $imghdu" >> $config
 echo "scriptname = $scriptname" >> $config
-echo "stack-operator = $stack_operator" >> $config
+echo "coadd-operator = $coadd_operator" >> $config
 echo "dithers = $(seq $ndither | tr '\n' ' ')" >> $config
 echo "hook-warp-before=$hook_warp_before" >> $config
 echo "hook-warp-after=$hook_warp_after" >> $config

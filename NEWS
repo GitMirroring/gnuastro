@@ -122,6 +122,15 @@ See the end of the file for license conditions.
 ** Removed features
 ** Changed features
 
+*** Book
+
+  - The term "stack" was used in two contexts within the Arithmetic
+    program: referring both to the stack of operands during its operation
+    and the coadding process (when we add many images to make a deeper
+    one). When talking about the latter scenario, the book now uses the
+    term "Coadd" (which is also commonly used in the optical astronomical
+    community).
+
 *** All programs
 
   --cite: also prints the citation for the Gnuastro book/manual (using the
@@ -154,6 +163,10 @@ See the end of the file for license conditions.
     the running directory. This would cause problems for parallel
     executions. Also, it was a plain-text file which is less efficient:
     slower to read and write and would be larger for longer catalog inputs.
+
+*** astscript-pointing-simulate
+
+  --coadd-operator: new name for '--stack-operator'.
 
 *** Library
 
