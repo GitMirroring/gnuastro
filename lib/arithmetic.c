@@ -3183,10 +3183,6 @@ arithmetic_function_binary_flt(int operator, int flags, gal_data_t *il,
       BINFUNC_F_OPERATOR_SET( gal_units_counts_to_mag, +0 ); break;
     case GAL_ARITHMETIC_OP_MAG_TO_COUNTS:
       BINFUNC_F_OPERATOR_SET( gal_units_mag_to_counts, +0 ); break;
-    case GAL_ARITHMETIC_MAG_TO_LUMINOSITY:
-      BINFUNC_F_OPERATOR_SET( gal_units_mag_to_luminosity, +0 ); break;
-    case GAL_ARITHMETIC_LUMINOSITY_TO_MAG:
-      BINFUNC_F_OPERATOR_SET( gal_units_luminosity_to_mag, +0 ); break;
     case GAL_ARITHMETIC_OP_COUNTS_TO_JY:
       BINFUNC_F_OPERATOR_SET( gal_units_counts_to_jy, +0 ); break;
     case GAL_ARITHMETIC_OP_JY_TO_COUNTS:
@@ -3317,6 +3313,10 @@ arithmetic_function_ternary_flt(int operator, int flags, gal_data_t *il,
     {
     case GAL_ARITHMETIC_OP_ZEROPOINT_CHANGE:
       TERFUNC_RUN_FUNCTION( gal_units_zeropoint_change ); break;
+    case GAL_ARITHMETIC_MAG_TO_LUMINOSITY:
+      TERFUNC_RUN_FUNCTION( gal_units_mag_to_luminosity ); break;
+    case GAL_ARITHMETIC_LUMINOSITY_TO_MAG:
+      TERFUNC_RUN_FUNCTION( gal_units_luminosity_to_mag ); break;
     default:
       error(EXIT_FAILURE, 0, "%s: operator code %d not recognized",
             __func__, operator);
@@ -4177,9 +4177,9 @@ gal_arithmetic_set_operator(char *string, size_t *num_operands)
   else if (!strcmp(string, "mag-to-counts"))
     { op=GAL_ARITHMETIC_OP_MAG_TO_COUNTS;     *num_operands=2;  }
   else if (!strcmp(string, "mag-to-luminosity"))
-    { op=GAL_ARITHMETIC_MAG_TO_LUMINOSITY;    *num_operands=2;  }
+    { op=GAL_ARITHMETIC_MAG_TO_LUMINOSITY;    *num_operands=3;  }
     else if (!strcmp(string, "luminosity-to-mag"))
-    { op=GAL_ARITHMETIC_LUMINOSITY_TO_MAG;    *num_operands=2;  }
+    { op=GAL_ARITHMETIC_LUMINOSITY_TO_MAG;    *num_operands=3;  }
   else if (!strcmp(string, "sb-to-mag"))
     { op=GAL_ARITHMETIC_OP_SB_TO_MAG;         *num_operands=2;  }
   else if (!strcmp(string, "mag-to-sb"))
@@ -4874,8 +4874,6 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_COUNTS_TO_JY:
     case GAL_ARITHMETIC_OP_COUNTS_TO_MAG:
     case GAL_ARITHMETIC_OP_MAG_TO_COUNTS:
-    case GAL_ARITHMETIC_LUMINOSITY_TO_MAG:
-    case GAL_ARITHMETIC_MAG_TO_LUMINOSITY:
     case GAL_ARITHMETIC_OP_NANOMAGGY_TO_COUNTS:
     case GAL_ARITHMETIC_OP_COUNTS_TO_NANOMAGGY:
     case GAL_ARITHMETIC_OP_JY_TO_WAVELENGTH_FLUX_DENSITY:
@@ -4885,6 +4883,8 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
       out=arithmetic_function_binary_flt(operator, flags, d1, d2);
       break;
 
+    case GAL_ARITHMETIC_LUMINOSITY_TO_MAG:
+    case GAL_ARITHMETIC_MAG_TO_LUMINOSITY:
     case GAL_ARITHMETIC_OP_ZEROPOINT_CHANGE:
       d1 = va_arg(va, gal_data_t *);
       d2 = va_arg(va, gal_data_t *);

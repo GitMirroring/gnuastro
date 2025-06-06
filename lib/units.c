@@ -391,13 +391,14 @@ gal_units_mag_to_counts(double mag, double zeropoint)
 
 
 
-/* Conver apparent magnitude to luminosity. The absolute bolometric
-   magnitude of the Sun is taken from:
-   https://en.wikipedia.org/wiki/Bolometric_correction#Setting_the_correction_scale */
+/* Convert apparent magnitude to luminosity. The absolute magnitude of the
+   sun for different filters can be taken from Table 3 of
+   https://arxiv.org/abs/1804.07788
+*/
 double
-gal_units_mag_to_luminosity(double mag, double distance_modulus)
+gal_units_mag_to_luminosity(double mag, double mag_absolute_sun,
+                            double distance_modulus)
 {
-  double mag_absolute_sun=4.74;
   return pow(10.0, (mag_absolute_sun - (mag - distance_modulus)) / 2.5);
 }
 
@@ -405,10 +406,9 @@ gal_units_mag_to_luminosity(double mag, double distance_modulus)
 
 
 double
-gal_units_luminosity_to_mag(double luminosity, double distance_modulus)
+gal_units_luminosity_to_mag(double luminosity, double mag_absolute_sun,
+                            double distance_modulus)
 {
-  double mag_absolute_sun=4.74;
-  /* double luminosity_sun=3.828e26; */
   return mag_absolute_sun - 2.5*log10(luminosity) + distance_modulus;
 }
 

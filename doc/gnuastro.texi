@@ -22029,13 +22029,28 @@ $ astarithmetic 20 24.8 mag-to-counts --quiet
 @item mag-to-luminosity
 @cindex Luminosity to Apparent Magnitude
 @cindex Apparent Mangitude to Luminosity
-Convert apparent magnitudes to luminosity (in units of solar luminosity; or @mymath{3.828\times10^{26}} Watts) using the distance modulus (for the definition see @ref{Brightness flux magnitude}).
-For example, let's assume we want to obtain the luminosity of an object at redshift 0.5 with apparent magnitude of 20.
-First, we need the distance modulus which we can find with the CosmicCalculator program (where you can specify all the cosmological parameters), then call Arithmetic:
+Convert apparent magnitudes to luminosity (in units of solar luminosity for given band).
+It takes the following three operands:
+
+@enumerate
+@item
+Measured apparent magnitude.
+@item
+Absolute magnitude of the Sun in the filter that the apparent magnitude was derived from.
+Table 3 of Willmer @url{https://arxiv.org/abs/1804.07788,2018} contains the absolute magnitude of the sun in many of the commonly used filters.
+For example the Sun's absolute magnitude SDSS u, g, r, i and z filters are 6.39, 5.11, 4.65, 4.53 and 4.50 in the AB magnitude system.
+@item
+Distance modulus (for the definition see @ref{CosmicCalculator basic cosmology calculations}).
+@end enumerate
+
+For example, let's assume we want to obtain the luminosity of an object at redshift 0.5 with apparent AB magnitude of 20 in the SDSS g filter.
+We need the distance modulus which we can find with the CosmicCalculator program (where you can specify all the cosmological parameters) and the Sun's absolute magnitude  from Willmer @url{https://arxiv.org/abs/1804.07788,2018} in this filter (which is 5.11) to complete the command:
+
+@c Check if instead of --distancemodulus we should use --absmagconv and correct both their documentations to clarify their different purposes.
 
 @example
 $ dmod=$(astcosmiccal --distancemodulus --redshift=0.5)
-$ astarithmetic 20 $dmod mag-to-luminosity
+$ astarithmetic 20 5.11 $dmod mag-to-luminosity
 @end example
 
 @item luminosity-to-mag
@@ -33906,7 +33921,8 @@ The luminosity distance to object at given redshift in Megaparsecs (Mpc).
 
 @item -u
 @itemx --distancemodulus
-The distance modulus at given redshift.
+The distance modulus (difference between the apparent and absolute magnitude for an object) at given redshift.
+The absolute magitude is defined at a fixed distance of 10 parsecs.
 
 @item -a
 @itemx --absmagconv
