@@ -151,6 +151,9 @@ See the end of the file for license conditions.
       integer datasets with small scatter (where the median can be repeated
       a lot).
 
+  --append: when called with this option, Arithmetic will not write its
+    run-time option values in the 0-th HDU.
+
   --metaname: can now accept multiple values (names of each HDU for
     multi-output calls of Arithmetic).
 

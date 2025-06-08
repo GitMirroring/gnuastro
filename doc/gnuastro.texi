@@ -24650,6 +24650,7 @@ This is very important for obtaining reproducible results, for more see @ref{Gen
 @item --append
 If the output file already exists, do not delete it; add the output data to new HDUs at the end of that file.
 You can use the @option{--meta*} options below to give a name, unit or comments to this HDUs (to easily distinguish it from other HDUs).
+When this option is given, the 0th HDU of the existing file will not be updated to add Arithmetic's option values at run-time (because the existing file must already have values there).
 
 @item -n STR[,STR,[...]]
 @itemx --metaname=STR[,STR,[...]]

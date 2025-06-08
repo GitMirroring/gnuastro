@@ -1953,7 +1953,7 @@ arithmetic_out_metadata(struct arithmeticparams *p, gal_data_t *data)
       gal_checkset_allocate_copy(s->v, &d->unit);
     }
 
-  /* Similar to 'metaname' but for meta comments. */
+  /* Similar to 'metacomment' but for meta comments. */
   d=data;
   for(s=p->metacomment; s!=NULL && d!=NULL; s=s->next, d=d->next)
     {
@@ -2104,7 +2104,9 @@ reversepolish(struct arithmeticparams *p)
         }
       else
         {
-          gal_fits_key_write(p->cp.ckeys, p->cp.output, "0", "NONE", 1, 1);
+          if(p->append==0) /* 0-HDU metadata only when not appending. */
+            gal_fits_key_write(p->cp.ckeys, p->cp.output, "0",
+                               "NONE", 1, 1);
           for(tmp=data; tmp!=NULL; tmp=tmp->next)
             gal_fits_img_write(tmp, p->cp.output, NULL, 0);
         }
