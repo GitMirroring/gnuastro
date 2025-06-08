@@ -116,6 +116,10 @@ See the end of the file for license conditions.
     limit only assuming a different effective radius of a different
     telescope and/or a different exposure time.
 
+  - gal_units_mag_to_luminosity:
+  - gal_units_luminosity_to_mag: Convert the observed magnitude of an
+    object to luminosity and vice-versa.
+
   - gal_units_wavelength_flux_density_to_jy: convert given wavelength flux
     density (erg/s/cm^2/A) to Janskys.
 

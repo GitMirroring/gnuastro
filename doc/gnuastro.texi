@@ -1063,7 +1063,7 @@ $ lzip -cd gnuastro-latest.tar.lz | tar -xf -
 Gnuastro has three mandatory dependencies and some optional dependencies for extra functionality, see @ref{Dependencies} for the full list.
 In @ref{Dependencies from package managers} we have prepared the command to easily install Gnuastro's dependencies using the package manager of some operating systems.
 When the mandatory dependencies are ready, you can configure, compile, check and install Gnuastro on your system with the following commands.
-See @ref{Known issues} if you confront any complications.
+See @ref{Known issues} if you confront any complications and if you plan to install without root permissions (such that you will not need @code{sudo} in the last command below) see @ref{Installation directory}.
 
 @example
 $ cd gnuastro-X.X                  # Replace X.X with version number.
@@ -22029,28 +22029,35 @@ $ astarithmetic 20 24.8 mag-to-counts --quiet
 @item mag-to-luminosity
 @cindex Luminosity to Apparent Magnitude
 @cindex Apparent Mangitude to Luminosity
-Convert apparent magnitudes to luminosity (in units of solar luminosity for given band).
-It takes the following three operands:
+Convert the given apparent magnitude to luminosity (in units of the luminosity of a reference object).
+It takes the following three operands (in the order written on the command-line):
 
 @enumerate
 @item
-Measured apparent magnitude.
+The measured apparent magnitude that is corrected for the ISM absorption/extinction.
+You can find the ISM absorption/extinction of a certain position on the sky using Gnuastro's Query program, which gives you direct access to the NED Extinction Calculator as described in @ref{Available databases}.
+
 @item
-Absolute magnitude of the Sun in the filter that the apparent magnitude was derived from.
-Table 3 of Willmer @url{https://arxiv.org/abs/1804.07788,2018} contains the absolute magnitude of the sun in many of the commonly used filters.
-For example the Sun's absolute magnitude SDSS u, g, r, i and z filters are 6.39, 5.11, 4.65, 4.53 and 4.50 in the AB magnitude system.
+@cindex Distance modulus
+@cindex Sun's absolute magnitude
+@cindex Absolute magnitude of Sun
+Absolute magnitude of the reference object in the same filter and magnitude system (for example Vega or AB) that the measured apparent magnitude was derived from.
+The reference object is conventionally the Sun.
+The Sun's absolute magnitude in various commonly used filters and magnitude systems from table 3 of Willmer @url{https://arxiv.org/abs/1804.07788,2018}.
+For example the Sun's absolute magnitude in the SDSS u, g, r, i and z filters (with the AB magnitude system) is respectively 6.39, 5.11, 4.65, 4.53 and 4.50.
 @item
-Distance modulus (for the definition see @ref{CosmicCalculator basic cosmology calculations}).
+@cindex K-Correction
+Conversion of apparent to absolute magnitude.
+At small distances or when talking about bolometric magnitudes, the distance modulus can be used for this.
+See @option{--distancemodulus} in @ref{CosmicCalculator basic cosmology calculations} for more details (and why @option{--absmagconv} is the prefered option in the absense of SED-based methods).
 @end enumerate
 
-For example, let's assume we want to obtain the luminosity of an object at redshift 0.5 with apparent AB magnitude of 20 in the SDSS g filter.
-We need the distance modulus which we can find with the CosmicCalculator program (where you can specify all the cosmological parameters) and the Sun's absolute magnitude  from Willmer @url{https://arxiv.org/abs/1804.07788,2018} in this filter (which is 5.11) to complete the command:
-
-@c Check if instead of --distancemodulus we should use --absmagconv and correct both their documentations to clarify their different purposes.
+For example, let's assume we want to obtain the luminosity of a galaxy (in units of solar luminosity at the same wavelength) at redshift 0.01 with apparent AB magnitude of 20 in the SDSS g filter.
+To do this, we need the distance modulus (which is sufficient for this distance) and the Sun's absolute magnitude, from Willmer @url{https://arxiv.org/abs/1804.07788,2018} in this filter (which is 5.11):
 
 @example
-$ dmod=$(astcosmiccal --distancemodulus --redshift=0.5)
-$ astarithmetic 20 5.11 $dmod mag-to-luminosity
+$ conv=$(astcosmiccal --absmagconv --redshift=0.01)
+$ astarithmetic 20 5.11 $conv mag-to-luminosity
 @end example
 
 @item luminosity-to-mag
@@ -29682,42 +29689,68 @@ To be able to compare our scientific data with other data, optical astronomers h
 But before getting to those, let's review the following basic physical concepts first:
 
 @table @asis
-@item Brightness (@mymath{erg/s})
+@item Energy (@mymath{erg}; also known as @emph{counts} or @emph{ADU}s)
+Within the electromagnetic regime, we measure the received energy of astronomical source by counting the number of photons that have been converted to electrons (electric potential) in our detectors.
+
+@cindex Gain
+@cindex Counts
+@cindex ADU (Analog-to-digital unit)
+@cindex Analog-to-digital unit (ADU)
+When counting the electrical potential, the optical (but also near ultra-violet and near infra-red) detectors do not actually count individual electrons but bundles/packages of electrons known as the analog-to-digital unit (ADU).
+The number of electrons in each ADU is known as the @emph{gain} of the instrument.
+The gain of the instrument is measured as part of its calibration to be able to convert ADUs to electron-counts.
+
+@item Power (@mymath{erg/s})
+The amount of energy in a fixed interval of time (1 second) and is used in two contexts within astronomy (and physics in general).
+Both have the same units of energy per time, but their difference is very important to understand in physical interpretation:
+
+@table @asis
+
+@item Brightness
 @cindex Brightness
-To be able to compare with data taken with different exposure times, we define the @emph{brightness} which is the measured power (energy divided by time).
+To be able to compare data taken with different exposure times, we define the @emph{measured power} of the source (energy divided by time) as the @emph{brightness}.
+
+@cindex Luminosity
+@item Luminosity
+This is the total power, in @mymath{erg/s}, the object emits in @emph{all directions}.
+Luminosity has the same units as brighntess, but as shown above its intepretations is very different: unlike brightness (a measured property), luminosity is an inherent property of the object that is calculated from the combination of multiple measurements (flux and distance).
+See the @option{mag-to-luminosity} operator of Arithmetic in @ref{Unit conversion operators} for more on the conversion of the observed magnitudes (described below) of an objec to luminosity.
+
+@end table
 
 @item Flux (@mymath{erg/s/cm^2})
 @cindex Flux
-To be able to compare with data from different telescopes (with differnet collecting areas), we define the @emph{flux} which is defined in units of brightness per collecting-area.
+To be able to compare with data from different telescopes (with different collecting areas), we define the @emph{flux} which is defined by dividing the brightness by the exposed aperture of our telescope.
 Because we are using the cgs units, the collecting area is reported in @mymath{cm^2}.
-
-@cindex Luminosity
-Knowing the flux (@mymath{f}) and distance to the object (@mymath{r}), we can define its @emph{luminosity}: @mymath{L=4{\pi}r^2f}.
-This is the total power, in @mymath{erg/s}, the object emits in all directions.
-Luminosity has the same units as brighntess, but as shown above its intepretations is very different: unlike brightness (a measured property), luminosity is an inherent property of the object that is calculated from the combination of multiple measurements (flux and distance).
-Our focus in this section is on direct measurements of electromagnetic energy, not position-related measurements, so we do not use or describe luminosity any more in this section and have not allocated a separate item in this list for it.
+Knowing the flux (@mymath{f}) and distance to the object (@mymath{r}), we can derive its @emph{luminosity}: @mymath{L=4{\pi}r^2f}.
 
 @item Spectral flux density (@mymath{erg/s/cm^2/Hz} or @mymath{erg/s/cm^2/\AA})
 @cindex Spectral Flux Density
 @cindex Frequency Flux Density
 @cindex Wavelength Flux Density
 @cindex Flux density (spectral)
-To take into account the spectral coverage of our data, we define the @emph{spectral flux density}, which is defined in either of these units (based on context): @mymath{erg/s/cm^2/Hz} (frequency-based) @mymath{erg/s/cm^2/\AA} (wavelength-based).
+To take into account the different spectral coverage of filters and detectors, we define the @emph{spectral flux density}, which is defined in either of these units (based on context): @mymath{erg/s/cm^2/Hz} (frequency-based) @mymath{erg/s/cm^2/\AA} (wavelength-based).
 
-Like other objects in nature, astronomical objects do not emit or reflect the same flux at all wavelengths.
+@cindex Bolometric luminosity
+As in other objects in nature, astronomical objects do not emit or reflect the same flux at all wavelengths.
 On the other hand, our detector techologies are different for different wavelength ranges.
-Therefore, even if we wanted to, there is no way to measure the ``total'' (at all wavelengths) brightness of an object with a single tool.
+Therefore, even if we wanted to, there is no way to measure the ``total'' (at all wavelengths; also known as ``bolometric'') luminosity of an object with a single tool.
 To be able to analyze objects with different spectral features (compare measurements of the same object taken in different spectral regimes), it is therefore important to account for the wavelength (or frequency) range of the photons that we measured through the spectral flux density.
 
+@table @asis
 @item Jansky (@mymath{10^{-23}erg/s/cm^2/Hz})
 @cindex Jansky (Jy)
-A ``Jansky'' is a certain level of frequency flux density (commonly used in radio astronomy).
+A ``Jansky'' is a predefined/nominal level of frequency flux density that is commonly used in radio astronomy.
+The AB magnitude system (see below; used in optical astronomy) is also in frequency-based so there is a simple conversion between the two.
+
 Janskys can be converted to wavelength flux density using the @code{jy-to-wavelength-flux-density} operator of Gnuastro's Arithmetic program, see the derivation under this operator's description in @ref{Unit conversion operators}.
 @end table
+@end table
 
-Having clarified, the basic physical concepts above, let's review the terminology that is used in optical astronomy.
-The reason optical astronomers don't use modern physical terminology is that optical astronomy precedes modern physical concepts by thousands of years.
-As a result, once the modern physical concepts where mature enough, optical astronomers found the correct conversion factors to better define their own terminology (and easily use previous results) instead of abandoning them.
+Having summarized the relevant basic physical concepts above, let's review the terminology that is used in optical astronomy.
+The reason optical astronomers don't use modern physical terminology is that optical astronomy precedes modern physical concepts by thousands of years!
+
+Once the modern physical concepts where mature enough, optical astronomers found the correct conversion factors to better define their own terminology (and easily use previous results) instead of abandoning them.
 Other fields of astronomy (for example X-ray or radio) were discovered in the last century when modern physical concepts had already matured and were being extensively used, so for those fields, the concepts above are enough.
 
 @table @asis
@@ -29725,22 +29758,21 @@ Other fields of astronomy (for example X-ray or radio) were discovered in the la
 @cindex Magnitudes from flux
 @cindex Flux to magnitude conversion
 @cindex Astronomical Magnitude system
-The spectral flux density of astronomical objects span over a very large range: the Sun (as the brightest object) is roughly @mymath{10^{24}} times brighter than the fainter galaxies we can currently detect in our deepest images.
-Therefore the scale that was originally used from the ancient times to measure the incoming light (written by Hipparchus of Nicaea; 190-120 BC) can be nicely parametrized as a logarithmic function of the spectral flux density.
+The observed spectral flux density of astronomical objects span over a very large range: the Sun (as the brightest object) is roughly @mymath{10^{24}} times brighter than the fainter galaxies we can currently detect in our deepest images.
+Therefore the scale that was originally used from the ancient times to measure the incoming light (used by Hipparchus of Nicaea; 190-120 BC) can be parametrized as a logarithmic function of the spectral flux density.
 
 @cindex Hipparchus of Nicaea
 But the logarithm can only be usable with a value which is always positive and has no units.
 Fortunately brightness is always positive.
 To remove the units, we divide the spectral flux density of the object (@mymath{F}) by a reference spectral flux density (@mymath{F_r}).
 We then define a logarithmic scale through the relation below and call it the @emph{magnitude}.
-The @mymath{-2.5} factor is also a legacy of our ancient origins: was necessary to match the used magnitude system of Hipparchus which was used extensively in the centuries after.
+The @mymath{-2.5} factor is also a legacy of our ancient origins: was necessary to approximately match the used magnitude system of Hipparchus.
 
 @dispmath{m-m_r=-2.5\log_{10} \left( F \over F_r \right)}
 
 @noindent
-@mymath{m} is defined as the magnitude of the object and @mymath{m_r} is the pre-defined magnitude of the reference spectral flux density.
+In the equation above, @mymath{m} is the magnitude of the object and @mymath{m_r} is the pre-defined magnitude of the reference spectral flux density.
 For estimating the error in measuring a magnitude, see @ref{Quantifying measurement limits}.
-
 The equation above is ultimately a relative relation.
 To tie it to physical units, astronomers use the concept of a zero point which is discussed in the next item.
 
@@ -29748,24 +29780,32 @@ To tie it to physical units, astronomers use the concept of a zero point which i
 @cindex Zero point magnitude
 @cindex Magnitude zero point
 A unique situation in the magnitude equation above occurs when the reference spectral flux density is unity (@mymath{F_r=1}).
-In other words, the increase in spectral flux density that produces to an increment in the detector's native measurement units (usually referred to as ``analog to digital units'', or ADUs, also known as ``counts'').
+In other words, the increase in spectral flux density that produces an increment in the detector's native measurement units (ADUs).
 
-The word ``increment'' above is used intentionally: because ADUs are discrete and measured as integer counts.
-In other words, a increase in spectral flux density that is below @mymath{F_r} will not be measured by the device.
-The reference magnitde (@mymath{m_r}) that corresponds to @mymath{F_r} is known as the @emph{Zero point} magnitude of that image.
+The word ``increment'' above is used intentionally: because ADUs are discrete and measured as integers.
+In other words, an increase in spectral flux density that is below @mymath{F_r} will not be measured by the device.
+The reference magnitde (@mymath{m_r}) that corresponds to @mymath{F_r} is known as the @emph{Zero point} magnitude of that detector + filter + atmosphere (for on-ground observations).
 
-The increase in spectral flux density (from an astrophysical source) that produces an increment in ADUs depends on all hardware and observational parameters that the image was taken in.
-These include the quantum efficiency of the dector, the detector's coating, the filter transmission curve, the transmission of the optical path, the atmospheric absorption (for ground-based images; for example observations at different altitudes from the horizon where the thickness of the atmosphere is different) and etc.
+@cindex ISM (inter-stellar medium)
+@cindex Inter-stellar medium (ISM)
+Therefore, the increase in spectral flux density (from an astrophysical source) that produces an increment in ADUs depends on all hardware and observational parameters that the image was taken in.
+These include the quantum efficiency of the dector, the detector's coating, the filter transmission curve, the transmission of the optical path and the atmospheric absorption (for ground-based images; for example observations at different altitudes from the horizon where the thickness of the atmosphere is different).
 
-The zero point therefore allows us to summarize all these ``observational'' (non-astrophysical) factors into a single number and compare different observations from different instruments at different times (critical to do science).
+The rest of the absoptions (for example due to the interstellar medium, or ISM) are not considered in the zero point definition because for most purposes, they are not related to our observing conditions, but position on the sky.
+In other words, while ISM absorption should be taken into account when measuring the luminosity of the source for example, ISM absorption is not in the zero point.
+If we can later observe the universe from outside the MilkyWay, the ISM absorption should also be included (it would become like the atmosphere).
+But the farthest we have got so far for scientific observations beyond the Solar system is the L2 orbit of Earth (for instruments like Euclid, Gaia or JWST).
+
+The zero point therefore allows us to summarize all these ``observational'' (non-astrophysical) factors into a single number and compare different observations from different instruments at different observing conditions (which are critical to do science).
 Defining the zero point magnitude as @mymath{m_r=Z} in the magnitude equation, we can write it in simpler format (recall that @mymath{F_r=1}):
 
 @dispmath{m = -2.5\log_{10}(F) + Z}
 
-@cindex AB magnitude
-@cindex Magnitude, AB
 The zero point is found through comparison of measurements with pre-defined standards (in other words, it is a calibration of the pixel values).
 Gnuastro has an installed script with a complete tutorial to estimate the zero point of any image, see @ref{Zero point estimation}.
+
+@cindex AB magnitude
+@cindex Magnitude, AB
 Historically, the reference was defined to be measurements of the star Vega, producing the @emph{vega magnitude} system.
 In this system, the star Vega had a magnitude of zero (similar to the catalog of Hipparchus of Nicaea).
 However, this caused many problems because Vega itself has its unique spectral features which are not in other stars and it is a variable star when measured precisely.
@@ -29777,7 +29817,7 @@ The AB magnitude zero point (when the input is frequency flux density; @mymath{F
 @dispmath{m_{AB} = -2.5\log_{10}(F_\nu) + 48.60}
 
 Reversing this equation and using Janskys, an object with a magnitude of zero (@mymath{m_{AB}=0}) has a spectral flux density of @mymath{3631Jy}.
-Once the AB magnitude zero point of an image is found, you can directly convert any measurement on it from instrument ``counts'' (ADUs) to Janskys.
+Once the AB magnitude zero point of an image is found, you can directly convert any measurement on it from instrument ADUs to Janskys.
 In Gnuastro, the Arithmetic program has an operator called @code{counts-to-jy} which will do this though a given AB Magnitude-based zero point like below (SDSS data have a fixed zero point of 22.5 in the AB magnitude system):
 
 @example
@@ -29786,16 +29826,16 @@ $ astarithmetic sdss.fits 22.5 counts-to-jy
 
 @cartouche
 @noindent
-@strong{Verify the zero point usage in from new databases:} observational factors like the exposure time, the gain (how many electrons correspond to one ADU), telescope aperture, filter transmission curve and other factors are usually taken into account in the reduction pipeline that produces high-level science products to provide a zero point that directly converts pixel values (in what ever units) to Janskys.
-But some reduction pipelines may not account for some of these for special reasons: for example not account for the gain or exposure time.
-To avoid annoying strange results, when using a new database, verify (in the documentation of the database) that the zero points they provide directly converts pixel values to Janskys (is an AB magnitude zero point), or not.
+@strong{Verify the zero point definition on new databases:} observational factors like the exposure time, the gain, telescope aperture, filter transmission curve and other factors are usually taken into account in the reduction pipeline that produces high-level science products.
+But some reduction pipelines may not account for some of these for special reasons: for example not accounting for the gain or exposure time.
+To avoid annoyingly strange results, when using a new database, verify (in the documentation of the database) that the zero points they provide directly converts pixel values to Janskys (is an AB magnitude zero point), or not.
 If they not, you need to apply corrections your self.
 @end cartouche
 
 Let's look at one example where the given zero point has not accounted for the exposure time (in other words it is only for a fixed exposure time: @mymath{Z_E}), but the pixel values (@mymath{p}) have been corrected for the exposure time.
-One solution would be to first multiply the pixels by the exposure time, use that zero point to get your desired measurement, and delete the temporary file.
+One solution would be to first multiply the pixels by the exposure time, use that zero point to get your desired measurement and delete the temporary file.
 But a more optimal way (in terms of storage, execution and clean code) would be to correct the zero point.
-Let's take @mymath{t} to show time in units of seconds and @mymath{p_E} to be the pixel value that would be measured after the the fixed exposure time (in other words @mymath{p_E=p\times t}).
+Let's take @mymath{t} to show time in units of seconds and @mymath{p_E} to be the pixel value that would be measured after the fixed exposure time (in other words @mymath{p_E=p\times t}).
 We then have the following:
 
 @dispmath{m = -2.5\log_{10}(p_E) + Z_E = -2.5\log_{10}(p\times t) + Z_E}
@@ -33921,14 +33961,45 @@ The luminosity distance to object at given redshift in Megaparsecs (Mpc).
 
 @item -u
 @itemx --distancemodulus
-The distance modulus (difference between the apparent and absolute magnitude for an object) at given redshift.
-The absolute magitude is defined at a fixed distance of 10 parsecs.
+@cindex Distance modulus
+@cindex Absolute magnitude
+@cindex Magnitude (absolute)
+@cindex Bolometric luminosity
+The bolometric (across the full electromagnetic spectrum) distance modulus (@mymath{DM}) at the given redshift assuming no intermediate absorption.
+The distance modulus allows the conversion of observed (@mymath{m}, distance dependent) to absolute (@mymath{M}, independent of distance; or the same distance of 10 parsecs for all objects) magnitudes.
+In other words, @mymath{DM=m-M}, or @mymath{M=m-DM}.
+From the absolute magnitude, we can derive the luminosity of the source; see @code{mag-to-luminosity} in @ref{Unit conversion operators}.
+
+The two conditions above are very important to remember when using this option:
+@itemize
+@item
+In practice we do not observe the bolometric magnitude of an object: any instrument's hardware is limited to a certain wavelength range and incoming photons outside that range will not be measured.
+Therefore, as regards the filter and spectrum, the distance modulus can be used in the following two cases:
+@itemize
+@item
+At smaller distances (where the filter on the observed spectrum covers approximately the same region on the rest frame spectrum).
+@item
+The observed bolometric magnitude of the source has been calculated (based on model-fitting, or combining data from many surveys to cover the whole electromagnetic spectrum) and is being used as input
+@end itemize
+
+At higher distances, it is important to account for ``K-correction'' because the filter's rest frame coverage over the rest frame spectrum of the source will decrease (compared to the filter's observed coverage in the source's observed spectrum).
+For details see Hogg et al. @url{https://arxiv.org/abs/astro-ph/0210394,2002} and Blanton and Roweis @url{https://ui.adsabs.harvard.edu/abs/2007AJ....133..734B,2007}.
+A @emph{simplified} correction (assuming a flat SED) to the distance modulus is available in the @option{--absmagconv} option below.
+
+@item
+@cindex ISM (inter-stellar medium)
+@cindex Inter-stellar medium (ISM)
+Intermediate absorption (from the source to your telescope) can happen in multiple stages.
+For example, the Earth is located inside the MilkyWay which has an interstellar medium (ISM) that will absorb some of the flux coming from extra-galactic sources behind them.
+After measuring the magnitude of your source, it is therefore important to find the MilkyWay extinction in the direction of your source and add it to your source's flux.
+Inside Gnuastro, the Query program gives you direct access to the NED Extinction Calculator as described in @ref{Available databases}.
+@end itemize
 
 @item -a
 @itemx --absmagconv
-The conversion factor (addition) to absolute magnitude.
-Note that this is practically the distance modulus added with @mymath{-2.5\log{(1+z)}} for the desired redshift based on the input parameters.
-Once the apparent magnitude and redshift of an object is known, this value may be added with the apparent magnitude to give the object's absolute magnitude.
+Corrected distance modulus: accounting for the thinner width of the filter at higher redshift by subtracting @mymath{2.5\log{(1+z)}} from the distance modulus (assuming a flat SED for the galaxy).
+However, no astronomical object has a flat SED across all wavelengths, so this should be taken as a zero-th order K-correction: just a crude statistical approximate that may under/over-estimate the actual value badly in special cases (for example when the omitted region has/misses a strong spectral feature).
+See the description of @option{--distancemodulus} for more.
 
 @item -g
 @itemx --age
@@ -45209,6 +45280,17 @@ Convert magnitudes to counts through the given zero point.
 For more on the equation, see @ref{Brightness flux magnitude}.
 @end deftypefun
 
+@deftypefun double gal_units_mag_to_luminosity (double @code{mag}, double @code{mag_absolute_ref}, double @code{distance_modulus})
+Convert the observed magnitude of a source into its luminosity knowing the absolute magnitude of a reference object and the (corrected) distance modulus.
+The reference object is usually taken to be the Sun, see table 3 of Willmer @url{https://arxiv.org/abs/1804.07788,2018} for values in common filters.
+Regarding the distance modulus see the description of @option{--distancemodulus} in @ref{CosmicCalculator basic cosmology calculations}.
+In the absence of SED-based estimages, you can use @code{gal_cosmology_to_absolute_mag} (which is the function behind @option{--absmagconv} described in that section).
+@end deftypefun
+
+@deftypefun double gal_units_luminosity_to_mag (double @code{mag}, double @code{mag_absolute_ref}, double @code{distance_modulus})
+The inverse of @code{gal_units_mag_to_luminosity}.
+@end deftypefun
+
 @deftypefun double gal_units_mag_to_sb (double @code{mag}, double @code{area_arcsec2})
 @cindex Magnitude
 @cindex Surface Brightness
@@ -45591,7 +45673,7 @@ Return the wavelength (in Angstroms) of the given line.
 @deftypefun double gal_speclines_line_redshift (double @code{obsline}, double @code{restline})
 @cindex Rest-frame
 Return the redshift where the observed wavelength (@code{obsline}) was
-emitted from (if its restframe wavelength was @code{restline}).
+emitted from (if its rest frame wavelength was @code{restline}).
 @end deftypefun
 
 @deftypefun double gal_speclines_line_redshift_code (double @code{obsline}, int @code{linecode})
