@@ -22030,7 +22030,7 @@ $ astarithmetic 20 24.8 mag-to-counts --quiet
 @cindex Luminosity to Apparent Magnitude
 @cindex Apparent Mangitude to Luminosity
 Convert the given apparent magnitude to luminosity (in units of the luminosity of a reference object).
-It takes the following three operands (in the order written on the command-line):
+It takes the following three operands (in the order written on the command-line; see example below):
 
 @enumerate
 @item
@@ -22047,13 +22047,13 @@ The Sun's absolute magnitude in various commonly used filters and magnitude syst
 For example the Sun's absolute magnitude in the SDSS u, g, r, i and z filters (with the AB magnitude system) is respectively 6.39, 5.11, 4.65, 4.53 and 4.50.
 @item
 @cindex K-Correction
-Conversion of apparent to absolute magnitude.
-At small distances or when talking about bolometric magnitudes, the distance modulus can be used for this.
-See @option{--distancemodulus} in @ref{CosmicCalculator basic cosmology calculations} for more details (and why @option{--absmagconv} is the prefered option in the absense of SED-based methods).
+Difference of apparent (@mymath{m}) and absolute (@mymath{M}) magnitudes: @mymath{m-M}.
+At small distances or when the input is bolometric (across all wavelengths), the distance modulus can be used for this.
+See @option{--distancemodulus} in @ref{CosmicCalculator basic cosmology calculations} for more details and why @option{--absmagconv} is preferred to the distance modulus in the absense of SED-based methods.
 @end enumerate
 
-For example, let's assume we want to obtain the luminosity of a galaxy (in units of solar luminosity at the same wavelength) at redshift 0.01 with apparent AB magnitude of 20 in the SDSS g filter.
-To do this, we need the distance modulus (which is sufficient for this distance) and the Sun's absolute magnitude, from Willmer @url{https://arxiv.org/abs/1804.07788,2018} in this filter (which is 5.11):
+For example, let's assume the apparent AB magnitude of a galaxy (after correcting Galactic extinction) is 20 in the SDSS g filter, and that its redshift is 0.01 and we need its luminosity (in units of solar luminosity) in the same filter.
+To do this, we need the apparent-absolute magnitude difference (using CosmicCalculator), as well as the Sun's absolute magnitude, from Willmer @url{https://arxiv.org/abs/1804.07788,2018} in this filter (which is 5.11):
 
 @example
 $ conv=$(astcosmiccal --absmagconv --redshift=0.01)
@@ -29689,34 +29689,34 @@ To be able to compare our scientific data with other data, optical astronomers h
 But before getting to those, let's review the following basic physical concepts first:
 
 @table @asis
-@item Energy (@mymath{erg}; also known as @emph{counts} or @emph{ADU}s)
+@item Energy (@mymath{erg}; also in @emph{counts} or @emph{ADU}s)
 Within the electromagnetic regime, we measure the received energy of astronomical source by counting the number of photons that have been converted to electrons (electric potential) in our detectors.
 
 @cindex Gain
 @cindex Counts
 @cindex ADU (Analog-to-digital unit)
 @cindex Analog-to-digital unit (ADU)
-When counting the electrical potential, the optical (but also near ultra-violet and near infra-red) detectors do not actually count individual electrons but bundles/packages of electrons known as the analog-to-digital unit (ADU).
-The number of electrons in each ADU is known as the @emph{gain} of the instrument.
-The gain of the instrument is measured as part of its calibration to be able to convert ADUs to electron-counts.
+When counting/measuring the electric potential changes, the optical (but also near ultra-violet and near infra-red) detectors do not actually count individual electrons but bundles/packages of electrons known as the analog-to-digital unit (ADU).
+The number of electrons in each ADU is known as the @emph{gain} of the instrument and is measured as part of its calibration.
 
 @item Power (@mymath{erg/s})
-The amount of energy in a fixed interval of time (1 second) and is used in two contexts within astronomy (and physics in general).
+The amount of energy in a fixed interval of time (1 second) is known as power.
+Power is used in two contexts within astronomy which are listed below.
 Both have the same units of energy per time, but their difference is very important to understand in physical interpretation:
 
 @table @asis
 
 @item Brightness
 @cindex Brightness
-To be able to compare data taken with different exposure times, we define the @emph{measured power} of the source (energy divided by time) as the @emph{brightness}.
+The @emph{received} power from a source (the thing we measure).
+To be able to compare data taken with different exposure times, we define the received power of the source in a detector as the @emph{brightness}.
 
 @cindex Luminosity
 @item Luminosity
-This is the total power, in @mymath{erg/s}, the object emits in @emph{all directions}.
-Luminosity has the same units as brighntess, but as shown above its intepretations is very different: unlike brightness (a measured property), luminosity is an inherent property of the object that is calculated from the combination of multiple measurements (flux and distance).
-See the @option{mag-to-luminosity} operator of Arithmetic in @ref{Unit conversion operators} for more on the conversion of the observed magnitudes (described below) of an objec to luminosity.
-
+The total @emph{emitted} power of a source in @emph{all directions}.
 @end table
+
+Unlike brightness (a measured property), luminosity is an inherent property of the object that is calculated from the combination of multiple measurements (flux and distance; see below).
 
 @item Flux (@mymath{erg/s/cm^2})
 @cindex Flux
@@ -29775,6 +29775,22 @@ In the equation above, @mymath{m} is the magnitude of the object and @mymath{m_r
 For estimating the error in measuring a magnitude, see @ref{Quantifying measurement limits}.
 The equation above is ultimately a relative relation.
 To tie it to physical units, astronomers use the concept of a zero point which is discussed in the next item.
+
+See the @option{mag-to-luminosity} operator of Arithmetic in @ref{Unit conversion operators} for more on the conversion of the observed magnitudes (described below) of an object to luminosity.
+The received brightness of two object with the same luminosity but at different distances is going to be different (the closer one will be brighter).
+Therefore, astronomers have defined the following terminology to help avoid confusing distant-dependent and distance-independent magnitudes.
+
+@table @asis
+@item Apparent magnitude
+The apparent magnitude is directly related (through the equation above) to the received spectral flux density (that we measure in our detectors).
+Therefore, it depends on the distance to the object (and any absorption that may occur in the light path).
+@item Absolute magnitude
+Knowing the distance of an object and absorptions in the light path, we can obtain the luminosity.
+From the luminosity, we can measure the apparent magnitude if the object was a point at a nominal (or fixed, or standard, or absolute) distance.
+The magnitude at this absolute distance is known as the absolute magnitude.
+The standard (or abstract: just to help in comparisons) distance is historically defined as 10 parsecs.
+By reporting the magnitude at a fixed distance for all objects, the absolute magnitude therefore helps to compare the intrinsic (independent of distance) magnitude of astronomical objects.
+@end table
 
 @item Zero point
 @cindex Zero point magnitude
