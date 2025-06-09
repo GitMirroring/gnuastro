@@ -35,7 +35,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/wcs.h>
 #include <gnuastro/data.h>
 #include <gnuastro/fits.h>
+#include <gnuastro/match.h>
 #include <gnuastro/units.h>
+#include <gnuastro/kdtree.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/dimension.h>
@@ -505,6 +507,136 @@ mkcatalog_outputs_keys_infiles(struct mkcatalogparams *p,
 
 
 
+/* Confusion limit: create a k-d tree using the image coordinates of the
+   clumps, then find the nearest neighbour of each clump and return a struct
+   with the mad-clipped stats. */
+static gal_data_t *
+mkcatalog_confusion_limit(gal_data_t *x, gal_data_t *y, size_t numthreads)
+{
+  size_t root;
+  size_t nummatched;
+  double aperture[]={1,1}; /* Ignored, due to GAL_MATCH_ARRANGE_OUTER */
+  gal_data_t *kdtree, *ret, *diststats;
+
+  /* Initialize the k-d tree. */
+  x->next=y;
+  y->next=NULL;
+  kdtree=gal_kdtree_create(x, &root);
+
+  /* Find the nearest neighbour of each clump */
+  ret=gal_match_kdtree(x, x, kdtree, root, GAL_MATCH_ARRANGE_OUTER, aperture,
+                   numthreads, -1, 0, &nummatched, 1);
+
+  /* Compute the statistics of the distances between a clump and its
+     nearest neighbour. */
+  diststats=gal_statistics_clip_mad(ret->next, 10, 0.01,
+                                    GAL_STATISTICS_CLIP_OUTCOL_OPTIONAL_STD, 0, 1);
+
+  /* Free the data structures. */
+  gal_list_data_free(kdtree);
+
+  /* Return the median. */
+  return diststats;
+}
+
+
+
+
+
+/* Confusion limit highlevel function. It extract the info from the clumps
+   catalog and, if possible, writes the headers related to confusion limit */
+static void
+mkcatalog_confusion_lim_highlevel(struct mkcatalogparams *p,
+                                  gal_fits_list_key_t **keylist)
+{
+  gal_data_t *clim=NULL;
+  float climmed, climmad, climstd;
+  float climmedw, climmadw, climstdw;
+  double *pixscale;
+  gal_data_t *xt=NULL, *yt=NULL, *x, *y, *tmp;
+
+  /* Check for a clumps catalog. */
+  if(p->clumps)
+    {
+      /* Find the image coordinates. */
+      for(tmp=p->clumpcols; tmp!=NULL; tmp=tmp->next)
+        {
+          if(tmp->status==UI_KEY_X) xt=tmp;
+          if(tmp->status==UI_KEY_Y) yt=tmp;
+        }
+
+      /* Computes the stats. */
+      if(xt && yt)
+        {
+          x=gal_data_copy_to_new_type_free(xt, GAL_TYPE_FLOAT64);
+          y=gal_data_copy_to_new_type_free(yt, GAL_TYPE_FLOAT64);
+
+          clim=mkcatalog_confusion_limit(x, y, p->cp.numthreads);
+
+          climmed=((float*)clim->array)[GAL_STATISTICS_CLIP_OUTCOL_MEDIAN];
+          climmad=((float*)clim->array)[GAL_STATISTICS_CLIP_OUTCOL_MAD];
+          climstd=((float*)clim->array)[GAL_STATISTICS_CLIP_OUTCOL_STD];
+
+          mkcatalog_outputs_keys_numeric(keylist, &climmed,
+                                         GAL_TYPE_FLOAT32, "CNLPIX",
+                                         "Median of distances to nearest clump.",
+                                         "pixel");
+          mkcatalog_outputs_keys_numeric(keylist, &climmad,
+                                         GAL_TYPE_FLOAT32, "CNLPIXM",
+                                         "MAD of distances to nearest clump.",
+                                         "pixel");
+          mkcatalog_outputs_keys_numeric(keylist, &climstd,
+                                         GAL_TYPE_FLOAT32, "CNLPIXS",
+                                         "STD of distances to nearest clump.",
+                                         "pixel");
+
+          /* Search for a wcs, to convert the limits in arcseconds. */
+          if(p->objects->wcs)
+            {
+              pixscale=gal_wcs_pixel_scale(p->objects->wcs);
+              climmedw=climmed*pixscale[0]*3600;
+              climmadw=climmad*pixscale[0]*3600;
+              climstdw=climstd*pixscale[0]*3600;
+
+              mkcatalog_outputs_keys_numeric(keylist, &climmedw,
+                                             GAL_TYPE_FLOAT32, "CNLASEC",
+                                             "Median of distances to nearest clump.",
+                                             "arcsec");
+              mkcatalog_outputs_keys_numeric(keylist, &climmadw,
+                                             GAL_TYPE_FLOAT32, "CNLASECM",
+                                             "MAD of distances to nearest clump.",
+                                             "arcsec");
+              mkcatalog_outputs_keys_numeric(keylist, &climstdw,
+                                             GAL_TYPE_FLOAT32, "CNLASECS",
+                                             "STD of distances to nearest clump.",
+                                             "arcsec");
+            }
+          else
+            gal_fits_key_list_fullcomment_add_end(keylist, "Can't "
+                   "write Confusion Limit in units of arcsec (CNLASEC) "
+                   "because input doesn't have a world coordinate "
+                   "system (WCS)", 0);
+        }
+      else
+        gal_fits_key_list_fullcomment_add_end(keylist, "Can't write "
+               "Confusion Limit values because no image coordinates has been "
+               "found. Rerun mkcatalog with --x and --y.", 0);
+    }
+  else
+    gal_fits_key_list_fullcomment_add_end(keylist, "No Confusion Limit "
+                                          "calculations because a clumps "
+                                          "catalog is not given. Rerun "
+                                          "mkcatalog with --clumpscat to "
+                                          "solve the issue.", 0);
+
+  /* Free the structures */
+  if(clim) gal_data_free(clim);
+}
+
+
+
+
+
 /* Write the output keywords. */
 static gal_fits_list_key_t *
 mkcatalog_outputs_keys(struct mkcatalogparams *p, int o0c1)
@@ -625,6 +757,11 @@ mkcatalog_outputs_keys(struct mkcatalogparams *p, int o0c1)
              "image.", 0);
       gal_fits_key_list_fullcomment_add_end(&keylist, "", 0);
     }
+
+  /* Calculate and write the confusion limit. */
+  gal_fits_key_list_title_add_end(&keylist, "Confusion limit "
+                                  "(CNL)", 0);
+  mkcatalog_confusion_lim_highlevel(p, &keylist);
 
   /* The count-per-second correction. */
   if(p->cpscorr>1.0f)

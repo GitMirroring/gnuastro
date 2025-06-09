@@ -53,7 +53,8 @@ gal_kdtree_create(gal_data_t *coords_raw, size_t *root);
 
 size_t
 gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
-                             size_t root, double *point, double *least_dist);
+                             size_t root, double *point, double *least_dist,
+                             uint8_t nosamenode);
 
 
 

@@ -1019,6 +1019,7 @@ struct match_kdtree_params
 {
   /* Input arguments. */
   uint8_t           arrange;  /* Arrangement: outer, inner, full...   */
+  uint8_t        nosamenode;  /* Avoid exact matches.                 */
   gal_data_t             *A;  /* 1st coordinate list of 'gal_data_t's */
   gal_data_t             *B;  /* 2nd coordinate list of 'gal_data_t's */
   size_t               ndim;  /* The number of dimensions.            */
@@ -1363,7 +1364,7 @@ match_kdtree_worker(void *in_prm)
              this point in the second catalog. */
           ai = gal_kdtree_nearest_neighbour(p->A, p->A_kdtree,
                                             p->kdtree_root, point,
-                                            &least_dist);
+                                            &least_dist, p->nosamenode);
 
           /* If nothing was found, then the 'ai' will be
              'GAL_BLANK_SIZE_T'. */
@@ -1445,7 +1446,8 @@ gal_data_t *
 gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
                  gal_data_t *coord1_kdtree, size_t kdtree_root,
                  uint8_t arrange, double *aperture, size_t numthreads,
-                 size_t minmapsize, int quietmmap, size_t *nummatched)
+                 size_t minmapsize, int quietmmap, size_t *nummatched,
+                 uint8_t nosamenode)
 {
   gal_data_t *out=NULL;
   struct match_kdtree_params p={0};
@@ -1459,6 +1461,7 @@ gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
   p.B=coord2;
   p.arrange=arrange;
   p.aperture=aperture;
+  p.nosamenode=nosamenode;
   p.A_kdtree=coord1_kdtree;
   p.kdtree_root=kdtree_root;
 

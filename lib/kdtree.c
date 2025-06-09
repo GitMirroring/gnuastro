@@ -506,7 +506,7 @@ gal_kdtree_create(gal_data_t *coords_raw, size_t *root)
 static void
 kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
                          double *point, double *least_dist,
-                         size_t *out_nn, size_t depth)
+                         size_t *out_nn, size_t depth, uint8_t nosamenode)
 {
   double d, dx, dx2;
   size_t axis=depth % p->ndim;    /* Set the working axis. */
@@ -523,21 +523,32 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
   dx = coordinates[node_current]-point[axis];
 
   /* Check if the current node is nearer than the previous
-     nearest node. */
-  if(d < *least_dist)
+     nearest node. Don't save info if the node is an exact match and
+     'nosamenode' is true. */
+  if(d < *least_dist && (!nosamenode || d))
     {
       *least_dist = d;
       *out_nn = node_current;
     }
 
-  /* If exact match found (least distance 0), return it. */
-  if(*least_dist==0.0f) return;
+  /* If exact match found (least distance 0), return it. The program
+     terminates with an error message if nosamenode is true, given that the
+     previous if statement is supposed to prevent such situations. */
+  if(*least_dist==0.0)
+    {
+      if(nosamenode)
+        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+              "fix the problem. a neighbour with distance zero is found, "
+              " even though it was asked to avoid exact match",
+              __func__, PACKAGE_BUGREPORT);
+      return;
+    }
 
   /* Recursively search in subtrees. */
   kdtree_nearest_neighbour(p, dx > 0
                               ? p->left[node_current]
                               : p->right[node_current],
-                           point, least_dist, out_nn, depth+1);
+                           point, least_dist, out_nn, depth+1, nosamenode);
 
   /* Since the hyperplanes are all axis-aligned, to check if there is a
      node in other branch which is nearer to the current node is done by a
@@ -552,7 +563,7 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
   kdtree_nearest_neighbour(p, dx > 0
                               ? p->right[node_current]
                               : p->left[node_current],
-                           point, least_dist, out_nn, depth+1);
+                           point, least_dist, out_nn, depth+1, nosamenode);
 }
 
 
@@ -568,7 +579,7 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
 size_t
 gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
                              size_t root, double *point,
-                             double *least_dist)
+                             double *least_dist, uint8_t nosamenode)
 {
   struct kdtree_params p={0};
   size_t out_nn=GAL_BLANK_SIZE_T;
@@ -579,7 +590,7 @@ gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
   kdtree_prepare(&p, coords_raw);
 
   /* Use the low-level function to find th nearest neighbour. */
-  kdtree_nearest_neighbour(&p, root, point, least_dist, &out_nn, 0);
+  kdtree_nearest_neighbour(&p, root, point, least_dist, &out_nn, 0, nosamenode);
 
   /* least_dist is the square of the distance between the nearest
      neighbour and the point (used to improve processing).

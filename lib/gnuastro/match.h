@@ -87,7 +87,8 @@ gal_data_t *
 gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
                  gal_data_t *coord1_kdtree, size_t kdtree_root,
                  uint8_t arrange, double *aperture, size_t numthreads,
-                 size_t minmapsize, int quietmmap, size_t *nummatched);
+                 size_t minmapsize, int quietmmap, size_t *nummatched,
+                 uint8_t nosamenode);
 
 
 

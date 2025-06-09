@@ -43491,8 +43491,9 @@ astfits kd-tree.fits -h1
 
 @end deftypefun
 
-@deftypefun size_t gal_kdtree_nearest_neighbour (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{*least_dist})
+@deftypefun size_t gal_kdtree_nearest_neighbour (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{*least_dist}, uint8_t @code{nosamenode})
 Returns the index of the nearest input point to the query point (@code{point}, assumed to be an array with same number of elements as @code{gal_data_t}s in @code{coords_raw}).
+If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbour within the same dataset.
 The distance between the query point and its nearest neighbor is stored in the space that @code{least_dist} points to.
 This search is efficient due to the constant checking for the presence of possible best points in other branches.
 If it is not possible for the other branch to have a better nearest neighbor, that branch is not searched.
@@ -43689,7 +43690,8 @@ Therefore, when @code{inplace==0}, inputs will remain untouched, but this functi
 If internal allocation is necessary and the space is larger than @code{minmapsize}, the space will be not allocated in the RAM, but in a file, see description of @option{--minmapsize} and @code{--quietmmap} in @ref{Processing options}.
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_match_kdtree (gal_data_t @code{*coord1}, gal_data_t @code{*coord2}, gal_data_t @code{*coord1_kdtree}, size_t @code{kdtree_root}, uint8_t @code{arrange}, double @code{*aperture}, size_t @code{numthreads}, size_t @code{minmapsize}, int @code{quietmmap}, size_t @code{*nummatched})
+@deftypefun {gal_data_t *} gal_match_kdtree (gal_data_t @code{*coord1},
+gal_data_t @code{*coord2}, gal_data_t @code{*coord1_kdtree}, size_t @code{kdtree_root}, uint8_t @code{arrange}, double @code{*aperture}, size_t @code{numthreads}, size_t @code{minmapsize}, int @code{quietmmap}, size_t @code{*nummatched}, uint8_t @code{nosamenode})
 
 @cindex Matching by k-d tree
 @cindex k-d tree matching
@@ -43698,6 +43700,7 @@ The @code{arrange}-ment of the match output should be set with one of the @code{
 The k-d tree of the first input (@code{coord1_kdtree}), and its root index (@code{kdtree_root}), should be constructed and found before calling this function, to do this, you can use the @code{gal_kdtree_create} of @ref{K-d tree}.
 The desired @code{aperture} array is the same as @code{gal_match_sort_based} and described at the top of this section.
 If @code{coord1_kdtree==NULL}, this function will return a @code{NULL} pointer and write a value of @code{0} in the space that @code{nummatched} points to.
+If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbour within the same dataset.
 If @code{numthreads} threads is larger than one, the matching will be done in parallel.
 
 The final number of matches is returned in @code{nummatched} and the format of the returned dataset (three columns) is described above.
