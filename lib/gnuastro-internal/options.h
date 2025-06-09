@@ -348,6 +348,11 @@ gal_options_parse_name_and_strings(struct argp_option *option, char *arg,
                                    void *junk);
 
 void *
+gal_options_parse_name_and_strings_append(struct argp_option *option,
+                                          char *arg, char *filename,
+                                          size_t lineno, void *junk);
+
+void *
 gal_options_parse_name_and_float64s(struct argp_option *option, char *arg,
                                     char *filename, size_t lineno,
                                     void *junk);

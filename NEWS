@@ -106,6 +106,10 @@ See the end of the file for license conditions.
 
 *** Library
 
+  - gal_data_append_second_array_to_first_free: for easily appending
+    (adding the contents of the second array into the first) in
+    single-dimensional datasets.
+
   - gal_statistics_range_double: return the difference between the minimum
     and maximum as a double-precision floating point of a dataset (with any
     type).
@@ -247,6 +251,9 @@ See the end of the file for license conditions.
   - bug #67191: Arithmetic does not parse '-inf' as a number on the
     command-line and complains with an invalid '-i' option! Reported by
     Sepideh Eskandarlou.
+
+  - bug #67204: Table's --equal operator cannot be called multiple times on
+    same column with different values.
 
 
 

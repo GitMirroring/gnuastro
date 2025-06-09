@@ -19594,10 +19594,10 @@ This option is very similar to the @option{--inpolygon} option, so see the descr
 The polygon to use for the @code{--inpolygon} and @option{--outpolygon} options.
 This option is parsed in an identical way to the same option in the Crop program, so for more information on how to use it, see @ref{Crop options}.
 
-@item -e STR,INT/FLT,...
-@itemx --equal=STR,INT/FLT,...
-Only output rows that are equal to the given number(s) in the given column.
-The first argument is the column identifier (name or number, see @ref{Selecting table columns}), after that you can specify any number of values.
+@item -e STR,INT/FLT/STR,...
+@itemx --equal=STR,INT/FLT/STR,...
+Only output rows that are equal to the given string(s)/number(s) in the given column.
+The first value is the column identifier (name or number, see @ref{Selecting table columns}), after that you can specify any number of values.
 For the precedence of this operation in relation to others, see @ref{Operation precedence in Table}.
 
 For example, @option{--equal=ID,5,6,8} will only print the rows that have a value of 5, 6, or 8 in the @code{ID} column.
@@ -21762,14 +21762,16 @@ $ astarithmetic image.fits set-i i i minvalue - sqrt
 Natural logarithm of first operand, so ``@command{4 log}'' is equivalent to @mymath{ln(4)}.
 Negative pixels will become NaN, and the output type is determined from the input, see the explanation under @command{sqrt} for more on these features.
 For example, the command below will take the natural logarithm of every pixel in the input.
+
 @example
 $ astarithmetic image.fits log --output=log.fits
 @end example
 
 @item log10
-Base-10 logarithm of first popped operand, so ``@command{4 log}'' is equivalent to @mymath{log_{10}(4)}.
+Base-10 logarithm of first popped operand, so ``@command{4 log10}'' is equivalent to @mymath{log_{10}(4)}.
 Negative pixels will become NaN, and the output type is determined from the input, see the explanation under @command{sqrt} for more on these features.
 For example, the command below will take the base-10 logarithm of every pixel in the input.
+
 @example
 $ astarithmetic image.fits log10
 @end example
@@ -39166,6 +39168,12 @@ So if you want to use a pre-allocated space/dataset multiple times with varying 
 @deftypefun {gal_data_t *} gal_data_copy_string_to_number (char @code{*string})
 Read @code{string} into the smallest type that can store the value (see @ref{Numeric data types}).
 This function is just a wrapper for the @code{gal_type_string_to_number}, but will put the value into a single-element dataset.
+@end deftypefun
+
+@deftypefun {void} gal_data_append_second_array_to_first_free (gal_data_t @code{*a}, gal_data_t @code{*b})
+Append the contents of @code{a->array} and @code{b->array} into an internal array, and replace it with @code{a->array}.
+Finally, free @code{b}.
+Both inputs have to have the same type and have to have a single dimension.
 @end deftypefun
 
 

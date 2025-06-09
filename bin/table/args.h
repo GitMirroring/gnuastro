@@ -452,7 +452,7 @@ struct argp_option program_options[] =
       GAL_OPTIONS_RANGE_ANY,
       GAL_OPTIONS_NOT_MANDATORY,
       GAL_OPTIONS_NOT_SET,
-      gal_options_parse_name_and_strings
+      gal_options_parse_name_and_strings_append
     },
     {
       "notequal",
@@ -466,7 +466,7 @@ struct argp_option program_options[] =
       GAL_OPTIONS_RANGE_ANY,
       GAL_OPTIONS_NOT_MANDATORY,
       GAL_OPTIONS_NOT_SET,
-      gal_options_parse_name_and_strings
+      gal_options_parse_name_and_strings_append
     },
     {
       "sort",

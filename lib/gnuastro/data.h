@@ -293,6 +293,9 @@ gal_data_copy_to_allocated(gal_data_t *in, gal_data_t *out);
 gal_data_t *
 gal_data_copy_string_to_number(char *string);
 
+void
+gal_data_append_second_array_to_first_free(gal_data_t *a, gal_data_t *b);
+
 
 __END_C_DECLS    /* From C++ preparations */
 

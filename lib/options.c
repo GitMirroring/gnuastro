@@ -1650,7 +1650,7 @@ gal_options_read_sigma_clip(struct argp_option *option, char *arg,
 static void *
 gal_options_parse_name_and_values(struct argp_option *option, char *arg,
                                   char *filename, size_t lineno, void *junk,
-                                  int str0_f641_sz2)
+                                  int str0_f641_sz2, int append)
 {
   double *darray=NULL;
   size_t i, nc, *sizarr=NULL;
@@ -1745,7 +1745,7 @@ gal_options_parse_name_and_values(struct argp_option *option, char *arg,
                 str0_f641_sz2);
         }
 
-      /* If there actually was a string of numbers, add the dataset to the
+      /* If there actually was a string of values, add the dataset to the
          rest. */
       if(dataset)
         {
@@ -1755,8 +1755,21 @@ gal_options_parse_name_and_values(struct argp_option *option, char *arg,
           existing = *(gal_data_t **)(option->value);
           if(existing)
             {
+              /* Parse over the existing name/values. */
               for(tmp=existing;tmp!=NULL;tmp=tmp->next)
-                if(tmp->next==NULL) { tmp->next=dataset; break; }
+                {
+                  /* Check if an existing name has already been given. */
+                  if( append && !strcmp(tmp->name, dataset->name) )
+                    {
+                      gal_data_append_second_array_to_first_free(tmp,
+                                                                 dataset);
+                      break;
+                    }
+
+                  /* This is the first time that this name is being
+                     called, add it to the end. */
+                  if(tmp->next==NULL) { tmp->next=dataset; break; }
+                }
             }
           else
             *(gal_data_t **)(option->value) = dataset;
@@ -1792,7 +1805,20 @@ gal_options_parse_name_and_strings(struct argp_option *option, char *arg,
                                    void *junk)
 {
   return gal_options_parse_name_and_values(option, arg, filename, lineno,
-                                           junk, 0);
+                                           junk, 0, 0);
+}
+
+
+
+
+
+void *
+gal_options_parse_name_and_strings_append(struct argp_option *option,
+                                          char *arg, char *filename,
+                                          size_t lineno, void *junk)
+{
+  return gal_options_parse_name_and_values(option, arg, filename, lineno,
+                                           junk, 0, 1);
 }
 
 
@@ -1805,7 +1831,7 @@ gal_options_parse_name_and_float64s(struct argp_option *option, char *arg,
                                     void *junk)
 {
   return gal_options_parse_name_and_values(option, arg, filename, lineno,
-                                           junk, 1);
+                                           junk, 1, 0);
 }
 
 
@@ -1818,7 +1844,7 @@ gal_options_parse_name_and_sizets(struct argp_option *option, char *arg,
                                   void *junk)
 {
   return gal_options_parse_name_and_values(option, arg, filename, lineno,
-                                           junk, 2);
+                                           junk, 2, 0);
 }
 
 

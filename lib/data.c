@@ -949,6 +949,55 @@ gal_data_copy_to_allocated(gal_data_t *in, gal_data_t *out)
 
 
 
+/* Append the array of the second input dataset to the first one. */
+void
+gal_data_append_second_array_to_first_free(gal_data_t *a, gal_data_t *b)
+{
+  void *new;
+  size_t i, len;
+  char **strarr;
+
+  /* In case 'b' doesn't have any elements, return (nothing to do!). */
+  if(b && b->size==0) return;
+
+  /* Make sure the two arrays have the same type. */
+  if(a->type!=b->type)
+    error(EXIT_FAILURE, 0, "%s: the two input datasets must have "
+          "the same type. The first has a type of '%s' and the "
+          "second a type of '%s'", __func__,
+          gal_type_name(a->type, 1), gal_type_name(b->type, 1));
+
+  /* Make sure both arrays are one-dimensional (the only supported format
+     here). */
+  if(a->ndim!=1 || b->ndim!=1)
+    error(EXIT_FAILURE, 0, "%s: the two input datasets should only have "
+          "a single dimension. The first and second inputs respectively "
+          "have %zu and %zu dimensions", __func__, a->ndim, b->ndim);
+
+  /* Allocate the new array and copy the contents of the two inputs into
+     it. */
+  len=a->size+b->size;
+  new=gal_pointer_allocate(a->type, len, 0, __func__, "new");
+  memcpy(new, a->array, a->size*gal_type_sizeof(a->type));
+  memcpy(gal_pointer_increment(new, a->size, a->type),
+         b->array, b->size*gal_type_sizeof(b->type));
+
+  /* In case the second input had a string type, set all the contents to
+     'NULL' (so the actual strings are not freed), then free it. */
+  if(b->type==GAL_TYPE_STRING)
+    { strarr=b->array; for(i=0;i<b->size;++i) strarr[i]=NULL; }
+  gal_data_free(b);
+
+  /* Free the first input's array, and replace it with the new one. */
+  a->size=a->dsize[0]=len;
+  free(a->array);
+  a->array=new;
+}
+
+
+
+
+
 /* Just a wrapper around 'gal_type_from_string_auto', to return a
    'gal_data_t' dataset hosting the allocated number. */
 gal_data_t *
