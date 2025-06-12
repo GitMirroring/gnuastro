@@ -176,19 +176,6 @@ struct argp_option program_options[] =
       GAL_OPTIONS_NOT_SET
     },
     {
-      "forcereadstd",
-      UI_KEY_FORCEREADSTD,
-      0,
-      0,
-      "Read STD even if no columns need it.",
-      GAL_OPTIONS_GROUP_INPUT,
-      &p->forcereadstd,
-      GAL_OPTIONS_NO_ARG_TYPE,
-      GAL_OPTIONS_RANGE_0_OR_1,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
-    {
       "zeropoint",
       UI_KEY_ZEROPOINT,
       "FLT",
@@ -246,32 +233,6 @@ struct argp_option program_options[] =
       GAL_OPTIONS_NOT_SET
     },
     {
-      "sfmagnsigma",
-      UI_KEY_SFMAGNSIGMA,
-      "FLT",
-      0,
-      "Surface brightness multiple of Sky STD.",
-      GAL_OPTIONS_GROUP_OUTPUT,
-      &p->sfmagnsigma,
-      GAL_TYPE_FLOAT32,
-      GAL_OPTIONS_RANGE_GT_0,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
-    {
-      "sfmagarea",
-      UI_KEY_SFMAGAREA,
-      "FLT",
-      0,
-      "Surface brightness area (in arcseconds^2).",
-      GAL_OPTIONS_GROUP_OUTPUT,
-      &p->sfmagarea,
-      GAL_TYPE_FLOAT32,
-      GAL_OPTIONS_RANGE_GT_0,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
-    {
       "inbetweenints",
       UI_KEY_INBETWEENINTS,
       0,
@@ -279,6 +240,19 @@ struct argp_option program_options[] =
       "Keep rows (integer ids) with no labels.",
       GAL_OPTIONS_GROUP_OUTPUT,
       &p->inbetweenints,
+      GAL_OPTIONS_NO_ARG_TYPE,
+      GAL_OPTIONS_RANGE_0_OR_1,
+      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_NOT_SET
+    },
+    {
+      "meta-measures",
+      UI_KEY_METAMEASURES,
+      0,
+      0,
+      "Measures on/about indiv. measures (e.g., limits).",
+      GAL_OPTIONS_GROUP_OUTPUT,
+      &p->metameasures,
       GAL_OPTIONS_NO_ARG_TYPE,
       GAL_OPTIONS_RANGE_0_OR_1,
       GAL_OPTIONS_NOT_MANDATORY,
@@ -2183,6 +2157,92 @@ struct argp_option program_options[] =
     },
 
 
+
+
+
+    {
+      0, 0, 0, 0,
+      "Metameasurements (e.g., limits):",
+      UI_GROUP_METAMEASURES
+    },
+    {
+      "sbl-sigma",
+      UI_KEY_SBLSIGMA,
+      "FLT",
+      0,
+      "Surf. bright. limit multiple of Sky STD.",
+      UI_GROUP_METAMEASURES,
+      &p->sblsigma,
+      GAL_TYPE_FLOAT32,
+      GAL_OPTIONS_RANGE_GT_0,
+      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_NOT_SET
+    },
+    {
+      "sbl-area",
+      UI_KEY_SBLAREA,
+      "FLT",
+      0,
+      "Surf. bright. limit area (in arcseconds^2).",
+      UI_GROUP_METAMEASURES,
+      &p->sblarea,
+      GAL_TYPE_FLOAT32,
+      GAL_OPTIONS_RANGE_GT_0,
+      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_NOT_SET
+    },
+    {
+      "nml-sigma",
+      UI_KEY_NMLSIGMA,
+      "FLT",
+      0,
+      "Noise-based mag. lim multip. of Sky STD.",
+      UI_GROUP_METAMEASURES,
+      &p->nmlsigma,
+      GAL_TYPE_FLOAT32,
+      GAL_OPTIONS_RANGE_GT_0,
+      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_NOT_SET
+    },
+    {
+      "nml-area",
+      UI_KEY_NMLAREA,
+      "FLT",
+      0,
+      "Noise-based mag. lim area (in arcsec^2).",
+      UI_GROUP_METAMEASURES,
+      &p->nmlarea,
+      GAL_TYPE_FLOAT32,
+      GAL_OPTIONS_RANGE_GT_0,
+      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_NOT_SET
+    },
+    {
+      "cnl-with-objects",
+      UI_KEY_CNLWITHOBJECTS,
+      0,
+      0,
+      "Use objects for confusion limit, not clumps.",
+      UI_GROUP_METAMEASURES,
+      &p->cnlwithobjects,
+      GAL_OPTIONS_NO_ARG_TYPE,
+      GAL_OPTIONS_RANGE_0_OR_1,
+      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_NOT_SET
+    },
+    {
+      "cnl-check",
+      UI_KEY_CNLCHECK,
+      0,
+      0,
+      "Table as extra HDU in output with all matches.",
+      UI_GROUP_METAMEASURES,
+      &p->cnlcheck,
+      GAL_OPTIONS_NO_ARG_TYPE,
+      GAL_OPTIONS_RANGE_0_OR_1,
+      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_NOT_SET
+    },
 
 
     {0}

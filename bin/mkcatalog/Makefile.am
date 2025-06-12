@@ -35,10 +35,11 @@ astmkcatalog_LDADD = $(top_builddir)/bootstrapped/lib/libgnu.la \
                      $(top_builddir)/lib/libgnuastro.la \
                      $(CONFIG_LDADD)
 
-astmkcatalog_SOURCES = main.c ui.c mkcatalog.c columns.c upperlimit.c parse.c
+astmkcatalog_SOURCES = main.c ui.c mkcatalog.c columns.c \
+                       upperlimit.c parse.c outkeys.c
 
-EXTRA_DIST = main.h authors-cite.h args.h ui.h mkcatalog.h columns.h	\
-  upperlimit.h parse.h
+EXTRA_DIST = main.h authors-cite.h args.h ui.h mkcatalog.h \
+             columns.h upperlimit.h parse.h outkeys.h
 
 
 

@@ -270,81 +270,6 @@ upperlimit_random_position(struct mkcatalog_passparams *pp, gal_data_t *tile,
 
 
 
-/* It is necessary to write the upperlimit parameters into the output
-   tables. The same set of information will thus be necessary both in the
-   upperlimit check table and also the final output. This function will do
-   the job in both cases.
-
-   Note that in the check output, the sigma-clipping information is not
-   used/necessary, so to avoid confusion, we won't write it.
-*/
-void
-upperlimit_write_keys(struct mkcatalogparams *p,
-                      gal_fits_list_key_t **keylist, int withsigclip)
-{
-  /* Write a title for  */
-  gal_fits_key_list_title_add_end(keylist, "Upper-limit (UP) parameters", 0);
-
-  /* Basic settings. */
-  gal_fits_key_list_add_end(keylist, GAL_TYPE_FLOAT32, "UPNSIGMA", 0,
-                            &p->upnsigma, 0,
-                            "Multiple of sigma to measure upper-limit.", 0,
-                            NULL, 0);
-  gal_fits_key_list_add_end(keylist, GAL_TYPE_SIZE_T, "UPNUMBER", 0,
-                            &p->upnum, 0,
-                            "Number of usable random samples.", 0,
-                            "counter", 0);
-  gal_fits_key_list_add_end(keylist, GAL_TYPE_STRING, "UPRNGNAM", 0,
-                            (void *)(p->rng_name), 0,
-                            "Random number generator name.",
-                            0, NULL, 0);
-  mkcatalog_outputs_keys_numeric(keylist, &p->rng_seed,
-                                 GAL_TYPE_ULONG, "UPRNGSEE",
-                                 "Random number generator seed.", NULL);
-
-  /* Range of upper-limit values. */
-  if(p->uprange)
-    {
-      gal_fits_key_list_add_end(keylist, GAL_TYPE_SIZE_T, "UPRANGE1", 0,
-                                &p->uprange[p->objects->ndim-1], 0,
-                                "Range about target in axis 1.", 0,
-                                "pixels", 0);
-      gal_fits_key_list_add_end(keylist, GAL_TYPE_STRING, "UPRANGE2", 0,
-                                &p->uprange[p->objects->ndim==2 ? 0 : 1], 0,
-                                "Range about target in axis 2.", 0,
-                                "pixels", 0);
-      if(p->objects->ndim==3)
-        gal_fits_key_list_add_end(keylist, GAL_TYPE_STRING, "UPRANGE3", 0,
-                                  &p->uprange[0], 0,
-                                  "Range about target in axis 3.", 0,
-                                  "pixels", 0);
-    }
-
-  /* If the upper-limit measurement included sigma-clipping. */
-  if(withsigclip)
-    {
-      gal_fits_key_list_add_end(keylist, GAL_TYPE_FLOAT64, "UPSCMLTP", 0,
-                                &p->upsigmaclip[0], 0,
-                                "Multiple of STD used for sigma-clipping.", 0,
-                                NULL, 0);
-      if(p->upsigmaclip[1]>=1.0f)
-        gal_fits_key_list_add_end(keylist, GAL_TYPE_FLOAT64, "UPSCNUM", 0,
-                                  &p->upsigmaclip[1], 0,
-                                  "Number of clips for sigma-clipping.", 0,
-                                  NULL, 0);
-      else
-        gal_fits_key_list_add_end(keylist, GAL_TYPE_FLOAT64, "UPSCTOL", 0,
-                                  &p->upsigmaclip[1], 0,
-                                  "Tolerance level to sigma-clipping.", 0,
-                                  NULL, 0);
-
-    }
-}
-
-
-
-
-
 /* Write the values into a table for the user */
 static void
 upperlimit_write_check(struct mkcatalogparams *p,
@@ -354,10 +279,9 @@ upperlimit_write_check(struct mkcatalogparams *p,
                        gal_list_f32_t *check_s)
 {
   float *sarr;
-  gal_fits_list_key_t *keylist=NULL;
+  struct gal_options_common_params *cp=&p->cp;
   size_t *xarr, *yarr, *zarr=NULL, tnum, ttnum, num;
   gal_data_t *x=NULL, *y=NULL, *z=NULL, *s=NULL; /* To avoid warnings. */
-
 
   /* Convert the lists to an array. */
   xarr=gal_list_sizet_to_array(check_x, 1, &num);
@@ -375,21 +299,21 @@ upperlimit_write_check(struct mkcatalogparams *p,
 
 
   /* Put the arrays into a data container. */
-  x=gal_data_alloc(xarr, GAL_TYPE_SIZE_T, 1, &num, NULL, 0, p->cp.minmapsize,
-                   p->cp.quietmmap, "RANDOM_X", "pixel",
+  x=gal_data_alloc(xarr, GAL_TYPE_SIZE_T, 1, &num, NULL, 0,
+                   cp->minmapsize, cp->quietmmap, "RANDOM_X", "pixel",
                    "X-axis position of random footprint's first pixel.");
-  y=gal_data_alloc(yarr, GAL_TYPE_SIZE_T, 1, &num, NULL, 0, p->cp.minmapsize,
-                   p->cp.quietmmap, "RANDOM_Y", "pixel",
+  y=gal_data_alloc(yarr, GAL_TYPE_SIZE_T, 1, &num, NULL, 0,
+                   cp->minmapsize, cp->quietmmap, "RANDOM_Y", "pixel",
                    "Y-axis position of random footprint's first pixel.");
   if(check_z)
     z=gal_data_alloc(zarr, GAL_TYPE_SIZE_T, 1, &num, NULL, 0,
-                     p->cp.minmapsize, p->cp.quietmmap, "RANDOM_Z", "pixel",
-                     "Z-axis position of random footprint's first pixel.");
-  s=gal_data_alloc(sarr, GAL_TYPE_FLOAT32, 1, &num, NULL, 0, p->cp.minmapsize,
-                   p->cp.quietmmap, "RANDOM_SUM",
+                     cp->minmapsize, cp->quietmmap, "RANDOM_Z",
+                     "pixel", "Z-axis position of random footprint's "
+                     "first pixel.");
+  s=gal_data_alloc(sarr, GAL_TYPE_FLOAT32, 1, &num, NULL, 0,
+                   cp->minmapsize, cp->quietmmap, "RANDOM_SUM",
                    p->values->unit ? p->values->unit : MKCATALOG_NO_UNIT,
                    "Sum of pixel values over random footprint.");
-
 
   /* If 'size_t' isn't 32-bit on this system, then convert the unsigned
      64-bit values to 32-bit because the FITS table format doesn't
@@ -402,44 +326,14 @@ upperlimit_write_check(struct mkcatalogparams *p,
         z=gal_data_copy_to_new_type_free( z, GAL_TYPE_UINT32);
     }
 
-
-  /* Write exactly what object/clump this table is for. */
-  gal_fits_key_list_title_add_end(&keylist, "Target for upper-limit "
-                                  "check", 0);
-  mkcatalog_outputs_keys_numeric(&keylist, &p->checkuplim[0],
-                                 GAL_TYPE_INT32, "UPCHKOBJ",
-                                 "Object label for upper-limit check "
-                                 "target.", NULL);
-  if( p->checkuplim[1]!=GAL_BLANK_INT32 )
-    mkcatalog_outputs_keys_numeric(&keylist, &p->checkuplim[1],
-                                   GAL_TYPE_INT32, "UPCHKCLU",
-                                   "Clump label for upper-limit check "
-                                   "target.", NULL);
-
-
-  /* Write the basic info, and conclude the keywords. */
-  mkcatalog_outputs_keys_infiles(p, &keylist);
-  upperlimit_write_keys(p, &keylist, 0);
-  if(p->cp.tableformat==GAL_TABLE_FORMAT_TXT)
-    gal_fits_key_list_title_add_end(&keylist, "Column metadata", 0);
-
-
   /* Define a list from the containers and write them into a table. */
   x->next=y;
   if(check_z) { y->next=z; z->next=s; }
   else        { y->next=s;            }
-  gal_table_write(x, keylist, NULL, p->cp.tableformat, p->upcheckout,
-                  "UPPERLIMIT_CHECK", 0, 1);
 
-  /* Inform the user. */
-  if(!p->cp.quiet)
-    printf("  - Upperlimit check table: %s\n", p->upcheckout);
-
-  /* Clean up. */
-  gal_data_free(x);
-  gal_data_free(y);
-  gal_data_free(s);
-  if(check_z) gal_data_free(z);
+  /* Write the array into the main data structure (note that only one label
+     may be checked in each run, so this will not cause any race issues).*/
+  p->upcheck=x;
 }
 
 

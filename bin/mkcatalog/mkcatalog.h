@@ -50,15 +50,6 @@ struct mkcatalog_passparams
 };
 
 void
-mkcatalog_outputs_keys_numeric(gal_fits_list_key_t **keylist, void *number,
-                               uint8_t type, char *nameliteral,
-                               char *commentliteral, char *unitliteral);
-
-void
-mkcatalog_outputs_keys_infiles(struct mkcatalogparams *p,
-                               gal_fits_list_key_t **keylist);
-
-void
 mkcatalog(struct mkcatalogparams *p);
 
 #endif

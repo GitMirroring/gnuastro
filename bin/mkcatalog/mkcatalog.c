@@ -53,6 +53,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include "ui.h"
 #include "parse.h"
 #include "columns.h"
+#include "outkeys.h"
 #include "upperlimit.h"
 
 
@@ -400,392 +401,6 @@ mkcatalog_wcs_conversion(struct mkcatalogparams *p)
 
 
 
-void
-mkcatalog_outputs_keys_numeric(gal_fits_list_key_t **keylist, void *number,
-                               uint8_t type, char *nameliteral,
-                               char *commentliteral, char *unitliteral)
-{
-  void *value;
-  value=gal_pointer_allocate(type, 1, 0, __func__, "value");
-  memcpy(value, number, gal_type_sizeof(type));
-  gal_fits_key_list_add_end(keylist, type, nameliteral, 0,
-                            value, 1, commentliteral, 0,
-                            unitliteral, 0);
-}
-
-
-
-
-
-void
-mkcatalog_outputs_keys_infiles(struct mkcatalogparams *p,
-                               gal_fits_list_key_t **keylist)
-{
-  int quiet=p->cp.quiet;
-  char *stdname, *stdhdu, *stdvalcom;
-
-  gal_fits_key_list_title_add_end(keylist,
-                                  "Input files and/or configuration", 0);
-
-  /* Object labels. */
-  gal_fits_key_write_filename("INLAB", p->objectsfile, keylist, 0,
-                              quiet);
-  gal_fits_key_write_filename("INLABHDU", p->cp.hdu, keylist, 0,
-                              quiet);
-
-  /* Clump labels. */
-  if(p->clumps)
-    {
-      gal_fits_key_write_filename("INCLU", p->usedclumpsfile, keylist, 0,
-                                  quiet);
-      gal_fits_key_write_filename("INCLUHDU", p->clumpshdu, keylist, 0,
-                                  quiet);
-    }
-
-  /* Values image. */
-  if(p->values)
-    {
-      gal_fits_key_write_filename("INVAL", p->usedvaluesfile, keylist, 0,
-                                  quiet);
-      gal_fits_key_write_filename("INVALHDU", p->valueshdu, keylist, 0,
-                                  quiet);
-    }
-
-  /* Sky image/value. */
-  if(p->sky)
-    {
-      if(p->sky->size==1)
-        mkcatalog_outputs_keys_numeric(keylist, p->sky->array,
-                                       p->sky->type, "INSKYVAL",
-                                       "Value of Sky used (a single "
-                                       "number).", NULL);
-      else
-        {
-          gal_fits_key_write_filename("INSKY", p->usedskyfile, keylist, 0,
-                                      quiet);
-          gal_fits_key_write_filename("INSKYHDU", p->skyhdu, keylist, 0,
-                                      quiet);
-        }
-    }
-
-  /* Standard deviation (or variance) image. */
-  if(p->variance)
-    {
-      stdname="INVAR"; stdhdu="INVARHDU";
-      stdvalcom="Value of Sky variance (a single number).";
-    }
-  else
-    {
-      stdname="INSTD"; stdhdu="INSTDHDU";
-      stdvalcom="Value of Sky STD (a single number).";
-    }
-  if(p->std)
-    {
-      if(p->std->size==1)
-        mkcatalog_outputs_keys_numeric(keylist, p->std->array, p->std->type,
-                                       stdname, stdvalcom, NULL);
-      else
-        {
-          gal_fits_key_write_filename(stdname, p->usedstdfile, keylist, 0,
-                                      quiet);
-          gal_fits_key_write_filename(stdhdu, p->stdhdu, keylist, 0,
-                                      quiet);
-        }
-    }
-
-  /* Upper limit mask. */
-  if(p->upmaskfile)
-    {
-      gal_fits_key_write_filename("INUPM", p->upmaskfile, keylist, 0,
-                                  quiet);
-      gal_fits_key_write_filename("INUPMHDU", p->upmaskhdu, keylist, 0,
-                                  quiet);
-    }
-}
-
-
-
-
-
-/* Confusion limit: create a k-d tree using the image coordinates of the
-   clumps, then find the nearest neighbour of each clump and return a struct
-   with the mad-clipped stats. */
-static gal_data_t *
-mkcatalog_confusion_limit(gal_data_t *x, gal_data_t *y, size_t numthreads)
-{
-  size_t root;
-  size_t nummatched;
-  double aperture[]={1,1}; /* Ignored, due to GAL_MATCH_ARRANGE_OUTER */
-  gal_data_t *kdtree, *ret, *diststats;
-
-  /* Initialize the k-d tree. */
-  x->next=y;
-  y->next=NULL;
-  kdtree=gal_kdtree_create(x, &root);
-
-  /* Find the nearest neighbour of each clump */
-  ret=gal_match_kdtree(x, x, kdtree, root, GAL_MATCH_ARRANGE_OUTER, aperture,
-                   numthreads, -1, 0, &nummatched, 1);
-
-  /* Compute the statistics of the distances between a clump and its
-     nearest neighbour. */
-  diststats=gal_statistics_clip_mad(ret->next, 10, 0.01,
-                                    GAL_STATISTICS_CLIP_OUTCOL_OPTIONAL_STD, 0, 1);
-
-  /* Free the data structures. */
-  gal_list_data_free(kdtree);
-
-  /* Return the median. */
-  return diststats;
-}
-
-
-
-
-
-/* Confusion limit highlevel function. It extract the info from the clumps
-   catalog and, if possible, writes the headers related to confusion limit */
-static void
-mkcatalog_confusion_lim_highlevel(struct mkcatalogparams *p,
-                                  gal_fits_list_key_t **keylist)
-{
-  gal_data_t *clim=NULL;
-  float climmed, climmad, climstd;
-  float climmedw, climmadw, climstdw;
-  double *pixscale;
-  gal_data_t *xt=NULL, *yt=NULL, *x, *y, *tmp;
-
-  /* Check for a clumps catalog. */
-  if(p->clumps)
-    {
-      /* Find the image coordinates. */
-      for(tmp=p->clumpcols; tmp!=NULL; tmp=tmp->next)
-        {
-          if(tmp->status==UI_KEY_X) xt=tmp;
-          if(tmp->status==UI_KEY_Y) yt=tmp;
-        }
-
-      /* Computes the stats. */
-      if(xt && yt)
-        {
-          x=gal_data_copy_to_new_type_free(xt, GAL_TYPE_FLOAT64);
-          y=gal_data_copy_to_new_type_free(yt, GAL_TYPE_FLOAT64);
-
-          clim=mkcatalog_confusion_limit(x, y, p->cp.numthreads);
-
-          climmed=((float*)clim->array)[GAL_STATISTICS_CLIP_OUTCOL_MEDIAN];
-          climmad=((float*)clim->array)[GAL_STATISTICS_CLIP_OUTCOL_MAD];
-          climstd=((float*)clim->array)[GAL_STATISTICS_CLIP_OUTCOL_STD];
-
-          mkcatalog_outputs_keys_numeric(keylist, &climmed,
-                                         GAL_TYPE_FLOAT32, "CNLPIX",
-                                         "Median of distances to nearest clump.",
-                                         "pixel");
-          mkcatalog_outputs_keys_numeric(keylist, &climmad,
-                                         GAL_TYPE_FLOAT32, "CNLPIXM",
-                                         "MAD of distances to nearest clump.",
-                                         "pixel");
-          mkcatalog_outputs_keys_numeric(keylist, &climstd,
-                                         GAL_TYPE_FLOAT32, "CNLPIXS",
-                                         "STD of distances to nearest clump.",
-                                         "pixel");
-
-          /* Search for a wcs, to convert the limits in arcseconds. */
-          if(p->objects->wcs)
-            {
-              pixscale=gal_wcs_pixel_scale(p->objects->wcs);
-              climmedw=climmed*pixscale[0]*3600;
-              climmadw=climmad*pixscale[0]*3600;
-              climstdw=climstd*pixscale[0]*3600;
-
-              mkcatalog_outputs_keys_numeric(keylist, &climmedw,
-                                             GAL_TYPE_FLOAT32, "CNLASEC",
-                                             "Median of distances to nearest clump.",
-                                             "arcsec");
-              mkcatalog_outputs_keys_numeric(keylist, &climmadw,
-                                             GAL_TYPE_FLOAT32, "CNLASECM",
-                                             "MAD of distances to nearest clump.",
-                                             "arcsec");
-              mkcatalog_outputs_keys_numeric(keylist, &climstdw,
-                                             GAL_TYPE_FLOAT32, "CNLASECS",
-                                             "STD of distances to nearest clump.",
-                                             "arcsec");
-            }
-          else
-            gal_fits_key_list_fullcomment_add_end(keylist, "Can't "
-                   "write Confusion Limit in units of arcsec (CNLASEC) "
-                   "because input doesn't have a world coordinate "
-                   "system (WCS)", 0);
-        }
-      else
-        gal_fits_key_list_fullcomment_add_end(keylist, "Can't write "
-               "Confusion Limit values because no image coordinates has been "
-               "found. Rerun mkcatalog with --x and --y.", 0);
-    }
-  else
-    gal_fits_key_list_fullcomment_add_end(keylist, "No Confusion Limit "
-                                          "calculations because a clumps "
-                                          "catalog is not given. Rerun "
-                                          "mkcatalog with --clumpscat to "
-                                          "solve the issue.", 0);
-
-  /* Free the structures */
-  if(clim) gal_data_free(clim);
-}
-
-
-
-
-
-/* Write the output keywords. */
-static gal_fits_list_key_t *
-mkcatalog_outputs_keys(struct mkcatalogparams *p, int o0c1)
-{
-  float pixarea=NAN, fvalue;
-  gal_fits_list_key_t *keylist=NULL;
-
-  /* First, add the file names. */
-  mkcatalog_outputs_keys_infiles(p, &keylist);
-
-  /* Type of catalog. */
-  gal_fits_key_list_add_end(&keylist, GAL_TYPE_STRING, "CATTYPE", 0,
-                            o0c1 ? "clumps" : "objects", 0,
-                            "Type of catalog ('object' or 'clump').", 0,
-                            NULL, 0);
-
-  /* Add project commit information when in a Git-controlled directory and
-     the output isn't a FITS file (in FITS, this will be automatically
-     included). */
-  if(p->cp.tableformat==GAL_TABLE_FORMAT_TXT && gal_git_describe())
-    gal_fits_key_list_add_end(&keylist, GAL_TYPE_STRING, "COMMIT", 0,
-                              gal_git_describe(), 1,
-                              "Git commit in running directory.", 0,
-                              NULL, 0);
-
-  /* Pixel area. */
-  if(p->objects->wcs)
-    {
-      pixarea=gal_wcs_pixel_area_arcsec2(p->objects->wcs);
-      if( isnan(pixarea)==0 )
-        mkcatalog_outputs_keys_numeric(&keylist, &pixarea,
-                                       GAL_TYPE_FLOAT32, "PIXAREA",
-                                       "Pixel area of input image.",
-                                       "arcsec^2");
-    }
-
-  /* Zeropoint magnitude. */
-  if( !isnan(p->zeropoint) )
-    mkcatalog_outputs_keys_numeric(&keylist, &p->zeropoint,
-                                   GAL_TYPE_FLOAT32, "ZEROPNT",
-                                   "Zeropoint used for magnitude.",
-                                   "mag");
-
-  /* Add the title for the keywords. */
-  gal_fits_key_list_title_add_end(&keylist, "Surface brightness limit "
-                                  "(SBL)", 0);
-
-  /* Print surface brightness limit. */
-  if( !isnan(p->medstd) && !isnan(p->sfmagnsigma) )
-    {
-      /* Used noise value (per pixel) and multiple of sigma. */
-      mkcatalog_outputs_keys_numeric(&keylist, &p->medstd,
-                                     GAL_TYPE_FLOAT32, "SBLSTD",
-                                     "Pixel STD for surface brightness "
-                                     "limit.", NULL);
-      mkcatalog_outputs_keys_numeric(&keylist, &p->sfmagnsigma,
-                                     GAL_TYPE_FLOAT32, "SBLNSIG",
-                                     "Sigma multiple for surface "
-                                     "brightness limit.", NULL);
-
-      /* Only print magnitudes if a zeropoint is given. */
-      if( !isnan(p->zeropoint) )
-        {
-          /* Per pixel, Surface brightness limit magnitude. */
-          fvalue=gal_units_counts_to_mag(p->sfmagnsigma * p->medstd,
-                                         p->zeropoint);
-          mkcatalog_outputs_keys_numeric(&keylist, &fvalue,
-                                         GAL_TYPE_FLOAT32, "SBLMAGPX",
-                                         "Surface brightness limit per "
-                                         "pixel.", "mag/pix");
-
-          /* Only print the SBL in fixed area if a WCS is present and a
-             pixel area could be deduced. */
-          if( !isnan(pixarea) )
-            {
-              /* Area used for measuring SBL. */
-              mkcatalog_outputs_keys_numeric(&keylist, &p->sfmagarea,
-                                             GAL_TYPE_FLOAT32, "SBLAREA",
-                                             "Area for surface brightness "
-                                             "limit.", "arcsec^2");
-
-              /* Per area, Surface brightness limit magnitude. */
-              fvalue=gal_units_counts_to_mag(p->sfmagnsigma
-                                             * p->medstd
-                                             / sqrt( p->sfmagarea
-                                                     * pixarea),
-                                             p->zeropoint);
-              mkcatalog_outputs_keys_numeric(&keylist, &fvalue,
-                                             GAL_TYPE_FLOAT32, "SBLMAG",
-                                             "Surf. bright. limit in "
-                                             "SBLAREA.",
-                                             "mag/arcsec^2");
-            }
-          else
-            gal_fits_key_list_fullcomment_add_end(&keylist, "Can't "
-                   "write surface brightness limiting magnitude (SBLM) "
-                   "values in fixed area ('SBLAREA' and 'SBLMAG' "
-                   "keywords) because input doesn't have a world "
-                   "coordinate system (WCS), or the first two "
-                   "coordinates of the WCS weren't angular positions "
-                   "in units of degrees.", 0);
-        }
-      else
-        gal_fits_key_list_fullcomment_add_end(&keylist, "Can't write "
-               "surface brightness limiting magnitude values (e.g., "
-               "'SBLMAG' or 'SBLMAGPX' keywords) because no "
-               "'--zeropoint' has been given.", 0);
-    }
-  else
-    {
-      gal_fits_key_list_fullcomment_add_end(&keylist, "No surface "
-             "brightness calcuations (e.g., 'SBLMAG' or 'SBLMAGPX' "
-             "keywords) because STD image didn't have the 'MEDSTD' "
-             "keyword. There are two solutions: 1) Call with "
-             "'--forcereadstd'. 2) Measure the median noise level "
-             "manually (possibly with Gnuastro's Arithmetic program) "
-             "and put the value in the 'MEDSTD' keyword of the STD "
-             "image.", 0);
-      gal_fits_key_list_fullcomment_add_end(&keylist, "", 0);
-    }
-
-  /* Calculate and write the confusion limit. */
-  gal_fits_key_list_title_add_end(&keylist, "Confusion limit "
-                                  "(CNL)", 0);
-  mkcatalog_confusion_lim_highlevel(p, &keylist);
-
-  /* The count-per-second correction. */
-  if(p->cpscorr>1.0f)
-    mkcatalog_outputs_keys_numeric(&keylist, &p->cpscorr,
-                                   GAL_TYPE_FLOAT32, "CPSCORR",
-                                   "Counts-per-second correction.",
-                                   NULL);
-
-  /* Print upper-limit parameters. */
-  if(p->upperlimit)
-    upperlimit_write_keys(p, &keylist, 1);
-
-  /* In plain-text outputs, put a title for column metadata. */
-  if(p->cp.tableformat==GAL_TABLE_FORMAT_TXT)
-    gal_fits_key_list_title_add_end(&keylist, "Column metadata", 0);
-
-  /* Return the list of keywords. */
-  return keylist;
-}
-
-
-
-
-
 /* Since all the measurements were done in parallel (and we didn't know the
    number of clumps per object a-priori), the clumps informtion is just
    written in as they are measured. Here, we'll sort the clump columns by
@@ -846,61 +461,61 @@ sort_clumps_by_objid(struct mkcatalogparams *p)
 static void
 mkcatalog_write_outputs(struct mkcatalogparams *p)
 {
-  gal_fits_list_key_t *keylist;
+  char *out=p->cp.output;
+  int tf=p->cp.tableformat;
+  gal_fits_list_key_t *tmp;
   gal_list_str_t *comments=NULL;
-  int outisfits=gal_fits_name_is_fits(p->objectsout);
+  char *ohdu="OBJECTS", *chdu="CLUMPS", *cuhdu="CHECK-UPPERLIMIT";
 
   /* If a catalog is to be generated. */
   if(p->objectcols)
     {
-      /* OBJECT catalog */
-      keylist=mkcatalog_outputs_keys(p, 0);
-
       /* Reverse the comments list (so it is printed in the same order
          here), write the objects catalog and free the comments. */
       gal_list_str_reverse(&comments);
-      gal_table_write(p->objectcols, keylist, NULL, p->cp.tableformat,
-                      p->objectsout, "OBJECTS", 0, 1);
+      gal_table_write(p->objectcols, NULL, NULL, tf, out, ohdu, 0, 1);
       gal_list_str_free(comments, 1);
 
       /* CLUMPS catalog */
       if(p->clumps)
         {
-          /* Make the comments. */
-          keylist=mkcatalog_outputs_keys(p, 1);
-
-          /* Write objects catalog
-             ---------------------
-
-             Reverse the comments list (so it is printed in the same order
+          /* Reverse the comments list (so it is printed in the same order
              here), write the objects catalog and free the comments. */
           gal_list_str_reverse(&comments);
-          gal_table_write(p->clumpcols, NULL, comments, p->cp.tableformat,
-                          p->clumpsout, "CLUMPS", 0, 1);
+          gal_table_write(p->clumpcols, NULL, comments, tf, out, chdu,
+                          0, 1);
           gal_list_str_free(comments, 1);
         }
+
+      /* Upper limit check table. */
+      if(p->upcheck)
+        gal_table_write(p->upcheck, NULL, comments, tf, out, cuhdu, 0, 1);
     }
 
   /* Configuration information. */
-  if(outisfits)
-    {
-      gal_fits_key_write_filename("input", p->objectsfile, &p->cp.ckeys,
-                                  1, p->cp.quiet);
-      gal_fits_key_write(p->cp.ckeys, p->objectsout, "0", "NONE", 1, 0);
-    }
+  gal_fits_key_write_filename("input", p->objectsfile, &p->cp.ckeys,
+                              1, p->cp.quiet);
 
+  /* MakeCatalog's analysis/measurement headers after the configuration
+     (input options) headers. */
+  for(tmp=p->cp.ckeys; tmp!=NULL; tmp=tmp->next)
+    if(tmp->next==NULL) { tmp->next=outkeys_write(p); break; }
+
+  /* Write all the keywords in the 0-th HDU of the output. This function
+     also frees the whole key list. */
+  gal_fits_key_write(p->cp.ckeys, out, "0", "NONE", 1, 0);
 
   /* Inform the user */
-  if(!p->cp.quiet && p->objectcols)
+  if(!p->cp.quiet)
     {
-      if(p->clumpsout && strcmp(p->clumpsout,p->objectsout))
-        {
-          printf("  - Output objects catalog: %s\n", p->objectsout);
-          if(p->clumps)
-            printf("  - Output clumps catalog: %s\n", p->clumpsout);
-        }
-      else
-        printf("  - Catalog written to %s\n", p->objectsout);
+      printf("  - Output written to (HDUs listed below): %s\n"
+             "    - OBJECTS: measurements on the object labels.\n",
+             out);
+      if(p->clumps)
+        printf("    - CLUMPS: measurements on the clump labels.\n");
+      if(p->clumps)
+        printf("    - CHECK-UPPERLIMIT: measurements on the "
+               "clump labels.\n");
     }
 }
 

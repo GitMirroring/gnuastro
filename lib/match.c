@@ -208,9 +208,10 @@ static double
 match_elliptical_r_2d(double d1, double d2, double *ellipse,
                       double c, double s)
 {
-  double Xr = d1 * ( c       )     +   d2 * ( s );
-  double Yr = d1 * ( -1.0f*s )     +   d2 * ( c );
-  return sqrt( Xr*Xr + Yr*Yr/ellipse[1]/ellipse[1] );
+  double Xr = d1 * ( c       ) + d2 * ( s );
+  double Yr = d1 * ( -1.0f*s ) + d2 * ( c );
+  double q = ellipse ? ellipse[1] : 1.0f;
+  return sqrt( Xr*Xr + Yr*Yr/q/q );
 }
 
 
@@ -225,8 +226,8 @@ match_elliptical_r_3d(double *delta, double *ellipsoid,
   double c1=c[0], s1=s[0];
   double c2=c[1], s2=s[1];
   double c3=c[2], s3=s[2];
-  double q1=ellipsoid[1], q2=ellipsoid[2];
   double x=delta[0], y=delta[1], z=delta[2];
+  double q1=ellipsoid?ellipsoid[1]:1.0f, q2=ellipsoid?ellipsoid[2]:1.0f;
 
   Xr = x*(  c3*c1   - s3*c2*s1 ) + y*( c3*s1   + s3*c2*c1) + z*( s3*s2 );
   Yr = x*( -1*s3*c1 - c3*c2*s1 ) + y*(-1*s3*s1 + c3*c2*c1) + z*( c3*s2 );
@@ -1188,6 +1189,7 @@ match_kdtree_sanity_check(struct match_kdtree_params *p)
 {
   double *d, *dd;
   size_t *s, *ss;
+  int needsaper=1;
   gal_data_t *tmp;
 
   /* Make sure all coordinates and the k-d tree have the same number of
@@ -1257,6 +1259,7 @@ match_kdtree_sanity_check(struct match_kdtree_params *p)
           do *s=GAL_BLANK_SIZE_T; while(++s<ss);
           dd=(d=p->aoinbd)+p->B->size; do *d=NAN; while(++d<dd);
         }
+      else needsaper=0; /* Raw 'outer' match doesn't need an aperture. */
       break;
 
     /* Un-recognized match arrangement. */
@@ -1279,11 +1282,21 @@ match_kdtree_sanity_check(struct match_kdtree_params *p)
       if( p->B->next->next ) p->b[2]=p->B->next->next->array;
     }
 
-  /* Find the bins of the first input along all its dimensions and select
-     those that contain data. This is very important in optimal k-d tree
-     based matching because confirming a non-match in a k-d tree is very
-     computationally expensive. */
-  match_kdtree_A_coverage(p);
+  /* If the aperture array is necessary, make sure it is given and do the
+     preparations. */
+  if(needsaper)
+    {
+      /* Make sure it is given. */
+      if(p->aperture==NULL)
+        error(EXIT_FAILURE, 0, "%s: the 'aperture' input argument is "
+              "necessary for the requested arrangement", __func__);
+
+      /* Find the bins of the first input along all its dimensions and
+         select those that contain data. This is very important in optimal
+         k-d tree based matching because confirming a non-match in a k-d
+         tree is very computationally expensive. */
+      match_kdtree_A_coverage(p);
+    }
 }
 
 
@@ -1330,7 +1343,6 @@ match_kdtree_worker(void *in_prm)
             {
               /* Fill the point location in this dimension and set the
                  pointer. */
-              existA=Aexist->array;
               po = point[j] = ((double *)(ccol->array))[ bi ];
 
               /* Make sure it covers the range of A (following the same set
@@ -1342,6 +1354,7 @@ match_kdtree_worker(void *in_prm)
                 {
                   if ( po >= p->Amin[j] && po <= p->Amax[j] )
                     {
+                      existA=Aexist->array;
                       h_i=(po-p->Amin[j])/p->Abinwidth[j];
                       if( existA[ h_i - (h_i==p->Aexist->size ? 1 : 0) ]
                           == 0 )
@@ -1352,9 +1365,10 @@ match_kdtree_worker(void *in_prm)
                 }
             }
 
-          /* Increment the dimensionality counter. */
+          /* Increment the dimensionality counter as well as the Aexist
+             pointer (but only if we actually need it!). */
           ++j;
-          Aexist=Aexist->next;
+          if(Aexist) Aexist=Aexist->next;
         }
 
       /* Continue with the match if the point is in-range. */
@@ -1428,10 +1442,14 @@ match_kdtree_second_in_first(struct match_kdtree_params *p,
 {
   double dist[3]; /* Just a place-holder in 'aperture_prepare'. */
 
-  /* Prepare the aperture-related checks. */
-  match_aperture_prepare(p->A, p->B, p->aperture,
-                         p->ndim, p->a, p->b, dist, p->c,
-                         p->s, &p->iscircle);
+  /* Prepare the aperture-related checks (only when an aperture is
+     necessary). */
+  if(p->arrange==GAL_MATCH_ARRANGE_OUTER)
+    p->iscircle=1; /* Only for the perpendicular coorindates when */
+  else             /* calculating distances. */
+    match_aperture_prepare(p->A, p->B, p->aperture,
+                           p->ndim, p->a, p->b, dist, p->c,
+                           p->s, &p->iscircle);
 
   /* Distribute the jobs in multiple threads. */
   gal_threads_spin_off(match_kdtree_worker, p, p->B->size,

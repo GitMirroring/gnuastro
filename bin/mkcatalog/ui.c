@@ -122,8 +122,8 @@ ui_initialize_options(struct mkcatalogparams *p,
 
   /* Specific to this program. */
   p->medstd         = NAN;
-  p->sfmagnsigma    = NAN;
-  p->sfmagarea      = NAN;
+  p->sblsigma       = NAN;
+  p->sblarea        = NAN;
   p->upnsigma       = NAN;
   p->zeropoint      = NAN;
   p->sigmaclip[0]   = NAN;
@@ -569,6 +569,10 @@ ui_wcs_info(struct mkcatalogparams *p)
           c=p->ctype[i]; while(*c!='\0' && *c!='-') ++c;
           *c='\0';
         }
+
+      /* Some of the columns need the pixel area in arcsec2, and ultimately
+         in the end, we print it in the header. So calculate it here. */
+      p->pixelarcsecsq=gal_wcs_pixel_area_arcsec2(p->objects->wcs);
     }
 }
 
@@ -1084,7 +1088,7 @@ ui_necessary_inputs(struct mkcatalogparams *p, int *values, int *sky,
   size_t i;
 
   /* Set necessary inputs based on options. */
-  if(p->forcereadstd) *std=1;
+  if(p->metameasures) *std=1;
   if(p->upperlimit) *values=1;
 
   /* Go over all the object columns. Note that the objects and clumps (if
@@ -1563,11 +1567,11 @@ ui_preparations_read_keywords(struct mkcatalogparams *p)
 
           /* If the two keywords couldn't be read. We don't want to slow
              down the user for the median (which needs sorting). So we'll
-             just calculate it if '--forcereadstd' is called. However, we
+             just calculate it if '--meta-measures' is called. However, we
              need the minimum for 'p->cpscorr'. */
           if(keys[1].status)
             {
-              if(p->forcereadstd)
+              if(p->metameasures)
                 {
                   tmp=gal_statistics_median(p->std, 0);
                   p->medstd=*((float *)(tmp->array));
@@ -1604,91 +1608,10 @@ ui_preparations_read_keywords(struct mkcatalogparams *p)
 
 
 
-/* When both catalogs need to be made, we need a separator, the output
-   names will either be built based on the input name or output name (if
-   given). In both cases, the operations are the same, just the base name
-   differs. So to keep things clean, we have defined this function. */
-static void
-ui_preparations_both_names(struct mkcatalogparams *p)
-{
-  char *basename, *suffix=".fits";
-  uint8_t keepinputdir=p->cp.keepinputdir;  /* See below. */
-
-  /* Set the type ending. */
-  if(p->cp.output)
-    {
-      /* When the user has specified a name, any possible directories in
-         that name must be respected. So we have kept the actual
-         'keepinputdir' value in a temporary variable above and set it to 1
-         only for this operation. Later we set it back to what it was. */
-      p->cp.keepinputdir=1;
-
-      /* Set the base name (if necessary). */
-      basename = p->cp.output;
-
-      /* FITS speicifc preparations. */
-      if( gal_fits_name_is_fits(p->cp.output) )
-        {
-          /* The output file name that the user has given supersedes the
-             'tableformat' argument. In this case, the filename is a FITS
-             file, so if 'tableformat' is a text file, we will change it to
-             a default binary FITS table. */
-          if( p->cp.tableformat==GAL_TABLE_FORMAT_TXT )
-            p->cp.tableformat=GAL_TABLE_FORMAT_BFITS;
-        }
-    }
-  else
-    {
-      /* Note that the suffix is not used in the text table outputs, so it
-         doesn't matter if the output table is not FITS. */
-      suffix="_cat.fits";
-      basename = p->objectsfile;
-    }
-
-
-  /* Set the final filename. If the output is a text file, we need two
-     files. But when its a FITS file we want to make a multi-extension FITS
-     file. */
-  if(p->cp.tableformat==GAL_TABLE_FORMAT_TXT)
-    {
-      p->objectsout=gal_checkset_automatic_output(&p->cp, basename,
-                                                  "_o.txt");
-      p->clumpsout=gal_checkset_automatic_output(&p->cp, basename,
-                                                 "_c.txt");
-    }
-  else
-    {
-      /* The output file is a FITS file (the 'p->cp.tableformat' has been
-         set before), so a single file output is enough. If no output name
-         has been given, then use automatic output. Otherwise, just check
-         if the given name is writable. */
-      if(p->cp.output)
-        {
-          gal_checkset_allocate_copy(p->cp.output, &p->objectsout);
-          gal_checkset_writable_remove(p->objectsout, p->objectsfile, 0,
-                                       p->cp.dontdelete);
-        }
-      else
-        p->objectsout=gal_checkset_automatic_output(&p->cp, basename,
-                                                    suffix);
-      p->clumpsout=p->objectsout;
-    }
-
-  /* Revert 'keepinputdir' to what it was. */
-  p->cp.keepinputdir=keepinputdir;
-}
-
-
-
-
-
 /* Set the output name. */
 static void
 ui_preparations_outnames(struct mkcatalogparams *p)
 {
-  char *suffix;
-  uint8_t keepinputdir=p->cp.keepinputdir;
-
   /* The process differs if an output filename has been given. */
   if(p->cp.output)
     {
@@ -1699,60 +1622,30 @@ ui_preparations_outnames(struct mkcatalogparams *p)
          irrelevant and it must be set to text. We use this value in the
          end to determine specific features. */
       if( gal_fits_name_is_fits(p->cp.output) )
-        gal_tableintern_check_fits_format(p->cp.output, p->cp.tableformat);
+        gal_tableintern_check_fits_format(p->cp.output,
+                                          p->cp.tableformat);
       else
-        p->cp.tableformat=GAL_TABLE_FORMAT_TXT;
+        error(EXIT_FAILURE, 0, "the output ('%s') is not a FITS file. "
+              "Please use a '.fits' suffix for the output. This is "
+              "necessary due to the various metadata and tables that "
+              "can be generated with MakeCatalog. After MakeCatalog "
+              "is finished, you can use Gnuastro's Fits program "
+              "('astfits'; to see the metdata and/or copy certain "
+              "HDUs) or Table program ('asttable'; to see the contents "
+              "of the rows/columns, or convert any of the output "
+              "tables, in different HDUs, to other formats)",
+              p->cp.output);
 
-      /* If a clumps image is present, then we have two outputs. */
-      if(p->clumps) ui_preparations_both_names(p);
-      else
-        {
-          gal_checkset_writable_remove(p->cp.output, p->objectsfile, 0,
-                                       p->cp.dontdelete);
-          gal_checkset_allocate_copy(p->cp.output, &p->objectsout);
-        }
+      /* The output name has the correct format, make sure it doesn't
+         exist. */
+      gal_checkset_writable_remove(p->cp.output, p->objectsfile, 0,
+                                   p->cp.dontdelete );
     }
+
+  /* No output name specified: we have to set one. */
   else
-    {
-      /* Both clumps and object catalogs are necessary. */
-      if(p->clumps) ui_preparations_both_names(p);
-
-      /* We only need one objects catalog. */
-      else
-        {
-          suffix = ( p->cp.tableformat==GAL_TABLE_FORMAT_TXT
-                     ? "_cat.txt" : "_cat.fits" );
-          p->objectsout=gal_checkset_automatic_output(&p->cp,
-                                                      p->objectsfile,
-                                                      suffix);
-        }
-    }
-
-  /* If an upperlimit check image is requsted, then set its filename. */
-  if(p->checkuplim[0]!=GAL_BLANK_INT32)
-    {
-      /* See if the directory should be respected. */
-      p->cp.keepinputdir = p->cp.output ? 1 : p->cp.keepinputdir;
-
-      /* Set the suffix. */
-      suffix = ( p->cp.tableformat==GAL_TABLE_FORMAT_TXT
-                 ? "_upcheck.txt" : "_upcheck.fits" );
-
-      /* Set the file name. */
-      p->upcheckout=gal_checkset_automatic_output(&p->cp,
-                                                  ( p->cp.output
-                                                    ? p->cp.output
-                                                    : p->objectsfile),
-                                                  suffix);
-
-      /* Set 'keepinputdir' to what it was before. */
-      p->cp.keepinputdir=keepinputdir;
-    }
-
-  /* Just to avoid bugs ('p->cp.output' must no longer be used), we'll free
-     it and set it to NULL.*/
-  free(p->cp.output);
-  p->cp.output=NULL;
+    p->cp.output=gal_checkset_automatic_output(&p->cp, p->objectsfile,
+                                               "-cat.fits");
 }
 
 
@@ -1950,10 +1843,8 @@ ui_read_check_inputs_setup(int argc, char *argv[],
   ui_preparations(p);
 
 
-  /* If the output is a FITS table, prepare all the options as FITS
-     keywords to write in output later. */
-  if(gal_fits_name_is_fits(p->objectsout))
-      gal_options_as_fits_keywords(&p->cp);
+  /* All the options as FITS keywords to write in output later. */
+  gal_options_as_fits_keywords(&p->cp);
 
 
   /* Inform the user. */
@@ -2055,11 +1946,6 @@ ui_free_report(struct mkcatalogparams *p, struct timeval *t1)
   /* If a random number generator was allocated, free it. */
   if(p->rng) gsl_rng_free(p->rng);
 
-  /* Free output names. */
-  if(p->clumpsout && p->clumpsout!=p->objectsout)
-    free(p->clumpsout);
-  free(p->objectsout);
-
   /* Free the allocated arrays: */
   free(p->skyhdu);
   free(p->stdhdu);
@@ -2080,6 +1966,7 @@ ui_free_report(struct mkcatalogparams *p, struct timeval *t1)
   gal_data_free(p->upmask);
   gal_data_free(p->clumps);
   gal_data_free(p->objects);
+  gal_data_free(p->upcheck);
   if(p->outlabs) free(p->outlabs);
   gal_list_data_free(p->clumpcols);
   gal_list_data_free(p->objectcols);

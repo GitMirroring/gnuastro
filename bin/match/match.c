@@ -759,7 +759,7 @@ match_catalog_kdtree(struct matchparams *p, size_t *nummatched)
                              p->kdtreeroot, p->type,
                              p->aperture ? p->aperture->array : NULL,
                              p->cp.numthreads, p->cp.minmapsize,
-                             p->cp.quietmmap, nummatched);
+                             p->cp.quietmmap, nummatched, 0);
       if(!p->cp.quiet)
         {
           if( asprintf(&msg, "... %zu matches found, done!",

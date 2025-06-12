@@ -56,6 +56,6 @@ if [ ! -f $base     ]; then echo "$base does not exist.";   exit 77; fi
 # 'check_with_program' can be something like Valgrind or an empty
 # string. Such programs will execute the command if present and help in
 # debugging when the developer doesn't have access to the user's system.
-$check_with_program $execname $labels -h1 --valuesfile=$base            \
-                              --tableformat=txt --output=detections.txt \
-                              --x --y --ra --dec --magnitude --sn
+$check_with_program $execname $labels -h1 --valuesfile=$base  \
+                              --x --y --ra --dec --magnitude --sn \
+                              --output=detections-cat.fits

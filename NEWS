@@ -61,6 +61,23 @@ See the end of the file for license conditions.
   --mean-error: Measure the error of the mean for each label (object or
     clump).
 
+  --meta-measures: new option to print metameasurements (measurements on
+    measurements) as keywords in the 0th HDU of the output. These include
+    the measured surface brightness limit, the noise-based magnitude limit
+    and the confusion limit. Until now, only the first was always
+    automatically measured, but from this version, if you need it be sure
+    to call this option (the keyword names have also changed).
+
+  --nml-sigma and --nml-area: the multiple of standard deviation and area
+    (in square arcseconds) to use for the noise-based magntiude limit (also
+    called "detection limit" by some authors).
+
+  --cnl-with-objects: measure the confusion limit using objects instead of
+    clumps (only recommended if you are not generating your labels with
+    Segment).
+
+  --cnl-check: add an extra HDU to the output
+
 *** Match
 
   --arrange: the arrangement of the match output. Until now, the Match
@@ -139,6 +156,12 @@ See the end of the file for license conditions.
     term "Coadd" (which is also commonly used in the optical astronomical
     community).
 
+  - The sub-sections of MakeCatalog's old "Quantifying measurement limits"
+    section (which described individual source errors as well as
+    metameasures over the whole image) have been distributed in other/new
+    sub-sections following MakeCatalog's new approach to metameasures as
+    described above in the new '--meta-measures' option.
+
 *** All programs
 
   --cite: also prints the citation for the Gnuastro book/manual (using the
@@ -174,6 +197,34 @@ See the end of the file for license conditions.
     the running directory. This would cause problems for parallel
     executions. Also, it was a plain-text file which is less efficient:
     slower to read and write and would be larger for longer catalog inputs.
+
+*** MakeCatalog
+
+  - The output should always be a FITS file. This was necessary because
+    with the metameasures, more and more tables may be requested by the
+    user. Also, keywords are becoming more important and and supporting
+    both text and FITS was becoming a major development overhead because
+    plain-text doesn't support multiple tables per file or keywords.
+
+  - All the metadata keywords of all the tables are now written in the 0th
+    HDU. Until now, they were written in all the produced tables that was
+    inefficient and confusing; this is part of an already started project
+    for all Gnuastro programs to write all their metadata in the 0th
+    HDU. The new "MakeCatalog output keywords" section in the book fully
+    describes all the output keywords, please check that section for all
+    the new keyword names. The most signifiacnt is the surface brightness
+    limit keyword(s), that have now been distributed and renamed to fit the
+    new metameasure structure.
+
+  --sbl-sigma: new name for the old '--sfmagnsigma', as part of the process
+    to standardize metameasures.
+
+  --sbl-area: new name for the old '--sfmagarea', as part of the process to
+    standardize metameasures.
+
+  --forcereadstd has been removed in favor of the more general
+    '--meta-measure' option. This is because it was only useful for
+    calculating the surface brighntess limit (which is a metameasure).
 
 *** astscript-pointing-simulate
 

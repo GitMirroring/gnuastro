@@ -473,10 +473,6 @@ Tables
 * Gnuastro text table format::  Gnuastro's convention plain text tables.
 * Selecting table columns::     Identify/select certain columns from a table
 
-Recognized table formats
-
-* Gnuastro text table format::  Reading plain text tables
-
 Data containers
 
 * Fits::                        View and manipulate extensions and keywords.
@@ -687,41 +683,46 @@ Invoking Segment
 
 MakeCatalog
 
-* Detection and catalog production::  Discussing why/how to treat these separately
+* Detection and catalog production::  Discussing why/how to treat these separately.
 * Brightness flux magnitude::   More on Magnitudes, surface brightness, etc.
-* Quantifying measurement limits::  For comparing different catalogs.
-* Measuring elliptical parameters::  Estimating elliptical parameters.
+* Standard deviation vs Standard error::  To avoid confusions with error measurements.
+* MakeCatalog measurements on each label::  The columns that you can request in output catalog.
+* Metameasurements on full input::  Measurements on/about measurements.
+* Manual metameasurements::     These need custom runs of MakeCatalog and/or other programs.
 * Adding new columns to MakeCatalog::  How to add new columns.
-* MakeCatalog measurements::    List of all the measurements/columns by MakeCatalog.
 * Invoking astmkcatalog::       Options and arguments to MakeCatalog.
 
-Quantifying measurement limits
-
-* Standard deviation vs Standard error::  Differnece between these important measures.
-* Magnitude measurement error of each detection::  Error in measuring magnitude.
-* Surface brightness error of each detection::  Error in measuring the Surface brightness.
-* Completeness limit of each detection::  Possibility of detecting similar objects?
-* Upper limit magnitude of each detection::  How reliable is your magnitude?
-* Magnitude limit of image::    Measured magnitude of objects at certain S/N.
-* Surface brightness limit of image::  Extrapolate per-pixel noise-level to standard units.
-* Upper limit surface brightness of image::  Measure the noise-level for a certain aperture.
-
-MakeCatalog measurements
+MakeCatalog measurements on each label
 
 * Identifier columns::          Identifying labels of each row (object/clumps).
 * Position measurements in pixels::  Containing image/pixel (X/Y) measurements.
 * Position measurements in WCS::  Containing WCS (for example RA/Dec) measurements.
 * Brightness measurements::     Using pixel values of each label.
 * Surface brightness measurements::  Various ways to measure surface brightness.
+* Upper limit measurements::
 * Morphology measurements nonparametric::  Non-parametric morphology.
 * Morphology measurements elliptical::  Elliptical morphology measurements.
 * Measurements per slice spectra::  Measurements on each slice (like spectra).
+
+Metameasurements on full input
+
+* Surface brightness limit of image::  A portable measure of the noise level.
+* Noise based magnitude limit of image::  Magnitude of objects above a certain threshold of the noise.
+* Confusion limit of image::    A measure of density in the image.
+
+Manual metameasurements
+
+* Expected surface brightness limit::
+* Upper limit surface brightness of image::  Necessary for diffuse regions of image.
+* Magnitude limit for certain objects::
+* Completeness limit for certain objects::
 
 Invoking MakeCatalog
 
 * MakeCatalog inputs and basic settings::  Input files and basic settings.
 * Upper-limit settings::        Settings for upper-limit measurements.
-* MakeCatalog output::          File names of MakeCatalog's output table.
+* MakeCatalog output HDUs::     Options that specify the output HDUs.
+* MakeCatalog output keywords::  Meta data and metameasures and related options.
 
 Match
 
@@ -2304,7 +2305,7 @@ For more, see the instructions in the checklist at the start of @ref{Invoking as
 
 As you hover your mouse over the image, notice how the ``Value'' and positional fields on the top of the ds9 window get updated.
 The first thing you might notice is that when you hover the mouse over the regions with no data, they have a value of zero.
-The next thing might be that the dataset has a shallower and deeper component (see @ref{Quantifying measurement limits}).
+The next thing might be that the dataset has a shallower and deeper component (see @ref{Metameasurements on full input}).
 Recall that this is a combined/reduced image of many exposures, and the parts that have more exposures are deeper.
 In particular, the exposure time of the deep inner region is more than 4 times the exposure time of the outer (more shallower) parts.
 
@@ -3506,7 +3507,7 @@ This (and other ways to measure the limits of your dataset) are discussed in the
 In @ref{Segmentation and making a catalog}, we created a catalog of the different objects with the image.
 Before measuring colors, or doing any other kind of analysis on the catalogs (and detected objects), it is very important to understand the limitations of the dataset.
 Without understanding the limitations of your dataset, you cannot make any physical interpretation of your results.
-The theory behind the calculations discussed here is thoroughly introduced in @ref{Quantifying measurement limits}.
+The theory behind the calculations discussed here is thoroughly introduced in @ref{Metameasurements on full input}.
 
 For example, with the command below, let's sort all the detected clumps in the image by magnitude (with @option{--sort=magnitude}) and and print the magnitude and signal-to-noise ratio (S/N; with @option{-cmagnitude,sn}):
 
@@ -3538,7 +3539,7 @@ $ asttable cat/xdf-f160w.fits -hclumps -csn \
            --range=magnitude,31:32 | aststatistics
 @end example
 
-This brings us to the first method of quantifying your dataset's @emph{magnitude limit}, which is also sometimes called @emph{detection limit} (see @ref{Magnitude limit of image}).
+This brings us to the first method of quantifying your dataset's @emph{magnitude limit}, which is also sometimes called @emph{detection limit} (see @ref{Noise based magnitude limit of image}).
 To estimate the @mymath{5\sigma} detection limit of your dataset, you simply report the median magnitude of the objects that have a signal to noise of (approximately) five.
 This is very easy to calculate with the command below:
 
@@ -3573,7 +3574,7 @@ Therefore you clearly see two main issues with the detection limit as defined ab
 @cindex Upper-limit
 A more realistic way to estimate the significance of the detection is to take its footprint, randomly place it in thousands of undetected regions of the image and use that distribution as a reference.
 This is technically known as upper-limit measurements.
-For a full discussion, see @ref{Upper limit magnitude of each detection}).
+For a full discussion, see @ref{Upper limit measurements}).
 
 Since it is for each separate object, the upper-limit measurements should be requested as extra columns in MakeCatalog's output.
 For example, with the command below, let's generate a new catalog of the F160W filter, but with two extra columns compared to the one in @file{cat/}: the upper-limit magnitude and the upper-limit multiple of sigma.
@@ -3661,11 +3662,12 @@ Before continuing, let's remove this temporarily produced catalog:
 $ rm xdf-f160w.fits
 @end example
 
-Another measure of the dataset's limit is the completeness limit (@ref{Completeness limit of each detection}).
+Another measure of the dataset's limit is the completeness limit.
 This is necessary when you are looking at populations of objects over the image.
 You want to know until what magnitude you can be sure that you have detected an object (if it was present).
-As described in @ref{Completeness limit of each detection}, the best way to do this is with mock images.
-But a crude, first order result can be obtained from the actual image: by simply plotting the histogram of the magnitudes:
+Due to the different morphologies of the sources the completeness limit is different from one type of object to another (for example sharper objects are easier to detect/segment).
+Therefore, the best way to measure the completeness limit is with mock images: to artificially insert your desired object in random undetected areas of the image many times and see how many times they are detected (for more, see @ref{Completeness limit for certain objects}).
+But a crude, zero-th order result (for the average object in the image) can be obtained from the actual image: by simply plotting the histogram of the magnitudes:
 
 @example
 $ aststatistics cat/xdf-f160w.fits -hclumps -cmagnitude
@@ -3724,13 +3726,13 @@ By default, MakeCatalog will estimate the surface brightness limit of a given da
 $ astfits cat/xdf-f160w.fits -h1 | grep SBL
 @end example
 
-As you see, the only one with a unit of @code{mag/arcsec^2} is @code{SBLMAG}.
+As you see, the only one with a unit of @code{mag/arcsec^2} is @code{SBL}.
 It contains the surface brightness limit of the input dataset over @code{SBLAREA} arcsec@mymath{^2} with @code{SBLNSIG} multiples of @mymath{\sigma}.
 In the current version of Gnuastro, @code{SBLAREA=100} and @code{SBLNSIG=3}, so the surface brightness limit of this image is 32.66 mag/arcsec@mymath{^2} (@mymath{3\sigma}, over 100 arcsec@mymath{^2}).
-Therefore, if this default area and multiple of sigma are fine for you@footnote{You can change these values with the @option{--sfmagarea} and @option{--sfmagnsigma}} (these are the most commonly used values), you can simply read the image surface brightness limit from the catalogs produced by MakeCatalog with this command:
+Therefore, if this default area and multiple of sigma are fine for you@footnote{You can change these values with the @option{--sbl-area} and @option{--sbl-sigma}} (these are the most commonly used values), you can simply read the image surface brightness limit from the catalogs produced by MakeCatalog with this command:
 
 @example
-$ astfits cat/*.fits -h1 --keyvalue=SBLMAG
+$ astfits cat/*.fits -h1 --keyvalue=SBL
 @end example
 
 
@@ -4464,7 +4466,7 @@ In other words, we should replace all NaN pixels, and pixels with a surface brig
 With the first command below, we will first extract the surface brightness limit from the catalog headers that we calculated before, and then call Arithmetic to use this limit.
 
 @example
-$ sblimit=$(astfits cat/xdf-f160w.fits --keyvalue=SBLMAG -q)
+$ sblimit=$(astfits cat/xdf-f160w.fits --keyvalue=SBL -q)
 $ astarithmetic nc/xdf-f160w.fits $zeropoint $pixarcsec2 \
                 counts-to-sb set-sb \
                 sb sb $sblimit gt sb isblank or $sblimit where \
@@ -4532,7 +4534,7 @@ To summarize, and to keep the image for the next section in a separate directory
 $ zeropoint=25.94
 $ mkdir report-image
 $ cd report-image
-$ sblimit=$(astfits cat/xdf-f160w.fits --keyvalue=SBLMAG -q)
+$ sblimit=$(astfits cat/xdf-f160w.fits --keyvalue=SBL -q)
 $ astwarp nc/xdf-f160w.fits --scale=1/4 --centeroncorner \
           --output=warped.fits
 $ pixarcsec2=$(astfits warped.fits --pixelareaarcsec2)
@@ -5705,7 +5707,7 @@ In case you would like to know more about the usage of the quantile of the mean 
 @cindex Surface brightness limit
 @cindex Limit, surface brightness
 When your science is related to extended emission (like the example here) and you are presenting your results in a scientific conference, usually the first thing that someone will ask (if you do not explicitly say it!), is the dataset's @emph{surface brightness limit} (a standard measure of the noise level), and your target's surface brightness (a measure of the signal, either in the center or outskirts, depending on context).
-For more on the basics of these important concepts please see @ref{Quantifying measurement limits}.
+For more on the basics of these important concepts please see @ref{Metameasurements on full input}.
 So in this section of the tutorial, we will measure these values for the single-exposure SDSS image of the M51 group that we downloaded in @ref{Downloading and validating input data}.
 
 @noindent
@@ -5722,7 +5724,7 @@ Showing that the mean is indeed very close to the median, although just about 1 
 As we saw in @ref{NoiseChisel optimization}, a very small residual signal still remains in the undetected regions and this very small difference is a quantitative measure of that undetected signal.
 It was up to you as an exercise to improve it, so we will continue with this dataset.
 
-The surface brightness limit of the image can be measured from the masked image and the equation in @ref{Quantifying measurement limits}.
+The surface brightness limit of the image can be measured from the masked image and the equation in @ref{Metameasurements on full input}.
 Let's do it for a @mymath{3\sigma} surface brightness limit over an area of @mymath{25 \rm{arcsec}^2}:
 
 @example
@@ -5795,8 +5797,8 @@ $ astfits sbl.fits -h1 | grep ^SBL
 
 Notice how the @code{SBLSTD} has the same value as NoiseChisel's @code{MEDSTD} above.
 Using @code{SBLSTD}, MakeCatalog has determined the @mymath{n\sigma} surface brightness limiting magnitude in these header keywords.
-The multiple of @mymath{\sigma}, or @mymath{n}, is the value of the @code{SBLNSIG} keyword which you can change with the @option{--sfmagnsigma}.
-The surface brightness limiting magnitude within a pixel (@code{SBLNSIG}) and within a pixel-agnostic area of @code{SBLAREA} arcsec@mymath{^2} are stored in @code{SBLMAG}.
+The multiple of @mymath{\sigma}, or @mymath{n}, is the value of the @code{SBLNSIG} keyword which you can change with the @option{--sbl-sigma}.
+The surface brightness limiting magnitude within a pixel (@code{SBLNSIG}) and within a pixel-agnostic area of @code{SBLAREA} arcsec@mymath{^2} are stored in @code{SBL}.
 
 @cindex SDSS
 @cindex Nanomaggy
@@ -5818,9 +5820,9 @@ Following the manual example we did above, you can ask for the multiple of sigma
 
 @example
 $ astmkcatalog r_detected.fits -hDETECTIONS --zeropoint=22.5 \
-               --output=sbl.fits --sfmagarea=25 --sfmagnsigma=3 \
+               --output=sbl.fits --sbl-area=25 --sbl-sigma=3 \
                --forcereadstd --ids
-$ astfits sbl.fits -h1 | awk '/^SBLMAG /@{print $3@}'
+$ astfits sbl.fits -h1 | awk '/^SBL /@{print $3@}'
 26.02296
 @end example
 
@@ -5841,10 +5843,10 @@ This is necessary in scenarios where your image has multiple depths and during y
 @end cartouche
 
 We have successfully measured the image's @mymath{3\sigma} surface brightness limiting magnitude over 25 arcsec@mymath{^2}.
-However, as discussed in @ref{Quantifying measurement limits} this value is just an extrapolation of the per-pixel standard deviation.
+However, as discussed in @ref{Metameasurements on full input} this value is just an extrapolation of the per-pixel standard deviation.
 Issues like correlated noise will cause the real noise over a large area to be different.
 So for a more robust measurement, let's use the upper-limit magnitude of similarly sized region.
-For more on the upper-limit magnitude, see the respective item in @ref{Quantifying measurement limits}.
+For more on the upper-limit magnitude, see the respective item in @ref{Metameasurements on full input}.
 
 In summary, the upper-limit measurements involve randomly placing the footprint of an object in undetected parts of the image many times.
 This results in a random distribution of brightness measurements, the standard deviation of that distribution is then converted into magnitudes.
@@ -5867,7 +5869,7 @@ echo "1 100 100 5 $r_pixel 0 0 1 1 1" \
 ## Do the upper-limit measurement, ignoring all NoiseChisel's
 ## detections as a mask for the upper-limit measurements.
 astmkcatalog lab.fits -h1 --zeropoint=$zeropoint -osbl.fits \
-             --sfmagarea=25 --sfmagnsigma=3 --forcereadstd \
+             --sbl-area=25 --sbl-sigma=3 --forcereadstd \
              --valuesfile=r_detected.fits --valueshdu=INPUT-NO-SKY \
              --upmaskfile=r_detected.fits --upmaskhdu=DETECTIONS \
              --upnsigma=3 --checkuplim=1 --upnum=1000 \
@@ -5901,7 +5903,7 @@ This is a very important point regarding any statistical process involving rando
 export GSL_RNG_TYPE=ranlxs1
 export GSL_RNG_SEED=1616493518
 astmkcatalog lab.fits -h1 --zeropoint=$zeropoint -osbl.fits \
-             --sfmagarea=25 --sfmagnsigma=3 --forcereadstd \
+             --sbl-area=25 --sbl-sigma=3 --forcereadstd \
              --valuesfile=r_detected.fits --valueshdu=INPUT-NO-SKY \
              --upmaskfile=r_detected.fits --upmaskhdu=DETECTIONS \
              --upnsigma=3 --checkuplim=1 --upnum=1000 \
@@ -10403,7 +10405,7 @@ The difference between 3 exposures and 5 exposures seems a lot at first.
 But let's calculate how much it actually affects the achieved signal-to-noise ratio and the surface brightness limit.
 The surface brightness limit (or upper-limit surface brightness) are both calculated by applying the definition of magnitude to the standard deviation of the background.
 So we should first calculate how much this difference in depth affects the sky standard deviation.
-For a complete discussion on the definition of the surface brightness limit, see @ref{Quantifying measurement limits}.
+For a complete discussion on the definition of the surface brightness limit, see @ref{Metameasurements on full input}.
 
 @cindex Poisson noise
 Deep images will usually be dominated by @ref{Photon counting noise} (or Poisson noise).
@@ -29581,10 +29583,9 @@ The role of MakeCatalog in a scientific analysis and the benefits of its model (
 We strongly recommend reading this short paper for a better understanding of this methodology.
 Understanding the effective usage of MakeCatalog, will thus also help effective use of other (lower-level) Gnuastro's programs like @ref{NoiseChisel} or @ref{Segment}.
 
-It is important to define your regions of interest for measurements @emph{before} running MakeCatalog.
-MakeCatalog is specialized in doing measurements accurately and efficiently.
-Therefore MakeCatalog will not do detection, segmentation, or defining apertures on requested positions in your dataset.
-Following Gnuastro's modularity principle, there are separate and highly specialized and customizable programs in Gnuastro for these other jobs as shown below (for a usage example in a real-world analysis, see @ref{General program usage tutorial} and @ref{Detecting large extended targets}).
+Following the Unix philosophy@footnote{Make each program do one thing well. To do a new job, build afresh rather than complicate old programs by adding new "features".}, MakeCatalog is specialized in doing measurements accurately and efficiently, not to do detection, segmentation, or defining apertures on requested positions in your dataset.
+It is therefore important to define the pixels (of each ``object'' in the image for example) @emph{before} running MakeCatalog.
+There are separate, highly specialized and customizable programs in Gnuastro for these other jobs as discussed below, their outputs can be fed into MakeCatalog (for a usage example in a real-world analysis, see @ref{General program usage tutorial} and @ref{Detecting large extended targets}).
 
 @itemize
 @item
@@ -29600,30 +29601,37 @@ Following Gnuastro's modularity principle, there are separate and highly special
 @ref{MakeProfiles}: Aperture creation for known positions.
 @end itemize
 
-These programs will/can return labeled dataset(s) to be fed into MakeCatalog.
-A labeled dataset for measurement has the same size/dimensions as the input, but with integer valued pixels that have the label/counter for each sub-set of pixels that must be measured together.
+To identify which pixels should be measured together, a ``label'' dataset is necessary (which is the main input to MakeCatalog).
+The number of labels in the labels dataset will be the number of rows in the output.
+Having identified which pixels to use for each row of the output catalog, the ``values'' dataset will be used to read the value of each pixel to use in the measurement.
+The labeled dataset should have the same size/dimensions as the values image, but with integer valued pixels.
+Any pixel with the same label/counter for each sub-set of pixels that must be measured together.
 For example, all the pixels covering one galaxy in an image, get the same label.
 
-The requested measurements are then done on similarly labeled pixels.
 The final result is a catalog where each row corresponds to the measurements on pixels with a specific label.
-For example, the flux weighted average position of all the pixels with a label of 42 will be written into the 42nd row of the output catalog/table's central position column@footnote{See @ref{Measuring elliptical parameters} for a discussion on this and the derivation of positional parameters, which includes the center.}.
+For example, the flux weighted average position of all the pixels with a label of 42 will be written into the 42nd row of the output catalog/table's central position column@footnote{See @ref{Morphology measurements elliptical} for a discussion on this and the derivation of positional parameters, which includes the center.}.
 Similarly, the sum of all these pixels will be the 42nd row in the sum column, etc.
 Pixels with labels equal to, or smaller than, zero will be ignored by MakeCatalog.
 In other words, the number of rows in MakeCatalog's output is already known before running it (the maximum value of the labeled dataset).
 
-Before getting into the details of running MakeCatalog (in @ref{Invoking astmkcatalog}, we will start with a discussion on the basics of its approach to separating detection from measurements in @ref{Detection and catalog production}.
+Before getting into the details of running MakeCatalog (in @ref{Invoking astmkcatalog} (last sub-section), we will start with some basics that are good to review if you are new to optical/astronomical data analysis.
+The basics of MakeCatalog's approach to separating detection/segmentation from measurements in is first discussed in @ref{Detection and catalog production}.
+We then introduce the core units/concepts of brightness measurements in optical astronomy (which inherits a lot from its multi-millennial history) in @ref{Brightness flux magnitude}.
+Having reviewed the core concepts, @ref{MakeCatalog measurements on each label} provides a categorized list of all measurements that are currently available in MakeCatalog.
+
 A very important factor in any measurement is understanding its validity range, or limits.
-Therefore in @ref{Quantifying measurement limits}, we will discuss how to estimate the reliability of the detection and basic measurements.
-This section will continue with a derivation of elliptical parameters from the labeled datasets in @ref{Measuring elliptical parameters}.
+Therefore in @ref{Metameasurements on full input}, we will discuss how to estimate the reliability of the detection and basic measurements.
+This section will continue with a derivation of elliptical parameters from the labeled datasets in @ref{Morphology measurements elliptical}.
 For those who feel MakeCatalog's existing measurements/columns are not enough and would like to add further measurements, in @ref{Adding new columns to MakeCatalog}, a checklist of steps is provided for readily adding your own new measurements/columns.
 
 @menu
-* Detection and catalog production::  Discussing why/how to treat these separately
+* Detection and catalog production::  Discussing why/how to treat these separately.
 * Brightness flux magnitude::   More on Magnitudes, surface brightness, etc.
-* Quantifying measurement limits::  For comparing different catalogs.
-* Measuring elliptical parameters::  Estimating elliptical parameters.
+* Standard deviation vs Standard error::  To avoid confusions with error measurements.
+* MakeCatalog measurements on each label::  The columns that you can request in output catalog.
+* Metameasurements on full input::  Measurements on/about measurements.
+* Manual metameasurements::     These need custom runs of MakeCatalog and/or other programs.
 * Adding new columns to MakeCatalog::  How to add new columns.
-* MakeCatalog measurements::    List of all the measurements/columns by MakeCatalog.
 * Invoking astmkcatalog::       Options and arguments to MakeCatalog.
 @end menu
 
@@ -29678,7 +29686,7 @@ It might even be so intertwined with its processing, that adding new columns mig
 
 
 
-@node Brightness flux magnitude, Quantifying measurement limits, Detection and catalog production, MakeCatalog
+@node Brightness flux magnitude, Standard deviation vs Standard error, Detection and catalog production, MakeCatalog
 @subsection Brightness, Flux, Magnitude and Surface brightness
 
 @cindex cgs units (centimeter–gram–second)
@@ -29775,7 +29783,7 @@ The @mymath{-2.5} factor is also a legacy of our ancient origins: was necessary 
 
 @noindent
 In the equation above, @mymath{m} is the magnitude of the object and @mymath{m_r} is the pre-defined magnitude of the reference spectral flux density.
-For estimating the error in measuring a magnitude, see @ref{Quantifying measurement limits}.
+For estimating the error in measuring a magnitude, see @ref{Metameasurements on full input}.
 The equation above is ultimately a relative relation.
 To tie it to physical units, astronomers use the concept of a zero point which is discussed in the next item.
 
@@ -29906,41 +29914,8 @@ Therefore if you generate color, magnitude or surface brightness images (where p
 If you need to warp or convolve the image, do it @emph{before} the conversion to magnitude-based units.
 @end cartouche
 
-
-
-
-@node Quantifying measurement limits, Measuring elliptical parameters, Brightness flux magnitude, MakeCatalog
-@subsection Quantifying measurement limits
-
-@cindex Depth of data
-@cindex Clump magnitude limit
-@cindex Object magnitude limit
-@cindex Limit, object/clump magnitude
-@cindex Magnitude, object/clump detection limit
-No measurement on a real dataset can be perfect: you can only reach a certain level/limit of accuracy and a meaningful (scientific) analysis requires an understanding of these limits.
-Different datasets have different noise properties and different detection methods (one method/algorithm/software that is run with a different set of parameters is considered as a different detection method) will have different abilities to detect or measure certain kinds of signal (astronomical objects) and their properties in the dataset.
-Hence, quantifying the detection and measurement limitations with a particular dataset and analysis tool is the most crucial/critical aspect of any high-level analysis.
-In two separate tutorials, we have touched upon some of these points.
-So to see the discussions below in action (on real data), see @ref{Measuring the dataset limits} and @ref{Image surface brightness limit}.
-
-Here, we will review some of the most commonly used methods to quantify the limits in astronomical data analysis and how MakeCatalog makes it easy to measure them.
-Depending on the higher-level analysis, there are more tests that must be done, but these are relatively low-level and usually necessary in most cases.
-In astronomy, it is common to use the magnitude (a unit-less scale) and the flux (physical units), see @ref{Brightness flux magnitude}.
-The measurements discussed here are commonly used in units of magnitudes.
-
-@menu
-* Standard deviation vs Standard error::  Differnece between these important measures.
-* Magnitude measurement error of each detection::  Error in measuring magnitude.
-* Surface brightness error of each detection::  Error in measuring the Surface brightness.
-* Completeness limit of each detection::  Possibility of detecting similar objects?
-* Upper limit magnitude of each detection::  How reliable is your magnitude?
-* Magnitude limit of image::    Measured magnitude of objects at certain S/N.
-* Surface brightness limit of image::  Extrapolate per-pixel noise-level to standard units.
-* Upper limit surface brightness of image::  Measure the noise-level for a certain aperture.
-@end menu
-
-@node Standard deviation vs Standard error, Magnitude measurement error of each detection, Quantifying measurement limits, Quantifying measurement limits
-@subsubsection Standard deviation vs Standard error
+@node Standard deviation vs Standard error, MakeCatalog measurements on each label, Brightness flux magnitude, MakeCatalog
+@subsection Standard deviation vs Standard error
 The standard deviation and standard error are different concepts to convey different aspects of a measurement, but they can be easily confused with each other: for example, the standard deviation is also called as the ``error''.
 A nice description of this difference is given in the following quote from Wikipedia.
 In this section, we'll show the concept described in this quote with a hands-on and practical set of commands to clarify this important distinction.
@@ -30112,478 +30087,20 @@ When the values are different, the combined error is calculated by adding the va
 When the values are smaller than one, a correction is applied (that is defined in Section 3.3 of Akhlaghi and Ichikawa @url{https://arxiv.org/abs/1505.01664, 2015}).
 @end table
 
-@node Magnitude measurement error of each detection, Surface brightness error of each detection, Standard deviation vs Standard error, Quantifying measurement limits
-@subsubsection Magnitude measurement error of each detection
-The raw error in measuring the magnitude is only meaningful when the object's magnitude is brighter than the upper-limit magnitude (see below).
-As discussed in @ref{Brightness flux magnitude}, the magnitude (@mymath{M}) of an object with brightness @mymath{B} and zero point magnitude @mymath{z} can be written as:
 
-@dispmath{M=-2.5\log_{10}(B)+z}
 
-@noindent
-Calculating the derivative with respect to @mymath{B}, we get:
 
-@dispmath{{dM\over dB} = {-2.5\over {B\times ln(10)}}}
+@node MakeCatalog measurements on each label, Metameasurements on full input, Standard deviation vs Standard error, MakeCatalog
+@subsection MakeCatalog measurements on each label
 
-@noindent
-From the Tailor series (@mymath{\Delta{M}=dM/dB\times\Delta{B}}), we can write:
+MakeCatalog's output measurements can be classified into two types: columns (independent measurements on each label) or metadata (of the whole image, see @ref{Metameasurements on full input}).
+The precise measurements that it will actually do is specified using command-line options that are described in the subsections below (@ref{Options}).
 
-@dispmath{\Delta{M} = \left|{-2.5\over ln(10)}\right|\times{\Delta{B}\over{B}}}
+The majority of the first group are those which only produce a single-valued measurement for each label (for example, its magnitude: a single number for every label/object).
+There are also multi-valued measurements per label (like spectra on 3D cubes) which keep their values in a single vector column of the same table (see @ref{Vector columns}).
+Both types of measurements will be written as one column in a final table/catalog that also contains all the other requested columns/measurements.
+Measurements that produce one value for the whole input (not a specific label/object) are stored as metadata in the 0-th (first) HDU of the output with predefined keywords described in @ref{Metameasurements on full input}.
 
-@noindent
-But, @mymath{\Delta{B}/B} is just the inverse of the Signal-to-noise ratio (@mymath{S/N}), so we can write the error in magnitude in terms of the signal-to-noise ratio:
-
-@dispmath{ \Delta{M} = {2.5\over{S/N\times ln(10)}} }
-
-MakeCatalog uses this relation to estimate the magnitude errors.
-The signal-to-noise ratio is calculated in different ways for clumps and objects, see Akhlaghi and Ichikawa @url{https://arxiv.org/abs/1505.01664,2015}), but this single equation can be used to estimate the measured magnitude error afterwards for any type of target.
-
-@node Surface brightness error of each detection, Completeness limit of each detection, Magnitude measurement error of each detection, Quantifying measurement limits
-@subsubsection Surface brightness error of each detection
-
-@cindex Surface brightness error
-@cindex Error in surface brightness
-We can derive the error in measuring the surface brightness based on the surface brightness (SB) equation of @ref{Brightness flux magnitude} and the generic magnitude error (@mymath{\Delta{M}}) of @ref{Magnitude measurement error of each detection}.
-Let's set @mymath{A} to represent the area and @mymath{\Delta{A}} to represent the error in measuring the area.
-For more on @mymath{\Delta{A}}, see the description of @option{--spatialresolution} in @ref{MakeCatalog inputs and basic settings}.
-
-@dispmath{\Delta{(SB)} = \Delta{M} + \left|{-2.5\over ln(10)}\right|\times{\Delta{A}\over{A}}}
-
-In the surface brightness equation mentioned above, @mymath{A} is in units of arcsecond squared and the conversion between arcseconds to pixels is a multiplication factor.
-Therefore as long as @mymath{A} and @mymath{\Delta{A}} have the same units, it does not matter if they are in arcseconds or pixels.
-Since the measure of spatial resolution (or area error) is the FWHM of the PSF which is usually defined in terms of pixels, its more intuitive to use pixels for @mymath{A} and @mymath{\Delta{A}}.
-
-@node Completeness limit of each detection, Upper limit magnitude of each detection, Surface brightness error of each detection, Quantifying measurement limits
-@subsubsection Completeness limit of each detection
-@cindex Completeness
-As the surface brightness of the objects decreases, the ability to detect them will also decrease.
-An important statistic is thus the fraction of objects of similar morphology and magnitude that will be detected with our detection algorithm/parameters in a given image.
-This fraction is known as @emph{completeness}.
-For brighter objects, completeness is 1: all bright objects that might exist over the image will be detected.
-However, as we go to objects of lower overall surface brightness, we will fail to detect a fraction of them, and fainter than a certain surface brightness level (for each morphology), nothing will be detectable in the image: you will need more data to construct a ``deeper'' image.
-For a given profile and dataset, the magnitude where the completeness drops below a certain level (usually above @mymath{90\%}) is known as the completeness limit.
-
-@cindex Purity
-@cindex False detections
-@cindex Detections false
-Another important parameter in measuring completeness is purity: the fraction of true detections to all detections.
-In effect purity is the measure of contamination by false detections: the higher the purity, the lower the contamination.
-Completeness and purity are anti-correlated: if we can allow a large number of false detections (that we might be able to remove by other means), we can significantly increase the completeness limit.
-
-One traditional way to measure the completeness and purity of a given sample is by embedding mock profiles in regions of the image with no detection.
-However in such a study we must be really careful to choose model profiles as similar to the target of interest as possible.
-
-
-
-@node Upper limit magnitude of each detection, Magnitude limit of image, Completeness limit of each detection, Quantifying measurement limits
-@subsubsection Upper limit magnitude of each detection
-Due to the noisy nature of data, it is possible to get arbitrarily faint magnitudes, especially when you use labels from another image (for example see @ref{Working with catalogs estimating colors}).
-Given the scatter caused by the dataset's noise, values fainter than a certain level are meaningless: another similar depth observation will give a radically different value.
-In such cases, measurements like the image magnitude limit are not useful because it is estimated for a certain morphology and is given for the whole image (it is a crude generalization; see see @ref{Magnitude limit of image}).
-You want a quality measure that is specific to each object.
-
-For example, assume that you have done your detection and segmentation on one filter and now you do measurements over the same labeled regions, but on other filters to measure colors (as we did in the tutorial @ref{Segmentation and making a catalog}).
-Some objects are not going to have any significant signal in the other filters, but for example, you measure magnitude of 36 for one of them!
-This is clearly unreliable (no dataset in current astronomy is able to detect such a faint signal).
-In another image with the same depth, using the same filter, you might measure a magnitude of 30 for it, and yet another might give you 33.
-Furthermore, the total sum of pixel values might actually be negative in some images of the same depth (due to noise).
-In these cases, no magnitude can be defined and MakeCatalog will place a NaN there (recall that a magnitude is a base-10 logarithm).
-
-@cindex Upper limit magnitude
-@cindex Magnitude, upper limit
-Using such unreliable measurements will directly affect our analysis, so we must not use the raw measurements.
-When approaching the limits of your detection method, it is therefore important to be able to identify such cases.
-But how can we know how reliable a measurement of one object on a given dataset is?
-
-When we confront such unreasonably faint magnitudes, there is one thing we can deduce: that if something actually exists under our labeled pixels (possibly buried deep under the noise), it's inherent magnitude is fainter than an @emph{upper limit magnitude}.
-To find this upper limit magnitude, we place the object's footprint (segmentation map) over a random part of the image where there are no detections, and measure the sum of pixel values within the footprint.
-Doing this a large number of times will give us a distribution of measurements of the sum.
-The standard deviation (@mymath{\sigma}) of that distribution can be used to quantify the upper limit magnitude for that particular object (given its particular shape and area):
-
-@dispmath{M_{up,n\sigma}=-2.5\times\log_{10}{(n\sigma_m)}+z \quad\quad [mag/target]}
-
-@cindex Correlated noise
-Traditionally, faint/small object photometry was done using fixed circular apertures (for example, with a diameter of @mymath{N} arc-seconds) and there was not much processing involved (to make a deep coadd).
-Hence, the upper limit was synonymous with the surface brightness limit discussed above: one value for the whole image.
-The problem with this simplified approach is that the number of pixels in the aperture directly affects the final distribution and thus magnitude.
-Also the image correlated noise might actually create certain patterns, so the shape of the object can also affect the final result.
-Fortunately, with the much more advanced hardware and software of today, we can make customized segmentation maps (footprint) for each object and have enough computing power to actually place that footprint over many random places.
-As a result, the per-target upper-limit magnitude and general surface brightness limit have diverged.
-
-When any of the upper-limit-related columns requested, MakeCatalog will randomly place each target's footprint over the undetected parts of the dataset as described above, and estimate the required properties.
-The procedure is fully configurable with the options in @ref{Upper-limit settings}.
-You can get the full list of upper-limit related columns of MakeCatalog with this command (the extra @code{--} before @code{--upperlimit} is necessary@footnote{Without the extra @code{--}, grep will assume that @option{--upperlimit} is one of its own options, and will thus abort, complaining that it has no option with this name.}):
-
-@example
-$ astmkcatalog --help | grep -- --upperlimit
-@end example
-
-@node Magnitude limit of image, Surface brightness limit of image, Upper limit magnitude of each detection, Quantifying measurement limits
-@subsubsection Magnitude limit of image
-
-@cindex Magnitude limit
-Suppose we have taken two images of the same field of view with the same CCD, once with a smaller telescope, and once with a larger one.
-Because we used the same CCD, the noise will be very similar.
-However, the larger telescope has gathered more light, therefore the same star or galaxy will have a higher signal-to-noise ratio (S/N) in the image taken with the larger one.
-The same applies for a coadded image of the field compared to a single-exposure image of the same telescope.
-
-This concept is used by some researchers to define the ``magnitude limit'' or ``detection limit'' at a certain S/N (sometimes 10, 5 or 3 for example, also written as @mymath{10\sigma}, @mymath{5\sigma} or @mymath{3\sigma}).
-To do this, they measure the magnitude and signal-to-noise ratio of all the objects within an image and measure the mean (or median) magnitude of objects at the desired S/N.
-A fully working example of deriving the magnitude limit is available in the tutorials section: @ref{Measuring the dataset limits}.
-
-However, this method should be used with extreme care!
-This is because the shape of the object becomes important in this method: a sharper object will have a higher @emph{measured} S/N compared to a more diffuse object at the same original magnitude.
-Besides the inherent shape/sharpness of the object, issues like the PSF also become important in this method (because the finally observed shapes of objects are important here): two surveys with the same surface brightness limit (see @ref{Surface brightness limit of image}) will have different magnitude limits if one is taken from space and the other from the ground.
-
-@node Surface brightness limit of image, Upper limit surface brightness of image, Magnitude limit of image, Quantifying measurement limits
-@subsubsection Surface brightness limit of image
-@cindex Surface brightness
-As we make more observations on one region of the sky and add/combine the observations into one dataset, both the signal and the noise increase.
-However, the signal increases much faster than the noise:
-Assuming you add @mymath{N} datasets with equal exposure times, the signal will increases as a multiple of @mymath{N}, while noise increases as @mymath{\sqrt{N}}.
-Therefore the signal-to-noise ratio increases by a factor of @mymath{\sqrt{N}}.
-Visually, fainter (per pixel) parts of the objects/signal in the image will become more visible/detectable.
-The noise-level is known as the dataset's surface brightness limit.
-
-You can think of the noise as muddy water that is completely covering a flat ground@footnote{The ground is the sky value in this analogy, see @ref{Sky value}.
-Note that this analogy only holds for a flat sky value across the surface of the image or ground.}.
-The signal (coming from astronomical objects in real data) will be summits/hills that start from the flat sky level (under the muddy water) and their summits can sometimes reach above the muddy water.
-Let's assume that in your first observation the muddy water has just been stirred and except a few small peaks, you cannot see anything through the mud.
-As you wait and make more observations/exposures, the mud settles down and the @emph{depth} of the transparent water increases.
-As a result, more and more summits become visible and the lower parts of the hills (parts with lower surface brightness) can be seen more clearly.
-In this analogy@footnote{Note that this muddy water analogy is not perfect, because while the water-level remains the same all over a peak, in data analysis, the Poisson noise increases with the level of data.}, height (from the ground) is the @emph{surface brightness} and the height of the muddy water at the moment you combine your data, is your @emph{surface brightness limit} for that moment.
-
-@cindex ACS camera
-@cindex Surface brightness limit
-@cindex Limit, surface brightness
-On different instruments, pixels cover different spatial angles over the sky.
-For example, the width of each pixel on the ACS camera on the Hubble Space Telescope (HST) is roughly 0.05 seconds of arc, while the pixels of SDSS are each 0.396 seconds of arc (almost eight times wider@footnote{Ground-based instruments like the SDSS suffer from strong smoothing due to the atmosphere.
-Therefore, increasing the pixel resolution (or decreasing the width of a pixel) will not increase the received information).}).
-Nevertheless, irrespective of its sky coverage, a pixel is our unit of data collection.
-
-To start with, we define the low-level Surface brightness limit or @emph{depth}, in units of magnitude/pixel with the equation below (assuming the image has zero point magnitude @mymath{z} and we want the @mymath{n}th multiple of @mymath{\sigma_m}).
-Where @mymath{\sigma_m} is the median of the measured sky standard deviation in the image.
-
-@dispmath{SB_{n\sigma,\rm pixel}=-2.5\times\log_{10}{(n\sigma_m)}+z \quad\quad [mag/pixel]}
-
-@cindex XDF survey
-@cindex CANDELS survey
-@cindex eXtreme Deep Field (XDF) survey
-As an example, the XDF survey covers part of the sky that the HST has observed the most (for 85 orbits) and is consequently very small (@mymath{\sim4} minutes of arc, squared).
-On the other hand, the CANDELS survey, is one of the widest multi-color surveys done by the HST covering several fields (about 720 arcmin@mymath{^2}) but its deepest fields have only 9 orbits observation.
-The @mymath{1\sigma} depth of the XDF and CANDELS-deep surveys in the near infrared WFC3/F160W filter are respectively 34.40 and 32.45 magnitudes/pixel.
-In a single orbit image, this same field has a @mymath{1\sigma} depth of 31.32 magnitudes/pixel.
-Recall that a larger magnitude corresponds to fainter objects, see @ref{Brightness flux magnitude}.
-
-@cindex Pixel scale
-The low-level magnitude/pixel measurement above is only useful when all the datasets you want to use, or compare, have the same pixel size.
-However, you will often find yourself using, or comparing, datasets from various instruments with different pixel scales (projected pixel width, in arc-seconds).
-If we know the pixel scale, we can obtain a more easily comparable surface brightness limit in units of: magnitude/arcsec@mymath{^2}.
-But another complication is that astronomical objects are usually larger than 1 arcsec@mymath{^2}.
-As a result, it is common to measure the surface brightness limit over a larger (but fixed, depending on context) area.
-
-Let's assume that every pixel is @mymath{p} arcsec@mymath{^2} and we want the surface brightness limit for an object covering A arcsec@mymath{^2} (so @mymath{A/p} is the number of pixels that cover an area of @mymath{A} arcsec@mymath{^2}).
-On the other hand, noise is added in RMS@footnote{If you add three datasets with noise @mymath{\sigma_1}, @mymath{\sigma_2} and @mymath{\sigma_3}, the resulting noise level is @mymath{\sigma_t=\sqrt{\sigma_1^2+\sigma_2^2+\sigma_3^2}}, so when @mymath{\sigma_1=\sigma_2=\sigma_3\equiv\sigma}, then @mymath{\sigma_t=\sigma\sqrt{3}}.
-In this case, the area @mymath{A} is covered by @mymath{A/p} pixels, so the noise level is @mymath{\sigma_t=\sigma\sqrt{A/p}}.}, hence the noise level in @mymath{A} arcsec@mymath{^2} is @mymath{n\sigma_m\sqrt{A/p}}.
-But we want the result in units of arcsec@mymath{^2}, so we should divide this by @mymath{A} arcsec@mymath{^2}:
-@mymath{n\sigma_m\sqrt{A/p}/A=n\sigma_m\sqrt{A/(pA^2)}=n\sigma_m/\sqrt{pA}}.
-Plugging this into the magnitude equation, we get the @mymath{n\sigma} surface brightness limit, over an area of A arcsec@mymath{^2}, in units of magnitudes/arcsec@mymath{^2} (see the end of this section on how to derive this using Gnuastro):
-
-@dispmath{SB_{{n\sigma,\rm A arcsec}^2}=-2.5\times\log_{10}{\left(n\sigma_m\over \sqrt{pA}\right)+z} \quad\quad [mag/arcsec^2]}
-
-Since the surface brightness limit is a theoretical extrapolation of one pixel's noise level, we can use a reference image's surface brightness limit (@mymath{SB_r}) to derive an expected/theoretical surface brightness limit of another image (on another telescope with another exposure time, but with @emph{the same} filter; let's call it @mymath{SB_i}).
-Assuming no correlated noise (which is only valid on a single exposure!), the @mymath{\sigma_m} described above is purely due to the Poisson noise of the background signal (for example Zodiacal light, light pollution or etc).
-Therefore, taking @mymath{S} to be the exposed surface of the telescope's primary mirror (or lens) and @mymath{t} to be the exposure time, the signal of the background will increase with @mymath{S\times t} and therefore @mymath{\sigma_m\propto \sqrt{St}}.
-Plugging this into two instances of the equation above, allows us to derive @mymath{SB_i} from @mymath{SB_r}
-
-@dispmath{SB_i = SB_r + 2.5\log_{10}\left( {n_i \over n_r} \sqrt{{S_i \over S_r}{t_i \over t_r}{A_i \over A_r}} \right)}
-
-@cindex LSST
-@cindex Vera C. Rubin Observatory
-@cindex Observatory: Vera C. Rubin
-@cindex Rubin (Vera C.) Observatory
-Since almost all mirrors are circular, we can simplify the relation above by replacing the exposed surface with the exposed radius (accounting for the non-exposed area in most reflective telescopes due to the secondary mirror) as shown in the quation below.
-Note that we didn't simply say ``radius'' (and the equation does not have @mymath{r}), but ``exposed radius'' (@mymath{r_e} in the equation).
-This is a very important factor to have in mind.
-For example in the Vera C. Rubin Observatory (that will be conducting the LSST survey) the primary mirror has a diameter of 8.4 meters, however, the inner cicular area of radius 5 meters is not used (due to the second and third mirrors)@footnote{@url{https://commons.wikimedia.org/wiki/File:LSSToptics.jpg}}.
-Therefore, the useful surface of the Vera C. Rubin telescope is @mymath{\pi(8.4^2-5.0^2)=\pi45.56=\pi6.75^2}, giving it an exposed radius of @mymath{r_e=6.75m} (for an easy implementation of this equation in Gnuastro, see the @code{sblim-diff} operator of @ref{Unit conversion operators}).
-
-@dispmath{SB_i = SB_r + 2.5\log_{10}\left( {r_{ei} \over r_{er}}{n_i \over n_r} \sqrt{{t_i \over t_r}{A_i \over A_r}} \right)}
-
-@cindex Correlated noise
-@cindex Noise, correlated
-As you saw in its derivation, the calculation above extrapolates the noise in one pixel over all the input's pixels!
-In other words, all pixels are treated independently in the measurement of the standard deviation.
-It therefore implicitly assumes that the noise is the same in all of the pixels.
-But this only happens in individual exposures: reduced data will have correlated noise because they are a coadd of many individual exposures that have been warped (thus mixing the pixel values).
-A more accurate measure which will provide a realistic value for every labeled region is known as the @emph{upper-limit magnitude}, which is discussed in the next section (@ref{Upper limit surface brightness of image}).
-
-Within Gnuastro, measuring the surface brighntess limit of the image is very easy: the outputs of NoiseChisel include the Sky standard deviation (@mymath{\sigma}) on every group of pixels (a tile) that were calculated from the undetected pixels in each tile, see @ref{Tessellation} and @ref{NoiseChisel output}.
-The @mymath{\sigma_m} used above is recorded in the @code{MEDSTD} keyword of the @code{SKY_STD} extension of NoiseChisel's output.
-Therefore, the first thing you need to do is to run NoiseChisel on the image.
-
-@cindex World Coordinate System (WCS)
-MakeCatalog will then calculate the input dataset's @mymath{SB_{n\sigma,\rm pixel}} and @mymath{SB_{{n\sigma,\rm A arcsec}^2}} and will write them as the @code{SBLMAGPIX} and @code{SBLMAG} keywords the output catalog(s), see @ref{MakeCatalog output}.
-You can set your desired @mymath{n}-th multiple of @mymath{\sigma} and the @mymath{A} arcsec@mymath{^2} area using the following two options respectively: @option{--sfmagnsigma} and @option{--sfmagarea} (see @ref{MakeCatalog output}).
-Just note that @mymath{SB_{{n\sigma,\rm A arcsec}^2}} is only calculated if the input has World Coordinate System (WCS).
-Without WCS, the pixel scale cannot be derived.
-
-The series of commands to find the surface brightness limit in Gnuastro are given below (assuming your image is called @file{image.fits} and its zero point magnitude is 25).
-For a more detailed hands-on introduction, see @ref{Image surface brightness limit} (which is part of a larger tutorial).
-
-@example
-$ zp=25.0
-$ astnoisechisel image.fits -o nc.fits
-$ astmkcatalog nc.fits -hDETECTIONS --sn --zeropoint=$zp \
-               --output=cat.fits
-$ astfits cat.fits --keyvalue=SBLMAG --quiet | asttable -Y
-@end example
-
-@node Upper limit surface brightness of image,  , Surface brightness limit of image, Quantifying measurement limits
-@subsubsection Upper limit surface brightness of image
-
-@cindex Correlated noise
-@cindex Noise, correlated
-As mentioned in @ref{Surface brightness limit of image}, the surface brightness limit assumes independent pixels when deriving the standard deviation (the main input in the equation).
-It just extrapolates the standard deviation derived from one pixel to the requested area.
-But as mentioned at the end of that section, we have correlated noise in our science-ready (deep) images and the noise of the pixels are not independent.
-
-Because of this, the surface brightness limit will always under-estimate the surface brightness (give fainter values than what is statistically possible in the data for the requested area).
-To account for the correlated noise in the images, we need to derive the standard deviation over a group of pixels that fall within a certain footprint/shape.
-For example over a circular aperture of radius 5.6419 arcsec, or a square with a side length of @mymath{10} arcsec.
-Depending on the correlated noise systematics, the limit can be (very) different for different shapes, even if they have the same area (as in the circle and square mentioned in the previous sentence: both have an area of 100 arcsec@mymath{^2}).
-
-Therefore we need to derive the standard deviation that goes into the surface brightness limit equation over a certain footprint/shape.
-To do that, we should:
-@enumerate
-@item
-Place the desired footprint many times randomly over all the undetected pixels in an image.
-In MakeCatalog, the number of these random positions can be configured with @option{--upnum} and you can check their positions with @option{--checkuplim}.
-@item
-Calculate the sum of pixel values in each randomly placed footprint.
-@item
-Calculate the sigma-clipped standard deviation of the resulting distribution (of sum of pixel values in the randomly placed apertures).
-Therefore, each footprint's measurement is independent of the other.
-@item
-Calculate the surface brightness of that standrad deviation (after multiplying it with your desired multiple of sigma).
-For the definition of surface brightness, see @ref{Brightness flux magnitude}.
-@end enumerate
-
-If you have reviewed the previous sections, the measurements over randomly placed apertures should remind you of @ref{Upper limit magnitude of each detection}.
-Generally, the ``upper limit'' prefix is given to all measurements with this way of measurement.
-Therefore this limit is called ``Upper limit surface brightness'' of an image (for a multiple of sigma, over a certain shape).
-
-Traditionally a circular aperture of a fixed radius (in arcseconds) has been used.
-In Gnuastro, a labeled image containing the desired shape/aperture can be generated with MakeProfiles.
-The position of the label is irrelevant because the upper limit measurements are done on the many randomly placed footprints in undetected regions (independent of where the label is positioned).
-That labeled image should then be given to MakeCatalog, while requesting @option{--upperlimit-sb}.
-Of course, all detected signal in the image needs to be masked (set to blank/NaN) so MakeCatalog doesn't use randomly placed apertures that overlap with detected signal in the image.
-
-Going into the implementation details can get pretty hard to follow in English, so a full hands-on tutorial is available in the second half of @ref{Image surface brightness limit}.
-Read that tutorial with the same input images and run the commands, and see each output image to get a good understanding of how to properly measure the upper limit surface brightness of your images.
-
-
-
-
-
-
-
-
-
-
-@node Measuring elliptical parameters, Adding new columns to MakeCatalog, Quantifying measurement limits, MakeCatalog
-@subsection Measuring elliptical parameters
-
-The shape or morphology of a target is one of the most commonly desired parameters of a target.
-Here, we will review the derivation of the most basic/simple morphological parameters: the elliptical parameters for a set of labeled pixels.
-The elliptical parameters are: the (semi-)major axis, the (semi-)minor axis and the position angle along with the central position of the profile.
-The derivations below follow the SExtractor manual derivations with some added explanations for easier reading.
-
-@cindex Moments
-Let's begin with one dimension for simplicity: Assume we have a set of @mymath{N} values @mymath{B_i} (for example, showing the spatial distribution of a target's brightness), each at position @mymath{x_i}.
-The simplest parameter we can define is the geometric center of the object (@mymath{x_g}) (ignoring the brightness values): @mymath{x_g=(\sum_ix_i)/N}.
-@emph{Moments} are defined to incorporate both the value (brightness) and position of the data.
-The first moment can be written as:
-
-@dispmath{\overline{x}={\sum_iB_ix_i \over \sum_iB_i}}
-
-@cindex Variance
-@cindex Second moment
-@noindent
-This is essentially the weighted (by @mymath{B_i}) mean position.
-The geometric center (@mymath{x_g}, defined above) is a special case of this with all @mymath{B_i=1}.
-The second moment is essentially the variance of the distribution:
-
-@dispmath{\overline{x^2}\equiv{\sum_iB_i(x_i-\overline{x})^2 \over
-        \sum_iB_i} = {\sum_iB_ix_i^2 \over \sum_iB_i} -
-        2\overline{x}{\sum_iB_ix_i\over\sum_iB_i} + \overline{x}^2
-        ={\sum_iB_ix_i^2 \over \sum_iB_i} - \overline{x}^2}
-
-@cindex Standard deviation
-@noindent
-The last step was done from the definition of @mymath{\overline{x}}.
-Hence, the square root of @mymath{\overline{x^2}} is the spatial standard deviation (along the one-dimension) of this particular brightness distribution (@mymath{B_i}).
-Crudely (or qualitatively), you can think of its square root as the distance (from @mymath{\overline{x}}) which contains a specific amount of the flux (depending on the @mymath{B_i} distribution).
-Similar to the first moment, the geometric second moment can be found by setting all @mymath{B_i=1}.
-So while the first moment quantified the position of the brightness distribution, the second moment quantifies how that brightness is dispersed about the first moment.
-In other words, it quantifies how ``sharp'' the object's image is.
-
-@cindex Floating point error
-Before continuing to two dimensions and the derivation of the elliptical parameters, let's pause for an important implementation technicality.
-You can ignore this paragraph and the next two if you do not want to implement these concepts.
-The basic definition (first definition of @mymath{\overline{x^2}} above) can be used without any major problem.
-However, using this fraction requires two runs over the data: one run to find @mymath{\overline{x}} and another run to find @mymath{\overline{x^2}} from @mymath{\overline{x}}, this can be slow.
-The advantage of the last fraction above, is that we can estimate both the first and second moments in one run (since the @mymath{-\overline{x}^2} term can easily be added later).
-
-The logarithmic nature of floating point number digitization creates a complication however: suppose the object is located between pixels 10000 and 10020.
-Hence the target's pixels are only distributed over 20 pixels (with a standard deviation @mymath{<20}), while the mean has a value of @mymath{\sim10000}.
-The @mymath{\sum_iB_i^2x_i^2} will go to very very large values while the individual pixel differences will be orders of magnitude smaller.
-This will lower the accuracy of our calculation due to the limited accuracy of floating point operations.
-The variance only depends on the distance of each point from the mean, so we can shift all position by a constant/arbitrary @mymath{K} which is much closer to the mean: @mymath{\overline{x-K}=\overline{x}-K}.
-Hence we can calculate the second order moment using:
-
-@dispmath{ \overline{x^2}={\sum_iB_i(x_i-K)^2 \over \sum_iB_i} -
-           (\overline{x}-K)^2 }
-
-@noindent
-The closer @mymath{K} is to @mymath{\overline{x}}, the better (the sums of squares will involve smaller numbers), as long as @mymath{K} is within the object limits (in the example above: @mymath{10000\leq{K}\leq10020}), the floating point error induced in our calculation will be negligible.
-For the most simplest implementation, MakeCatalog takes @mymath{K} to be the smallest position of the object in each dimension.
-Since @mymath{K} is arbitrary and an implementation/technical detail, we will ignore it for the remainder of this discussion.
-
-In two dimensions, the mean and variances can be written as:
-
-@dispmath{\overline{x}={\sum_iB_ix_i\over B_i}, \quad
-          \overline{x^2}={\sum_iB_ix_i^2 \over \sum_iB_i} -
-          \overline{x}^2}
-@dispmath{\overline{y}={\sum_iB_iy_i\over B_i}, \quad
-          \overline{y^2}={\sum_iB_iy_i^2 \over \sum_iB_i} -
-          \overline{y}^2}
-@dispmath{\quad\quad\quad\quad\quad\quad\quad\quad\quad
-          \overline{xy}={\sum_iB_ix_iy_i \over \sum_iB_i} -
-          \overline{x}\times\overline{y}}
-
-If an elliptical profile's major axis exactly lies along the @mymath{x} axis, then @mymath{\overline{x^2}} will be directly proportional with the profile's major axis, @mymath{\overline{y^2}} with its minor axis and @mymath{\overline{xy}=0}.
-However, in reality we are not that lucky and (assuming galaxies can be parameterized as an ellipse) the major axis of galaxies can be in any direction on the image (in fact this is one of the core principles behind weak-lensing by shear estimation).
-So the purpose of the remainder of this section is to define a strategy to measure the position angle and axis ratio of some randomly positioned ellipses in an image, using the raw second moments that we have calculated above in our image coordinates.
-
-Let's assume we have rotated the galaxy by @mymath{\theta}, the new second order moments are:
-
-@dispmath{\overline{x_\theta^2} = \overline{x^2}\cos^2\theta +
-           \overline{y^2}\sin^2\theta -
-           2\overline{xy}\cos\theta\sin\theta }
-@dispmath{\overline{y_\theta^2} = \overline{x^2}\sin^2\theta +
-           \overline{y^2}\cos^2\theta +
-           2\overline{xy}\cos\theta\sin\theta}
-@dispmath{\overline{xy_\theta} = \overline{x^2}\cos\theta\sin\theta -
-           \overline{y^2}\cos\theta\sin\theta +
-           \overline{xy}(\cos^2\theta-\sin^2\theta)}
-
-@noindent
-The best @mymath{\theta} (@mymath{\theta_0}, where major axis lies along the @mymath{x_\theta} axis) can be found by:
-
-@dispmath{\left.{\partial \overline{x_\theta^2} \over \partial \theta}\right|_{\theta_0}=0}
-Taking the derivative, we get:
-@dispmath{2\cos\theta_0\sin\theta_0(\overline{y^2}-\overline{x^2}) +
-2(\cos^2\theta_0-\sin^2\theta_0)\overline{xy}=0} When
-@mymath{\overline{x^2}\neq\overline{y^2}}, we can write:
-@dispmath{\tan2\theta_0 =
-2{\overline{xy} \over \overline{x^2}-\overline{y^2}}.}
-
-@cindex Position angle
-@noindent
-MakeCatalog uses the standard C math library's @code{atan2} function to estimate @mymath{\theta_0}, which we define as the position angle of the ellipse.
-To recall, this is the angle of the major axis of the ellipse with the @mymath{x} axis.
-By definition, when the elliptical profile is rotated by @mymath{\theta_0}, then @mymath{\overline{xy_{\theta_0}}=0}, @mymath{\overline{x_{\theta_0}^2}} will be the extent of the maximum variance and @mymath{\overline{y_{\theta_0}^2}} the extent of the minimum variance (which are perpendicular for an ellipse).
-Replacing @mymath{\theta_0} in the equations above for @mymath{\overline{x_\theta}} and @mymath{\overline{y_\theta}}, we can get the semi-major (@mymath{A}) and semi-minor (@mymath{B}) lengths:
-
-@dispmath{A^2\equiv\overline{x_{\theta_0}^2}= {\overline{x^2} +
-\overline{y^2} \over 2} + \sqrt{\left({\overline{x^2}-\overline{y^2} \over 2}\right)^2 + \overline{xy}^2}}
-
-@dispmath{B^2\equiv\overline{y_{\theta_0}^2}= {\overline{x^2} +
-\overline{y^2} \over 2} - \sqrt{\left({\overline{x^2}-\overline{y^2} \over 2}\right)^2 + \overline{xy}^2}}
-
-As a summary, it is important to remember that the units of @mymath{A} and @mymath{B} are in pixels (the standard deviation of a positional distribution) and that they represent the spatial light distribution of the object in both image dimensions (rotated by @mymath{\theta_0}).
-When the object cannot be represented as an ellipse, this interpretation breaks down: @mymath{\overline{xy_{\theta_0}}\neq0} and @mymath{\overline{y_{\theta_0}^2}} will not be the direction of minimum variance.
-
-
-
-
-
-
-@node Adding new columns to MakeCatalog, MakeCatalog measurements, Measuring elliptical parameters, MakeCatalog
-@subsection Adding new columns to MakeCatalog
-
-MakeCatalog is designed to allow easy addition of different measurements over a labeled image; see Akhlaghi @url{https://arxiv.org/abs/1611.06387v1,2016}.
-A check-list style description of necessary steps to do that is described in this section.
-The common development characteristics of MakeCatalog and other Gnuastro programs is explained in @ref{Developing}.
-We strongly encourage you to have a look at that chapter to greatly simplify your navigation in the code.
-After adding and testing your column, you are most welcome (and encouraged) to share it with us so we can add to the next release of Gnuastro for everyone else to also benefit from your efforts.
-
-MakeCatalog will first pass over each label's pixels two times and do necessary raw/internal calculations.
-Once the passes are done, it will use the raw information for filling the final catalog's columns.
-In the first pass it will gather mainly object information and in the second run, it will mainly focus on the clumps, or any other measurement that needs an output from the first pass.
-These two passes are designed to be raw summations: no extra processing.
-This will allow parallel processing and simplicity/clarity.
-So if your new calculation, needs new raw information from the pixels, then you will need to also modify the respective @code{mkcatalog_first_pass} and @code{mkcatalog_second_pass} functions (both in @file{bin/mkcatalog/mkcatalog.c}) and define new raw table columns in @file{main.h} (hopefully the comments in the code are clear enough).
-
-In all these different places, the final columns are sorted in the same order (same order as @ref{Invoking astmkcatalog}).
-This allows a particular column/option to be easily found in all steps.
-Therefore in adding your new option, be sure to keep it in the same relative place in the list in all the separate places (it does not necessarily have to be in the end), and near conceptually similar options.
-
-@table @file
-
-@item main.h
-The @code{objectcols} and @code{clumpcols} enumerated variables (@code{enum}) define the raw/internal calculation columns.
-If your new column requires new raw calculations, add a row to the respective list.
-If your calculation requires any other settings parameters, you should add a variable to the @code{mkcatalogparams} structure.
-
-@item ui.c
-If the new column needs raw calculations (an entry was added in @code{objectcols} and @code{clumpcols}), specify which inputs it needs in @code{ui_necessary_inputs}, similar to the other options.
-Afterwards, if your column includes any particular settings (you needed to add a variable to the @code{mkcatalogparams} structure in @file{main.h}), you should do the sanity checks and preparations for it here.
-
-@item ui.h
-The @code{option_keys_enum} associates a unique value for each option to MakeCatalog.
-The options that have a short option version, the single character short comment is used for the value.
-Those that do not have a short option version, get a large integer automatically.
-You should add a variable here to identify your desired column.
-
-
-@cindex GNU C library
-@item args.h
-This file specifies all the parameters for the GNU C library, Argp structure that is in charge of reading the user's options.
-To define your new column, just copy an existing set of parameters and change the first, second and 5th values (the only ones that differ between all the columns), you should use the macro you defined in @file{ui.h} here.
-
-
-@item columns.c
-This file contains the main definition and high-level calculation of your new column through the @code{columns_define_alloc} and @code{columns_fill} functions.
-In the first, you specify the basic information about the column: its name, units, comments, type (see @ref{Numeric data types}) and how it should be printed if the output is a text file.
-You should also specify the raw/internal columns that are necessary for this column here as the many existing examples show.
-Through the types for objects and rows, you can specify if this column is only for clumps, objects or both.
-
-The second main function (@code{columns_fill}) writes the final value into the appropriate column for each object and clump.
-As you can see in the many existing examples, you can define your processing on the raw/internal calculations here and save them in the output.
-
-@item mkcatalog.c
-This file contains the low-level parsing functions.
-To be optimized, the parsing is done in parallel through the @code{mkcatalog_single_object} function.
-This function initializes the necessary arrays and calls the lower-level @code{parse_objects} and @code{parse_clumps} for actually going over the pixels.
-They are all heavily commented, so you should be able to follow where to add your necessary low-level calculations.
-
-@item doc/gnuastro.texi
-Update this manual and add a description for the new column.
-
-@end table
-
-
-
-
-@node MakeCatalog measurements, Invoking astmkcatalog, Adding new columns to MakeCatalog, MakeCatalog
-@subsection MakeCatalog measurements
-
-MakeCatalog's output measurements/columns can be specified using command-line options (@ref{Options}).
-The current measurements in MakeCatalog are those which only produce one final value for each label (for example, its magnitude: a single number).
-All the different label's measurements can be written as one column in a final table/catalog that contains other columns for other similar single-number measurements.
-
-In this case, all the different label's measurements can be written as one column in a final table/catalog that contains other columns for other similar single-number measurements.
 The majority of this section is devoted to MakeCatalog's single-valued measurements.
 However, MakeCatalog can also do measurements that produce more than one value for each label.
 Currently the only such measurement is generation of spectra from 3D cubes with the @option{--spectrum} option and it is discussed in the end of this section.
@@ -30600,12 +30117,13 @@ Columns/options that are unique to one catalog (only objects, or only clumps), a
 * Position measurements in WCS::  Containing WCS (for example RA/Dec) measurements.
 * Brightness measurements::     Using pixel values of each label.
 * Surface brightness measurements::  Various ways to measure surface brightness.
+* Upper limit measurements::
 * Morphology measurements nonparametric::  Non-parametric morphology.
 * Morphology measurements elliptical::  Elliptical morphology measurements.
 * Measurements per slice spectra::  Measurements on each slice (like spectra).
 @end menu
 
-@node Identifier columns, Position measurements in pixels, MakeCatalog measurements, MakeCatalog measurements
+@node Identifier columns, Position measurements in pixels, MakeCatalog measurements on each label, MakeCatalog measurements on each label
 @subsubsection Identifier columns
 
 The identifier of each row (group of measurements) is usually the first thing you will be requesting from MakeCatalog.
@@ -30632,7 +30150,7 @@ Hence if only object catalogs are required, it has the same effect as @option{--
 [Clumps] The ID of this clump in its host object.
 @end table
 
-@node Position measurements in pixels, Position measurements in WCS, Identifier columns, MakeCatalog measurements
+@node Position measurements in pixels, Position measurements in WCS, Identifier columns, MakeCatalog measurements on each label
 @subsubsection Position measurements in pixels
 
 The position of a labeled region within your input dataset (in its own units) can be measured with the options in this section.
@@ -30643,7 +30161,7 @@ As you see below, there are various ways to define the ``position'' of an object
 @table @option
 @item -x
 @itemx --x
-The flux weighted center of all objects and clumps along the first FITS axis (horizontal when viewed in SAO DS9), see @mymath{\overline{x}} in @ref{Measuring elliptical parameters}.
+The flux weighted center of all objects and clumps along the first FITS axis (horizontal when viewed in SAO DS9), see @mymath{\overline{x}} in @ref{Morphology measurements elliptical}.
 The weight has to have a positive value (pixel value larger than the Sky value) to be meaningful! Specially when doing matched photometry, this might not happen: no pixel value might be above the Sky value.
 For such detections, the geometric center will be reported in this column (see @option{--geo-x}).
 You can use @option{--weight-area} to see which was used.
@@ -30729,7 +30247,7 @@ See @option{--geo-x}.
 the third FITS axis. See @option{--geo-z}.
 @end table
 
-@node Position measurements in WCS, Brightness measurements, Position measurements in pixels, MakeCatalog measurements
+@node Position measurements in WCS, Brightness measurements, Position measurements in pixels, MakeCatalog measurements on each label
 @subsubsection Position measurements in WCS
 
 The position of a labeled region within your input dataset (in the World Coordinate System, or WCS) can be measured with the options in this section.
@@ -30806,7 +30324,7 @@ The second WCS axis is commonly used as declination in images.
 The third WCS axis is commonly used as wavelength in integral field unit data cubes.
 @end table
 
-@node Brightness measurements, Surface brightness measurements, Position measurements in WCS, MakeCatalog measurements
+@node Brightness measurements, Surface brightness measurements, Position measurements in WCS, MakeCatalog measurements on each label
 @subsubsection Brightness measurements
 
 Within an image, pixels have both a position and a value.
@@ -30892,55 +30410,44 @@ For more on sigma-clipping and how to define it, see @option{--sigclip-number}.
 
 @item -m
 @itemx --magnitude
-The magnitude of clumps or objects, see @option{--sum}.
+The magnitude of clumps or objects.
+It is derived through the pixel counts over the label (which you can see in the @option{--sum} column) and the value given to the @option{--zeropoint} through the definition of the magnitude described in @ref{Brightness flux magnitude}.
 
 @item --magnitude-error
 The magnitude error of clumps or objects.
-The magnitude error is calculated from the signal-to-noise ratio (see @option{--sn} and @ref{Quantifying measurement limits}).
-Note that until now this error assumes uncorrelated pixel values and also does not include the error in estimating the aperture (or error in generating the labeled image).
-
-For now these factors have to be found by other means.
-@url{https://savannah.gnu.org/task/index.php?14124, Task 14124} has been defined for work on adding these sources of error too.
+The method used is described below.
+As we see there, this error assumes uncorrelated pixel values and also does not include the error in estimating the aperture (or error in generating the labeled image).
+See the status of implementation of such factors in @url{https://savannah.gnu.org/task/index.php?14124, Task 14124}.
 
 The returned value will be NaN when the label covers only NaN pixels in the values image, or a pixel is NaN in the @option{--instd} image, but non-NaN in the values image.
 The latter situation usually happens when there is a bug in the previous steps of your analysis, and is important because those pixels with a NaN in the @option{--instd} image may contribute significantly to the final error.
 If you want to ignore those pixels in the error measurement, set them to zero (which is a meaningful number in such scenarios).
 
+The raw error in measuring the magnitude is only meaningful when the object's magnitude is brighter than the upper-limit magnitude (see below).
+As discussed in @ref{Brightness flux magnitude}, the magnitude (@mymath{M}) of an object with brightness @mymath{B} and zero point magnitude @mymath{z} can be written as:
+
+@dispmath{M=-2.5\log_{10}(B)+z}
+
+@noindent
+Calculating the derivative with respect to @mymath{B}, we get:
+
+@dispmath{{dM\over dB} = {-2.5\over {B\times ln(10)}}}
+
+@noindent
+From the Tailor series (@mymath{\Delta{M}=dM/dB\times\Delta{B}}), we can write:
+
+@dispmath{\Delta{M} = \left|{-2.5\over ln(10)}\right|\times{\Delta{B}\over{B}}}
+
+@noindent
+But, @mymath{\Delta{B}/B} is just the inverse of the Signal-to-noise ratio (@mymath{S/N}), so we can write the error in magnitude in terms of the signal-to-noise ratio:
+
+@dispmath{ \Delta{M} = {2.5\over{S/N\times ln(10)}} }
+
+MakeCatalog uses this relation to estimate the magnitude errors.
+The signal-to-noise ratio is calculated in different ways for clumps and objects, see Akhlaghi and Ichikawa @url{https://arxiv.org/abs/1505.01664,2015}), but this single equation can be used to estimate the measured magnitude error afterwards for any type of target.
+
 @item --clumps-magnitude
 [Objects] The magnitude of all clumps in this object, see @option{--clumps-sum}.
-
-@item --upperlimit
-The upper limit value (in units of the input image) for this object or clump.
-This is the sigma-clipped standard deviation of the random distribution, multiplied by the value of @option{--upnsigma}).
-See @ref{Quantifying measurement limits} and @ref{Upper-limit settings} for a complete explanation.
-This is very important for the fainter and smaller objects in the image where the measured magnitudes are not reliable.
-
-@item --upperlimit-mag
-The upper limit magnitude for this object or clump.
-See @ref{Quantifying measurement limits} and @ref{Upper-limit settings} for a complete explanation.
-This is very important for the fainter and smaller objects in the image where the measured magnitudes are not reliable.
-
-@item --upperlimit-onesigma
-The @mymath{1\sigma} upper limit value (in units of the input image) for this object or clump.
-See @ref{Quantifying measurement limits} and @ref{Upper-limit settings} for a complete explanation.
-When @option{--upnsigma=1}, this column's values will be the same as @option{--upperlimit}.
-
-@item --upperlimit-sigma
-The position of the label's sum measured within the distribution of randomly placed upperlimit measurements in units of the distribution's @mymath{\sigma} or standard deviation.
-See @ref{Quantifying measurement limits} and @ref{Upper-limit settings} for a complete explanation.
-
-@item --upperlimit-quantile
-The position of the label's sum within the distribution of randomly placed upperlimit measurements as a quantile (value between 0 or 1).
-See @ref{Quantifying measurement limits} and @ref{Upper-limit settings} for a complete explanation.
-If the object is brighter than the brightest randomly placed profile, a value of @code{inf} is returned.
-If it is less than the minimum, a value of @code{-inf} is reported.
-
-@item --upperlimit-skew
-@cindex Skewness
-This column contains the non-parametric skew of the @mymath{\sigma}-clipped random distribution that was used to estimate the upper-limit magnitude.
-Taking @mymath{\mu} as the mean, @mymath{\nu} as the median and @mymath{\sigma} as the standard deviation, the traditional definition of skewness is defined as: @mymath{(\mu-\nu)/\sigma}.
-
-This can be a good measure to see how much you can trust the random measurements, or in other words, how accurately the regions with signal have been masked/detected. If the skewness is strong (and to the positive), then you can tell that you have a lot of undetected signal in the dataset, and therefore that the upper-limit measurement (and other measurements) are not reliable.
 
 @item --river-mean
 [Clumps] The average of the river pixel values around this clump.
@@ -30977,7 +30484,7 @@ The sky value standard deviation (per pixel) for this clump or object.
 This is the square root of the mean variance under the object, or the root mean square.
 @end table
 
-@node Surface brightness measurements, Morphology measurements nonparametric, Brightness measurements, MakeCatalog measurements
+@node Surface brightness measurements, Upper limit measurements, Brightness measurements, MakeCatalog measurements on each label
 @subsubsection Surface brightness measurements
 
 In astronomy, Surface brightness is most commonly measured in units of magnitudes per arcsec@mymath{^2} (for the formal definition, see @ref{Brightness flux magnitude}).
@@ -30989,9 +30496,19 @@ The surface brightness (in units of mag/arcsec@mymath{^2}) of the labeled region
 For more on the definition of the surface brightness, see @ref{Brightness flux magnitude}.
 
 @item --sb-error
-Error in measuring the surface brightness (the @option{--sb} column).
-This column will use the value given to @option{--spatialresolution} in the processing (in pixels).
-For more on @option{--spatialresolution}, see @ref{MakeCatalog inputs and basic settings} and for the equation used to derive the surface brightness error, see @ref{Surface brightness error of each detection}.
+Error in measuring the surface brightness (the @option{--sb} column) as derived below.
+
+@cindex Surface brightness error
+@cindex Error in surface brightness
+We can derive the error in measuring the surface brightness based on the surface brightness (SB) equation of @ref{Brightness flux magnitude} and the generic magnitude error (@mymath{\Delta{M}}) that is described under @option{--magnitude-error} in @ref{Brightness measurements}.
+Let's set @mymath{A} to represent the area and @mymath{\Delta{A}} to represent the error in measuring the area.
+For more on @mymath{\Delta{A}}, see the description of @option{--spatialresolution} in @ref{MakeCatalog inputs and basic settings}.
+
+@dispmath{\Delta{(SB)} = \Delta{M} + \left|{-2.5\over ln(10)}\right|\times{\Delta{A}\over{A}}}
+
+In the surface brightness equation mentioned above, @mymath{A} is in units of arcsecond squared and the conversion between arcseconds to pixels is a multiplication factor.
+Therefore as long as @mymath{A} and @mymath{\Delta{A}} have the same units, it does not matter if they are in arcseconds or pixels.
+Since the measure of spatial resolution (or area error) is the FWHM of the PSF which is usually defined in terms of pixels, its more intuitive to use pixels for @mymath{A} and @mymath{\Delta{A}}.
 
 @item --upperlimit-sb
 The upper-limit surface brightness (in units of mag/arcsec@mymath{^2}) of this labeled region (object or clump).
@@ -31029,8 +30546,8 @@ Scatter in the @option{--sigclip-mean-sb} without using the standard deviation o
 The scatter here is measured from the values of the label themselves.
 This measurement is therefore most meaningful when you expect the flux across one label to be constant (as in a radial profile for example).
 
-This is calculated using the equation in @ref{Surface brightness error of each detection}, where @mymath{\Delta{A}=0} (since sigma-clip is calculated per pixel and there is no error in a single pixel).
-Within the equation to derive @mymath{\Delta{M}} (the error in magnitude, derived in @ref{Magnitude measurement error of each detection}), the signal-to-noise ratio is defined by dividing the sigma-clipped mean by the sigma-clipped standard deviation.
+This is calculated using surface brightness error derived under @option{--sb-error} in @ref{Surface brightness measurements}, but with @mymath{\Delta{A}=0} (since sigma-clip is calculated per pixel and there is no error in a single pixel).
+Within the equation to derive @mymath{\Delta{M}} (the error in magnitude, derived in the description of @option{--magnitude-error} in @ref{Brightness measurements}), the signal-to-noise ratio is defined by dividing the sigma-clipped mean by the sigma-clipped standard deviation.
 
 @item --sigclip-std-sb
 The surface brightness of the sigma-clipped standard deviation of all the pixels with the same label.
@@ -31039,7 +30556,82 @@ In other words, if @option{--sigclip-mean-sb} is fainter than the value of this 
 However, as described in @option{--sigclip-mean-sb}, the sigma-clipped measurements of MakeCatalog should only be used in certain situations like radial profiles, see the description there for more.
 @end table
 
-@node Morphology measurements nonparametric, Morphology measurements elliptical, Surface brightness measurements, MakeCatalog measurements
+@node Upper limit measurements, Morphology measurements nonparametric, Surface brightness measurements, MakeCatalog measurements on each label
+@subsubsection Upper limit measurements
+
+Due to the noisy nature of data, it is possible to get arbitrarily faint magnitudes, especially when you use labels from another image (for example see @ref{Working with catalogs estimating colors}).
+Given the scatter caused by the dataset's noise, values fainter than a certain level are meaningless: another similar depth observation will give a radically different value.
+In such cases, measurements like the image magnitude limit are not useful because it is estimated for a certain morphology and is given for the whole image (it is a crude generalization; see @ref{Metameasurements on full input}.
+You want a quality measure that is specific to each object.
+
+For example, assume that you have done your detection and segmentation on one filter and now you do measurements over the same labeled regions, but on other filters to measure colors (as we did in the tutorial @ref{Segmentation and making a catalog}).
+Some objects are not going to have any significant signal in the other filters, but for example, you measure magnitude of 36 for one of them!
+This is clearly unreliable (no dataset in current astronomy is able to detect such a faint signal).
+In another image with the same depth, using the same filter, you might measure a magnitude of 30 for it, and yet another might give you 33.
+Furthermore, the total sum of pixel values might actually be negative in some images of the same depth (due to noise).
+In these cases, no magnitude can be defined and MakeCatalog will place a NaN there (recall that a magnitude is a base-10 logarithm).
+
+@cindex Upper limit magnitude
+@cindex Magnitude, upper limit
+Using such unreliable measurements will directly affect our analysis, so we must not use the raw measurements.
+When approaching the limits of your detection method, it is therefore important to be able to identify such cases.
+But how can we know how reliable a measurement of one object on a given dataset is?
+
+When we confront such unreasonably faint magnitudes, there is one thing we can deduce: that if something actually exists under our labeled pixels (possibly buried deep under the noise), it's inherent magnitude is fainter than an @emph{upper limit magnitude}.
+To find this upper limit magnitude, we place the object's footprint (segmentation map) over a random part of the image where there are no detections, and measure the sum of pixel values within the footprint.
+Doing this a large number of times will give us a distribution of measurements of the sum.
+The standard deviation (@mymath{\sigma}) of that distribution can be used to quantify the upper limit magnitude for that particular object (given its particular shape and area):
+
+@dispmath{M_{up,n\sigma}=-2.5\times\log_{10}{(n\sigma_m)}+z \quad\quad [mag/target]}
+
+@cindex Correlated noise
+Traditionally, faint/small object photometry was done using fixed circular apertures (for example, with a diameter of @mymath{N} arc-seconds) and there was not much processing involved (to make a deep coadd).
+Hence, the upper limit was synonymous with the surface brightness limit discussed above: one value for the whole image.
+The problem with this simplified approach is that the number of pixels in the aperture directly affects the final distribution and thus magnitude.
+Also the image correlated noise might actually create certain patterns, so the shape of the object can also affect the final result.
+Fortunately, with the much more advanced hardware and software of today, we can make customized segmentation maps (footprint) for each object and have enough computing power to actually place that footprint over many random places.
+As a result, the per-target upper-limit magnitude and general surface brightness limit have diverged.
+
+When any of the upper-limit-related columns requested, MakeCatalog will randomly place each target's footprint over the undetected parts of the dataset as described above, and estimate the required properties.
+The procedure is fully configurable with the options in @ref{Upper-limit settings}.
+You can get the full list of upper-limit related columns of MakeCatalog with this command (the extra @code{--} before @code{--upperlimit} is necessary@footnote{Without the extra @code{--}, grep will assume that @option{--upperlimit} is one of its own options, and will thus abort, complaining that it has no option with this name.}):
+
+@example
+$ astmkcatalog --help | grep -- --upperlimit
+@end example
+
+@table @option
+
+@item --upperlimit
+The upper limit value (in units of the input image) for this object or clump.
+This is the sigma-clipped standard deviation of the random distribution, multiplied by the value of @option{--upnsigma}).
+This is very important for the fainter and smaller objects in the image where the measured magnitudes are not reliable.
+
+@item --upperlimit-mag
+The upper limit magnitude for this object or clump.
+This is very important for the fainter and smaller objects in the image where the measured magnitudes are not reliable.
+
+@item --upperlimit-onesigma
+The @mymath{1\sigma} upper limit value (in units of the input image) for this object or clump.
+When @option{--upnsigma=1}, this column's values will be the same as @option{--upperlimit}.
+
+@item --upperlimit-sigma
+The position of the label's sum measured within the distribution of randomly placed upperlimit measurements in units of the distribution's @mymath{\sigma} or standard deviation.
+
+@item --upperlimit-quantile
+The position of the label's sum within the distribution of randomly placed upperlimit measurements as a quantile (value between 0 or 1).
+If the object is brighter than the brightest randomly placed profile, a value of @code{inf} is returned.
+If it is less than the minimum, a value of @code{-inf} is reported.
+
+@item --upperlimit-skew
+@cindex Skewness
+This column contains the non-parametric skew of the @mymath{\sigma}-clipped random distribution that was used to estimate the upper-limit magnitude.
+Taking @mymath{\mu} as the mean, @mymath{\nu} as the median and @mymath{\sigma} as the standard deviation, the traditional definition of skewness is defined as: @mymath{(\mu-\nu)/\sigma}.
+
+This can be a good measure to see how much you can trust the random measurements, or in other words, how accurately the regions with signal have been masked/detected. If the skewness is strong (and to the positive), then you can tell that you have a lot of undetected signal in the dataset, and therefore that the upper-limit measurement (and other measurements) are not reliable.
+@end table
+
+@node Morphology measurements nonparametric, Morphology measurements elliptical, Upper limit measurements, MakeCatalog measurements on each label
 @subsubsection Morphology measurements (non-parametric)
 
 Morphology defined as a way to quantify the ``shape'' of an object in your input image.
@@ -31172,13 +30764,125 @@ This is only available for 3-dimensional datasets.
 When working with Integral Field Unit (IFU) datasets, this projection onto the first two dimensions would be a narrow-band image.
 @end table
 
-@node Morphology measurements elliptical, Measurements per slice spectra, Morphology measurements nonparametric, MakeCatalog measurements
+@node Morphology measurements elliptical, Measurements per slice spectra, Morphology measurements nonparametric, MakeCatalog measurements on each label
 @subsubsection Morphology measurements (elliptical)
 
 When your target objects are sufficiently ellipse-like, you can use the measurements below to quantify the various parameters of the ellipse.
-For details of how the elliptical parameters are measured, see @ref{Measuring elliptical parameters}.
-For non-parametric morphological measurements, see @ref{Morphology measurements nonparametric}.
-The measures that start with @option{--geo-*} ignore the pixel values and just do the measurements on the label's ``geometric'' shape.
+The derivation of the elliptical parameters are described in detail below and followed by the available MakeCatalog column options.
+
+The shape or morphology of a target is one of the most commonly desired parameters of a target.
+Here, we will review the derivation of the most basic/simple morphological parameters: the elliptical parameters for a set of labeled pixels.
+The elliptical parameters are: the (semi-)major axis, the (semi-)minor axis and the position angle along with the central position of the profile.
+The derivations below follow the SExtractor manual derivations with some added explanations for easier reading.
+
+@cindex Moments
+Let's begin with one dimension for simplicity: Assume we have a set of @mymath{N} values @mymath{B_i} (for example, showing the spatial distribution of a target's brightness), each at position @mymath{x_i}.
+The simplest parameter we can define is the geometric center of the object (@mymath{x_g}) (ignoring the brightness values): @mymath{x_g=(\sum_ix_i)/N}.
+@emph{Moments} are defined to incorporate both the value (brightness) and position of the data.
+The first moment can be written as:
+
+@dispmath{\overline{x}={\sum_iB_ix_i \over \sum_iB_i}}
+
+@cindex Variance
+@cindex Second moment
+@noindent
+This is essentially the weighted (by @mymath{B_i}) mean position.
+The geometric center (@mymath{x_g}, defined above) is a special case of this with all @mymath{B_i=1}.
+The second moment is essentially the variance of the distribution:
+
+@dispmath{\overline{x^2}\equiv{\sum_iB_i(x_i-\overline{x})^2 \over
+        \sum_iB_i} = {\sum_iB_ix_i^2 \over \sum_iB_i} -
+        2\overline{x}{\sum_iB_ix_i\over\sum_iB_i} + \overline{x}^2
+        ={\sum_iB_ix_i^2 \over \sum_iB_i} - \overline{x}^2}
+
+@cindex Standard deviation
+@noindent
+The last step was done from the definition of @mymath{\overline{x}}.
+Hence, the square root of @mymath{\overline{x^2}} is the spatial standard deviation (along the one-dimension) of this particular brightness distribution (@mymath{B_i}).
+Crudely (or qualitatively), you can think of its square root as the distance (from @mymath{\overline{x}}) which contains a specific amount of the flux (depending on the @mymath{B_i} distribution).
+Similar to the first moment, the geometric second moment can be found by setting all @mymath{B_i=1}.
+So while the first moment quantified the position of the brightness distribution, the second moment quantifies how that brightness is dispersed about the first moment.
+In other words, it quantifies how ``sharp'' the object's image is.
+
+@cindex Floating point error
+Before continuing to two dimensions and the derivation of the elliptical parameters, let's pause for an important implementation technicality.
+You can ignore this paragraph and the next two if you do not want to implement these concepts.
+The basic definition (first definition of @mymath{\overline{x^2}} above) can be used without any major problem.
+However, using this fraction requires two runs over the data: one run to find @mymath{\overline{x}} and another run to find @mymath{\overline{x^2}} from @mymath{\overline{x}}, this can be slow.
+The advantage of the last fraction above, is that we can estimate both the first and second moments in one run (since the @mymath{-\overline{x}^2} term can easily be added later).
+
+The logarithmic nature of floating point number digitization creates a complication however: suppose the object is located between pixels 10000 and 10020.
+Hence the target's pixels are only distributed over 20 pixels (with a standard deviation @mymath{<20}), while the mean has a value of @mymath{\sim10000}.
+The @mymath{\sum_iB_i^2x_i^2} will go to very very large values while the individual pixel differences will be orders of magnitude smaller.
+This will lower the accuracy of our calculation due to the limited accuracy of floating point operations.
+The variance only depends on the distance of each point from the mean, so we can shift all position by a constant/arbitrary @mymath{K} which is much closer to the mean: @mymath{\overline{x-K}=\overline{x}-K}.
+Hence we can calculate the second order moment using:
+
+@dispmath{ \overline{x^2}={\sum_iB_i(x_i-K)^2 \over \sum_iB_i} -
+           (\overline{x}-K)^2 }
+
+@noindent
+The closer @mymath{K} is to @mymath{\overline{x}}, the better (the sums of squares will involve smaller numbers), as long as @mymath{K} is within the object limits (in the example above: @mymath{10000\leq{K}\leq10020}), the floating point error induced in our calculation will be negligible.
+For the most simplest implementation, MakeCatalog takes @mymath{K} to be the smallest position of the object in each dimension.
+Since @mymath{K} is arbitrary and an implementation/technical detail, we will ignore it for the remainder of this discussion.
+
+In two dimensions, the mean and variances can be written as:
+
+@dispmath{\overline{x}={\sum_iB_ix_i\over B_i}, \quad
+          \overline{x^2}={\sum_iB_ix_i^2 \over \sum_iB_i} -
+          \overline{x}^2}
+@dispmath{\overline{y}={\sum_iB_iy_i\over B_i}, \quad
+          \overline{y^2}={\sum_iB_iy_i^2 \over \sum_iB_i} -
+          \overline{y}^2}
+@dispmath{\quad\quad\quad\quad\quad\quad\quad\quad\quad
+          \overline{xy}={\sum_iB_ix_iy_i \over \sum_iB_i} -
+          \overline{x}\times\overline{y}}
+
+If an elliptical profile's major axis exactly lies along the @mymath{x} axis, then @mymath{\overline{x^2}} will be directly proportional with the profile's major axis, @mymath{\overline{y^2}} with its minor axis and @mymath{\overline{xy}=0}.
+However, in reality we are not that lucky and (assuming galaxies can be parameterized as an ellipse) the major axis of galaxies can be in any direction on the image (in fact this is one of the core principles behind weak-lensing by shear estimation).
+So the purpose of the remainder of this section is to define a strategy to measure the position angle and axis ratio of some randomly positioned ellipses in an image, using the raw second moments that we have calculated above in our image coordinates.
+
+Let's assume we have rotated the galaxy by @mymath{\theta}, the new second order moments are:
+
+@dispmath{\overline{x_\theta^2} = \overline{x^2}\cos^2\theta +
+           \overline{y^2}\sin^2\theta -
+           2\overline{xy}\cos\theta\sin\theta }
+@dispmath{\overline{y_\theta^2} = \overline{x^2}\sin^2\theta +
+           \overline{y^2}\cos^2\theta +
+           2\overline{xy}\cos\theta\sin\theta}
+@dispmath{\overline{xy_\theta} = \overline{x^2}\cos\theta\sin\theta -
+           \overline{y^2}\cos\theta\sin\theta +
+           \overline{xy}(\cos^2\theta-\sin^2\theta)}
+
+@noindent
+The best @mymath{\theta} (@mymath{\theta_0}, where major axis lies along the @mymath{x_\theta} axis) can be found by:
+
+@dispmath{\left.{\partial \overline{x_\theta^2} \over \partial \theta}\right|_{\theta_0}=0}
+Taking the derivative, we get:
+@dispmath{2\cos\theta_0\sin\theta_0(\overline{y^2}-\overline{x^2}) +
+2(\cos^2\theta_0-\sin^2\theta_0)\overline{xy}=0} When
+@mymath{\overline{x^2}\neq\overline{y^2}}, we can write:
+@dispmath{\tan2\theta_0 =
+2{\overline{xy} \over \overline{x^2}-\overline{y^2}}.}
+
+@cindex Position angle
+@noindent
+MakeCatalog uses the standard C math library's @code{atan2} function to estimate @mymath{\theta_0}, which we define as the position angle of the ellipse.
+To recall, this is the angle of the major axis of the ellipse with the @mymath{x} axis.
+By definition, when the elliptical profile is rotated by @mymath{\theta_0}, then @mymath{\overline{xy_{\theta_0}}=0}, @mymath{\overline{x_{\theta_0}^2}} will be the extent of the maximum variance and @mymath{\overline{y_{\theta_0}^2}} the extent of the minimum variance (which are perpendicular for an ellipse).
+Replacing @mymath{\theta_0} in the equations above for @mymath{\overline{x_\theta}} and @mymath{\overline{y_\theta}}, we can get the semi-major (@mymath{A}) and semi-minor (@mymath{B}) lengths:
+
+@dispmath{A^2\equiv\overline{x_{\theta_0}^2}= {\overline{x^2} +
+\overline{y^2} \over 2} + \sqrt{\left({\overline{x^2}-\overline{y^2} \over 2}\right)^2 + \overline{xy}^2}}
+
+@dispmath{B^2\equiv\overline{y_{\theta_0}^2}= {\overline{x^2} +
+\overline{y^2} \over 2} - \sqrt{\left({\overline{x^2}-\overline{y^2} \over 2}\right)^2 + \overline{xy}^2}}
+
+As a summary, it is important to remember that the units of @mymath{A} and @mymath{B} are in pixels (the standard deviation of a positional distribution) and that they represent the spatial light distribution of the object in both image dimensions (rotated by @mymath{\theta_0}).
+When the object cannot be represented as an ellipse, this interpretation breaks down: @mymath{\overline{xy_{\theta_0}}\neq0} and @mymath{\overline{y_{\theta_0}^2}} will not be the direction of minimum variance.
+
+The list of options/columns to measure the elliptical properties of an object's light distribution is given below.
+Those that start with @option{--geo-*} ignore the pixel values and just do the measurements on the label's ``geometric'' shape.
 
 @table @option
 @item --semi-major
@@ -31206,7 +30910,7 @@ The geometric (ignoring pixel values) axis ratio of the profile, assuming it is 
 The geometric (ignoring pixel values) angle of the semi-major axis with the first FITS axis in degrees.
 @end table
 
-@node Measurements per slice spectra,  , Morphology measurements elliptical, MakeCatalog measurements
+@node Measurements per slice spectra,  , Morphology measurements elliptical, MakeCatalog measurements on each label
 @subsubsection Measurements per slice (spectra)
 
 @cindex Spectrum
@@ -31215,7 +30919,8 @@ The geometric (ignoring pixel values) angle of the semi-major axis with the firs
 @cindex IFU: Integral Field Unit
 @cindex Integral field unit (IFU)
 @cindex Spectrum (of astronomical source)
-When the input is a 3D data cube, MakeCatalog has the following multi-valued measurements per label.
+When the input is a 3D data cube, MakeCatalog also has the following multi-valued measurements per label (as well as the single-valued measurements).
+These will be stored as vector columns (@ref{Vector columns}) in the same output table as the single-valued measurements.
 For a tutorial on how to use these options and interpret their values, see @ref{Detecting lines and extracting spectra in 3D data}.
 
 These options will do measurements on each 2D slice of the input 3D cube; hence the common the format of @code{--*-in-slice}.
@@ -31300,8 +31005,398 @@ These measurements contain @code{-other-} in their name.
 
 
 
+@node Metameasurements on full input, Manual metameasurements, MakeCatalog measurements on each label, MakeCatalog
+@subsection Metameasurements on full input
 
-@node Invoking astmkcatalog,  , MakeCatalog measurements, MakeCatalog
+The data (rows and columns) produced by MakeCatalog are independent measurements of each label and were the focus of @ref{MakeCatalog measurements on each label}.
+However, to correctly interpret those measurements especially in light of other studies, we also need statistical analysis of the full input or catalog.
+These metameasurements (measurements on/about independent/individual measurements) are a single value for the whole input and are therefore stored as meta-data (keywords) in the 0th (first) HDU of the MakeCatalog's output.
+The most common type of such metameasurements are commonly known as ``limits'' or ``depth'' of a dataset.
+These are also the only type that is currently implemented in MakeCatalog; so let's continue with them.
+
+@cindex Depth of data
+@cindex Clump magnitude limit
+@cindex Object magnitude limit
+@cindex Limit, object/clump magnitude
+@cindex Magnitude, object/clump detection limit
+No measurement on a real dataset can be perfect: you can only reach a certain level/limit of accuracy and a meaningful (scientific) analysis on the output catalog requires an understanding of these limits.
+Different datasets have different noise properties and different detection methods@footnote{A method/algorithm/software that is run with a different set of parameters is considered as a different detection method} will have different abilities to detect or measure certain kinds of signal (astronomical objects) and their properties in the dataset.
+Hence, quantifying the detection and measurement limitations with a particular dataset and analysis tool is the most crucial/critical aspect of any high-level analysis.
+Due to their importance, we have already touched upon some of these in two tutorials on real data: see @ref{Measuring the dataset limits} and @ref{Image surface brightness limit}.
+
+The sections below describe each of the metameasurements that MakeCatalog will calculate and report when given the @option{--meta-measures} option.
+Here, we just focus on the concept behind each measurement and its derviation.
+The actual keywords that are written for each is described in @ref{MakeCatalog output keywords}.
+
+@menu
+* Surface brightness limit of image::  A portable measure of the noise level.
+* Noise based magnitude limit of image::  Magnitude of objects above a certain threshold of the noise.
+* Confusion limit of image::    A measure of density in the image.
+@end menu
+
+
+@node Surface brightness limit of image, Noise based magnitude limit of image, Metameasurements on full input, Metameasurements on full input
+@subsubsection Surface brightness limit of image
+
+@cindex Surface brightness limit
+@cindex SBL: surface brightness limit
+@cindex Limit: surface brightness limit
+As we make more observations on one region of the sky and add/combine the observations into one dataset, both the signal and the noise increase.
+However, the signal increases much faster than the noise:
+Assuming you add @mymath{N} datasets with equal exposure times, the signal will increases as a multiple of @mymath{N}, while noise increases as @mymath{\sqrt{N}}.
+Therefore the signal-to-noise ratio increases by a factor of @mymath{\sqrt{N}}.
+Visually, fainter (per pixel) parts of the objects/signal in the image will become more visible/detectable.
+The noise-level is known as the dataset's surface brightness limit.
+
+You can think of the noise as muddy water in a pond (the ``sky'' will be the bottom of the pond).
+The signal (coming from astronomical objects in real data) will be the rocks and their peaks can sometimes reach above the muddy water.
+Let's assume that in your first observation the muddy water has just been stirred and except a few small peaks, you cannot see anything through the mud.
+As you wait (and make more observations/exposures), the mud settles down and the @emph{depth} of the transparent water increases.
+As a result, more and more summits become visible and the lower parts of the rocks (parts with lower surface brightness) can be seen more clearly.
+In this analogy@footnote{Note that this muddy water analogy is not perfect, because while the water-level remains the same all over a peak, in data analysis, the Poisson noise increases with the level of data.}, height (from the ground) is the @emph{surface brightness} and the height of the muddy water at the moment you do your measurements, is your @emph{surface brightness limit}.
+
+@cindex ACS camera
+@cindex Surface brightness limit
+@cindex Limit, surface brightness
+On different instruments, pixels cover different spatial angles over the sky.
+For example, the width of each pixel on the ACS camera on the Hubble Space Telescope (HST) is roughly 0.05 seconds of arc, while the pixels of SDSS are each 0.396 seconds of arc (almost eight times wider@footnote{Ground-based instruments like the SDSS suffer from strong smoothing due to the atmosphere.
+Therefore, increasing the pixel resolution (or decreasing the width of a pixel) will not increase the received information).}).
+Nevertheless, irrespective of its sky coverage, a pixel is our unit of data collection.
+
+To start with, we define the low-level Surface brightness limit or @emph{depth}, in units of magnitude/pixel with the equation below (assuming the image has zero point magnitude @mymath{z} and we want the @mymath{n}th multiple of @mymath{\sigma_p}).
+Where @mymath{\sigma_p} is the per-pixel standard deviation (for example median of the measured sky standard deviation in the image).
+
+@dispmath{SB_{n\sigma,\rm pixel}=-2.5\times\log_{10}{(n\sigma_p)}+z \quad\quad [mag/pixel]}
+
+@cindex XDF survey
+@cindex CANDELS survey
+@cindex eXtreme Deep Field (XDF) survey
+As an example, the XDF survey covers part of the sky that the HST has observed the most (for 85 orbits) and is consequently very small (@mymath{\sim4} minutes of arc, squared).
+On the other hand, the CANDELS survey, is one of the widest multi-color surveys done by the HST covering several fields (about 720 arcmin@mymath{^2}) but its deepest fields have only 9 orbits observation.
+The @mymath{1\sigma} depth of the XDF and CANDELS-deep surveys in the near infrared WFC3/F160W filter are respectively 34.40 and 32.45 magnitudes/pixel.
+In a single orbit image, this same field has a @mymath{1\sigma} depth of 31.32 magnitudes/pixel.
+Recall that a larger magnitude corresponds to fainter objects, see @ref{Brightness flux magnitude}.
+
+@cindex Pixel scale
+The low-level magnitude/pixel measurement above is only useful when all the datasets you want to use, or compare, have the same pixel size.
+However, you will often find yourself using, or comparing, datasets from various instruments with different pixel scales (projected pixel width, in arc-seconds).
+If we know the pixel scale, we can obtain a more easily comparable surface brightness limit in units of: magnitude/arcsec@mymath{^2}.
+But another complication is that astronomical objects are usually larger than 1 arcsec@mymath{^2}.
+As a result, it is common to measure the surface brightness limit over a larger (but fixed, depending on context) area.
+
+Let's assume that every pixel is @mymath{p} arcsec@mymath{^2} and we want the surface brightness limit for an object covering A arcsec@mymath{^2} (so @mymath{A/p} is the number of pixels that cover an area of @mymath{A} arcsec@mymath{^2}).
+On the other hand, noise is added in RMS@footnote{If you add three datasets with noise @mymath{\sigma_1}, @mymath{\sigma_2} and @mymath{\sigma_3}, the resulting noise level is @mymath{\sigma_t=\sqrt{\sigma_1^2+\sigma_2^2+\sigma_3^2}}, so when @mymath{\sigma_1=\sigma_2=\sigma_3\equiv\sigma}, then @mymath{\sigma_t=\sigma\sqrt{3}}.
+In this case, the area @mymath{A} is covered by @mymath{A/p} pixels, so the noise level is @mymath{\sigma_t=\sigma\sqrt{A/p}}.}, hence the noise level in @mymath{A} arcsec@mymath{^2} is @mymath{n\sigma_p\sqrt{A/p}}.
+But we want the result in units of arcsec@mymath{^2}, so we should divide this by @mymath{A} arcsec@mymath{^2}:
+@mymath{n\sigma_p\sqrt{A/p}/A=n\sigma_p\sqrt{A/(pA^2)}=n\sigma_p/\sqrt{pA}}.
+Plugging this into the magnitude equation, we get the @mymath{n\sigma} surface brightness limit, over an area of A arcsec@mymath{^2}, in units of magnitudes/arcsec@mymath{^2} (see the end of this section on how to derive this using Gnuastro):
+
+@dispmath{SB_{{n\sigma,\rm A arcsec}^2}=-2.5\times\log_{10}{\left(n\sigma_p\over \sqrt{pA}\right)+z} \quad\quad [mag/arcsec^2]}
+
+@cindex Correlated noise
+@cindex Noise, correlated
+As you saw in its derivation, the calculation above extrapolates the noise in one pixel over all the input's pixels!
+In other words, all pixels are treated independently in the measurement of the standard deviation.
+It therefore implicitly assumes that the noise is the same in all of the pixels.
+But this only happens in individual exposures: reduced data will have correlated noise because they are a coadd of many individual exposures that have been warped (thus mixing the pixel values).
+A more accurate measure which will provide a realistic value for every labeled region is known as the @emph{upper-limit magnitude}, which is discussed in the next section (@ref{Upper limit surface brightness of image}).
+
+Within Gnuastro, measuring the surface brighntess limit of the image is very easy: the outputs of NoiseChisel include the Sky standard deviation (@mymath{\sigma}) on every group of pixels (a tile) that were calculated from the undetected pixels in each tile, see @ref{Tessellation} and @ref{NoiseChisel output}.
+The @mymath{\sigma_p} used above is recorded in the @code{MEDSTD} keyword of the @code{SKY_STD} extension of NoiseChisel's output.
+Therefore, the first thing you need to do is to run NoiseChisel on the image.
+
+@cindex World Coordinate System (WCS)
+When MakeCatalog is called with @option{--meta-measurements}, it will calculate the input dataset's @mymath{SB_{{n\sigma,\rm A arcsec}^2}} and will write it @code{SBL} keywords the 0th HDU of the output, see @ref{MakeCatalog output keywords}.
+You can set your desired @mymath{n}-th multiple of @mymath{\sigma} and the @mymath{A} arcsec@mymath{^2} area using the following two options respectively: @option{--sbl-sigma} and @option{--sbl-area} (see @ref{MakeCatalog output keywords}).
+Just note that @mymath{SB_{{n\sigma,\rm A arcsec}^2}} is only calculated if the input has World Coordinate System (WCS).
+Without WCS, the pixel scale cannot be derived.
+
+In case you just want the surface brightness limit of an image without separating the objects and clumps within the image or doing any measurements, you can use the series of commands below.
+They assume your image is called @file{image.fits} and its zero point magnitude is 25.
+For a more detailed hands-on understanding of the surface brightness limit, see @ref{Image surface brightness limit} (which is part of a larger tutorial).
+
+@example
+$ zp=25.0
+$ astnoisechisel image.fits -o nc.fits
+$ astmkcatalog nc.fits -hDETECTIONS --sn --zeropoint=$zp \
+               --output=cat.fits --meta-measures
+$ astfits cat.fits --keyvalue=SBL --quiet | asttable -Y
+@end example
+
+Because the surface brightness limit is just an extrapolation of the noise level, we can extend the concept to use a reference surface brightness limit to find the expected surface brightness limit of another telescope (in a similar location), or a different exposure time for the same telescope.
+This is discussed more fully in @ref{Expected surface brightness limit}.
+
+
+@node Noise based magnitude limit of image, Confusion limit of image, Surface brightness limit of image, Metameasurements on full input
+@subsubsection Noise based magnitude limit of image
+
+@cindex Limit: detection (magnitude)
+@cindex Magnitude limit (noise-based)
+@cindex Limit: magnitude (noise-based)
+@cindex Detection limit (magnitude limit)
+Assuming @mymath{\sigma_p} to be per-pixel noise level, and we apply a threshold of @mymath{n\sigma_p} on the image, what would be the faintest magnitude of an object that covers more than @mymath{A} square arcseconds?
+Answering this question is the goal of the noise-based magnitude limit (nML or NML) is defined for (for more on @mymath{\sigma_p}, see @ref{Surface brightness limit of image}).
+The commonly used parameters are: @mymath{n=5} and @mymath{A=7} square arcseconds (approximate area of a circle with radius 1.5 arcseconds).
+
+Let's show the area of a pixel (in square arcseconds) as @mymath{p}.
+The arbitrary area @mymath{A} covers @mymath{A/p} pixels (which is just a counter; without any units).
+On the other hand, @mymath{n\sigma_p} (the threshold we want to apply) is the minimum flux that each pixel should have.
+Assuming all the pixels above the threshold have the same @mymath{n\sigma} flux, then the total flux above the threshold would be @mymath{n\sigma\times A/p}.
+Plugging this into the definition of magnitudes (see @ref{Brightness flux magnitude}), we get the noise based magnitude limit:
+
+@dispmath{nML = -2.5 \log_{10}\left(n\sigma_p\times\frac{A}{p}\right) + z}
+
+@noindent
+There are several caveats to this measure:
+
+@itemize
+@item
+Astronomical objects are not flat! Their flux gradually sinks deeply into the noise; see Figure 1 of Akhlaghi & Ichikawa @url{https://arxiv.org/abs/1505.01664,2015}.
+Therefore, the centers of stars and galaxies will be (much) brighter than the threshold and major fraction of the object's flux will not be counted in this measure (more as @mymath{n} increases).
+@item
+The area used in the equation is just a number (without any shape!).
+In other words, it is an extrapolated/abstract area that is shapeless.
+@item
+Since this depends on a per-pixel measurement of @mymath{\sigma_p}, it does not account for correlated noise.
+For more on this, see @ref{Surface brightness limit of image}.
+@end itemize
+
+Given the caveats above, it may be strage to see that the noise based magnitude limit is still reported in many reports (it is sometimes called simply as ``magnitude limit'' or even ``detection limit'').
+So let's review the history of this metameasure for a better understanding of its usage.
+When computers started to enter astronomical data analysis (1970s) their processing powers were very low (compared to today!).
+Also, images were taken on photographic plates and digitized/scanned later (not too clean noise).
+Therefore, they needed to apply high thresholds (@mymath{+2\sigma_p}), find groups of pixels that were contiguously above that threshold, and define the ``real'' objects based on their contiguous area above that threshold.
+Therefore, this limit was also known as ``detection limit''.
+
+Because this lost flux was a problem, authors like Petrosian @url{https://ui.adsabs.harvard.edu/abs/1976ApJ...209L...1P,1976} or Kron @url{https://ui.adsabs.harvard.edu/abs/1980ApJS...43..305K} suggested ways of finding the object's ``total'' flux (accounting for the flux below the threshold also).
+But with new paradigms to detection coming in the current century (for example Gnuastro's @ref{NoiseChisel}), the ``detection limit'' name will cause confusion and mis-interpretation.
+Therefore in Gnuastro we call this limit the ``noise-based magnitude limit'' and include it only for legacy/historical reasons (it is just an extrapolatoin).
+
+The reason for the ``noise-based'' prefix is that the equation above is purely based on the noise (does not depend on the actual signal!).
+However, different objects have different profiles: some are sharp/concentrated (like stars or elliptical galaxies), others are diffuse (like ultra diffuse galaxies) and others are clumpy (like a globular cluster) and etc.
+Therefore, we classify the more robust ``magnitude limit'' (that actually takes morphology into account) as a @emph{manual} metameasurement (that you should do after calling MakeCatalog based on your desired targets/goals), it is described in @ref{Magnitude limit for certain objects}.
+
+When MakeCatalog is called with @option{--meta-measurements}, it will calculate the input dataset's noise-based magnitude limit and will write it @code{NML} keyword the 0th HDU of the output.
+You can set your desired @mymath{n}-th multiple of @mymath{\sigma} and the @mymath{A} arcsec@mymath{^2} area using the following two options respectively: @option{--nml-sigma} and @option{--nml-area}.
+See @ref{MakeCatalog output keywords} for more.
+
+@node Confusion limit of image,  , Noise based magnitude limit of image, Metameasurements on full input
+@subsubsection Confusion limit of image
+
+@cindex Confusion limit
+@cindex Limit, confusion
+The confusion limit is a measure of density reported in units of distance (pixels or arcseconds): the median distance of all resolved sources with their nearest neighbor in the image.
+The confusion limit depends on several factors, including the pointing on the sky.
+For example a shallow image taken from the center of a globular cluster, or close to the disk of the milky way will have a bad confusion limit (resolved sources will be very close to each other).
+But at exactly the same imaging conditions (depth, PSF and etc), an image of an "empty" region of the sky will have a good/high confusion limit (sources can be more distant).
+
+Therefore, unlike the previously discussed automatic metameasurements like @ref{Surface brightness limit of image} and @ref{Noise based magnitude limit of image} the confusion limit depends on the pointing on sky.
+This is because those are defined purely based on the noise of the image, but the confusion limit comes from the signal's distribution in the image.
+But as we go very deep in extra-galactic fields (high galactic latitudes: away from the disk of the milky wayw) the density of sources as you go deeper should become mostly uniform (assuming a relatively uniform background galaxy population).
+
+To help in interpreting the confusion limit, here is one example: if you take images of the same pointing of the sky but at very different PSFs, the confusion limit will increase (which is bad) as a function of the PSF.
+This is because the smaller objects that are closer to larger ones get washed-out in the larger PSF of their brighter neighbors.
+
+Technically (when calculating the distance between the clump and its nearest neighbor), it is also important to account for the spherical nature of RA and Dec.
+Otherwise, distances will have a dependency on the declination and may make it hard to interpret the statistics.
+
+@cindex Skewness
+When MakeCatalog is called with @option{--meta-measurements}, it will find the nearest neighbor to each clump and return information about the distribution of values using the output keywords that start with @code{CNL} within the 0th HDU of the output.
+The distribution to the nearest label is by nature a very non-symmetric distribution (skewed to the positive), so it cannot be simply parametrized as in the other metameasures here.
+As mentioned at the start, the main parameter that the community uses is the median.
+But to identify the spread and shape of the distribution, that is not enough.
+
+Therefore as described in  @ref{MakeCatalog output keywords}, MakeCatalog doesn't just return the median (at quantile of 0.5 or percentile of 50), but several other quantiles.
+Ultimately, you can see each clump's nearest neighbor as well as the spherical distance to its nearest clump by activating the @option{--cnl-check} option (see @ref{MakeCatalog output HDUs}).
+
+@node Manual metameasurements, Adding new columns to MakeCatalog, Metameasurements on full input, MakeCatalog
+@subsection Manual metameasurements
+
+The concept of metameasurements, and the automatically calculated metameasurements of MakeCatalog were introduced in @ref{Metameasurements on full input}.
+There are other metameasures that cannot (as of this writing) be done automatically in the same run of MakeCatalog and need a customized execution of MakeCatalog.
+In this section these types of metameasures are introduced.
+
+@menu
+* Expected surface brightness limit::
+* Upper limit surface brightness of image::  Necessary for diffuse regions of image.
+* Magnitude limit for certain objects::
+* Completeness limit for certain objects::
+@end menu
+
+@node Expected surface brightness limit, Upper limit surface brightness of image, Manual metameasurements, Manual metameasurements
+@subsubsection Expected surface brightness limit
+
+The Surface brighntess limit was defined in @ref{Surface brightness limit of image}.
+As we saw there, it is ultimately a theoretical extrapolation of one pixel's noise level.
+Therefore, we can use a reference image's surface brightness limit (@mymath{SB_r}) to derive an expected surface brightness limit of another image (on another telescope with another exposure time, but with @emph{the same} filter; let's call it @mymath{SB_i}).
+Assuming no correlated noise (which is only valid on a single exposure!), the @mymath{\sigma_p} described above is purely due to the Poisson noise of the background signal (for example Zodiacal light, light pollution or etc).
+Therefore, taking @mymath{S} to be the exposed surface of the telescope's primary mirror (or lens) and @mymath{t} to be the exposure time, the signal of the background will increase with @mymath{S\times t} and therefore @mymath{\sigma_p\propto \sqrt{St}}.
+Plugging this into two instances of the equation above, allows us to derive @mymath{SB_i} from @mymath{SB_r}
+
+@dispmath{SB_i = SB_r + 2.5\log_{10}\left( {n_i \over n_r} \sqrt{{S_i \over S_r}{t_i \over t_r}{A_i \over A_r}} \right)}
+
+@cindex LSST
+@cindex Vera C. Rubin Observatory
+@cindex Observatory: Vera C. Rubin
+@cindex Rubin (Vera C.) Observatory
+Since almost all mirrors are circular, we can simplify the relation above by replacing the exposed surface with the exposed radius (accounting for the non-exposed area in most reflective telescopes due to the secondary mirror) as shown in the quation below.
+Note that we didn't simply say ``radius'' (and the equation does not have @mymath{r}), but ``exposed radius'' (@mymath{r_e} in the equation).
+This is a very important factor to have in mind.
+For example in the Vera C. Rubin Observatory (that will be conducting the LSST survey) the primary mirror has a diameter of 8.4 meters, however, the inner cicular area of radius 5 meters is not used (due to the second and third mirrors)@footnote{@url{https://commons.wikimedia.org/wiki/File:LSSToptics.jpg}}.
+Therefore, the useful surface of the Vera C. Rubin telescope is @mymath{\pi(8.4^2-5.0^2)=\pi45.56=\pi6.75^2}, giving it an exposed radius of @mymath{r_e=6.75m} (for an easy implementation of this equation in Gnuastro, see the @code{sblim-diff} operator of @ref{Unit conversion operators}).
+
+@dispmath{SB_i = SB_r + 2.5\log_{10}\left( {r_{ei} \over r_{er}}{n_i \over n_r} \sqrt{{t_i \over t_r}{A_i \over A_r}} \right)}
+
+@node Upper limit surface brightness of image, Magnitude limit for certain objects, Expected surface brightness limit, Manual metameasurements
+@subsubsection Upper limit surface brightness of image
+
+@cindex Correlated noise
+@cindex Noise, correlated
+As mentioned in @ref{Surface brightness limit of image}, the surface brightness limit assumes independent pixels when deriving the standard deviation (the main input in the equation).
+It just extrapolates the standard deviation derived from one pixel to the requested area.
+But as mentioned at the end of that section, we have correlated noise in our science-ready (deep) images and the noise of the pixels are not independent.
+
+Because of this, the surface brightness limit will always under-estimate the surface brightness (give fainter values than what is statistically possible in the data for the requested area).
+To account for the correlated noise in the images, we need to derive the standard deviation over a group of pixels that fall within a certain footprint/shape.
+For example over a circular aperture of radius 5.6419 arcsec, or a square with a side length of @mymath{10} arcsec.
+Depending on the correlated noise systematics, the limit can be (very) different for different shapes, even if they have the same area (as in the circle and square mentioned in the previous sentence: both have an area of 100 arcsec@mymath{^2}).
+
+Therefore we need to derive the standard deviation that goes into the surface brightness limit equation over a certain footprint/shape.
+To do that, we should:
+@enumerate
+@item
+Place the desired footprint many times randomly over all the undetected pixels in an image.
+In MakeCatalog, the number of these random positions can be configured with @option{--upnum} and you can check their positions with @option{--checkuplim}.
+@item
+Calculate the sum of pixel values in each randomly placed footprint.
+@item
+Calculate the sigma-clipped standard deviation of the resulting distribution (of sum of pixel values in the randomly placed apertures).
+Therefore, each footprint's measurement is independent of the other.
+@item
+Calculate the surface brightness of that standrad deviation (after multiplying it with your desired multiple of sigma).
+For the definition of surface brightness, see @ref{Brightness flux magnitude}.
+@end enumerate
+
+The measurements over randomly placed apertures may remind you of @ref{Upper limit measurements}.
+Generally, the ``upper limit'' prefix is given to all measurements with this way of measurement.
+Therefore this limit is called ``Upper limit surface brightness'' of an image (for a multiple of sigma, over a certain shape).
+
+Traditionally a circular aperture of a fixed radius (in arcseconds) has been used.
+In Gnuastro, a labeled image containing the desired shape/aperture can be generated with MakeProfiles.
+The position of the label is irrelevant because the upper limit measurements are done on the many randomly placed footprints in undetected regions (independent of where the label is positioned).
+That labeled image should then be given to MakeCatalog, while requesting @option{--upperlimit-sb}.
+Of course, all detected signal in the image needs to be masked (set to blank/NaN) so MakeCatalog doesn't use randomly placed apertures that overlap with detected signal in the image.
+
+Going into the implementation details can get pretty hard to follow in English, so a full hands-on tutorial is available in the second half of @ref{Image surface brightness limit}.
+Read that tutorial with the same input images and run the commands, and see each output image to get a good understanding of how to properly measure the upper limit surface brightness of your images.
+
+@node Magnitude limit for certain objects, Completeness limit for certain objects, Upper limit surface brightness of image, Manual metameasurements
+@subsubsection Magnitude limit for certain objects
+
+@cindex Magnitude limit
+Suppose we have taken two images of the same field of view with the same CCD, once with a smaller telescope, and once with a larger one.
+Because we used the same CCD, the noise will be very similar.
+However, the larger telescope has gathered more light, therefore the same star or galaxy will have a higher signal-to-noise ratio (S/N) in the image taken with the larger one.
+The same applies for a coadded image of the field compared to a single-exposure image of the same telescope.
+
+This concept is used by some researchers to define the ``magnitude limit'' or ``detection limit'' at a certain S/N (sometimes 10, 5 or 3 for example, also written as @mymath{10\sigma}, @mymath{5\sigma} or @mymath{3\sigma}).
+To do this, they measure the magnitude and signal-to-noise ratio of all the objects that have similar within an image and measure the mean (or median) magnitude of objects at the desired S/N.
+A fully working example of deriving the magnitude limit is available in the tutorials section: @ref{Measuring the dataset limits}.
+
+However, this method should be used with extreme care!
+This is because the shape of the object becomes important in this method: a sharper object will have a higher @emph{measured} S/N compared to a more diffuse object at the same original magnitude.
+Besides the inherent shape/sharpness of the object, issues like the PSF also become important in this method (because the finally observed shapes of objects are important here): two surveys with the same surface brightness limit (see @ref{Surface brightness limit of image}) will have different magnitude limits if one is taken from space and the other from the ground.
+
+
+@node Completeness limit for certain objects,  , Magnitude limit for certain objects, Manual metameasurements
+@subsubsection Completeness limit for certain objects
+@cindex Completeness
+As the surface brightness of the objects decreases, the ability to detect them will also decrease.
+An important statistic is thus the fraction of objects of similar morphology and magnitude that will be detected with our detection algorithm/parameters in a given image.
+This fraction is known as @emph{completeness}.
+-For brighter objects, completeness is 1: all bright objects that might exist over the image will be detected.
+However, as we go to objects of lower overall surface brightness, we will fail to detect a fraction of them, and fainter than a certain surface brightness level (for each morphology), nothing will be detectable in the image: you will need more data to construct a ``deeper'' image.
+For a given profile and dataset, the magnitude where the completeness drops below a certain level (usually above @mymath{90\%}) is known as the completeness limit.
+
+@cindex Purity
+@cindex False detections
+@cindex Detections false
+Another important parameter in measuring completeness is purity: the fraction of true detections to all detections.
+In effect purity is the measure of contamination by false detections: the higher the purity, the lower the contamination.
+Completeness and purity are anti-correlated: if we can allow a large number of false detections (that we might be able to remove by other means), we can significantly increase the completeness limit.
+
+One traditional way to measure the completeness and purity of a given sample is by embedding mock profiles in regions of the image with no detection.
+However in such a study we must be really careful to choose model profiles as similar to the target of interest as possible.
+
+
+
+
+@node Adding new columns to MakeCatalog, Invoking astmkcatalog, Manual metameasurements, MakeCatalog
+@subsection Adding new columns to MakeCatalog
+
+MakeCatalog is designed to allow easy addition of different measurements over a labeled image; see Akhlaghi @url{https://arxiv.org/abs/1611.06387v1,2016}.
+A check-list style description of necessary steps to do that is described in this section.
+The common development characteristics of MakeCatalog and other Gnuastro programs is explained in @ref{Developing}.
+We strongly encourage you to have a look at that chapter to greatly simplify your navigation in the code.
+After adding and testing your column, you are most welcome (and encouraged) to share it with us so we can add to the next release of Gnuastro for everyone else to also benefit from your efforts.
+
+MakeCatalog will first pass over each label's pixels two times and do necessary raw/internal calculations.
+Once the passes are done, it will use the raw information for filling the final catalog's columns.
+In the first pass it will gather mainly object information and in the second run, it will mainly focus on the clumps, or any other measurement that needs an output from the first pass.
+These two passes are designed to be raw summations: no extra processing.
+This will allow parallel processing and simplicity/clarity.
+So if your new calculation, needs new raw information from the pixels, then you will need to also modify the respective @code{mkcatalog_first_pass} and @code{mkcatalog_second_pass} functions (both in @file{bin/mkcatalog/mkcatalog.c}) and define new raw table columns in @file{main.h} (hopefully the comments in the code are clear enough).
+
+In all these different places, the final columns are sorted in the same order (same order as @ref{Invoking astmkcatalog}).
+This allows a particular column/option to be easily found in all steps.
+Therefore in adding your new option, be sure to keep it in the same relative place in the list in all the separate places (it does not necessarily have to be in the end), and near conceptually similar options.
+
+@table @file
+
+@item main.h
+The @code{objectcols} and @code{clumpcols} enumerated variables (@code{enum}) define the raw/internal calculation columns.
+If your new column requires new raw calculations, add a row to the respective list.
+If your calculation requires any other settings parameters, you should add a variable to the @code{mkcatalogparams} structure.
+
+@item ui.c
+If the new column needs raw calculations (an entry was added in @code{objectcols} and @code{clumpcols}), specify which inputs it needs in @code{ui_necessary_inputs}, similar to the other options.
+Afterwards, if your column includes any particular settings (you needed to add a variable to the @code{mkcatalogparams} structure in @file{main.h}), you should do the sanity checks and preparations for it here.
+
+@item ui.h
+The @code{option_keys_enum} associates a unique value for each option to MakeCatalog.
+The options that have a short option version, the single character short comment is used for the value.
+Those that do not have a short option version, get a large integer automatically.
+You should add a variable here to identify your desired column.
+
+
+@cindex GNU C library
+@item args.h
+This file specifies all the parameters for the GNU C library, Argp structure that is in charge of reading the user's options.
+To define your new column, just copy an existing set of parameters and change the first, second and 5th values (the only ones that differ between all the columns), you should use the macro you defined in @file{ui.h} here.
+
+
+@item columns.c
+This file contains the main definition and high-level calculation of your new column through the @code{columns_define_alloc} and @code{columns_fill} functions.
+In the first, you specify the basic information about the column: its name, units, comments, type (see @ref{Numeric data types}) and how it should be printed if the output is a text file.
+You should also specify the raw/internal columns that are necessary for this column here as the many existing examples show.
+Through the types for objects and rows, you can specify if this column is only for clumps, objects or both.
+
+The second main function (@code{columns_fill}) writes the final value into the appropriate column for each object and clump.
+As you can see in the many existing examples, you can define your processing on the raw/internal calculations here and save them in the output.
+
+@item mkcatalog.c
+This file contains the low-level parsing functions.
+To be optimized, the parsing is done in parallel through the @code{mkcatalog_single_object} function.
+This function initializes the necessary arrays and calls the lower-level @code{parse_objects} and @code{parse_clumps} for actually going over the pixels.
+They are all heavily commented, so you should be able to follow where to add your necessary low-level calculations.
+
+@item doc/gnuastro.texi
+Update this manual and add a description for the new column.
+
+@end table
+
+
+@node Invoking astmkcatalog,  , Adding new columns to MakeCatalog, MakeCatalog
 @subsection Invoking MakeCatalog
 
 MakeCatalog will do measurements and produce a catalog from a labeled dataset and optional values dataset(s).
@@ -31343,15 +31438,16 @@ For operations that MakeProfiles shares with other programs (mainly involving in
 Also see @ref{Common program behavior} for some general characteristics of all Gnuastro programs including MakeCatalog.
 
 The various measurements/columns of MakeCatalog are requested as options, either on the command-line or in configuration files, see @ref{Configuration files}.
-The full list of available columns is available in @ref{MakeCatalog measurements}.
+The full list of available columns is available in @ref{MakeCatalog measurements on each label}.
 Depending on the requested columns, MakeCatalog needs more than one input dataset, for more details, please see @ref{MakeCatalog inputs and basic settings}.
 The upper-limit measurements in particular need several configuration options which are thoroughly discussed in @ref{Upper-limit settings}.
-Finally, in @ref{MakeCatalog output} the output file(s) created by MakeCatalog are discussed.
+Finally, in @ref{MakeCatalog output HDUs} and @ref{MakeCatalog output keywords} the output HDUs and keywords that are written by MakeCatalog are discussed.
 
 @menu
 * MakeCatalog inputs and basic settings::  Input files and basic settings.
 * Upper-limit settings::        Settings for upper-limit measurements.
-* MakeCatalog output::          File names of MakeCatalog's output table.
+* MakeCatalog output HDUs::     Options that specify the output HDUs.
+* MakeCatalog output keywords::  Meta data and metameasures and related options.
 @end menu
 
 @node MakeCatalog inputs and basic settings, Upper-limit settings, Invoking astmkcatalog, Invoking astmkcatalog
@@ -31368,7 +31464,7 @@ For example, let's assume you want the brightness/magnitude and signal-to-noise 
 For these columns, you will also need to provide an extra dataset containing values for every pixel of the labeled input (to measure magnitude) and another for the Sky standard deviation (to measure error).
 All such auxiliary input files have to have the same size (number of pixels in each dimension) as the input labeled image.
 Their numeric data type is irrelevant (they will be converted to 32-bit floating point internally).
-For the full list of available measurements, see @ref{MakeCatalog measurements}.
+For the full list of available measurements, see @ref{MakeCatalog measurements on each label}.
 
 The ``values'' dataset is used for measurements like brightness/magnitude, or flux-weighted positions.
 If it is a real image, by default it is assumed to be already Sky-subtracted prior to running MakeCatalog.
@@ -31406,7 +31502,7 @@ The full list of input dataset options and general setting options are described
 
 @item -l FITS
 @itemx --clumpsfile=FITS
-The FITS file containing the labeled clumps dataset when @option{--clumpscat} is called (see @ref{MakeCatalog output}).
+The FITS file containing the labeled clumps dataset when @option{--clumpscat} is called (see @ref{MakeCatalog output HDUs}).
 When @option{--clumpscat} is called, but this option is not, MakeCatalog will look into the main input file (given as an argument) for the required extension/HDU (value to @option{--clumpshdu}).
 
 @item --clumpshdu=STR
@@ -31467,7 +31563,7 @@ If this option is given, the pixel values will be ignored when measuring the @op
 
 @item --forcereadstd
 Read the input STD image even if it is not required by any of the requested columns.
-This is because some of the output catalog's metadata may need it, for example, to calculate the dataset's surface brightness limit (see @ref{Quantifying measurement limits}, configured with @option{--sfmagarea} and @option{--sfmagnsigma} in @ref{MakeCatalog output}).
+This is because some of the output catalog's metadata may need it, for example, to calculate the dataset's surface brightness limit (see @ref{Metameasurements on full input}, configured with @option{--sbl-area} and @option{--sbl-sigma} in @ref{MakeCatalog output keywords}).
 
 Furthermore, if the input STD image does not have the @code{MEDSTD} keyword (that is meant to contain the representative standard deviation of the full image), with this option, the median will be calculated and used for the surface brightness limit.
 
@@ -31484,7 +31580,7 @@ If it is smaller than 1, it is interpreted as the tolerance level to stop clippi
 See @ref{Sigma clipping} for a complete explanation.
 
 @item --frac-max=FLT[,FLT]
-The fractions (one or two) of maximum value in objects or clumps to be used in the related columns, for example, @option{--frac-max1-area}, @option{--frac-max1-sum} or @option{--frac-max1-radius}, see @ref{MakeCatalog measurements}.
+The fractions (one or two) of maximum value in objects or clumps to be used in the related columns, for example, @option{--frac-max1-area}, @option{--frac-max1-sum} or @option{--frac-max1-radius}.
 For the maximum value, see the description of @option{--maximum} column below.
 The value(s) of this option must be larger than 0 and smaller than 1 (they are a fraction).
 When only @option{--frac-max1-area} or @option{--frac-max1-sum} is requested, one value must be given to this option, but if @option{--frac-max2-area} or @option{--frac-max2-sum} are also requested, two values must be given to this option.
@@ -31492,7 +31588,7 @@ The values can be written as simple floating point numbers, or as fractions, for
 
 @item --spatialresolution=FLT
 The error in measuring spatial properties (for example, the area) in units of pixels.
-You can think of this as the FWHM of the dataset's PSF and is used in measurements like the error in surface brightness (@option{--sb-error}), see @ref{Surface brightness measurements} and @ref{Surface brightness error of each detection}.
+You can think of this as the FWHM of the dataset's PSF and is used in measurements like the error in surface brightness (@option{--sb-error} described in @ref{Surface brightness measurements}).
 
 @cindex Cirrus (Galactic)
 @cindex Interstellar dust filaments
@@ -31514,10 +31610,10 @@ If you use this option, it will have 13 rows and all the columns corresponding t
 
 
 
-@node Upper-limit settings, MakeCatalog output, MakeCatalog inputs and basic settings, Invoking astmkcatalog
+@node Upper-limit settings, MakeCatalog output HDUs, MakeCatalog inputs and basic settings, Invoking astmkcatalog
 @subsubsection Upper-limit settings
 
-The upper-limit magnitude was discussed in @ref{Quantifying measurement limits}.
+The upper-limit magnitude was discussed in @ref{Metameasurements on full input}.
 Unlike other measured values/columns in MakeCatalog, the upper limit magnitude needs several extra parameters which are discussed here.
 All the options specific to the upper-limit measurements start with @option{up} for ``upper-limit''.
 The only exception is @option{--envseed} that is also present in other programs and is general for any job requiring random number generation in Gnuastro (see @ref{Generating random numbers}).
@@ -31553,7 +31649,7 @@ All the non-zero pixels of the image specified by this option (in the @option{--
 
 For example, when you are using labels from another image, you can give NoiseChisel's objects image output for this image as the value to this option.
 In this way, you can be sure that regions with data do not harm your distribution.
-See @ref{Quantifying measurement limits} for more on the upper limit magnitude.
+See @ref{Metameasurements on full input} for more on the upper limit magnitude.
 
 @item --upmaskhdu=STR
 The extension in the file specified by @option{--upmask}.
@@ -31563,7 +31659,7 @@ The number of random samples to take for all the objects.
 A larger value to this option will give a more accurate result (asymptotically), but it will also slow down the process.
 When a randomly positioned sample overlaps with a detected/masked pixel it is not counted and another random position is found until the object completely lies over an undetected region.
 So you can be sure that for each object, this many samples over undetected objects are made.
-See the upper limit magnitude discussion in @ref{Quantifying measurement limits} for more.
+See the upper limit magnitude discussion in @ref{Metameasurements on full input} for more.
 
 @item --uprange=INT,INT
 The range/width of the region (in pixels) to do random sampling along each dimension of the input image around each object's position.
@@ -31588,19 +31684,22 @@ If it is smaller than 1, it is interpreted as the tolerance level to stop clippi
 The multiple of the final (@mymath{\sigma}-clipped) standard deviation (or @mymath{\sigma}) used to measure the upper-limit sum or magnitude.
 
 @item --checkuplim=INT[,INT]
-Print a table of positions and measured values for all the full random distribution used for one particular object or clump.
+Write a table of positions and measured values for the full random distribution used in the upper-limit positions for one particular object or clump.
+The table will be placed as a HDU in the output file with a name of @code{CHECK-UPPERLIMIT}.
 If only one integer is given to this option, it is interpreted to be an object's label.
 If two values are given, the first is the object label and the second is the ID of requested clump within it.
 
-The output is a table with three columns (whether it is FITS or plain-text is determined with the @option{--tableformat} option, see @ref{Input output options}).
-The first two columns are the pixel X,Y positions of the center of each label's tile (see next paragraph), in each random sampling of this particular object/clump.
-The third column is the measured flux over that region.
-If the region overlapped with a detection or masked pixel, then its measured value will be a NaN (not-a-number).
+The output is a table with three columns on a 2D image input (and four columns on a 3D cube input).
+The first two columns are the pixel X,Y positions of the center of each label's tile (see next paragraph), in each random sampling of this particular object/clump (on a 3D cube, the third column will be the position along the third dimension).
+The final column is the measured flux over that region.
+
+If a randomly placed region overlapped with a detection or masked pixel, its measured value will be a NaN (not-a-number).
 The total number of rows is thus unknown before running.
 However, if an upper-limit measurement was made in the main output of MakeCatalog, you can be sure that the number of rows with non-NaN measurements is the number given to the @option{--upnum} option.
 
 The ``tile'' of each label is defined by the minimum and maximum positions of each label: values of the @option{--min-x}, @option{--max-x}, @option{--min-y} and @option{--max-y} columns in the main output table for each label.
 Therefore, the tile center position that is recorded in the output of this column ignores the distribution of labeled pixels within the tile.
+Note that this is only about the center position, not the measurement.
 
 Precise interpretation of the position is only relevant when the footprint of your label is highly un-symmetrical and you want to use this catalog to insert your object into the image.
 In such a case, you can also ask for @option{--min-x} and @option{--min-y} and manually calculate their difference with the following two positional measurements of your desired label: @option{--geo-x} and @option{--geo-y} (which report the label's ``geometric'' center; only using the label positions ignoring any ``values'') or @option{--x} and @option{--y} (which report the value-weighted center of the label).
@@ -31609,55 +31708,27 @@ For more on these positional columns, see @ref{Position measurements in pixels}.
 @end table
 
 
-@node MakeCatalog output,  , Upper-limit settings, Invoking astmkcatalog
-@subsubsection MakeCatalog output
-After it has completed all the requested measurements (see @ref{MakeCatalog measurements}), MakeCatalog will store its measurements in table(s).
-If an output filename is given (see @option{--output} in @ref{Input output options}), the format of the table will be deduced from the name.
-When it is not given, the input name will be appended with a @file{_cat} suffix (see @ref{Automatic output}) and its format will be determined from the @option{--tableformat} option, which is also discussed in @ref{Input output options}.
-@option{--tableformat} is also necessary when the requested output name is a FITS table (recall that FITS can accept ASCII and binary tables, see @ref{Table}).
+@node MakeCatalog output HDUs, MakeCatalog output keywords, Upper-limit settings, Invoking astmkcatalog
+@subsubsection MakeCatalog output HDUs
+After it has completed all the requested measurements (see @ref{MakeCatalog measurements on each label}), MakeCatalog writes them in table(s) that are stored into a FITS file.
+This is necessary because the number of output tables and the metadata that MakeCatalogs provides can be numerous.
+If any of the output tables are necessary in another format (for example plain-text), you can use Gnuastro's Table program (with executable name @code{asttable}, see @ref{Table}).
 
-By default (when @option{--spectrum} or @option{--clumpscat} are not called) only a single catalog/table will be created for the labeled ``objects''.
+This section focuses on the HDUs of the output, for the keywords, see @ref{MakeCatalog output keywords}.
+The name of the output FITS table can be given to the @option{--output} option, with a recognized FITS suffix (as defined in @ref{Arguments}).
+When it is not given, the input name will be appended with a @file{-cat.fits} suffix (see @ref{Automatic output}) and its format (ASCII or Binary FITS table) will be determined from the @option{--tableformat} option, which is also discussed in @ref{Input output options}.
+By default (when @option{--spectrum}, @option{--checkuplim} or @option{--clumpscat} are not called) only a single catalog/table will be created for the labeled objects.
 
 @itemize
 @item
-if @option{--clumpscat} is called, a secondary catalog/table will also be created for ``clumps'' (one of the outputs of the Segment program, for more on ``objects'' and ``clumps'', see @ref{Segment}).
+When @option{--clumpscat} is called, a secondary catalog/table HDU will also be created for ``clumps'' (one of the outputs of the Segment program, for more on ``objects'' and ``clumps'', see @ref{Segment}).
 In short, if you only have one labeled image, you do not have to worry about clumps and just ignore this.
 @item
-When @option{--spectrum} is called, it is not mandatory to specify any single-valued measurement columns. In this case, the output will only be the spectra of each labeled region within a 3D data cube.
-For more, see the description of @option{--spectrum} in @ref{MakeCatalog measurements}.
+When @option{--checkuplim} is called, a HDU is added to the output FITS file and is fully described in the description of this option in @ref{Upper-limit settings}.
 @end itemize
 
-@cindex Surface brightness limit
-@cindex Limit, Surface brightness
-When possible, MakeCatalog will also measure the full input's noise level (also known as surface brightness limit, see @ref{Quantifying measurement limits}).
-Since these measurements are related to the noise and not any particular labeled object, they are stored as keywords in the output table.
-Furthermore, they are only possible when a standard deviation image has been loaded (done automatically for any column measurement that involves noise, for example, @option{--sn}, @option{--magnitude-error} or @option{--sky-std}).
-But if you just want the surface brightness limit and no noise-related column, you can use @option{--forcereadstd}.
-All these keywords start with @code{SBL} (for ``surface brightness limit'') and are described below:
-
-@table @code
-@item SBLSTD
-Per-pixel standard deviation.
-If a @code{MEDSTD} keyword exists in the standard deviation dataset, then that value is directly used.
-
-@item SBLNSIG
-Sigma multiple for surface brightness limit (value you gave to @option{--sfmagnsigma}), used for @code{SBLMAGPX} and @code{SBLMAG}.
-
-@item SBLMAGPX
-Per-pixel surface brightness limit (in units of magnitudes/pixel).
-
-@item SBLAREA
-Area (in units of arcsec@mymath{^2}) used in @code{SBLMAG} (value you gave to @option{--sfmagarea}).
-
-@item SBLMAG
-Surface brightness limit of data calculated over @code{SBLAREA} (in units of mag/arcsec@mymath{^2}).
-@end table
-
-When any of the upper-limit measurements are requested, the input parameters for the upper-limit measurement are stored in the keywords starting with @code{UP}: @code{UPNSIGMA}, @code{UPNUMBER}, @code{UPRNGNAM}, @code{UPRNGSEE}, @code{UPSCMLTP}, @code{UPSCTOL}.
-These are primarily input arguments, so they correspond to the options with a similar name.
-
 The full list of MakeCatalog's options relating to the output file format and keywords are listed below.
-See @ref{MakeCatalog measurements} for specifying which columns you want in the final catalog.
+See @ref{MakeCatalog measurements on each label} for specifying which columns you want in the final catalog.
 
 @table @option
 @item -C
@@ -31687,27 +31758,163 @@ If you would like to order the catalog later (when it is a plain text file), you
 $ awk '!/^#/' out_c.txt | sort -g -k1,1 -k2,2
 @end example
 
-@item --sfmagnsigma=FLT
+@item --cnl-check
+Add an extra HDU to the output of MakeCatalog that contains the positions of every clump as well as the positions of that clump's nearest clump and the distance between the two (in both units of arcseconds and pixels).
+@end table
+
+
+@node MakeCatalog output keywords,  , MakeCatalog output HDUs, Invoking astmkcatalog
+@subsubsection MakeCatalog output keywords
+
+The columns and rows that include the various measurements for the variuos labels of the input in its HDUs were described separately in @ref{MakeCatalog output HDUs}.
+But those raw numbers are not the only thing that MakeCatalog writes in its output!
+MakeCatalog will also write metadata (header keywords) in the 0th (first) HDU of the output FITS file which add a lot of value and help to interpret the raw numbers.
+The only keywords in the other HDUs are the column names, units and comments; generic metadata are written in the 0th HDU.
+
+You can see the full list of keywords written by MakeCatalog in its output with Gnuastro's Fits program, for example @command{astfits out.fits -h0}.
+If you only want the value of certain keywords (in a script/pipeline for example), its @option{--keyvalue} option is pretty convenient see @ref{Keyword inspection and manipulation}.
+
+The keywords are grouped in the output based on context with a title above each group.
+We'll follow the same structure here, skipping the first three groups (that are generic to all Gnuastro's programs, see @ref{Output FITS files}).
+Some of the values reported below will be repeated (are the same as the respective option keyword in the ``Option values'' group of keywords).
+The ``Option value'' group contains the raw option names and values: the option (keyword) names are just written in full-caps according to the FITS standard.
+This is done for the following reason:
+Human readability is important for option names, so they tend to be long and force a @code{HIERARCH} string at the start of the line.
+On the contrary, for automatic extraction and human readability, it helps a lot to have all keywords related to a certain metameasure start with the same characters and because the keyword description is written just after it, there is no problem if the name is cryptic.
+
+@table @asis
+
+@item Input file(s) and HDUs
+@table @asis
+@item  @code{INLAB} and @code{INLABHDU}: main (object) label dataset.
+@itemx @code{INCLU} and @code{INCLUHDU}: clump label dataset.
+@itemx @code{INVAL} and @code{INVALHDU}: value dataset.
+@itemx @code{INSTD} and @code{INSTDHDU}: standard deviation dataset.
+@itemx @code{INVAR} and @code{INVARHDU}: variance dataset.
+@itemx @code{INUPM} and @code{INUPMHDU}: upper-limit mask dataset.
+The file name and HDU of all the possible inputs to MakeCatalog.
+Only the keywords that correspond to inputs which are actually used in a given run of MakeCatalog will be written in the output.
+This is based on the columns or metameasurements that you request, not if you gave them on the command-line (described in @ref{MakeCatalog inputs and basic settings}), or the HDUs that exist in the main argument.
+
+For the standard deviation or variance, in case a single number was given (instead of a dataset), that number will be written for @code{INSTD} or @code{INVAR} (without any @code{INSTDHDU} and @code{INVALHDU}).
+@end table
+
+@item Input pixel grid and value properties
+Basic information about the pixel values and grid properties of the input:
+
+@table @code
+
+@item PIXWIDTH
+The width of one pixel on the sky (in units of arcseconds).
+
+@item PIXAREA
+The area of one pixel on the sky (in units of arcseconds squared) on the reference point.
+The difference in pixel area across the image will be negligible in most science images.
+In case you would like to check this for your input images, use the @option{--pixelareaonwcs} option of the Fits program (see @ref{Pixel information images}).
+
+@item ZEROPNT
+The zero point of the values image (used to convert
+This is the same value you gave to the @option{--zeropoint} option of @ref{MakeCatalog inputs and basic settings}.
+
+@item STDUSED
+Per-pixel standard deviation (used in noise-based metameasurements like @ref{Surface brightness limit of image} and @ref{Noise based magnitude limit of image}).
+This keyword will only be present when a standard deviation image has been loaded (done automatically for any column measurement that involves noise, for example, @option{--sn}, @option{--magnitude-error} or @option{--sky-std}).
+In case your catalog does not include any such columns and you want this keyword, you can use the @option{--meta-measures} option (see @ref{Metameasurements on full input}).
+
+If the @code{MEDSTD} keyword is present in the standard deviation dataset (see @ref{NoiseChisel output}), it will be used.
+Otherwise, the median of the standard deviation input is calculated, used for the metameasures and written in this keyword.
+@end table
+
+@item Upper-limit parameters
+When any of the upper-limit measurements are requested, the input parameters for the upper-limit measurement are stored in the following keywords (see @ref{Upper limit measurements}).
+@table @code
+@item UPSIGMA
+The multiple of sigma to measure the upper-limit.
+This is the same value given to the @option{--upnsigma} option of @ref{Upper-limit settings}.
+
+@item UPNUMBER
+The number of random positions with a successful reading.
+This is the same value given to the @option{--upnum} option of @ref{Upper-limit settings}.
+
+@item UPRNGNAM
+Name of the random number generator used for finding the random positions; see @ref{Generating random numbers}.
+
+@item UPRNGSEE
+Seed used for the random number generator.
+This will be differnet on every run, unless @option{--envseed} is called.
+For more details, see @ref{Generating random numbers}
+
+@item UPSCMLTP
+@mymath{\sigma}-clipping paramter: multiple of sigma.
+Clipping is necessary to reject strong outliers that can affect the statistics.
+This is the first value given to the @option{--upsigmaclip} option of @ref{Upper-limit settings}.
+
+@item UPSCTOL
+@mymath{\sigma}-clipping paramter: tolerance level.
+Clipping is necessary to reject strong outliers that can affect the statistics.
+This is the second value given to the @option{--upsigmaclip} option of @ref{Upper-limit settings}.
+@end table
+
+@item Noise-based metameasures
+The following metamesurement are calculated purely based on the measured noise level.
+But they are not written by default, if you want them run with @option{--meta-measure}.
+
+@table @code
+@item SBL
+Measured surface brighntess limit (in units of mag/arcsec@mymath{^2}); as described in @ref{Surface brightness limit of image}.
+@item NML
+Measured surface brighntess limit (in units of mag/arcsec@mymath{^2}); as described in @ref{Noise based magnitude limit of image}.
+@end table
+
+@item Confusion limit
+The confusion limit is a measure of density in the input image.
+For a complete review on its goals and how to interpret the values to these keywords, see @ref{Confusion limit of image}.
+In particular, if you would like to see the full distribution of nearest neighbors and their distances, you can use @option{--cnl-check} as described in @ref{MakeCatalog output HDUs}.
+By default, the clumps catalog is used for the distribution, however if you would like to use the objects for any reason, you can use @option{--cnl-with-objects} as described below in this section (not recommended unless you understand the risks).
+@table @code
+@item  CNLP05W
+@itemx CNLP25W
+@itemx CNLP50W
+@itemx CNLP75W
+@itemx CNLP95W
+Various percentiles of the distribution of distances to the nearest neighbor in units of arcseconds.
+The @code{W} suffix is for ``WCS'' and the @code{P} after @code{CNL} is for percentile.
+Note that a quantile is just the percentile after division by 100.
+We are using percentiles in the keyword names because they are simple integers and do not need a floating point.
+
+@item  CNLP05I
+@itemx CNLP25I
+@itemx CNLP50I
+@itemx CNLP75I
+@itemx CNLP95I
+Similar to the @code{CNLP*W} keywords but in units of pixels: the @code{I} suffix is for ``image''.
+@end table
+
+@end table
+
+@noindent
+The following MakeCatalog options are specifically related to the various keywords above.
+
+@table @option
+@item --sbl-sigma=FLT
 Value to multiply with the median standard deviation (from a @command{MEDSTD} keyword in the Sky standard deviation image) for estimating the surface brightness limit.
 Note that the surface brightness limit is only reported when a standard deviation image is read, in other words a column using it is requested (for example, @option{--sn}) or @option{--forcereadstd} is called.
 
-This value is a per-pixel value, not per object/clump and is not found over an area or aperture, like the common @mymath{5\sigma} values that are commonly reported as a measure of depth or the upper-limit measurements (see @ref{Quantifying measurement limits}).
+This value is a per-pixel value, not per object/clump and is not found over an area or aperture, like the common @mymath{5\sigma} values that are commonly reported as a measure of depth or the upper-limit measurements (see @ref{Metameasurements on full input}).
 
-@item --sfmagarea=FLT
-Area (in arc-seconds squared) to convert the per-pixel estimation of @option{--sfmagnsigma} in the comments section of the output tables.
+@item --sbl-area=FLT
+Area (in arc-seconds squared) to convert the per-pixel estimation of @option{--sbl-sigma} in the comments section of the output tables.
 Note that the surface brightness limit is only reported when a standard deviation image is read, in other words a column using it is requested (for example, @option{--sn}) or @option{--forcereadstd} is called.
 
 Note that this is just a unit conversion using the World Coordinate System (WCS) information in the input's header.
 It does not actually do any measurements on this area.
-For random measurements on any area, please use the upper-limit columns of MakeCatalog (see the discussion on upper-limit measurements in @ref{Quantifying measurement limits}).
+For random measurements on any area, please use the upper-limit columns of MakeCatalog (see the discussion on upper-limit measurements in @ref{Metameasurements on full input}).
+
+@item --cnl-with-objects
+Use the object positions instead of clumps for measuing the distance to the nearest label.
+This is only useful if you have generated your labels image with something other than Gnuastro's @ref{Segment}, and that program doesn't have the capacity to identify individual peaks and extended signal at the same time.
+Therefore, in case you have generated the input labels with Segment, we do not recommend using this option.
 @end table
-
-
-
-
-
-
-
 
 
 
@@ -32306,12 +32513,12 @@ To simply the usage, you can determine the shape based on the number of free par
 
 @table @asis
 @item 1 number
-for example, @option{--aperture=2}.
+For example, @option{--aperture=2}.
 The aperture will be a circle of the given radius.
 The value will be in the same units as the columns in @option{--ccol1} and @option{--ccol2}).
 
 @item 2 numbers
-for example, @option{--aperture=3,4e-10}.
+For example, @option{--aperture=3,4e-10}.
 The aperture will be an ellipse (if the two numbers are different) with the respective value along each dimension.
 The numbers are in units of the first and second axis.
 In the example above, the semi-axis value along the first axis will be 3 (in units of the first coordinate) and along the second axis will be @mymath{4\times10^{-10}} (in units of the second coordinate).
@@ -32319,7 +32526,7 @@ Such values can happen if you are comparing catalogs of a spectra for example.
 If more than one object exists in the aperture, the nearest will be found along the major axis as described in @ref{Defining an ellipse and ellipsoid}.
 
 @item 3 numbers
-for example, @option{--aperture=2,0.6,30}.
+For example, @option{--aperture=2,0.6,30}.
 The aperture will be an ellipse (if the second value is not 1).
 The first number is the semi-major axis, the second is the axis ratio and the third is the position angle (in degrees).
 If multiple matches are found within the ellipse, the distance (to find the nearest) is calculated along the major axis in the elliptical space, see @ref{Defining an ellipse and ellipsoid}.
@@ -32331,19 +32538,19 @@ To simplifythe usage, the shape can be determined based on the number of values 
 
 @table @asis
 @item 1 number
-for example, @option{--aperture=3}.
+For example, @option{--aperture=3}.
 The matching volume will be a sphere of the given radius.
 The value is in the same units as the input coordinates.
 
 @item 3 numbers
-for example, @option{--aperture=4,5,6e-10}.
+For example, @option{--aperture=4,5,6e-10}.
 The aperture will be a general ellipsoid with the respective extent along each dimension.
 The numbers must be in the same units as each axis.
 This is very similar to the two number case of 2D inputs.
 See there for more.
 
 @item 6 numbers
-for example, @option{--aperture=4,0.5,0.6,10,20,30}.
+For example, @option{--aperture=4,0.5,0.6,10,20,30}.
 The numbers represent the full general ellipsoid definition (in any orientation).
 For the definition of a general ellipsoid, see @ref{Defining an ellipse and ellipsoid}.
 The first number is the semi-major axis.
@@ -34690,13 +34897,13 @@ If this script yields useful results in your research, please be sure to cite it
 The operator for measuring the values over each radial distance.
 The values given to this option will be directly passed to @ref{MakeCatalog}.
 As a consequence, all MakeCatalog measurements like the magnitude, magnitude error, median, mean, signal-to-noise ratio (S/N), std, surface brightness, sigclip-mean, and sigclip-number can be used here.
-For a full list of MakeCatalog's measurements, please run @command{astmkcatalog --help} or see @ref{MakeCatalog measurements}.
+For a full list of MakeCatalog's measurements, please run @command{astmkcatalog --help} or see @ref{MakeCatalog measurements on each label}.
 Multiple values can be given to this option, each separated by a comma.
 This option can also be called multiple times.
 
 @cartouche
 @noindent
-@strong{Masking background/foreground objects:} For crude rejection of outliers, you can use sigma-clipping using MakeCatalog measurements like @option{--sigclip-mean} or @option{--sigclip-mean-sb} (see @ref{MakeCatalog measurements}).
+@strong{Masking background/foreground objects:} For crude rejection of outliers, you can use sigma-clipping using MakeCatalog measurements like @option{--sigclip-mean} or @option{--sigclip-mean-sb} (see @ref{MakeCatalog measurements on each label}).
 To properly mask the effect of background/foreground objects from your target object's radial profile, you can use @command{astscript-psf-stamp} script, see @ref{Invoking astscript-psf-stamp}, and feed it the output of @ref{Segment}.
 This script will mask unwanted objects from the image that is later used to measure the radial profile.
 @end cartouche
@@ -43698,7 +43905,7 @@ gal_data_t @code{*coord2}, gal_data_t @code{*coord1_kdtree}, size_t @code{kdtree
 Use the k-d tree algorithm for finding matches between two catalogs.
 The @code{arrange}-ment of the match output should be set with one of the @code{GAL_MATCH_ARRANGE_*} macros described above.
 The k-d tree of the first input (@code{coord1_kdtree}), and its root index (@code{kdtree_root}), should be constructed and found before calling this function, to do this, you can use the @code{gal_kdtree_create} of @ref{K-d tree}.
-The desired @code{aperture} array is the same as @code{gal_match_sort_based} and described at the top of this section.
+The desired @code{aperture} array is the same as @code{gal_match_sort_based} and described at the top of this section, but the appreture array can be @code{NULL} for an outer arrangement (it will not be used).
 If @code{coord1_kdtree==NULL}, this function will return a @code{NULL} pointer and write a value of @code{0} in the space that @code{nummatched} points to.
 If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbour within the same dataset.
 If @code{numthreads} threads is larger than one, the matching will be done in parallel.

@@ -263,12 +263,17 @@ struct mkcatalogparams
   float             zeropoint;  /* Zero-point magnitude of object.      */
   uint8_t            variance;  /* Input STD file is actually variance. */
   uint8_t        novalinerror;  /* Ignore values when estimating errors.*/
-  uint8_t        forcereadstd;  /* Read STD even if not needed.         */
   uint8_t         subtractsky;  /* ==1: subtract the Sky from values.   */
-  float           sfmagnsigma;  /* Surface brightness multiple of sigma.*/
-  float             sfmagarea;  /* Surface brightness area (arcsec^2).  */
   uint8_t       inbetweenints;  /* Keep rows (integer ids) with no labs.*/
   double         sigmaclip[2];  /* Sigma clip column settings.          */
+  uint8_t        metameasures;  /* Measurments on/about measurements.   */
+
+  float              sblsigma;  /* Surface brightness multiple of sigma.*/
+  float               sblarea;  /* Surface brightness area (arcsec^2).  */
+  float              nmlsigma;  /* Noise Mag. Lim. multiple of sigma.   */
+  float               nmlarea;  /* Noise Mag. Lim. area (arcsec^2).     */
+  uint8_t      cnlwithobjects;  /* Confusion limit should use objects.  */
+  uint8_t            cnlcheck;  /* Check table for positions.           */
 
   char            *upmaskfile;  /* Name of upper limit mask file.       */
   char             *upmaskhdu;  /* HDU of upper limit mask file.        */
@@ -300,8 +305,7 @@ struct mkcatalogparams
   gal_data_t      *objectcols;  /* Output columns for the objects.      */
   gal_data_t       *clumpcols;  /* Output columns for the clumps.       */
   gal_data_t           *tiles;  /* Tiles to cover each object.          */
-  char            *objectsout;  /* Output objects catalog.              */
-  char             *clumpsout;  /* Output clumps catalog.               */
+  gal_data_t         *upcheck;  /* Table contining the upper-limt check.*/
   char            *upcheckout;  /* Name of upperlimit check table.      */
   uint8_t             *oiflag;  /* Intermediate flags for objects.      */
   uint8_t             *ciflag;  /* Intermediate flags for clumps.       */

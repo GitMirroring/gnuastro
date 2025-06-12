@@ -192,7 +192,6 @@ static void
 columns_wcs_preparation(struct mkcatalogparams *p)
 {
   size_t i;
-  double *pixscale;
   gal_list_i32_t *colcode;
   int continue_wcs_check=1;
 
@@ -258,21 +257,6 @@ columns_wcs_preparation(struct mkcatalogparams *p)
           error(EXIT_FAILURE, 0, "%s (hdu: %s): %s not present in any of "
                 "the WCS axis types (CTYPE)", p->objectsfile, p->cp.hdu,
                 colcode->v==UI_KEY_RA ? "RA" : "DEC");
-        break;
-
-      /* Calculate the pixel area if necessary. */
-      case UI_KEY_SB:
-      case UI_KEY_SBERROR:
-      case UI_KEY_HALFMAXSB:
-      case UI_KEY_HALFSUMSB:
-      case UI_KEY_AREAARCSEC2:
-      case UI_KEY_UPPERLIMITSB:
-      case UI_KEY_SIGCLIPSTDSB:
-      case UI_KEY_SIGCLIPMEANSB:
-      case UI_KEY_SIGCLIPMEANSBDELTA:
-        pixscale=gal_wcs_pixel_scale(p->objects->wcs);
-        p->pixelarcsecsq=pixscale[0]*pixscale[1]*3600.0f*3600.0f;
-        free(pixscale);
         break;
 
       /* The '--frac-max-*' options. */
