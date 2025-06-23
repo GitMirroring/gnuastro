@@ -1359,7 +1359,7 @@ arithmetic_to_1d(int flags, gal_data_t *input)
 
   /* Set absurd value to cause a crash if values that shouldn't be used
      are used! */
-  for(i=1;i<input->ndim;++i) input->dsize[i]=GAL_BLANK_UINT64;
+  for(i=1;i<input->ndim;++i) input->dsize[i]=GAL_BLANK_SIZE_T;
 
   /* Reset the metadata and return.*/
   input->ndim=1;

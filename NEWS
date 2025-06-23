@@ -255,6 +255,9 @@ See the end of the file for license conditions.
   - bug #67204: Table's --equal operator cannot be called multiple times on
     same column with different values.
 
+  - bug #67232: Building failure on i686 architectures (32-bit).  Reported
+    by Benson Muite and fixed by Giacomo Lorenzetti.
+
 
 
 

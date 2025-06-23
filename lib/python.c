@@ -61,7 +61,7 @@ gal_python_type_to_numpy(uint8_t type)
     case GAL_TYPE_INT8:      return NPY_INT8;
     case GAL_TYPE_INT16:     return NPY_INT16;
     case GAL_TYPE_INT32:     return NPY_INT32;
-    case GAL_TYPE_INT64:     return NPY_LONG;
+    case GAL_TYPE_INT64:     return NPY_INT64;
     case GAL_TYPE_UINT8:     return NPY_UINT8;
     case GAL_TYPE_UINT16:    return NPY_UINT16;
     case GAL_TYPE_UINT32:    return NPY_UINT32;
@@ -91,7 +91,7 @@ gal_python_type_from_numpy(int type)
     case NPY_INT8:           return GAL_TYPE_INT8;
     case NPY_INT16:          return GAL_TYPE_INT16;
     case NPY_INT32:          return GAL_TYPE_INT32;
-    case NPY_LONG:           return GAL_TYPE_INT64;
+    case NPY_INT64:          return GAL_TYPE_INT64;
     case NPY_UINT8:          return GAL_TYPE_UINT8;
     case NPY_UINT16:         return GAL_TYPE_UINT16;
     case NPY_UINT32:         return GAL_TYPE_UINT32;
