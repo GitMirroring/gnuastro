@@ -731,136 +731,26 @@ ui_num_clumps(struct mkcatalogparams *p)
 
 
 
-/* To make the catalog processing more scalable (and later allow for
-   over-lappping regions), we will define a tile for each object. */
 static void
 ui_one_tile_per_object_correct_numobjects(struct mkcatalogparams *p)
 {
-  size_t ndim=p->objects->ndim;
-
+  size_t i, j, nuniq;
   uint8_t *rarray=NULL;
-  int32_t *l, *lf, *start;
-  gal_data_t *rowsremove=NULL;
-  size_t i, j, d, no, *min, *max, exists, width=2*ndim;
-  size_t *minmax=gal_pointer_allocate(GAL_TYPE_SIZE_T,
-                                      width*p->numobjects, 0, __func__,
-                                      "minmax");
-  size_t *coord=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0, __func__,
-                                      "coord");
+  gal_data_t *rows_to_remove=NULL;
 
-  /* Initialize the minimum and maximum position for each tile/object. So,
-     we'll initialize the minimum coordinates to the maximum possible
-     'size_t' value (in 'GAL_BLANK_SIZE_T') and the maximums to zero. */
-  for(i=0;i<p->numobjects;++i)
-    for(d=0;d<ndim;++d)
-      {
-        minmax[ i * width +        d ] = GAL_BLANK_SIZE_T; /* Minimum. */
-        minmax[ i * width + ndim + d ] = 0;                /* Maximum. */
-      }
+  /* Find the tiles for each label. */
+  p->tiles=gal_tile_per_label(p->objects, p->numobjects,
+                              p->inbetweenints, &rows_to_remove,
+                              &nuniq);
 
-  /* Go over the objects label image and correct the minimum and maximum
-     coordinates. */
-  start=p->objects->array;
-  lf=(l=p->objects->array)+p->objects->size;
-  do
-    {
-      /* Small sanity check: the objects image shouldn't have negative
-         values (can happen when the user gives a clump image). */
-      if(*l!=GAL_BLANK_INT32 && *l<0)
-        error(EXIT_FAILURE, 0, "the main labeled image ('OBJECTS' HDU "
-              "when using Segment), shouldn't contain negative values. "
-              "This can happen when you mistakenly give Segment's "
-              "clumps as the main input labeled image. If you want to "
-              "treat clumps as objects, please use 'astarithmetic' to "
-              "convert all negative pixels to 0 before calling "
-              "MakeCatalog. For example this command: "
-              "'astarithmetic file.fits -hCLUMPS set-i i i 0 lt "
-              "0 where'. For this scenario, a better solution is to "
-              "only keep the clumps and give them each a separate "
-              "label with a command like this: 'astarithmetic file.fits "
-              "-hCLUMPS 0 gt 2 connected-components'");
-
-      /* We are on an object. */
-      if(*l>0)
-        {
-          /* Get the coordinates of this pixel. */
-          gal_dimension_index_to_coord(l-start, ndim, p->objects->dsize,
-                                       coord);
-
-          /* Check to see this coordinate is the smallest/largest found so
-             far for this label. Note that labels start from 1, while indexs
-             here start from zero. */
-          min = &minmax[ (*l-1) * width        ];
-          max = &minmax[ (*l-1) * width + ndim ];
-          for(d=0;d<ndim;++d)
-            {
-              if( coord[d] < min[d] ) min[d] = coord[d];
-              if( coord[d] > max[d] ) max[d] = coord[d];
-            }
-        }
-    }
-  while(++l<lf);
-
-  /* If a label doesn't exist in the image, then write over it and define
-     the unique labels to use for the next steps. To over-write, we have
-     two counters: 'i' (for the position in the input array) and 'no' (or
-     'num-objects' for the counter in the output table). In the end, 'no'
-     counts the total number of unique labels in the input. */
-  no=0;
-  for(i=0;i<p->numobjects;++i)
-    {
-      /* Make sure a pixel with this label exists in all dimensions. */
-      exists=0;
-      for(d=0;d<ndim;++d)
-        if ( minmax[ i * width + d ] == GAL_BLANK_SIZE_T
-             && minmax[ i * width + ndim + d ] == 0 )
-          {
-            /* When the object doesn't exist, but the user wants a row
-               anyway, make all the minimums and maximums of all
-               coordinates 0, note that the maximum is already zero. */
-            if(p->inbetweenints)
-              minmax[ i * width + d ] = 0;
-          }
-        else
-          {
-            /* Write over the blank elements when necessary
-               (i!=j). When i==j, then these statements are
-               redundant. */
-            minmax[no*width+d]=minmax[i*width+d];
-            minmax[no*width+ndim+d]=minmax[i*width+ndim+d];
-
-            /* Set the checked flag. */
-            exists=1;
-          }
-
-      /* If it does (or if the user wants to keep all integers), then
-         increment the output counter.*/
-      if(p->inbetweenints || exists) ++no;
-      else
-        {
-          /* If 'rarray' isn't defined yet, define it. */
-          if(rarray==NULL)
-            {
-              /* Note that by initializing with zeros, all (the possibly
-                 existing) previous rows that shouldn't be removed are
-                 flagged as zero in this array. */
-              rowsremove=gal_data_alloc(NULL, GAL_TYPE_UINT8, 1,
-                                        &p->numobjects, NULL, 1,
-                                        p->cp.minmapsize, p->cp.quietmmap,
-                                        NULL, NULL, NULL);
-              rarray=rowsremove->array;
-            }
-          rarray[i]=1;
-        }
-    }
-
-  /* If 'rarray!=NULL', then there are elements to remove and we need to
-     make some modifications/corrections. */
+  /* If 'rows_to_remove!=NULL', then there are elements to remove and we
+     need to make some modifications/corrections. */
+  rarray = rows_to_remove ? rows_to_remove->array : NULL;
   if(rarray)
     {
       /* Build an array to keep the real ID of each tile. */
       j=0;
-      p->outlabs=gal_pointer_allocate(GAL_TYPE_INT32, no, 0, __func__,
+      p->outlabs=gal_pointer_allocate(GAL_TYPE_INT32, nuniq, 0, __func__,
                                       "p->outlabs");
       for(i=0;i<p->numobjects;++i) if(rarray[i]==0) p->outlabs[j++]=i+1;
 
@@ -872,32 +762,18 @@ ui_one_tile_per_object_correct_numobjects(struct mkcatalogparams *p)
           p->outlabsinv=gal_pointer_allocate(GAL_TYPE_UINT32,
                                              p->numobjects+1, 1,
                                              __func__, "p->outlabsinv");
-          for(i=0;i<no;++i) p->outlabsinv[ p->outlabs[i] ] = i;
+          for(i=0;i<nuniq;++i) p->outlabsinv[ p->outlabs[i] ] = i;
         }
 
       /* Correct numobjects and clean up. */
-      p->numobjects=no;
-      gal_data_free(rowsremove);
+      p->numobjects=nuniq;
+      gal_data_free(rows_to_remove);
 
       /* For a check:
       for(i=0;i<p->numobjects;++i)
         printf("outlabs[%zu]: %d\n", i, p->outlabs[i]);
       */
     }
-
-  /* For a check.
-  for(i=0;i<p->numobjects;++i)
-    printf("%zu: (%zu, %zu) --> (%zu, %zu)\n",
-           p->outlabs ? p->outlabs[i] : i+1, minmax[i*width],
-           minmax[i*width+1], minmax[i*width+2], minmax[i*width+3]);
-  */
-
-  /* Make the tiles. */
-  p->tiles=gal_tile_series_from_minmax(p->objects, minmax, p->numobjects);
-
-  /* Clean up. */
-  free(coord);
-  free(minmax);
 }
 
 

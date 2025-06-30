@@ -76,8 +76,8 @@ gal_label_clump_significance(gal_data_t *values, gal_data_t *std,
                              gal_data_t *sigind);
 
 void
-gal_label_grow_indexs(gal_data_t *labels, gal_data_t *indexs, int withrivers,
-                      int connectivity);
+gal_label_grow_indexs(gal_data_t *labels, gal_data_t *indexs,
+                      int withrivers, int connectivity);
 
 
 

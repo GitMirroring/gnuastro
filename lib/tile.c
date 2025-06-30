@@ -35,6 +35,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/pointer.h>
 #include <gnuastro/convolve.h>
 #include <gnuastro/dimension.h>
+#include <gnuastro/statistics.h>
 #include <gnuastro/interpolate.h>
 #include <gnuastro/permutation.h>
 
@@ -258,7 +259,8 @@ gal_tile_series_from_minmax(gal_data_t *block, size_t *minmax, size_t number)
 
       /* Tile's array pointer. */
       ind=gal_dimension_coord_to_index(ndim, block->dsize, min);
-      tiles[i].array = gal_pointer_increment(block->array, ind, block->type);
+      tiles[i].array = gal_pointer_increment(block->array, ind,
+                                             block->type);
     }
 
   /* For a check (put all the objects in an extension of a test file).
@@ -273,6 +275,195 @@ gal_tile_series_from_minmax(gal_data_t *block, size_t *minmax, size_t number)
   */
 
   /* Return the final pointer. */
+  return tiles;
+}
+
+
+
+
+
+static size_t
+gal_tile_per_label_number(gal_data_t *labels)
+{
+  size_t out;
+  gal_data_t *tmp;
+
+  /* Get the maximum of the labels.*/
+  tmp=gal_statistics_maximum(labels);
+  out=*((int32_t *)(tmp->array)); /*numobjects is int32_t.*/
+
+  /* In case the input is all blank, the maximum will be blank, so in
+     effect, there we no objects. */
+  if(out==GAL_BLANK_INT32) out=0;
+
+  /* Clean up and return. */
+  gal_data_free(tmp);
+  return out;
+}
+
+
+
+
+
+/* Define a tile over each group of labeled pixels within the input
+   image. */
+gal_data_t *
+gal_tile_per_label(gal_data_t *labels, size_t maxlabel,
+                   uint8_t inbetweenints, gal_data_t **rows_to_remove,
+                   size_t *numunique)
+{
+  uint8_t *rarray=NULL;
+  size_t *minmax, *coord;
+  int32_t *l, *lf, *start;
+  gal_data_t *labs, *tiles;
+  size_t ndim=labels->ndim;
+  size_t i, d, nuniq=0, *min, *max, exists, width;
+
+  /* Make sure the type of the input is correct. */
+  if(labels->type==GAL_TYPE_FLOAT32 || labels->type==GAL_TYPE_FLOAT64)
+    error(EXIT_FAILURE, 0, "%s: the input labels dataset must have "
+          "an integer type not floating point", __func__);
+  if(    labels->type==GAL_TYPE_INT64
+      || labels->type==GAL_TYPE_UINT32
+      || labels->type==GAL_TYPE_UINT64 )
+    error(EXIT_FAILURE, 0, "%s: the input labels dataset must not be "
+          "larger int32, but it has a type of '%s'", __func__,
+          gal_type_name(labels->type, 1));
+
+  /* Initialize the two output pointer (in case it is not allocated below
+     depending on the conditions). */
+  *rows_to_remove=NULL;
+
+  /* In case the input labels is not a signed 32-bit integer, copy it to
+     this type. */
+  labs = ( labels->type==GAL_TYPE_INT32
+           ? labels
+           : gal_data_copy_to_new_type(labels, GAL_TYPE_INT32) );
+
+  /* If the number of labels is not set (it is blank), find the largest
+     label within the image. */
+  maxlabel = ( maxlabel==GAL_BLANK_SIZE_T
+                ? gal_tile_per_label_number(labs) : maxlabel );
+
+  /* Allocate the necessary arrays. */
+  width=2*ndim;
+  minmax=gal_pointer_allocate(GAL_TYPE_SIZE_T, width*maxlabel, 0,
+                              __func__, "minmax");
+  coord=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0, __func__,"coord");
+
+  /* Initialize the minimum and maximum position for each tile/object. So,
+     we'll initialize the minimum coordinates to the maximum possible
+     'size_t' value (in 'GAL_BLANK_SIZE_T') and the maximums to zero. */
+  for(i=0;i<maxlabel;++i)
+    for(d=0;d<ndim;++d)
+      {
+        minmax[ i * width +        d ] = GAL_BLANK_SIZE_T; /* Minimum. */
+        minmax[ i * width + ndim + d ] = 0;                /* Maximum. */
+      }
+
+  /* Go over the objects label image and correct the minimum and maximum
+     coordinates. */
+  start=labs->array;
+  lf=(l=labs->array)+labs->size;
+  do
+    {
+      /* Small sanity check: the objects image shouldn't have negative
+         values (can happen when the user gives a clump image). */
+      if(*l!=GAL_BLANK_INT32 && *l<0)
+        error(EXIT_FAILURE, 0, "the main labeled image ('OBJECTS' HDU "
+              "when using Segment), shouldn't contain negative values. "
+              "This can happen when you mistakenly give Segment's "
+              "clumps as the main input labeled image. If you want to "
+              "treat clumps as objects, please use 'astarithmetic' to "
+              "convert all negative pixels to 0 before calling "
+              "MakeCatalog. For example this command: "
+              "'astarithmetic file.fits -hCLUMPS set-i i i 0 lt "
+              "0 where'. For this scenario, a better solution is to "
+              "only keep the clumps and give them each a separate "
+              "label with a command like this: 'astarithmetic file.fits "
+              "-hCLUMPS 0 gt 2 connected-components'");
+
+      /* We are on an object. */
+      if(*l>0)
+        {
+          /* Get the coordinates of this pixel. */
+          gal_dimension_index_to_coord(l-start, ndim, labs->dsize,
+                                       coord);
+
+          /* Check to see this coordinate is the smallest/largest found so
+             far for this label. Note that labels start from 1, while indexs
+             here start from zero. */
+          min = &minmax[ (*l-1) * width        ];
+          max = &minmax[ (*l-1) * width + ndim ];
+          for(d=0;d<ndim;++d)
+            {
+              if( coord[d] < min[d] ) min[d] = coord[d];
+              if( coord[d] > max[d] ) max[d] = coord[d];
+            }
+        }
+    }
+  while(++l<lf);
+
+  /* If a label doesn't exist in the image, then write over it and define
+     the unique labels to use for the next steps. To over-write, we have
+     two counters: 'i' (for the position in the input array) and 'no' (or
+     'num-objects' for the counter in the output table). In the end, 'no'
+     counts the total number of unique labels in the input. */
+  for(i=0;i<maxlabel;++i)
+    {
+      /* Make sure a pixel with this label exists in all dimensions. */
+      exists=0;
+      for(d=0;d<ndim;++d)
+        if ( minmax[ i * width + d ] == GAL_BLANK_SIZE_T
+             && minmax[ i * width + ndim + d ] == 0 )
+          {
+            /* When the label doesn't exist, but the user wants a row
+               anyway, make all the minimums and maximums of all
+               coordinates 0, note that the maximum is already zero. */
+            if(inbetweenints) minmax[ i * width + d ] = 0;
+          }
+        else
+          {
+            /* Write over the blank elements when necessary
+               (i!=j). When i==j, then these statements are
+               redundant. */
+            minmax[nuniq*width+d]=minmax[i*width+d];
+            minmax[nuniq*width+ndim+d]=minmax[i*width+ndim+d];
+
+            /* Set the checked flag. */
+            exists=1;
+          }
+
+      /* If it does (or if the user wants to keep all integers), then
+         increment the output counter.*/
+      if(inbetweenints || exists) ++nuniq;
+      else
+        {
+          /* If 'rarray' isn't defined yet, define it. */
+          if(rarray==NULL)
+            {
+              /* Note that by initializing with zeros, all (the possibly
+                 existing) previous rows that shouldn't be removed are
+                 flagged as zero in this array. */
+              *rows_to_remove=gal_data_alloc(NULL, GAL_TYPE_UINT8, 1,
+                                             &maxlabel, NULL, 1,
+                                             labs->minmapsize,
+                                             labs->quietmmap,
+                                             NULL, NULL, NULL);
+              rarray=(*rows_to_remove)->array;
+            }
+          rarray[i]=1;
+        }
+    }
+
+  /* Make the tiles and write the number of unique. */
+  tiles=gal_tile_series_from_minmax(labs, minmax, maxlabel);
+  *numunique=nuniq;
+
+  /* Clean up and return. */
+  if(labs!=labels) gal_data_free(labs);
+  free(minmax);
+  free(coord);
   return tiles;
 }
 

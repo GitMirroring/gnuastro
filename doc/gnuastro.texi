@@ -42841,6 +42841,29 @@ So in total @code{minmax} must have @code{2*ndim*number} elements.
 @end example
 @end deftypefun
 
+@deftypefun {gal_data_t *} gal_tile_per_label (gal_data_t @code{*labels}, size_t @code{maxlabel}, uint8_t @code{inbetweenints}, gal_data_t @code{**rows_to_remove}, size_t @code{*numunique})
+
+Create a series of tiles (the returned linked list) that enclose each label (a non-zero and positive integer identifier for a group of pixels) within @code{labels}.
+
+If you already have the value of the largest label of the input, you can pass it onto @code{maxlabel}, otherwise, set @code{maxlabel} to @code{GAL_BLANK_SIZE_T} (so this function finds the maximum label itself).
+We have defined this argument because functions like @code{gal_binary_connected_components} that create labeled images also return the maximum label, so it may not be necessary for this function to find it (and decrease performance).
+
+The three last arguments are related to cases when the label values in the image can be non-contiguous.
+For example when you have cropped a region within a larger labeled image.
+In such cases, if you want an empty tile for a non-existant label (a value between 1 and the maximum label, but with no associated pixels), @code{inbetweenints} should not be zero and the extra two output pointers/arguments will be created by this function:
+@table @code
+@item rows_to_remove
+This is a one-dimensional binary (@code{GAL_TYPE_UINT8}) dataset, that has @code{maxlabel} rows.
+For every label that does not exist in the image, it will have a value of 1 (and for labels that do exist a value of zero).
+You can use this to manage your future operations with the tiles.
+@item numunique
+The value that will be written in this pointer is the number of unique labels in the image.
+@end table
+
+In other words, if you would like to make sure that the label values in the image are contiguous or not, you can set @code{inbetweenints} to non-zero and check the pointer of @code{rows_to_remove}.
+
+@end deftypefun
+
 @deftypefun {gal_data_t *} gal_tile_block (gal_data_t @code{*tile})
 Return the dataset that contains @code{tile}'s allocated block of memory.
 If tile is immediately defined as part of the allocated block, then this is equivalent to @code{tile->block}.
