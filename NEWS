@@ -182,6 +182,17 @@ See the end of the file for license conditions.
 
   - Operators:
 
+    - interpolate-minofregion:
+    - interpolate-maxofregion: Now takes three operands (in order of
+      popping): the outer connectivity, the inner connectivity and the
+      image with blank pixels. Until now, it took only the inner
+      connectivity and the outer connectivity was hard-coded to the maximum
+      of the input's dimensions. This was necessary because it can happen
+      that the most permissive outer connectivity may be too loose in some
+      usage scenarios. To get the same output as before in your existing
+      scripts, add a '2' before the operator (for an image) or (3 for a
+      cube).
+
     - madclip-*: when the MAD is zero (median is repeated; mostly occurs on
       integer inputs), an alternative to the MAD will be used (difference
       between the two differing values just before and after the median in

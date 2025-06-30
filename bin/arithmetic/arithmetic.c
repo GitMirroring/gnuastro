@@ -818,7 +818,7 @@ arithmetic_invert(struct arithmeticparams *p, char *token)
     for(i=0;i<in->size;++i)                                             \
       {                                                                 \
         if( l[i]>0 )                                                    \
-          GAL_DIMENSION_NEIGHBOR_OP(i, in->ndim, in->dsize, in->ndim,   \
+          GAL_DIMENSION_NEIGHBOR_OP(i, in->ndim, in->dsize, ocon[0],    \
                                     dinc,                               \
             {                                                           \
               if(   in->type==GAL_TYPE_FLOAT32                          \
@@ -853,38 +853,44 @@ arithmetic_interpolate_region(struct arithmeticparams *p,
   int32_t *l;
   gal_data_t *minmax;
   gal_data_t *lab=NULL, *flag;
-  size_t i, *con, *dinc, numlabs;
+  size_t i, *icon, *ocon, *dinc, numlabs;
 
   /* First pop the number of nearby neighbors.*/
-  gal_data_t *connectivity = operands_pop(p, token);
+  gal_data_t *outconn = operands_pop(p, token);
+  gal_data_t *inconn  = operands_pop(p, token);
 
   /* Then pop the actual dataset to interpolate. */
   gal_data_t *in = operands_pop(p, token);
 
   /* Do proper sanity checks on 'con'. */
-  if(connectivity->size!=1)
-    error(EXIT_FAILURE, 0, "the first popped operand to the "
-          "'interpolate-XXXofregion' operators must be a single number. "
-          "However, it has %zu elements", connectivity->size);
-  if( connectivity->type==GAL_TYPE_FLOAT32
-      || connectivity->type==GAL_TYPE_FLOAT64)
-    error(EXIT_FAILURE, 0, "the first popped operand to "
-          "'interpolate-XXXofregion' operators is the connectivity to "
-          "define connected blank regions (a counter, an integer, with "
-          "a maximum of the number of dimensions of the input). It must "
-          "NOT be a floating point.\n\n"
-          "If its already an integer, but in a floating point container, "
-          "you can use the 'int32' operator to convert it to a 32-bit "
-          "integer for example");
+  if(inconn->size!=1 || outconn->size!=1)
+    error(EXIT_FAILURE, 0, "the first and second popped operands to the "
+          "'interpolate-*ofregion' operators must be a single number. "
+          "However, it has %zu elements", inconn->size);
+  if(    inconn->type==GAL_TYPE_FLOAT32
+      || inconn->type==GAL_TYPE_FLOAT64
+      || outconn->type==GAL_TYPE_FLOAT32
+      || outconn->type==GAL_TYPE_FLOAT64 )
+    error(EXIT_FAILURE, 0, "the first and second popped operands to "
+          "'interpolate-*ofregion' operators are the connectivity to "
+          "define connected regions. The first popped is used to the "
+          "define the connectivity of the outer neighbors and the "
+          "second popped operand is used to define the region. They "
+          "should both be a counter (a positive integer) with a maximum "
+          "of the number of dimensions of the input). They cannot NOT "
+          "be a floating point. If its already an integer, but in a "
+          "floating point container, you can use the 'int32' operator "
+          "to convert it to a 32-bit integer");
 
   /* Convert connectivity to an integer type and make sure its not larger
      than dimensions of the input. */
-  connectivity=gal_data_copy_to_new_type_free(connectivity,
-                                              GAL_TYPE_SIZE_T);
-  con=connectivity->array;
-  if(con[0]>in->ndim)
-    error(EXIT_FAILURE, 0, "the first popped operand to "
-          "'interpolate-XXXofregion' operators must not be larger than "
+  inconn=gal_data_copy_to_new_type_free(inconn, GAL_TYPE_SIZE_T);
+  outconn=gal_data_copy_to_new_type_free(outconn, GAL_TYPE_SIZE_T);
+  icon=inconn->array;
+  ocon=outconn->array;
+  if(icon[0]>in->ndim || ocon[0]>in->ndim)
+    error(EXIT_FAILURE, 0, "the first and second popped operands to "
+          "'interpolate-*ofregion' operators must not be larger than "
           "the number of dimensions of the input. The connectivity is "
           "used to define connected blank regions. For example in a "
           "2D dataset, a connectivity of 1 corresponds to 4-connected "
@@ -899,7 +905,7 @@ arithmetic_interpolate_region(struct arithmeticparams *p,
   /* Build a binary image with the blank regions masked and label them,
      then free the flagged array. */
   flag=gal_blank_flag(in);
-  numlabs=gal_binary_connected_components(flag, &lab, con[0]);
+  numlabs=gal_binary_connected_components(flag, &lab, icon[0]);
   gal_data_free(flag);
 
   /* Allocate array to keep maximum values for each region. Just note that
@@ -938,7 +944,7 @@ arithmetic_interpolate_region(struct arithmeticparams *p,
   free(dinc);
   gal_data_free(lab);
   gal_data_free(minmax);
-  gal_data_free(connectivity);
+  gal_data_free(inconn);
 
   /* Push the interpolated dataset onto the stack. */
   operands_add(p, NULL, in);
