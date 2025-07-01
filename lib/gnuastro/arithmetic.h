@@ -182,6 +182,10 @@ enum gal_arithmetic_operators
   GAL_ARITHMETIC_OP_UNIQUE,       /* Only return unique elements.          */
   GAL_ARITHMETIC_OP_NOBLANK,      /* Only keep non-blank elements.         */
 
+  GAL_ARITHMETIC_OP_LABEL_AREA,   /* Fill labeles with area of its values. */
+  GAL_ARITHMETIC_OP_LABEL_MINIMUM,/* Fill labeles with min of its values.  */
+  GAL_ARITHMETIC_OP_LABEL_MAXIMUM,/* Fill labeles with max of its values.  */
+
   GAL_ARITHMETIC_OP_MIN,          /* Minimum per pixel of multiple arrays. */
   GAL_ARITHMETIC_OP_MAX,          /* Maximum per pixel of multiple arrays. */
   GAL_ARITHMETIC_OP_NUMBER,       /* Non-blank number of pixels in arrays. */

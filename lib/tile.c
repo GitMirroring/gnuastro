@@ -242,6 +242,11 @@ gal_tile_series_from_minmax(gal_data_t *block, size_t *minmax, size_t number)
       min = &minmax[ i * width        ];
       max = &minmax[ i * width + ndim ];
 
+      /* For a check.
+      printf("%s: [%zu,%zu], [%zu,%zu]\n", __func__, min[0], max[0],
+             min[1], max[1]);
+      */
+
       /* Tile types should be invalid (we shouldn't use tiles directly),
          also se the other simple values. */
       tiles[i].flag  = 0;
@@ -249,18 +254,28 @@ gal_tile_series_from_minmax(gal_data_t *block, size_t *minmax, size_t number)
       tiles[i].type  = GAL_TYPE_INVALID;
       tiles[i].next  = i==number-1 ? NULL : &tiles[i+1];
 
-      /* Set the size related constants. */
-      size = 1;
-      tiles[i].ndim  = ndim;
-      tiles[i].dsize = gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0,
-                                            __func__, "tiles[i].dsize");
-      for(d=0;d<ndim;++d) size *= tiles[i].dsize[d] = max[d] - min[d] + 1;
-      tiles[i].size  = size;
+      /* In case any of the values is blank, do not set the size or
+         pointers. */
+      if(    min[0]!=GAL_BLANK_SIZE_T
+          && max[0]!=GAL_BLANK_SIZE_T
+          && min[1]!=GAL_BLANK_SIZE_T
+          && max[1]!=GAL_BLANK_SIZE_T )
+        {
 
-      /* Tile's array pointer. */
-      ind=gal_dimension_coord_to_index(ndim, block->dsize, min);
-      tiles[i].array = gal_pointer_increment(block->array, ind,
-                                             block->type);
+          /* Set the size related constants. */
+          size=1;
+          tiles[i].ndim=ndim;
+          tiles[i].dsize=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0,
+                                              __func__, "tiles[i].dsize");
+          for(d=0;d<ndim;++d)
+            size *= tiles[i].dsize[d] = max[d] - min[d] + 1;
+          tiles[i].size  = size;
+
+          /* Tile's array pointer. */
+          ind=gal_dimension_coord_to_index(ndim, block->dsize, min);
+          tiles[i].array = gal_pointer_increment(block->array, ind,
+                                                 block->type);
+        }
     }
 
   /* For a check (put all the objects in an extension of a test file).
@@ -305,56 +320,28 @@ gal_tile_per_label_number(gal_data_t *labels)
 
 
 
-/* Define a tile over each group of labeled pixels within the input
-   image. */
-gal_data_t *
-gal_tile_per_label(gal_data_t *labels, size_t maxlabel,
-                   uint8_t inbetweenints, gal_data_t **rows_to_remove,
-                   size_t *numunique)
+static size_t *
+gal_tile_per_label_minmax(gal_data_t *labs, size_t *maxlabel)
 {
-  uint8_t *rarray=NULL;
-  size_t *minmax, *coord;
   int32_t *l, *lf, *start;
-  gal_data_t *labs, *tiles;
-  size_t ndim=labels->ndim;
-  size_t i, d, nuniq=0, *min, *max, exists, width;
-
-  /* Make sure the type of the input is correct. */
-  if(labels->type==GAL_TYPE_FLOAT32 || labels->type==GAL_TYPE_FLOAT64)
-    error(EXIT_FAILURE, 0, "%s: the input labels dataset must have "
-          "an integer type not floating point", __func__);
-  if(    labels->type==GAL_TYPE_INT64
-      || labels->type==GAL_TYPE_UINT32
-      || labels->type==GAL_TYPE_UINT64 )
-    error(EXIT_FAILURE, 0, "%s: the input labels dataset must not be "
-          "larger int32, but it has a type of '%s'", __func__,
-          gal_type_name(labels->type, 1));
-
-  /* Initialize the two output pointer (in case it is not allocated below
-     depending on the conditions). */
-  *rows_to_remove=NULL;
-
-  /* In case the input labels is not a signed 32-bit integer, copy it to
-     this type. */
-  labs = ( labels->type==GAL_TYPE_INT32
-           ? labels
-           : gal_data_copy_to_new_type(labels, GAL_TYPE_INT32) );
+  size_t *min, *max, maxlab=*maxlabel;
+  size_t i, d, width, *minmax, *coord, ndim=labs->ndim;
 
   /* If the number of labels is not set (it is blank), find the largest
-     label within the image. */
-  maxlabel = ( maxlabel==GAL_BLANK_SIZE_T
-                ? gal_tile_per_label_number(labs) : maxlabel );
+     label within the image and write it in that value. */
+  if(maxlab==GAL_BLANK_SIZE_T)
+    *maxlabel=maxlab=gal_tile_per_label_number(labs);
 
   /* Allocate the necessary arrays. */
   width=2*ndim;
-  minmax=gal_pointer_allocate(GAL_TYPE_SIZE_T, width*maxlabel, 0,
+  minmax=gal_pointer_allocate(GAL_TYPE_SIZE_T, width*maxlab, 0,
                               __func__, "minmax");
   coord=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0, __func__,"coord");
 
   /* Initialize the minimum and maximum position for each tile/object. So,
      we'll initialize the minimum coordinates to the maximum possible
      'size_t' value (in 'GAL_BLANK_SIZE_T') and the maximums to zero. */
-  for(i=0;i<maxlabel;++i)
+  for(i=0;i<maxlab;++i)
     for(d=0;d<ndim;++d)
       {
         minmax[ i * width +        d ] = GAL_BLANK_SIZE_T; /* Minimum. */
@@ -404,66 +391,186 @@ gal_tile_per_label(gal_data_t *labels, size_t maxlabel,
     }
   while(++l<lf);
 
+  /* Clean up and return. */
+  free(coord);
+  return minmax;
+}
+
+
+
+
+
+static gal_data_t *
+gal_tile_per_label_minmax_adjust(gal_data_t *labs, size_t *maxlabel,
+                                 uint8_t inbetweenints, size_t *minmax,
+                                 size_t *numexist)
+{
+  int exists;
+  uint8_t *farray=NULL;
+  gal_data_t *labs_not_present=NULL;
+  size_t i, d, width, nexist=0, ndim=labs->ndim, maxlab=*maxlabel;
+
   /* If a label doesn't exist in the image, then write over it and define
      the unique labels to use for the next steps. To over-write, we have
-     two counters: 'i' (for the position in the input array) and 'no' (or
-     'num-objects' for the counter in the output table). In the end, 'no'
-     counts the total number of unique labels in the input. */
-  for(i=0;i<maxlabel;++i)
+     two counters: 'i' (for the position in the input array) and 'nexist'
+     (for the counter in the output table). In the end, 'nexist' counts the
+     total number of unique labels in the input. */
+  width=2*ndim;
+  for(i=0;i<maxlab;++i)
     {
       /* Make sure a pixel with this label exists in all dimensions. */
       exists=0;
       for(d=0;d<ndim;++d)
-        if ( minmax[ i * width + d ] == GAL_BLANK_SIZE_T
-             && minmax[ i * width + ndim + d ] == 0 )
+        if (    minmax[ i * width + d        ] == GAL_BLANK_SIZE_T
+             && minmax[ i * width + ndim + d ] == 0                )
           {
             /* When the label doesn't exist, but the user wants a row
                anyway, make all the minimums and maximums of all
                coordinates 0, note that the maximum is already zero. */
-            if(inbetweenints) minmax[ i * width + d ] = 0;
+            if(inbetweenints) minmax[i*width+ndim+d] = GAL_BLANK_SIZE_T;
           }
         else
           {
             /* Write over the blank elements when necessary
                (i!=j). When i==j, then these statements are
                redundant. */
-            minmax[nuniq*width+d]=minmax[i*width+d];
-            minmax[nuniq*width+ndim+d]=minmax[i*width+ndim+d];
+            minmax[nexist*width+d]=minmax[i*width+d];
+            minmax[nexist*width+ndim+d]=minmax[i*width+ndim+d];
 
             /* Set the checked flag. */
             exists=1;
           }
 
-      /* If it does (or if the user wants to keep all integers), then
-         increment the output counter.*/
-      if(inbetweenints || exists) ++nuniq;
+      /* If the label exists (or if the user wants to keep all integers),
+         then increment the output counter. Otherwise, write the keep a
+         flag that the given label didn't exist. */
+      if(inbetweenints || exists) ++nexist;
       else
         {
-          /* If 'rarray' isn't defined yet, define it. */
-          if(rarray==NULL)
+          /* If 'farray' isn't defined yet, define it. */
+          if(farray==NULL)
             {
               /* Note that by initializing with zeros, all (the possibly
                  existing) previous rows that shouldn't be removed are
                  flagged as zero in this array. */
-              *rows_to_remove=gal_data_alloc(NULL, GAL_TYPE_UINT8, 1,
-                                             &maxlabel, NULL, 1,
-                                             labs->minmapsize,
-                                             labs->quietmmap,
-                                             NULL, NULL, NULL);
-              rarray=(*rows_to_remove)->array;
+              labs_not_present=gal_data_alloc(NULL, GAL_TYPE_UINT8, 1,
+                                              &maxlab, NULL, 1,
+                                              labs->minmapsize,
+                                              labs->quietmmap,
+                                              NULL, NULL, NULL);
+              farray=(labs_not_present)->array;
             }
-          rarray[i]=1;
+          farray[i]=1;
         }
     }
 
-  /* Make the tiles and write the number of unique. */
-  tiles=gal_tile_series_from_minmax(labs, minmax, maxlabel);
-  *numunique=nuniq;
+  /* If we re-arranged the minimum and maximums, set all the remaining
+     minimum and maximums blank (so no tile is created).  */
+  if(inbetweenints==0)
+    {
+      for(i=nexist;i<maxlab;++i)
+        for(d=0;d<ndim;++d)
+          {
+            minmax[ i * width +        d ] = GAL_BLANK_SIZE_T; /* Min. */
+            minmax[ i * width + ndim + d ] = GAL_BLANK_SIZE_T; /* Max. */
+          }
+    }
+
+  /* Return the flags table (identifying which labels were not present in
+     the input. */
+  *numexist=nexist;
+  return labs_not_present;
+}
+
+
+
+
+static gal_data_t *
+gal_tile_per_label_match(gal_data_t *labs_not_present, size_t ntiles)
+{
+  gal_data_t *out=NULL;
+  int32_t *lab_from_tile;
+  size_t *t, *tf, *lab_to_tile;
+  uint8_t *farray=labs_not_present->array;
+  size_t i, j, maxlab=labs_not_present->size, maxlabp1=maxlab+1;
+
+  /* Column to map labels to tiles. Note that because labels start counting
+     from 1 and we want a direct mapping, it is important to allocate one
+     more than 'maxlab'. */
+  gal_list_data_add_alloc(&out, NULL, GAL_TYPE_SIZE_T, 1, &maxlabp1, NULL,
+                          0, labs_not_present->minmapsize,
+                          labs_not_present->quietmmap, "LAB-TO-TILE",
+                          NULL, NULL);
+  lab_to_tile=out->array; /* Must be after the '_alloc' above. */
+
+  /* Column to map tiles to labels. */
+  gal_list_data_add_alloc(&out, NULL, GAL_TYPE_INT32, 1, &ntiles, NULL,
+                          0, labs_not_present->minmapsize,
+                          labs_not_present->quietmmap, "LAB-FROM-TILE",
+                          NULL, NULL);
+  lab_from_tile=out->array; /* Must be after the '_alloc' above. */
+
+  /* Tile index (counting from zero) to input label (counting from 1). */
+  j=0;
+  for(i=0;i<maxlab;++i) if(farray[i]==0) lab_from_tile[j++]=i+1;
+
+  /* Input label to tile index; but first initialize it to blank (so labels
+     do not exist give bad crashes in case they are not properly
+     checked!). */
+  tf=(t=lab_to_tile)+maxlabp1; do *t++=GAL_BLANK_UINT32; while(t<tf);
+  for(i=0;i<ntiles;++i) lab_to_tile[ lab_from_tile[i] ] = i;
+
+  /* For a check.
+  printf("%s: lab_from_tile:\n", __func__);
+  for(i=0;i<ntiles;++i)
+    printf("\ttile-%zu: lab-%d\n", i, lab_from_tile[i]);
+  printf("%s: lab_to_tile:\n", __func__);
+  for(i=0;i<maxlabp1;++i)
+    printf("\tlab-%zu: tile-%d\n", i, lab_to_tile[i]);
+  exit(0);
+  */
+
+  /* Return the list. */
+  return out;
+}
+
+
+
+
+
+/* Define a tile over each group of labeled pixels within the input
+   image. */
+gal_data_t *
+gal_tile_per_label(gal_data_t *labels, size_t *maxlabel,
+                   uint8_t inbetweenints, gal_data_t **lab_fromto_tile)
+{
+  size_t ntiles, *minmax;
+  gal_data_t *labs, *tiles, *labs_not_present;
+
+  /* Make sure the input labels has the correct type and if not, convert to
+     the expected 'int32_t'. */
+  labs=gal_checkset_labels_to_int32(labels, __func__);
+
+  /* Find the minimum and maximum position of each label (necessary to
+     build tiles and adjust them (in case there are non-existant labels. */
+  minmax=gal_tile_per_label_minmax(labs, maxlabel);
+  labs_not_present=gal_tile_per_label_minmax_adjust(labs, maxlabel,
+                                                    inbetweenints,
+                                                    minmax, &ntiles);
+
+  /* Make the tiles for each existing/unique label. */
+  tiles=gal_tile_series_from_minmax(labs, minmax, ntiles);
+
+  /* If a mapping of labels to tiles is necessary add it here. We know it
+     is necessary when 'labs_not_present' exists.  */
+  *lab_fromto_tile = ( labs_not_present
+                       ? gal_tile_per_label_match(labs_not_present, ntiles)
+                       : NULL );
 
   /* Clean up and return. */
   if(labs!=labels) gal_data_free(labs);
+  gal_data_free(labs_not_present);
   free(minmax);
-  free(coord);
   return tiles;
 }
 

@@ -331,6 +331,10 @@ See the end of the file for license conditions.
   - bug #67232: Building failure on i686 architectures (32-bit).  Reported
     by Benson Muite and fixed by Giacomo Lorenzetti.
 
+  - bug #67275: Segmentation fault in MakeCagalot during clump catalog
+    generation when input labels not contiguous (for example you are
+    feeding a crop of a larger object/clump map).
+
 
 
 

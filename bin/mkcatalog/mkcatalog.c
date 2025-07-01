@@ -193,6 +193,61 @@ mkcatalog_single_object_init(struct mkcatalogparams *p,
 
 
 
+/* Fill column values with blanks in case the label does not actually exist
+   in the input table (can happen with '--inbetweenints'). This is based on
+   the 'columns_fill' function. */
+static void
+mkcatalog_single_object_not_exist(struct mkcatalog_passparams *pp)
+{
+  void *vstart;
+  size_t i, oind;
+  gal_data_t *column;
+  struct mkcatalogparams *p=pp->p;
+
+  /* If the two metadata arrays are allocated, set them for this column. */
+  if(p->numclumps_c)
+    p->numclumps_c[ p->obj_to_tile
+                    ? p->obj_to_tile[pp->object]
+                    : pp->object-1 ] = 0;
+
+  /* Set this object's rows in all columns to blank. */
+  for(column=p->objectcols; column!=NULL; column=column->next)
+    {
+      /* This object's row index. */
+      oind=pp->object-1;
+
+      /* Write single-valued columns. */
+      switch(column->ndim)
+        {
+        case 1: /* Single value columns. */
+          gal_blank_write(gal_pointer_increment(column->array, oind,
+                                                column->type),
+                          column->type);
+          break;
+
+        case 2: /* Vector columns. */
+          vstart=gal_pointer_increment(column->array,
+                                      oind*column->dsize[1],
+                                      column->type);
+          for(i=0;i<column->dsize[1];++i)
+            gal_blank_write(gal_pointer_increment(vstart, i,
+                                                  column->type),
+                            column->type);
+          break;
+
+        default:
+          error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
+                "'%s' to find and fix the problem. 'col->ndim' "
+                "should be either 1 or 2, but has a value of %zu",
+                __func__, PACKAGE_BUGREPORT, column->ndim);
+        }
+    }
+}
+
+
+
+
+
 /* Each thread will call this function once. It will go over all the
    objects that are assigned to it. */
 static void *
@@ -211,12 +266,19 @@ mkcatalog_single_object(void *in_prm)
   for(i=0; tprm->indexs[i]!=GAL_BLANK_SIZE_T; ++i)
     {
       /* For easy reading. Note that the object IDs start from one while
-         the array positions start from 0. */
-      pp.ci       = NULL;
-      pp.object   = ( p->outlabs
-                      ? p->outlabs[ tprm->indexs[i] ]
-                      : tprm->indexs[i] + 1 );
-      pp.tile     = &p->tiles[   tprm->indexs[i] ];
+         the tile indexs (that we parallelize over) start from 0. */
+      pp.ci = NULL;
+      pp.tile = &p->tiles[ tprm->indexs[i] ];
+      pp.object = ( p->obj_from_tile
+                    ? p->obj_from_tile[ tprm->indexs[i] ]
+                    : tprm->indexs[i] + 1 );
+
+      /* When the 'ndim' of the tile is zero, this label did not exist in
+         the image (only present because '--inbetweenints' was called). In
+         this case, simply set all the column values to blank and go to the
+         next object. */
+      if(pp.tile->ndim==0)
+        { mkcatalog_single_object_not_exist(&pp); continue; }
 
       /* Initialize the parameters for this object/tile. */
       parse_initialize(&pp);
@@ -404,49 +466,76 @@ mkcatalog_wcs_conversion(struct mkcatalogparams *p)
 /* Since all the measurements were done in parallel (and we didn't know the
    number of clumps per object a-priori), the clumps informtion is just
    written in as they are measured. Here, we'll sort the clump columns by
-   object ID. There is an option to disable this. */
+   object ID (when it is requested). */
 static void
 sort_clumps_by_objid(struct mkcatalogparams *p)
 {
   gal_data_t *col;
-  size_t o, i, j, *permute, *rowstart;
+  size_t i, j, tind, *permute, *rowstart;
+  size_t ptwc=GAL_BLANK_SIZE_T; /* previous tile with clump. */
 
   /* Make sure everything is fine. */
-  if(p->hostobjid_c==NULL || p->numclumps_c==NULL)
-    error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to fix the "
-          "problem. 'p->hostobjid_c' and 'p->numclumps_c' must not be "
-          "NULL.", __func__, PACKAGE_BUGREPORT);
-
+  if(p->hosttind_c==NULL || p->numclumps_c==NULL)
+    error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to fix "
+          "the problem. 'p->hostobjid_c' and 'p->numclumps_c' must not "
+          "be NULL.", __func__, PACKAGE_BUGREPORT);
 
   /* Allocate the necessary arrays. */
-  rowstart=gal_pointer_allocate(GAL_TYPE_SIZE_T, p->numobjects, 0, __func__,
-                                 "rowstart");
-  permute=gal_pointer_allocate(GAL_TYPE_SIZE_T, p->numclumps, 0, __func__,
-                                "permute");
+  rowstart=gal_pointer_allocate(GAL_TYPE_SIZE_T, p->numtiles, 0,
+                                __func__, "rowstart");
+  permute=gal_pointer_allocate(GAL_TYPE_SIZE_T, p->numclumps, 0,
+                               __func__, "permute");
 
+  /* The tile/object array is already sorted by tile ID. So we should just
+     add up the number of clumps in each object to find the row where each
+     object's clumps should start from in the final sorted clumps
+     catalog. */
+  for(i=0;i<p->numtiles;++i)
+    {
+      /* This tile has clumps, use the previous tile's total clumps to find
+         the starting row of this tile's clumps. */
+      if(p->numclumps_c[i])
+        {
+          rowstart[i] = ( ptwc==GAL_BLANK_SIZE_T
+                          ? 0
+                          : rowstart[ptwc]+p->numclumps_c[ptwc] );
+          ptwc=i;
 
-  /* The objects array is already sorted by object ID. So we should just
-     add up the number of clumps to find the row where each object's clumps
-     should start from in the final sorted clumps catalog. */
-  rowstart[0] = 0;
-  for(i=1;i<p->numobjects;++i)
-    rowstart[i] = p->numclumps_c[i-1] + rowstart[i-1];
+          /* For a check.
+          printf("%s: %zu, %zu, %zu\n", __func__, i,
+                 p->numclumps_c[i], rowstart[i]);
+          */
+        }
 
-  /* Fill the permutation array. Note that WE KNOW that all the objects for
-     one clump are after each other.*/
+      /* There are no clumps on this tile, so we'll just put a blank value
+         to create a segmentation fault if not used properly (better than a
+         logical error). */
+      else rowstart[i] = GAL_BLANK_SIZE_T;
+    }
+
+  /* Fill the permutation array to rearrange the clump rows. Note that WE
+     KNOW that all the clumps within for one objects are already
+     immediately after each other. */
   i=0;
   while(i<p->numclumps)
     {
-      o = ( p->outlabsinv
-            ? (p->outlabsinv[ p->hostobjid_c[i] ] + 1)
-            : p->hostobjid_c[i] ) - 1;
-      for(j=0; j<p->numclumps_c[o]; ++j)
-        permute[i++] = rowstart[o] + j;
+      /* Find the tile-id of this clump and depending on how many clumps
+         there are in this tile, increment the clump-index ('i'). */
+      tind = p->hosttind_c[i];
+      for(j=0; j<p->numclumps_c[tind]; ++j)
+        {
+          permute[i++] = rowstart[tind] + j;
+
+          /* For a check.
+             printf("%s: clump-%zu --> obj-%zu: %zu\n", __func__, i-1,
+                    tind, permute[i-1]);
+          */
+        }
     }
 
   /* Permute all the clump columns. */
   for(col=p->clumpcols; col!=NULL; col=col->next)
-    gal_permutation_apply_inverse(col, permute);
+      gal_permutation_apply_inverse(col, permute);
 
   /* Clean up */
   free(permute);
@@ -513,7 +602,7 @@ mkcatalog_write_outputs(struct mkcatalogparams *p)
              out);
       if(p->clumps)
         printf("    - CLUMPS: measurements on the clump labels.\n");
-      if(p->clumps)
+      if(p->upcheck)
         printf("    - CHECK-UPPERLIMIT: measurements on the "
                "clump labels.\n");
     }
@@ -549,7 +638,7 @@ mkcatalog(struct mkcatalogparams *p)
   if( p->cp.numthreads > 1 ) pthread_mutex_init(&p->mutex, NULL);
 
   /* Do the processing on each thread. */
-  gal_threads_spin_off(mkcatalog_single_object, p, p->numobjects,
+  gal_threads_spin_off(mkcatalog_single_object, p, p->numtiles,
                        p->cp.numthreads, p->cp.minmapsize,
                        p->cp.quietmmap);
 
@@ -558,9 +647,8 @@ mkcatalog(struct mkcatalogparams *p)
   mkcatalog_wcs_conversion(p);
 
   /* If the columns need to be sorted (by object ID), then some adjustments
-     need to be made (possibly to both the objects and clumps catalogs). */
-  if(p->hostobjid_c)
-    sort_clumps_by_objid(p);
+     need to be made to the clumps catalog.. */
+  if(p->hosttind_c) sort_clumps_by_objid(p);
 
   /* Write the filled columns into the output. */
   mkcatalog_write_outputs(p);

@@ -110,6 +110,11 @@ gal_checkset_noprefix_isequal(char *string, char *prefix,
 int
 gal_checkset_exec(char *executable_abs_address, gal_list_str_t *args);
 
+/**************************************************************/
+/**********         Common dataset formats         ************/
+/**************************************************************/
+gal_data_t *
+gal_checkset_labels_to_int32(gal_data_t *input, const char *funcname);
 
 /**************************************************************/
 /********** Set file names and check if they exist ************/

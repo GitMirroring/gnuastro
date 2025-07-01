@@ -582,31 +582,30 @@ ui_wcs_info(struct mkcatalogparams *p)
 
 /* When the number of clumps is not specified a priori (through the
    'NUMLABS' keyword in the clumps array, we need to map the original
-   labels to new labels that start counting from one and are
-   congtiguous. */
+   labels to new labels that start counting from one and are contiguous. */
 static size_t
 ui_num_clumps_orig_labs(struct mkcatalogparams *p)
 {
-  size_t ncinobj;
+  size_t tind, ncintile;
   gal_list_i32_t *tmp, **origclumplist;
-  int32_t olab, **origclpid, *c=p->clumps->array;
-  size_t i, j, numclumps=0, nobjpone=p->numobjects+1;
+  int32_t **origclpid, *c=p->clumps->array;
+  size_t i, numclumps=0, ntiles=p->numtiles;
   int32_t *o=p->objects->array, *of=o+p->objects->size;
 
   /* Allocate array of lists and arrays to keep the unique labels within
      each object. The list is used in the first run and the array is later
      filled based on the list.*/
   errno=0;
-  origclumplist=calloc(nobjpone, sizeof *origclumplist);
+  origclumplist=calloc(ntiles, sizeof *origclumplist);
   if(origclumplist==NULL)
     error(EXIT_FAILURE, 0, "%s: couldn't allocate %zu bytes for "
-          "'origclumplist'", __func__, nobjpone * sizeof *origclumplist);
+          "'origclumplist'", __func__, ntiles * sizeof *origclumplist);
   errno=0;
-  origclpid=calloc(nobjpone, sizeof *origclpid);
+  p->origclpid=origclpid=calloc(ntiles, sizeof *origclpid);
   if(origclpid==NULL)
     error(EXIT_FAILURE, 0, "%s: couldn't allocate %zu bytes for "
-          "'origclpid'", __func__, nobjpone * sizeof *origclpid);
-  p->origclpid=origclpid; /* To avoid 'p->' in the lines below. */
+          "'origclpid'", __func__, ntiles * sizeof *origclpid);
+  errno=0;
 
   /* Go over each pixel and find the list of original clump labels. */
   do
@@ -615,15 +614,15 @@ ui_num_clumps_orig_labs(struct mkcatalogparams *p)
       if(*o>0 && *c>0)
         {
           /* See if the label has already been found. */
-          olab = p->outlabsinv ? p->outlabsinv[*o] : *o;
-          for(tmp=origclumplist[olab];tmp!=NULL;tmp=tmp->next)
+          tind = p->obj_to_tile ? p->obj_to_tile[*o] : (*o-1);
+          for(tmp=origclumplist[tind];tmp!=NULL;tmp=tmp->next)
             if(tmp->v==*c) break;
 
           /* When it wasn't found, 'tmp==NULL'. */
           if(tmp==NULL)
             {
               ++numclumps;
-              gal_list_i32_add(&origclumplist[olab], *c);
+              gal_list_i32_add(&origclumplist[tind], *c);
             }
         }
 
@@ -632,47 +631,46 @@ ui_num_clumps_orig_labs(struct mkcatalogparams *p)
     }
   while(++o<of);
 
-  /* For a check of the list.
-  for(i=1;i<p->numobjects+1;++i)
+  /* For a check of the list so far.
+  for(i=0;i<ntiles;++i)
     {
-      printf("list%zu: ", i);
+      printf("Obj %d (tile %zu) as list: ",
+             p->obj_from_tile ? p->obj_from_tile[i] : (int32_t)(i+1), i);
       for(tmp=origclumplist[i];tmp!=NULL;tmp=tmp->next)
         printf("%d%s", tmp->v, tmp->next?" ":"");
       printf("\n");
     }
   */
 
-  /* Build a separate array of original labels for each objects. */
-  for(i=1;i<p->numobjects+1;++i)
-    {
-      /* Find the number of clumps in this object and allocate. */
-      ncinobj=gal_list_i32_number(origclumplist[i]);
-      origclpid[i]=gal_pointer_allocate(GAL_TYPE_INT32, ncinobj+1, 0,
-                                          __func__, "origclpid");
-
-      /* Put the list into the array in reverse because it was filled as
-         last-in-last-out. We are also setting the last element to blank so
-         we can parse through the labels when necessary. */
-      j=ncinobj;
-      origclpid[i][j--]=GAL_BLANK_INT32;
-      for(tmp=origclumplist[i];tmp!=NULL;tmp=tmp->next)
-        origclpid[i][j--]=tmp->v;
+  /* Convert the label list into an array. */
+  for(i=0;i<ntiles;++i)
+    if(origclumplist[i]) /* Only for objects that have clumps. */
+      {
+        /* Add a blank element at the end of the list (to enable parsing
+           like a string). Note that the reverse flag is activated because
+           we filled the clump labels as a last-in-last-out order. */
+        gal_list_i32_add(&origclumplist[i], GAL_BLANK_INT32);
+        origclpid[i]=gal_list_i32_to_array(origclumplist[i], 1,
+                                           &ncintile);
+        if(p->numclumps_c) p->numclumps_c[i]=ncintile;
     }
 
   /* For a check of the array.
-  for(i=1;i<p->numobjects+1;++i)
-    if(i==9)
-    {
-      printf("arr%zu: ", i);
-      for(j=0; origclpid[i][j]!=GAL_BLANK_INT32; ++j)
-        printf("%d%s", origclpid[i][j],
-               origclpid[i][j+1]==GAL_BLANK_INT32?"":" ");
-      printf("\n");
-    }
+  for(i=0;i<ntiles;++i)
+    if(origclumplist[i])
+      {
+        size_t j;
+        printf("Obj %d (tile %zu) as array: ",
+               p->obj_from_tile ? p->obj_from_tile[i] : (int32_t)(i+1), i);
+        for(j=0; origclpid[i][j]!=GAL_BLANK_INT32; ++j)
+          printf("%d%s", origclpid[i][j],
+                 origclpid[i][j+1]==GAL_BLANK_INT32?"":" ");
+        printf("\n");
+      }
   */
 
   /* Clean up and return the total number of clumps. */
-  for(i=1;i<p->numobjects;++i) gal_list_i32_free(origclumplist[i]);
+  for(i=0;i<ntiles;++i) gal_list_i32_free(origclumplist[i]);
   free(origclumplist);
   return numclumps;
 }
@@ -681,28 +679,28 @@ ui_num_clumps_orig_labs(struct mkcatalogparams *p)
 
 
 static size_t
-ui_num_clumps(struct mkcatalogparams *p)
+ui_clumps_not_from_segment(struct mkcatalogparams *p)
 {
-  size_t i, numclumps=0;
-  int32_t olab, *c=p->clumps->array;
+  size_t i, tind, numclumps=0;
+  int32_t *c=p->clumps->array;
   int32_t *o=p->objects->array, *of=o+p->objects->size;
 
   /* Count the total number of clumps and extract the original labels
      within the clumps into an array ('p->origclpid'). */
   numclumps=ui_num_clumps_orig_labs(p);
 
-  /* Re-write the clump values so their numbering is contiguous (this is
-     assumed during the later steps). */
+  /* Re-write the clump values in the input image so their numbering is
+     contiguous (this is assumed during the later steps). */
   o=p->objects->array;
   c=p->clumps->array;
   do
     {
-      /* Do the steps if we are on a clump. */
+      /* If we are on a clump, find its new label and replace it. */
       if(*o>0 && *c>0)
         {
-          olab = p->outlabsinv ? p->outlabsinv[*o] : *o;
-          for(i=0;p->origclpid[olab][i]!=GAL_BLANK_INT32;++i)
-            if(p->origclpid[olab][i]==*c) { *c=i+1; break; }
+          tind = p->obj_to_tile ? p->obj_to_tile[*o] : (*o-1);
+          for(i=0;p->origclpid[tind][i]!=GAL_BLANK_INT32;++i)
+            if(p->origclpid[tind][i]==*c) { *c=i+1; break; }
         }
 
       /* Increment the clumps pointer.*/
@@ -710,17 +708,18 @@ ui_num_clumps(struct mkcatalogparams *p)
     }
   while(++o<of);
 
+
   /* For a check
-  char *basename;
-  char *checkname;
-  int keepinputdir;
-  keepinputdir=p->cp.keepinputdir;
-  p->cp.keepinputdir = p->cp.output ? 1 : 0;
-  basename = p->cp.output ? p->cp.output : p->objectsfile;
-  checkname=gal_checkset_automatic_output(&p->cp, basename,
-                                          "-clumps-relab.fits");
-  gal_fits_img_write(p->clumps, checkname, NULL, PROGRAM_STRING);
-  p->cp.keepinputdir=keepinputdir;
+     char *basename;
+     char *checkname;
+     int keepinputdir;
+     keepinputdir=p->cp.keepinputdir;
+     p->cp.keepinputdir = p->cp.output ? 1 : 0;
+     basename = p->cp.output ? p->cp.output : p->objectsfile;
+     checkname=gal_checkset_automatic_output(&p->cp, basename,
+     "-clumps-relab.fits");
+     gal_fits_img_write(p->clumps, checkname, NULL, PROGRAM_STRING);
+     p->cp.keepinputdir=keepinputdir;
   */
 
   /* Return the number of clumps. */
@@ -732,48 +731,41 @@ ui_num_clumps(struct mkcatalogparams *p)
 
 
 static void
-ui_one_tile_per_object_correct_numobjects(struct mkcatalogparams *p)
+ui_one_tile_per_object(struct mkcatalogparams *p)
 {
-  size_t i, j, nuniq;
-  uint8_t *rarray=NULL;
-  gal_data_t *rows_to_remove=NULL;
+  gal_data_t *lab_fromto_tile=NULL;
 
   /* Find the tiles for each label. */
-  p->tiles=gal_tile_per_label(p->objects, p->numobjects,
-                              p->inbetweenints, &rows_to_remove,
-                              &nuniq);
+  p->tiles=gal_tile_per_label(p->objects, &p->maxobjlabel,
+                              p->inbetweenints, &lab_fromto_tile);
 
-  /* If 'rows_to_remove!=NULL', then there are elements to remove and we
-     need to make some modifications/corrections. */
-  rarray = rows_to_remove ? rows_to_remove->array : NULL;
-  if(rarray)
+  /* In case there isn't a one-to-one mapping between tiles and labels (can
+     happen example when the input is a crop on a larger labeled image), we
+     need a mapping between the tiles and labels (both ways); see the
+     documentation of 'gal_tile_per_label' in the book. */
+  if(lab_fromto_tile)
     {
-      /* Build an array to keep the real ID of each tile. */
-      j=0;
-      p->outlabs=gal_pointer_allocate(GAL_TYPE_INT32, nuniq, 0, __func__,
-                                      "p->outlabs");
-      for(i=0;i<p->numobjects;++i) if(rarray[i]==0) p->outlabs[j++]=i+1;
+      /* Move the arrays and the total number of tiles to stable places (in
+         the internal structure). */
+      p->numtiles=lab_fromto_tile->size;
+      p->obj_from_tile=lab_fromto_tile->array;
+      p->obj_to_tile=lab_fromto_tile->next->array;
 
-      /* Allocate an array for easy finding of the proper label and fill it
-         with the new labels. This array should have an element for each of
-         the original labels (that are not contiguous). */
-      if(p->clumpscat)
-        {
-          p->outlabsinv=gal_pointer_allocate(GAL_TYPE_UINT32,
-                                             p->numobjects+1, 1,
-                                             __func__, "p->outlabsinv");
-          for(i=0;i<nuniq;++i) p->outlabsinv[ p->outlabs[i] ] = i;
-        }
-
-      /* Correct numobjects and clean up. */
-      p->numobjects=nuniq;
-      gal_data_free(rows_to_remove);
+      /* Clean up (after setting the array pointers to NULL so they are not
+         freed here). */
+      lab_fromto_tile->array=NULL;
+      lab_fromto_tile->next->array=NULL;
+      gal_list_data_free(lab_fromto_tile);
 
       /* For a check:
-      for(i=0;i<p->numobjects;++i)
-        printf("outlabs[%zu]: %d\n", i, p->outlabs[i]);
+      size_t i;
+      for(i=0;i<p->numtiles;++i)
+        printf("tile: %zu: obj: %d\n", i, p->obj_from_tile[i]);
+      for(i=0;i<p->maxobjlabel+1;++i)
+        printf("obj: %zu: tile: %d\n", i, p->obj_to_tile[i]);
       */
     }
+  else p->numtiles=p->maxobjlabel;
 }
 
 
@@ -803,7 +795,8 @@ ui_read_labels(struct mkcatalogparams *p)
   p->objects=gal_data_copy_to_new_type_free(p->objects, GAL_TYPE_INT32);
 
 
-  /* Currently MakeCatalog is only implemented for 2D images or 3D cubes. */
+  /* Currently MakeCatalog is only implemented for 2D images or 3D
+     cubes. */
   if(p->objects->ndim!=2 && p->objects->ndim!=3)
     error(EXIT_FAILURE, 0, "%s (hdu %s) has %zu dimensions, MakeCatalog "
           "currently only supports 2D or 3D datasets", p->objectsfile,
@@ -833,23 +826,23 @@ ui_read_labels(struct mkcatalogparams *p)
   /* See if the total number of objects is given in the header keywords. */
   keys[0].name="NUMLABS";
   keys[0].type=GAL_TYPE_SIZE_T;
-  keys[0].array=&p->numobjects;
+  keys[0].array=&p->maxobjlabel;
   gal_fits_key_read(p->objectsfile, p->cp.hdu, keys, 0, 0, "--hdu");
   if(keys[0].status) /* status!=0: the key didn't exist. */
     {
       /* Get the maximum of the labels.*/
       tmp=gal_statistics_maximum(p->objects);
-      p->numobjects=*((int32_t *)(tmp->array)); /*numobjects is int32_t.*/
+      p->maxobjlabel=*((int32_t *)(tmp->array));
 
       /* In case the input is all blank, the maximum will be blank, so in
          effect, there we no objects. */
-      if(p->numobjects==GAL_BLANK_INT32) p->numobjects=0;
+      if(p->maxobjlabel==GAL_BLANK_INT32) p->maxobjlabel=0;
       gal_data_free(tmp);
     }
 
   /* If there were no objects in the input, then inform the user with an
      error (it is pointless to build a catalog). */
-  if(p->numobjects==0)
+  if(p->maxobjlabel==0)
     error(EXIT_FAILURE, 0, "no object labels (non-zero and non-blank "
           "pixels) in %s (hdu %s). To make a catalog, labeled regions "
           "must be defined", p->objectsfile, p->cp.hdu);
@@ -866,7 +859,7 @@ ui_read_labels(struct mkcatalogparams *p)
 
   /* Make the tiles that cover each object and also correct the total
      number of objects based on the parsing of the image. */
-  ui_one_tile_per_object_correct_numobjects(p);
+  ui_one_tile_per_object(p);
 
 
   /* Read the clumps array if necessary. */
@@ -909,7 +902,15 @@ ui_read_labels(struct mkcatalogparams *p)
       gal_fits_key_read(p->usedclumpsfile, p->clumpshdu, keys, 0, 0,
                         "--clumpshdu");
       if(keys[0].status) p->clumpsn=NAN;
-      if(keys[1].status) p->numclumps=ui_num_clumps(p);
+
+      /* When 'NUMLABS' isn't in the keywords, it shows that the image was
+         not created by Gnuastro's Segment program (at least not directly:
+         for example, this is a crop of Segment's output). But the rest of
+         steps make certain assuptions about the clumps (for example that
+         their IDs are contigous). With 'ui_clumps_not_from_segment', we
+         make sure all necessary conditions for later are met (and of
+         course, while reading the total number of clumps). */
+      if(keys[1].status) p->numclumps=ui_clumps_not_from_segment(p);
 
       /* If there were no clumps, then free the clumps array and set it to
          NULL, so for the rest of the processing, MakeCatalog things that
@@ -939,6 +940,18 @@ ui_read_labels(struct mkcatalogparams *p)
                   "created.\n", p->usedclumpsfile, p->clumpshdu);
           gal_data_free(p->clumps);
           p->clumps=NULL;
+        }
+
+      /* If it is necessary to sort the final clump catalog by ID, we need
+         the following two arrays (that will be filled later). */
+      if(!p->noclumpsort && p->cp.numthreads>1)
+        {
+          p->hosttind_c=gal_pointer_allocate(GAL_TYPE_SIZE_T,
+                                             p->numclumps, 0, __func__,
+                                             "p->hosttind_c");
+          p->numclumps_c=gal_pointer_allocate(GAL_TYPE_SIZE_T,
+                                              p->numtiles, 0, __func__,
+                                              "p->numclumps_c");
         }
     }
 
@@ -1360,11 +1373,11 @@ ui_preparations_read_inputs(struct mkcatalogparams *p)
       /* If an upperlimit check was requested, make sure the object number
          is not larger than the maximum number of labels. */
       if(p->checkuplim[0] != GAL_BLANK_INT32
-         && p->checkuplim[0] > p->numobjects)
+         && p->checkuplim[0] > p->maxobjlabel)
         error(EXIT_FAILURE, 0, "%d (object identifier for the "
               "'--checkuplim' option) is larger than the number of "
               "objects in the input labels (%zu)", p->checkuplim[0],
-              p->numobjects);
+              p->maxobjlabel);
 
       /* Read the mask file if it was given. */
       if(p->upmaskfile)
@@ -1624,24 +1637,6 @@ ui_preparations(struct mkcatalogparams *p)
 
   if( p->hasmag && isnan(p->zeropoint) )
     error(EXIT_FAILURE, 0, "no zeropoint specified");
-
-
-  /* Prepare the two internal arrays necessary to sort the clumps catalog
-     by object and clump IDs. We are allocating and filling these in
-     separately (and not using the actual output columns that have the same
-     values), because playing with the output columns can cause bad
-     bugs. If the user wants performance, they are encouraged to run
-     MakeCatalog with '--noclumpsort' and avoid the whole process all
-     together. */
-  if(p->clumps && !p->noclumpsort && p->cp.numthreads>1)
-    {
-      p->hostobjid_c=gal_pointer_allocate(GAL_TYPE_SIZE_T,
-                                          p->clumpcols->size, 0, __func__,
-                                          "p->hostobjid_c");
-      p->numclumps_c=gal_pointer_allocate(GAL_TYPE_SIZE_T,
-                                          p->objectcols->size, 0, __func__,
-                                          "p->numclumps_c");
-    }
 }
 
 
@@ -1834,7 +1829,7 @@ ui_free_report(struct mkcatalogparams *p, struct timeval *t1)
   free(p->valueshdu);
   free(p->clumpsfile);
   free(p->valuesfile);
-  free(p->hostobjid_c);
+  free(p->hosttind_c);
   free(p->numclumps_c);
   gal_data_free(p->sky);
   gal_data_free(p->std);
@@ -1843,22 +1838,21 @@ ui_free_report(struct mkcatalogparams *p, struct timeval *t1)
   gal_data_free(p->clumps);
   gal_data_free(p->objects);
   gal_data_free(p->upcheck);
-  if(p->outlabs) free(p->outlabs);
   gal_list_data_free(p->clumpcols);
   gal_list_data_free(p->objectcols);
-  if(p->outlabsinv) free(p->outlabsinv);
   if(p->upcheckout) free(p->upcheckout);
-  gal_data_array_free(p->tiles, p->numobjects, 0);
+  if(p->obj_to_tile) free(p->obj_to_tile);
+  if(p->obj_from_tile) free(p->obj_from_tile);
+  gal_data_array_free(p->tiles, p->numtiles, 0);
 
   /* The original clump labels. */
   if(p->origclpid)
     {
-      for(i=1;i<p->numobjects+1;++i)
+      for(i=0;i<p->numtiles;++i)
         if(p->origclpid[i])
           free(p->origclpid[i]);
       free(p->origclpid);
     }
-  /**/
 
   /* If the Sky or its STD image were given in tiles, then we defined a
      tile structure to deal with them. The initialization of the tile
@@ -1870,15 +1864,15 @@ ui_free_report(struct mkcatalogparams *p, struct timeval *t1)
     fprintf(stderr, "\nMore on the WARNING-UPPERLIMIT(s) above: "
             "In order to obtain a good/robust random distribution (and "
             "thus a reliable upper-limit measurement), it is necessary "
-            "to have a sufficienty wide enough range (in each dimension). "
-            "As mentioned in the warning(s) above, the available "
-            "range for random sampling of some of the labels in this "
-            "input is less than double their length. If the input is taken "
-            "from a larger dataset, this issue can be solved by using a "
-            "larger part of it. You can also run MakeCatalog with "
-            "'--checkuplim' to see the distribution for a special "
-            "object or clump as a table and personally inspect its "
-            "reliability. \n\n");
+            "to have a sufficienty wide enough range (in each "
+            "dimension). As mentioned in the warning(s) above, the "
+            "available range for random sampling of some of the labels "
+            "in this input is less than double their length. If the "
+            "input is taken from a larger dataset, this issue can be "
+            "solved by using a larger part of it. You can also run "
+            "MakeCatalog with '--checkuplim' to see the distribution "
+            "for a special object or clump as a table and personally "
+            "inspect its reliability. \n\n");
 
   /* Print the final message. */
   if(!p->cp.quiet)

@@ -22364,6 +22364,35 @@ Its usage is similar to @command{minvalue}, for example
 $ astarithmetic image.fits medianvalue -q
 @end example
 
+@item label-area
+Calculate the area (number of pixels) that have a unique label and replace that label's pixels with its area.
+The output will be an unsigned 32-bit integer (see @ref{Numeric data types}).
+
+The input labled image should have an integer type smaller than a signed 32-bit integer (so unsigned 32-bit or 64-bit integers are not acceptable).
+For exapmle the output of @code{connected-components} (see @ref{Mathematical morphology operators}), or Gnuastro's @ref{Segment} program.
+This operator can be useful when you want to separate the different labels by their area.
+For example let's assume you want to remove all labels that are smaller than 3 pixels.
+With the command below you can do that and generate new labels (starting from one).
+
+@example
+$ astarithmeitc label.fits label-area \
+                3 gt 2 connected-components
+@end example
+
+@item label-minimum
+@item label-maximum
+Calculate the minimum/maximum value of first popped operand (values image) that have a unique label in the second popped operand (labels image).
+The output will have the same type as the values image and the input labeled image should have the same properties as the @code{label-area} operator described above.
+
+For example, Let's assume you want to find ``thinner'' objects in the image (to keep or delete them).
+You can use the command below (using @code{number-neighbors} of @ref{Mathematical morphology operators}) as the second popped operand of this operator and then apply a threshold of 6 for example and generate new labels for the remaining objects.
+
+@example
+astarithmetic lab.fits set-l \
+              l l 0 gt 2 number-neighbors label-maximum \
+              6 uint8 gt 2 connected-components
+@end example
+
 @item madclip-maskfilled
 @item sigclip-maskfilled
 Mask (set to blank/NaN) all the outlying elements (defined by @mymath{\sigma} or MAD clipping) in the inputs and put all the inputs back on the stack.
@@ -42445,6 +42474,14 @@ These are just wrappers around similar functions in @ref{Statistical operations}
 In your programs, it will probably be easier if you use those @code{gal_statistics_} functions directly.
 @end deffn
 
+@deffn  Macro GAL_ARITHMETIC_OP_LABEL_AREA
+@deffnx Macro GAL_ARITHMETIC_OP_LABEL_MINIMUM
+@deffnx Macro GAL_ARITHMETIC_OP_LABEL_MAXIMUM
+Operators that will do the named measurement over the input labeled image (possibly using a values image as a second argument) and write the result in the label's pixels in the output.
+The area operator does not need a values dataset, but the rest do.
+For usage examples within the Arithmetic program, see the @code{label-*} operators of @ref{Statistical operators}.
+@end deffn
+
 @deffn Macro GAL_ARITHMETIC_OP_ABS
 Unary operand absolute-value operator.
 @end deffn
@@ -42841,26 +42878,58 @@ So in total @code{minmax} must have @code{2*ndim*number} elements.
 @end example
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_tile_per_label (gal_data_t @code{*labels}, size_t @code{maxlabel}, uint8_t @code{inbetweenints}, gal_data_t @code{**rows_to_remove}, size_t @code{*numunique})
+@deftypefun {gal_data_t *} gal_tile_per_label (gal_data_t @code{*labels}, size_t @code{*maxlabel}, uint8_t @code{inbetweenints}, gal_data_t @code{**lab_fromto_tile})
 
-Create a series of tiles (the returned linked list) that enclose each label (a non-zero and positive integer identifier for a group of pixels) within @code{labels}.
+Create a series of tiles that enclose each label (a non-zero and positive integer identifier for a group of pixels) within @code{labels}.
+The returned series of tiles is formatted as an array of datasets that are also a list (with @code{num_exist} nodes).
+The array nature of the output, allows fast/easy access to any label's tile, but by having the @code{next} pointer, you can also parse them as a list.
+To free the returned pointer after your job is done, use @code{gal_data_array_free}.
 
-If you already have the value of the largest label of the input, you can pass it onto @code{maxlabel}, otherwise, set @code{maxlabel} to @code{GAL_BLANK_SIZE_T} (so this function finds the maximum label itself).
+If you already have the value of the largest label of the input, you can pass it using the @code{maxlabel} argument (to avoid one round of parsing the labels).
+Otherwise, initialize @code{maxlabel} to @code{GAL_BLANK_SIZE_T}; in this case, this function will find the maximum label itself and write into the pointer (so you can use it later).
 We have defined this argument because functions like @code{gal_binary_connected_components} that create labeled images also return the maximum label, so it may not be necessary for this function to find it (and decrease performance).
 
 The three last arguments are related to cases when the label values in the image can be non-contiguous.
 For example when you have cropped a region within a larger labeled image.
-In such cases, if you want an empty tile for a non-existant label (a value between 1 and the maximum label, but with no associated pixels), @code{inbetweenints} should not be zero and the extra two output pointers/arguments will be created by this function:
-@table @code
-@item rows_to_remove
-This is a one-dimensional binary (@code{GAL_TYPE_UINT8}) dataset, that has @code{maxlabel} rows.
-For every label that does not exist in the image, it will have a value of 1 (and for labels that do exist a value of zero).
-You can use this to manage your future operations with the tiles.
-@item numunique
-The value that will be written in this pointer is the number of unique labels in the image.
-@end table
+In such cases, if you want an empty tile for a non-existant label (a value between 1 and the maximum label, but with no associated pixels), activate @code{inbetweenints} (by giving it a non-zero value).
 
-In other words, if you would like to make sure that the label values in the image are contiguous or not, you can set @code{inbetweenints} to non-zero and check the pointer of @code{rows_to_remove}.
+When @code{inbetweenints==0} and the labels do not start from one or are not contiguous, a one-to-one relation between the tiles and labels does not exist.
+In this case, the @code{lab_fromto_tile} argumet will be set by this function to allow easy mapping between the labels and tiles (its usage is described below).
+In other words, when @code{inbetweenints=0} you need to check if @code{lab_fromto_tile} is @code{NULL} or not and implement future steps based on that.
+
+When the returned @code{lab_fromto_tile} is not @code{NULL}, it will be a 2-node list of @code{gal_data_t}s (both are one dimensional).
+The first one is @code{GAL_TYPE_INT32}, and the length of the array is the number of tiles that are created (note that unlike labels that count from one, tiles count from zero).
+For example, if you want to know which input label the @code{t}-th tile corresponds to, simply use the @code{t}-th element of this array.
+
+The second node of @code{lab_fromto_tile} will be the inverse of the first mapping: knowing the label, you can retrieve the tile number that was constructed for it.
+The second node has one element more than the maximum label in the image (so the zero-th element will be blank; because label counting starts from 1, while tile counting starts from zero) with a type of @code{GAL_TYPE_SIZE_T}.
+For an example, if you want to know which output tile the @code{l}-th label corresponds to, simply use the @code{l}-th element of this array.
+Here is a minimal working example usage of this function:
+
+@verbatim
+int32_t *lab_from_tile=NULL;
+gal_data_t *tiles, *lab_fromto_tile=NULL;
+size_t *lab_to_tile=NULL, maxlab, numtiles;
+
+tiles=gal_tile_per_label(labels, &maxlab, 0, &lab_fromto_tile);
+if(lab_to_tile)
+  {
+    ntiles=lab_fromto_tile->size;
+    lab_from_tile=lab_fromto_tile->array;
+    lab_to_tile=lab_fromto_tile->next->array;
+  }
+else ntiles=maxlab;
+@end verbatim
+
+@noindent
+Given the code above, let's assume you want to parse each tile and find pixels that are associated to that tile.
+If the tile index is called @code{tind}, the line below will extract the label that the tile corresponds to:
+
+@verbatim
+lab = lab_from_tile ? lab_from_tile[tind] : tind+1;
+@end verbatim
+
+For a working example of this function, this function see the source of the @code{gal_label_measure} function (in @file{lib/label.c} file) within the tarball or version controlled source of Gnuastro (see @ref{Version controlled source}).
 
 @end deftypefun
 
@@ -44922,6 +44991,26 @@ But since @code{indexs->dsize[0]} and @code{indexs->size} have new values after 
 
 Connectivity is a value between @code{1} (fewest number of neighbors) and the number of dimensions in the input (most number of neighbors).
 For example, in a 2D dataset, a connectivity of @code{1} and @code{2} corresponds to 4-connected and 8-connected neighbors.
+@end deftypefun
+
+@deftypefun {gal_data_t *} gal_label_measure (gal_data_t @code{*labels}, gal_data_t @code{*values}, int @code{operator}, size_t @code{numthreads}, int @code{flags})
+Implement the given arithmetic measurement operator on the pixels that have the same label in @code{labels} (possibly on the @code{values} array) and write the operator's output over the pixels of that label.
+For examples of how this function can be useful see the examples of @code{label-*} operators of the Arithmetic program in @ref{Statistical operators}.
+
+The @code{flags} argument is read as bit-flags and the only one currently implemented is the @code{GAL_ARITHMETIC_FLAG_FREE} of @ref{Arithmetic on datasets}.
+In other words, if this bit-flag is active, the inputs will be freed.
+The different measurements currently accepted are implemented arithmetic library operators are the following (from @ref{Arithmetic on datasets}).
+Depending on the operator, the @code{values} dataset may not be necessary.
+
+@table @code
+@item GAL_ARITHMETIC_OP_LABEL_AREA
+Measure the area (number of pixels) of each label to write into that label's pixels.
+This operator does not use the @code{values} dataset and the output has a type of unsigned 32-bit integer.
+@item GAL_ARITHMETIC_OP_LABEL_MINIMUM
+@itemx GAL_ARITHMETIC_OP_LABEL_MAXIMUM
+Measure the minimum/maximum value (from @code{values}) of the pixels of each label (from @code{labels}) and write into that label's pixels.
+The output has the same type as the values dataset.
+@end table
 @end deftypefun
 
 

@@ -296,10 +296,11 @@ struct mkcatalogparams
   gal_data_t          *upmask;  /* Upper limit magnitude mask.          */
   float                medstd;  /* Median standard deviation value.     */
   float               cpscorr;  /* Counts-per-second correction.        */
-  int32_t            *outlabs;  /* Labels in output cat (when necessary)*/
-  int32_t         *outlabsinv;  /* Inverse of the 'outlabs' array.      */
+  int32_t      *obj_from_tile;  /* Conv. of tile index to obj counter.  */
+  size_t         *obj_to_tile;  /* Conv. of obj counter to tile index.  */
   int32_t         **origclpid;  /* Original clump labels in objects.    */
-  size_t           numobjects;  /* Number of object labels in image.    */
+  size_t          maxobjlabel;  /* Number of object labels in image.    */
+  size_t             numtiles;  /* Number of object labels in image.    */
   float               clumpsn;  /* Clump S/N threshold.                 */
   size_t            numclumps;  /* Number of clumps in image.           */
   gal_data_t      *objectcols;  /* Output columns for the objects.      */
@@ -317,8 +318,8 @@ struct mkcatalogparams
   size_t               rngmin;  /* Minimum possible value of RNG.       */
   size_t              rngdiff;  /* Difference of RNG max and min.       */
   uint8_t      uprangewarning;  /* A warning must be printed.           */
-  size_t         *hostobjid_c;  /* To sort the clumps table by Obj.ID.  */
-  size_t         *numclumps_c;  /* To sort the clumps table by Obj.ID.  */
+  size_t          *hosttind_c;  /* A clump's host tile index.           */
+  size_t         *numclumps_c;  /* Number of clumps in a tile.          */
   double        pixelarcsecsq;  /* Area of input's pixels in arcsec^2.  */
 
   char        *usedvaluesfile;  /* Ptr to final name used for values.   */

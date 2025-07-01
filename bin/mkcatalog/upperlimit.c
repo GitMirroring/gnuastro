@@ -664,13 +664,13 @@ upperlimit_calculate(struct mkcatalog_passparams *pp)
       /* If an upper-limit check image is requested, then make sure that
          the clump label is not more than the number of clumps in this
          object. */
-      if( p->checkuplim[0] == pp->object
+      if(    p->checkuplim[0] == pp->object
           && p->checkuplim[1] != GAL_BLANK_INT32
           && p->checkuplim[1] > pp->clumpsinobj )
-        error(EXIT_FAILURE, 0, "object %d has %zu clumps, but an upperlimit "
-              "check table (using the '--checkuplim' option) has been "
-              "requested for clump %d", pp->object, pp->clumpsinobj,
-              p->checkuplim[1]);
+        error(EXIT_FAILURE, 0, "object %d has %zu clumps, but an "
+              "upperlimit check table (using the '--checkuplim' "
+              "option) has been requested for clump %d", pp->object,
+              pp->clumpsinobj, p->checkuplim[1]);
 
       /* Make tiles covering the clumps. */
       clumptiles=upperlimit_make_clump_tiles(pp);
@@ -682,7 +682,7 @@ upperlimit_calculate(struct mkcatalog_passparams *pp)
          IDs. */
       for(i=0;i<pp->clumpsinobj;++i)
         {
-          seed = p->rng_seed + p->numobjects + p->numclumps * pp->object + i;
+          seed = p->rng_seed + p->numtiles + p->numclumps * pp->object + i;
           upperlimit_one_tile(pp, &clumptiles[i], seed, i+1);
         }
 

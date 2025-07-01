@@ -31,10 +31,13 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/list.h>
 #include <gnuastro/qsort.h>
 #include <gnuastro/label.h>
+#include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/dimension.h>
+#include <gnuastro/arithmetic.h>
 #include <gnuastro/statistics.h>
 
+#include <gnuastro-internal/checkset.h>
 
 
 
@@ -44,7 +47,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 
 /****************************************************************
- *****************         Internal          ********************
+ *****************     Checks and preparations     **************
  ****************************************************************/
 static void
 label_check_type(gal_data_t *in, uint8_t needed_type, char *variable,
@@ -1015,4 +1018,345 @@ gal_label_grow_indexs(gal_data_t *labels, gal_data_t *indexs, int withrivers,
 
   /* Clean up. */
   free(dinc);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**********************************************************************/
+/*************         Measurements on labels             *************/
+/**********************************************************************/
+struct label_measure_p
+{
+  int           operator;
+  gal_data_t        *out;
+  gal_data_t       *labs;
+  gal_data_t       *vals;
+  gal_data_t      *tiles;
+  int32_t *lab_from_tile;
+  size_t    *lab_to_tile;
+};
+
+
+
+
+
+static void
+label_measure_area(struct label_measure_p *p, gal_data_t *tile,
+                   int32_t lab)
+{
+  size_t increment=0, num_increment=1;
+  size_t start_end_inc[2]={0,tile->block->size-1}; /* inclusive */
+
+  /* Input/output specific types. */
+  int32_t *l, *lf, *lstart;
+  uint32_t *o, *of, *ostart;
+
+  /* Operational variables. */
+  size_t area=0;
+
+  /* Parse over the pixels of this tile to find the output value. */
+  lstart=gal_tile_start_end_ind_inclusive(tile, tile->block,
+                                          start_end_inc);
+  while( start_end_inc[0] + increment <= start_end_inc[1] ) /* slow-dim */
+    {
+      /* Parse over the fast dimension. */
+      lf = ( l = lstart + increment ) + tile->dsize[tile->ndim-1];
+      do if(*l++==lab) ++area; while(l<lf);
+
+      /* Increment to the next pointer. */
+      increment += gal_tile_block_increment(p->labs, tile->dsize,
+                                            num_increment++, NULL);
+    }
+
+  /* Write the value into the output. */
+  increment=0;
+  num_increment=1;
+  lstart=gal_tile_start_end_ind_inclusive(tile, tile->block,
+                                          start_end_inc);
+  ostart=gal_tile_start_end_ind_inclusive(tile, p->out, start_end_inc);
+  while( start_end_inc[0] + increment <= start_end_inc[1] )
+    {
+      l = lstart + increment;
+      of = ( o = ostart + increment ) + tile->dsize[tile->ndim-1];
+      do if(*l++==lab) *o=area; while(++o<of);
+      increment += gal_tile_block_increment(p->labs, tile->dsize,
+                                            num_increment++, NULL);
+    }
+}
+
+
+
+
+
+/* Used to check for blanks and to set the operator. It is very important
+   that the label be checked first (so it is also incremented at the same
+   time). */
+#define LABEL_MEASURE_MINMAX_OP(BCHECK, OP) {                           \
+    do if(*l++==lab && BCHECK && *v OP *ext) *ext=*v; while(++v<vf);    \
+  }
+
+/* Parsing function for minimum or maximum. */
+#define LABEL_MEASURE_MINMAX(VT) {                                      \
+  VT *ext=(VT *)(&outputvalue);                                         \
+  VT b, *vstart, *v=p->vals->array, *vf=v+p->vals->size;                \
+                                                                        \
+  /* Set the blank value and initialize the extremum. */                \
+  gal_blank_write(&b, p->vals->type);                                   \
+  if(p->operator==GAL_ARITHMETIC_OP_LABEL_MINIMUM)                      \
+    gal_type_max(p->vals->type, ext);                                   \
+  else gal_type_min(p->vals->type, ext);                                \
+                                                                        \
+  /* Set the sizes for the slow dimension. */                           \
+  vstart=gal_tile_start_end_ind_inclusive(tile, p->vals, start_end_inc); \
+  while( start_end_inc[0] + increment <= start_end_inc[1] )             \
+    {                                                                   \
+      /* Set the parsing pointers for the fast dimension. */            \
+      l = lstart + increment;                                           \
+      vf = ( v = vstart + increment ) + tile->dsize[tile->ndim-1];      \
+                                                                        \
+      if(b==b) /* On an integer type: the blank equals itself. */       \
+        {                                                               \
+          if(p->operator==GAL_ARITHMETIC_OP_LABEL_MINIMUM)              \
+            LABEL_MEASURE_MINMAX_OP(*v!=b, <)                           \
+          else if(p->operator==GAL_ARITHMETIC_OP_LABEL_MAXIMUM)         \
+            LABEL_MEASURE_MINMAX_OP(*v!=b, >)                           \
+        }                                                               \
+      else     /* On a floating point type. */                          \
+        {                                                               \
+          if(p->operator==GAL_ARITHMETIC_OP_LABEL_MINIMUM)              \
+            LABEL_MEASURE_MINMAX_OP(*v==*v, <)                          \
+          else if(p->operator==GAL_ARITHMETIC_OP_LABEL_MAXIMUM)         \
+            LABEL_MEASURE_MINMAX_OP(*v==*v, >)                          \
+        }                                                               \
+                                                                        \
+      /* Increment the slow dimension. */                               \
+      increment += gal_tile_block_increment(p->labs, tile->dsize,       \
+                                            num_increment++, NULL);     \
+    }                                                                   \
+  }
+
+
+
+
+
+/* High-level macroS to call various low-level values-parsing and
+   output-writin macros.  */
+#define LABEL_MEASURE_PARSE_VALS(PARSE_MACRO) {                         \
+  lstart=gal_tile_start_end_ind_inclusive(tile, tile->block,            \
+                                          start_end_inc);               \
+  switch(p->vals->type)                                                 \
+    {                                                                   \
+    case GAL_TYPE_INT8:    PARSE_MACRO(int8_t);   break;                \
+    case GAL_TYPE_UINT8:   PARSE_MACRO(uint8_t);  break;                \
+    case GAL_TYPE_INT16:   PARSE_MACRO(int16_t);  break;                \
+    case GAL_TYPE_UINT16:  PARSE_MACRO(uint16_t); break;                \
+    case GAL_TYPE_INT32:   PARSE_MACRO(int32_t);  break;                \
+    case GAL_TYPE_UINT32:  PARSE_MACRO(uint32_t); break;                \
+    case GAL_TYPE_INT64:   PARSE_MACRO(int64_t);  break;                \
+    case GAL_TYPE_UINT64:  PARSE_MACRO(uint64_t); break;                \
+    case GAL_TYPE_FLOAT32: PARSE_MACRO(float);    break;                \
+    case GAL_TYPE_FLOAT64: PARSE_MACRO(double);   break;                \
+    default:                                                            \
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' "    \
+            "to find and fix the problem. The values type '%s' is "     \
+            "not recognized", __func__, PACKAGE_BUGREPORT,              \
+            gal_type_name(p->vals->type, 1));                           \
+    }                                                                   \
+  }
+
+#define LABEL_MEASURE_OUTPUT_WRITE(OT) {                                \
+  OT *o, *of, *ostart, *ow=(OT *)(&outputvalue);                        \
+  increment=0;      /* Was changed while parsing input values. */       \
+  num_increment=1;  /* Was changed wihle parsing input values. */       \
+  lstart=gal_tile_start_end_ind_inclusive(tile, tile->block,            \
+                                          start_end_inc);               \
+  ostart=gal_tile_start_end_ind_inclusive(tile, p->out, start_end_inc); \
+  while( start_end_inc[0] + increment <= start_end_inc[1] )             \
+    {                                                                   \
+      l = lstart + increment;                                           \
+      of = ( o = ostart + increment ) + tile->dsize[tile->ndim-1];      \
+      do if(*l++==lab) *o=*ow; while(++o<of);                           \
+      increment += gal_tile_block_increment(p->labs, tile->dsize,       \
+                                            num_increment++, NULL);     \
+    }                                                                   \
+  }
+
+#define LABEL_MEASURE_OUTPUT {                                          \
+  switch(p->out->type)                                                  \
+    {                                                                   \
+    case GAL_TYPE_INT8:    LABEL_MEASURE_OUTPUT_WRITE(int8_t);   break; \
+    case GAL_TYPE_UINT8:   LABEL_MEASURE_OUTPUT_WRITE(uint8_t);  break; \
+    case GAL_TYPE_INT16:   LABEL_MEASURE_OUTPUT_WRITE(int16_t);  break; \
+    case GAL_TYPE_UINT16:  LABEL_MEASURE_OUTPUT_WRITE(uint16_t); break; \
+    case GAL_TYPE_INT32:   LABEL_MEASURE_OUTPUT_WRITE(int32_t);  break; \
+    case GAL_TYPE_UINT32:  LABEL_MEASURE_OUTPUT_WRITE(uint32_t); break; \
+    case GAL_TYPE_INT64:   LABEL_MEASURE_OUTPUT_WRITE(int64_t);  break; \
+    case GAL_TYPE_UINT64:  LABEL_MEASURE_OUTPUT_WRITE(uint64_t); break; \
+    case GAL_TYPE_FLOAT32: LABEL_MEASURE_OUTPUT_WRITE(float);    break; \
+    case GAL_TYPE_FLOAT64: LABEL_MEASURE_OUTPUT_WRITE(double);   break; \
+    default:                                                            \
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' "    \
+            "to find and fix the problem. The values type '%s' is "     \
+            "not recognized", __func__, PACKAGE_BUGREPORT,              \
+            gal_type_name(p->vals->type, 1));                           \
+    }                                                                   \
+  }
+
+
+
+
+
+static void *
+label_measure_worker(void *inprm)
+{
+  /* Low-level definitions to be done first. */
+  struct gal_threads_params *tprm=(struct gal_threads_params *)inprm;
+  struct label_measure_p *p=(struct label_measure_p *)tprm->params;
+
+  /* For parsing tiles. */
+  int32_t lab;
+  size_t i, tind;
+  gal_data_t *tile;
+
+  /* For parsing/writing pixels within a tile. */
+  int32_t *l, *lstart;
+  uint8_t commonoutput=1;
+  size_t increment, num_increment;
+  uint64_t outputvalue; /* For storage, Will be cast to values' type. */
+  size_t start_end_inc[2]={0,p->tiles->block->size-1}; /* Is inclusive */
+
+  /* Go over all the tiles/labels that were assigned to this thread. */
+  for(i=0; tprm->indexs[i] != GAL_BLANK_SIZE_T; ++i)
+    {
+      /* For easy reading and initializations. */
+      increment=0;
+      num_increment=1;
+      tind = tprm->indexs[i];
+      tile = &p->tiles[tind];
+      lab = p->lab_from_tile ? p->lab_from_tile[tind] : tind+1;
+
+      /* Find the output value for this tile. */
+      switch(p->operator)
+        {
+        case GAL_ARITHMETIC_OP_LABEL_AREA:
+          commonoutput=0; label_measure_area(p, tile, lab);
+          break;
+        case GAL_ARITHMETIC_OP_LABEL_MINIMUM:
+        case GAL_ARITHMETIC_OP_LABEL_MAXIMUM:
+          LABEL_MEASURE_PARSE_VALS(LABEL_MEASURE_MINMAX);
+          break;
+        default:
+          error(EXIT_FAILURE,0,"%s: a bug! Please contact us at '%s' to "
+                "find and fix the problem. The code '%d' is not "
+                "recognized as an operator", __func__, PACKAGE_BUGREPORT,
+                p->operator);
+        }
+
+      /* If the operator's function/macro did not write the output, use the
+         common output writing function. */
+      if(commonoutput) LABEL_MEASURE_OUTPUT;
+    }
+
+  /* Wait for all the other threads to finish, then return. */
+  if(tprm->b) pthread_barrier_wait(tprm->b);
+  return NULL;
+}
+
+
+
+
+
+
+
+
+gal_data_t *
+gal_label_measure(gal_data_t *labels, gal_data_t *values, int operator,
+                  size_t numthreads, int flags)
+{
+  int needsvals=0;
+  struct label_measure_p p={0};
+  gal_data_t *lab_fromto_tile=NULL;
+  size_t ntiles, maxlab=GAL_BLANK_SIZE_T;
+  uint8_t votype=GAL_TYPE_INVALID; /* Type for values and output. */
+
+  /* Fill the necessary parameters. */
+  p.operator=operator;
+  p.labs=gal_checkset_labels_to_int32(labels, __func__);
+
+  /* If the values are necessary, make sure they are float32. */
+  switch(operator)
+    {
+    case GAL_ARITHMETIC_OP_LABEL_AREA:
+      votype=GAL_TYPE_UINT32;
+      break;
+
+    case GAL_ARITHMETIC_OP_LABEL_MINIMUM:
+    case GAL_ARITHMETIC_OP_LABEL_MAXIMUM:
+      if(values) votype=values->type;
+      needsvals=1;
+      break;
+
+    default:
+      error(EXIT_FAILURE, 0, "%s: the operator code '%d' is not "
+            "recognized", __func__, operator);
+    }
+
+  /* Necessary allocations. */
+  if(needsvals)
+    {
+      if(values==NULL)
+        error(EXIT_FAILURE, 0, "%s: the requested label measurement "
+              "operator needs a 'values' argument (should not be "
+              "NULL)", __func__);
+      p.vals = ( values->type==votype
+                 ? values
+                 : gal_data_copy_to_new_type(values, votype) );
+    }
+  p.out=gal_data_alloc(NULL, votype, labels->ndim, labels->dsize,
+                       labels->wcs, 1, labels->minmapsize,
+                       labels->quietmmap, NULL, NULL, NULL);
+
+  /* Build a tile for every label; the 'rows_to_remove' and 'numunique' are
+     not used/relevant in this function. */
+  p.tiles=gal_tile_per_label(p.labs, &maxlab, 0, &lab_fromto_tile);
+  if(lab_fromto_tile)
+    {
+      p.lab_to_tile=lab_fromto_tile->next->array;
+      p.lab_from_tile=lab_fromto_tile->array;
+      ntiles=lab_fromto_tile->size;
+    }
+  else ntiles=maxlab;
+
+  /* Spin-off the threads to do the measurements on each label and write
+     the output. */
+  gal_threads_spin_off(label_measure_worker, &p, ntiles, numthreads,
+                       labels->minmapsize, labels->quietmmap);
+
+  /* Clean up. */
+  if(p.vals!=values) { gal_data_free(p.vals); p.vals=NULL; }
+  if(p.labs!=labels) { gal_data_free(p.labs); p.labs=NULL; }
+  if(flags & GAL_ARITHMETIC_FLAG_FREE)
+    { gal_data_free(values); gal_data_free(labels); }
+  gal_data_array_free(p.tiles, ntiles, 0);
+  gal_list_data_free(lab_fromto_tile);
+
+  /* Return the output. */
+  return p.out;
 }

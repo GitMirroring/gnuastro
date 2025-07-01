@@ -562,6 +562,57 @@ gal_checkset_exec(char *executable_abs_address, gal_list_str_t *args)
 
 
 
+
+
+/**************************************************************/
+/**********         Common dataset formats         ************/
+/**************************************************************/
+
+/* All functions dealing with labels in Gnuastro assume it to be
+   int32. This function is a common preparation step. */
+gal_data_t *
+gal_checkset_labels_to_int32(gal_data_t *input, const char *funcname)
+{
+  gal_data_t *out;
+
+  /* Make sure the type of the input is correct. */
+  if(input->type==GAL_TYPE_FLOAT32 || input->type==GAL_TYPE_FLOAT64)
+    error(EXIT_FAILURE, 0, "%s: the input input dataset must have "
+          "an integer type not floating point", __func__);
+  if(    input->type==GAL_TYPE_INT64
+      || input->type==GAL_TYPE_UINT32
+      || input->type==GAL_TYPE_UINT64 )
+    error(EXIT_FAILURE, 0, "%s: the input input dataset must not be "
+          "larger int32, but it has a type of '%s'", __func__,
+          gal_type_name(input->type, 1));
+
+  /* In case the input labels is not a signed 32-bit integer, copy it to
+     this type and return it. */
+  out = ( input->type==GAL_TYPE_INT32
+          ? input
+          : gal_data_copy_to_new_type(input, GAL_TYPE_INT32) );
+  return out;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**************************************************************/
 /********** Set file names and check if they exist ************/
 /**************************************************************/

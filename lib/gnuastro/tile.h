@@ -69,14 +69,15 @@ gal_tile_start_end_ind_inclusive(gal_data_t *tile, gal_data_t *work,
 /**************           Series of tiles             ******************/
 /***********************************************************************/
 gal_data_t *
-gal_tile_series_from_minmax(gal_data_t *block, size_t *minmax, size_t number);
+gal_tile_series_from_minmax(gal_data_t *block, size_t *minmax,
+                            size_t number);
 
 /* numlabels can be GAL_BLANK_SIZE_t (in which case it will be calculated
    automatically). */
 gal_data_t *
-gal_tile_per_label(gal_data_t *labels, size_t numlabels,
-                   uint8_t inbetweenints, gal_data_t **rows_to_remove,
-                   size_t *numunique);
+gal_tile_per_label(gal_data_t *labels, size_t *maxlabel,
+                   uint8_t inbetweenints,
+                   gal_data_t **lab_tofrom_tile);
 
 
 

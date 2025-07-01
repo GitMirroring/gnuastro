@@ -66,7 +66,7 @@ columns_alloc_radec(struct mkcatalogparams *p)
   if(p->wcs_vo==NULL)
     for(i=0;i<p->objects->ndim;++i)
       gal_list_data_add_alloc(&p->wcs_vo, NULL, GAL_TYPE_FLOAT64, 1,
-                              &p->numobjects, NULL, 0, p->cp.minmapsize,
+                              &p->numtiles, NULL, 0, p->cp.minmapsize,
                               p->cp.quietmmap, NULL, NULL, NULL);
 
   /* For clumps */
@@ -91,7 +91,7 @@ columns_alloc_georadec(struct mkcatalogparams *p)
   if(p->wcs_go==NULL)
     for(i=0;i<p->objects->ndim;++i)
       gal_list_data_add_alloc(&p->wcs_go, NULL, GAL_TYPE_FLOAT64, 1,
-                              &p->numobjects, NULL, 0, p->cp.minmapsize,
+                              &p->numtiles, NULL, 0, p->cp.minmapsize,
                               p->cp.quietmmap, NULL, NULL, NULL);
 
   /* For clumps */
@@ -115,7 +115,7 @@ columns_alloc_clumpsradec(struct mkcatalogparams *p)
   if(p->wcs_vcc==NULL)
     for(i=0;i<p->objects->ndim;++i)
       gal_list_data_add_alloc(&p->wcs_vcc, NULL, GAL_TYPE_FLOAT64, 1,
-                              &p->numobjects, NULL, 0, p->cp.minmapsize,
+                              &p->numtiles, NULL, 0, p->cp.minmapsize,
                               p->cp.quietmmap, NULL, NULL, NULL);
 }
 
@@ -132,7 +132,7 @@ columns_alloc_clumpsgeoradec(struct mkcatalogparams *p)
   if(p->wcs_gcc==NULL)
     for(i=0;i<p->objects->ndim;++i)
       gal_list_data_add_alloc(&p->wcs_gcc, NULL, GAL_TYPE_FLOAT64, 1,
-                              &p->numobjects, NULL, 0, p->cp.minmapsize,
+                              &p->numtiles, NULL, 0, p->cp.minmapsize,
                               p->cp.quietmmap, NULL, NULL, NULL);
 }
 
@@ -2259,7 +2259,7 @@ columns_define_alloc(struct mkcatalogparams *p)
          for the columns. */
       if(otype!=GAL_TYPE_INVALID)
         {
-          dsize[0]=p->numobjects;
+          dsize[0]=p->numtiles;
           gal_list_data_add_alloc(&p->objectcols, NULL, otype, colndim,
                                   dsize, NULL, 0, p->cp.minmapsize,
                                   p->cp.quietmmap, name, unit, ocomment);
@@ -2686,6 +2686,7 @@ columns_vector_fill(int key, gal_data_t *column, gal_data_t *v,
   ( (ARRAY)[ SUMWHT_COL ]>0                                             \
     ? MKC_RATIO( (ARRAY)[ V_COL ], (ARRAY)[ SUMWHT_COL ] )              \
     : MKC_RATIO( (ARRAY)[ G_COL ], (ARRAY)[ NUMALL_COL ] ) )
+
 void
 columns_fill(struct mkcatalog_passparams *pp)
 {
@@ -2694,21 +2695,21 @@ columns_fill(struct mkcatalog_passparams *pp)
   int key;
   double tmp;
   void *colarr;
+  gal_data_t *column;
   size_t tmpind=GAL_BLANK_SIZE_T;
-  gal_data_t *column, *vec=pp->vector;
+  size_t cind, coind, sr=pp->clumpstartindex;
   double *ci, *oi=pp->oi, **vcc=NULL, **gcc=NULL;
   double **vo=NULL, **vc=NULL, **go=NULL, **gc=NULL;
-  size_t i, cind, coind, sr=pp->clumpstartindex, oind=GAL_BLANK_SIZE_T;
   size_t coord[3]={GAL_BLANK_SIZE_T, GAL_BLANK_SIZE_T, GAL_BLANK_SIZE_T};
 
-  /* Find the object's index in final catalog. */
-  if(p->outlabs)
-    {
-      for(i=0;i<p->numobjects;++i)
-        if(p->outlabs[i]==pp->object)
-          { oind=i; break; }
-    }
-  else oind=pp->object-1;
+  /* Extract the tile index (from the object label). */
+  size_t tind = ( p->obj_to_tile
+                  ? p->obj_to_tile[pp->object]
+                  : pp->object-1 );
+
+  /* Keep the number of clumps for this tile incase it is necessary for
+     sorting the final output (when the array is not NULL). */
+  if(p->numclumps_c) p->numclumps_c[tind]=pp->clumpsinobj;
 
   /* If a WCS column is requested (check will be done inside the function),
      then set the pointers. */
@@ -2721,157 +2722,152 @@ columns_fill(struct mkcatalog_passparams *pp)
       key=column->status;
       colarr=column->array;
 
-      /* Put the number of clumps in the internal array which we will need
-         later to order the clump table by object ID. */
-      if(p->numclumps_c)
-        p->numclumps_c[oind]=pp->clumpsinobj;
-
       /* Go over all the columns. */
       switch(key)
         {
         case UI_KEY_OBJID:
-          ((int32_t *)colarr)[oind] = pp->object;
+          ((int32_t *)colarr)[tind] = pp->object;
           break;
 
         case UI_KEY_NUMCLUMPS:
-          ((int32_t *)colarr)[oind] = pp->clumpsinobj;
+          ((int32_t *)colarr)[tind] = pp->clumpsinobj;
           break;
 
         case UI_KEY_AREA:
-          ((int32_t *)colarr)[oind] = oi[OCOL_NUM];
+          ((int32_t *)colarr)[tind] = oi[OCOL_NUM];
           break;
 
         case UI_KEY_AREAARCSEC2:
-          ((float *)colarr)[oind] = oi[OCOL_NUM]*p->pixelarcsecsq;
+          ((float *)colarr)[tind] = oi[OCOL_NUM]*p->pixelarcsecsq;
           break;
 
         case UI_KEY_SB:
-          ((float *)colarr)[oind] = MKC_SB(oi[OCOL_SUM], oi[OCOL_NUM]);
+          ((float *)colarr)[tind] = MKC_SB(oi[OCOL_SUM], oi[OCOL_NUM]);
           break;
 
         case UI_KEY_SBERROR:
-          ((float *)colarr)[oind] = SB_ERROR(p, oi, 0);
+          ((float *)colarr)[tind] = SB_ERROR(p, oi, 0);
           break;
 
         case UI_KEY_AREAXY:
-          ((int32_t *)colarr)[oind] = oi[OCOL_NUMXY];
+          ((int32_t *)colarr)[tind] = oi[OCOL_NUMXY];
           break;
 
         case UI_KEY_CLUMPSAREA:
-          ((int32_t *)colarr)[oind] = oi[OCOL_C_NUM];
+          ((int32_t *)colarr)[tind] = oi[OCOL_C_NUM];
           break;
 
         case UI_KEY_WEIGHTAREA:
-          ((int32_t *)colarr)[oind] = oi[OCOL_NUMWHT];
+          ((int32_t *)colarr)[tind] = oi[OCOL_NUMWHT];
           break;
 
         case UI_KEY_GEOAREA:
-          ((int32_t *)colarr)[oind] = oi[OCOL_NUMALL];
+          ((int32_t *)colarr)[tind] = oi[OCOL_NUMALL];
           break;
 
         case UI_KEY_GEOAREAXY:
-          ((int32_t *)colarr)[oind] = oi[OCOL_NUMALLXY];
+          ((int32_t *)colarr)[tind] = oi[OCOL_NUMALLXY];
           break;
 
         case UI_KEY_X:
-          ((float *)colarr)[oind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMWHT,
+          ((float *)colarr)[tind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMWHT,
                                             OCOL_VX, OCOL_GX);
           break;
 
         case UI_KEY_Y:
-          ((float *)colarr)[oind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMWHT,
+          ((float *)colarr)[tind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMWHT,
                                             OCOL_VY, OCOL_GY);
           break;
 
         case UI_KEY_Z:
-          ((float *)colarr)[oind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMALL,
+          ((float *)colarr)[tind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMALL,
                                             OCOL_VZ, OCOL_GZ);
           break;
 
         case UI_KEY_GEOX:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_GX],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_GX],
                                                oi[OCOL_NUMALL] );
           break;
 
         case UI_KEY_GEOY:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_GY],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_GY],
                                                oi[OCOL_NUMALL] );
           break;
 
         case UI_KEY_GEOZ:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_GZ],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_GZ],
                                                oi[OCOL_NUMALL] );
           break;
 
         case UI_KEY_CLUMPSX:
-          ((float *)colarr)[oind] = POS_V_G(oi, OCOL_C_SUMWHT,
+          ((float *)colarr)[tind] = POS_V_G(oi, OCOL_C_SUMWHT,
                                             OCOL_C_NUMWHT, OCOL_C_VX,
                                             OCOL_C_GX);
           break;
 
         case UI_KEY_CLUMPSY:
-          ((float *)colarr)[oind] = POS_V_G(oi, OCOL_C_SUMWHT,
+          ((float *)colarr)[tind] = POS_V_G(oi, OCOL_C_SUMWHT,
                                             OCOL_C_NUMWHT, OCOL_C_VY,
                                             OCOL_C_GY);
           break;
 
         case UI_KEY_CLUMPSZ:
-          ((float *)colarr)[oind] = POS_V_G(oi, OCOL_C_SUMWHT,
+          ((float *)colarr)[tind] = POS_V_G(oi, OCOL_C_SUMWHT,
                                             OCOL_C_NUMALL, OCOL_C_VZ,
                                             OCOL_C_GZ);
           break;
 
         case UI_KEY_CLUMPSGEOX:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_C_GX],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_C_GX],
                                                oi[OCOL_C_NUMALL] );
           break;
 
         case UI_KEY_CLUMPSGEOY:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_C_GY],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_C_GY],
                                                oi[OCOL_C_NUMALL] );
           break;
 
         case UI_KEY_CLUMPSGEOZ:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_C_GZ],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_C_GZ],
                                                oi[OCOL_C_NUMALL] );
           break;
 
         case UI_KEY_MINVALX:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_MINVX],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_MINVX],
                                                oi[OCOL_MINVNUM] );
           break;
 
         case UI_KEY_MAXVALX:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_MAXVX],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_MAXVX],
                                                oi[OCOL_MAXVNUM] );
           break;
 
         case UI_KEY_MINVALY:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_MINVY],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_MINVY],
                                                oi[OCOL_MINVNUM] );
           break;
 
         case UI_KEY_MAXVALY:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_MAXVY],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_MAXVY],
                                                oi[OCOL_MAXVNUM] );
           break;
 
         case UI_KEY_MINVALZ:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_MINVZ],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_MINVZ],
                                                oi[OCOL_MINVNUM] );
           break;
 
         case UI_KEY_MAXVALZ:
-          ((float *)colarr)[oind] = MKC_RATIO( oi[OCOL_MAXVZ],
+          ((float *)colarr)[tind] = MKC_RATIO( oi[OCOL_MAXVZ],
                                                oi[OCOL_MAXVNUM] );
           break;
 
         case UI_KEY_MINVALNUM:
-          ((uint32_t *)colarr)[oind] = oi[OCOL_MINVNUM];
+          ((uint32_t *)colarr)[tind] = oi[OCOL_MINVNUM];
           break;
 
         case UI_KEY_MAXVALNUM:
-          ((uint32_t *)colarr)[oind] = oi[OCOL_MAXVNUM];
+          ((uint32_t *)colarr)[tind] = oi[OCOL_MAXVNUM];
           break;
 
         case UI_KEY_MINX:
@@ -2880,70 +2876,70 @@ columns_fill(struct mkcatalog_passparams *pp)
         case UI_KEY_MAXY:
         case UI_KEY_MINZ:
         case UI_KEY_MAXZ:
-          ((uint32_t *)colarr)[oind]=columns_xy_extrema(pp, oi, coord,
+          ((uint32_t *)colarr)[tind]=columns_xy_extrema(pp, oi, coord,
                                                         key);
           break;
 
         case UI_KEY_W1:
         case UI_KEY_W2:
         case UI_KEY_W3:
-          vo[0][oind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMALL, OCOL_VX,
+          vo[0][tind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMALL, OCOL_VX,
                                 OCOL_GX);
-          vo[1][oind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMALL, OCOL_VY,
+          vo[1][tind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMALL, OCOL_VY,
                                 OCOL_GY);
           if(p->objects->ndim==3)
-            vo[2][oind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMALL, OCOL_VZ,
+            vo[2][tind] = POS_V_G(oi, OCOL_SUMWHT, OCOL_NUMALL, OCOL_VZ,
                                   OCOL_GZ);
           break;
 
         case UI_KEY_GEOW1:
         case UI_KEY_GEOW2:
         case UI_KEY_GEOW3:
-          go[0][oind] = MKC_RATIO( oi[OCOL_GX], oi[OCOL_NUMALL] );
-          go[1][oind] = MKC_RATIO( oi[OCOL_GY], oi[OCOL_NUMALL] );
+          go[0][tind] = MKC_RATIO( oi[OCOL_GX], oi[OCOL_NUMALL] );
+          go[1][tind] = MKC_RATIO( oi[OCOL_GY], oi[OCOL_NUMALL] );
           if(p->objects->ndim==3)
-            go[2][oind] = MKC_RATIO( oi[OCOL_GZ], oi[OCOL_NUMALL] );
+            go[2][tind] = MKC_RATIO( oi[OCOL_GZ], oi[OCOL_NUMALL] );
           break;
 
         case UI_KEY_CLUMPSW1:
         case UI_KEY_CLUMPSW2:
         case UI_KEY_CLUMPSW3:
-          vcc[0][oind] = POS_V_G(oi, OCOL_C_SUMWHT, OCOL_C_NUMALL,
+          vcc[0][tind] = POS_V_G(oi, OCOL_C_SUMWHT, OCOL_C_NUMALL,
                                  OCOL_C_VX, OCOL_C_GX);
-          vcc[1][oind] = POS_V_G(oi, OCOL_C_SUMWHT, OCOL_C_NUMALL,
+          vcc[1][tind] = POS_V_G(oi, OCOL_C_SUMWHT, OCOL_C_NUMALL,
                                  OCOL_C_VY, OCOL_C_GY);
           if(p->objects->ndim==3)
-            vcc[2][oind] = POS_V_G(oi, OCOL_C_SUMWHT, OCOL_C_NUMALL,
+            vcc[2][tind] = POS_V_G(oi, OCOL_C_SUMWHT, OCOL_C_NUMALL,
                                    OCOL_C_VZ, OCOL_C_GZ);
           break;
 
         case UI_KEY_CLUMPSGEOW1:
         case UI_KEY_CLUMPSGEOW2:
         case UI_KEY_CLUMPSGEOW3:
-          gcc[0][oind] = MKC_RATIO( oi[OCOL_C_GX], oi[OCOL_C_NUMALL] );
-          gcc[1][oind] = MKC_RATIO( oi[OCOL_C_GY], oi[OCOL_C_NUMALL] );
+          gcc[0][tind] = MKC_RATIO( oi[OCOL_C_GX], oi[OCOL_C_NUMALL] );
+          gcc[1][tind] = MKC_RATIO( oi[OCOL_C_GY], oi[OCOL_C_NUMALL] );
           if(p->objects->ndim==3)
-            gcc[2][oind] = MKC_RATIO( oi[OCOL_C_GZ], oi[OCOL_C_NUMALL] );
+            gcc[2][tind] = MKC_RATIO( oi[OCOL_C_GZ], oi[OCOL_C_NUMALL] );
           break;
 
         case UI_KEY_SUM:
-          ((float *)colarr)[oind] = ( oi[ OCOL_NUM ]>0.0f
+          ((float *)colarr)[tind] = ( oi[ OCOL_NUM ]>0.0f
                                       ? oi[ OCOL_SUM ]
                                       : NAN );
           break;
 
         case UI_KEY_SUMERROR:
-          ((float *)colarr)[oind] = columns_sum_std(p, oi, 0);
+          ((float *)colarr)[tind] = columns_sum_std(p, oi, 0);
           break;
 
         case UI_KEY_CLUMPSSUM:
-          ((float *)colarr)[oind] = ( oi[ OCOL_C_NUM ]>0.0f
+          ((float *)colarr)[tind] = ( oi[ OCOL_C_NUM ]>0.0f
                                       ? oi[ OCOL_C_SUM ]
                                       : NAN );
           break;
 
         case UI_KEY_MEAN:
-          ((float *)colarr)[oind] = ( oi[ OCOL_NUM ]>0.0f
+          ((float *)colarr)[tind] = ( oi[ OCOL_NUM ]>0.0f
                                       ? oi[ OCOL_SUM ] / oi[ OCOL_NUM ]
                                       : NAN );
           break;
@@ -2953,185 +2949,185 @@ columns_fill(struct mkcatalog_passparams *pp)
            of elements used: since the mean is the sum/number and number is
            fixed, so e(mean)=e(sum)/number. */
         case UI_KEY_MEANERROR:
-          ((float *)colarr)[oind] = ( columns_sum_std(p, oi, 0)
+          ((float *)colarr)[tind] = ( columns_sum_std(p, oi, 0)
                                       / oi[OCOL_NUM] );
           break;
 
         case UI_KEY_STD:
-          ((float *)colarr)[oind] =
+          ((float *)colarr)[tind] =
             gal_statistics_std_from_sums(oi[ OCOL_SUM ], oi[ OCOL_SUMP2 ],
                                          oi[ OCOL_NUM ]);
           break;
 
         case UI_KEY_MEDIAN:
-          ((float *)colarr)[oind] = ( oi[ OCOL_NUM ]>0.0f
+          ((float *)colarr)[tind] = ( oi[ OCOL_NUM ]>0.0f
                                       ? oi[ OCOL_MEDIAN ]
                                       : NAN );
           break;
 
         case UI_KEY_MAXIMUM:
-          ((float *)colarr)[oind] = oi[ OCOL_MAXIMUM ];
+          ((float *)colarr)[tind] = oi[ OCOL_MAXIMUM ];
           break;
 
         case UI_KEY_SIGCLIPNUMBER:
-          ((int32_t *)colarr)[oind] = oi[ OCOL_SIGCLIPNUM ];
+          ((int32_t *)colarr)[tind] = oi[ OCOL_SIGCLIPNUM ];
           break;
 
         case UI_KEY_SIGCLIPMEDIAN:
-          ((float *)colarr)[oind] = oi[ OCOL_SIGCLIPMEDIAN ];
+          ((float *)colarr)[tind] = oi[ OCOL_SIGCLIPMEDIAN ];
           break;
 
         case UI_KEY_SIGCLIPMEAN:
-          ((float *)colarr)[oind] = oi[ OCOL_SIGCLIPMEAN ];
+          ((float *)colarr)[tind] = oi[ OCOL_SIGCLIPMEAN ];
           break;
 
         case UI_KEY_SIGCLIPSTD:
-          ((float *)colarr)[oind] = oi[ OCOL_SIGCLIPSTD ];
+          ((float *)colarr)[tind] = oi[ OCOL_SIGCLIPSTD ];
           break;
 
         case UI_KEY_SIGCLIPMEANSB:
-          ((float *)colarr)[oind] = MKC_SB(oi[ OCOL_SIGCLIPMEAN ], 1);
+          ((float *)colarr)[tind] = MKC_SB(oi[ OCOL_SIGCLIPMEAN ], 1);
           break;
 
         case UI_KEY_SIGCLIPMEANSBDELTA:
-          ((float *)colarr)[oind] = SCLIP_SBERR(oi[ OCOL_SIGCLIPMEAN ],
+          ((float *)colarr)[tind] = SCLIP_SBERR(oi[ OCOL_SIGCLIPMEAN ],
                                                 oi[ OCOL_SIGCLIPSTD ]);
           break;
 
         case UI_KEY_SIGCLIPSTDSB:
-          ((float *)colarr)[oind] = MKC_SB(oi[ OCOL_SIGCLIPSTD ], 1);
+          ((float *)colarr)[tind] = MKC_SB(oi[ OCOL_SIGCLIPSTD ], 1);
           break;
 
         case UI_KEY_MAGNITUDE:
-          ((float *)colarr)[oind] = ( oi[ OCOL_NUM ]>0.0f
+          ((float *)colarr)[tind] = ( oi[ OCOL_NUM ]>0.0f
                                       ? MKC_MAG(oi[ OCOL_SUM ])
                                       : NAN );
           break;
 
         case UI_KEY_MAGNITUDEERROR:
-          ((float *)colarr)[oind] = MAG_ERROR(p, oi, 0);
+          ((float *)colarr)[tind] = MAG_ERROR(p, oi, 0);
           break;
 
         case UI_KEY_CLUMPSMAGNITUDE:
-          ((float *)colarr)[oind] = MKC_MAG(oi[ OCOL_C_SUM ]);
+          ((float *)colarr)[tind] = MKC_MAG(oi[ OCOL_C_SUM ]);
           break;
 
         case UI_KEY_UPPERLIMIT:
-          ((float *)colarr)[oind] = oi[ OCOL_UPPERLIMIT_B ];
+          ((float *)colarr)[tind] = oi[ OCOL_UPPERLIMIT_B ];
           break;
 
         case UI_KEY_UPPERLIMITMAG:
-          ((float *)colarr)[oind] = MKC_MAG(oi[ OCOL_UPPERLIMIT_B ]);
+          ((float *)colarr)[tind] = MKC_MAG(oi[ OCOL_UPPERLIMIT_B ]);
           break;
 
         case UI_KEY_UPPERLIMITSB:
-          ((float *)colarr)[oind] = MKC_SB( oi[ OCOL_UPPERLIMIT_B ],
+          ((float *)colarr)[tind] = MKC_SB( oi[ OCOL_UPPERLIMIT_B ],
                                             oi[ OCOL_NUMALL ] );
           break;
 
         case UI_KEY_UPPERLIMITONESIGMA:
-          ((float *)colarr)[oind] = oi[ OCOL_UPPERLIMIT_S ];
+          ((float *)colarr)[tind] = oi[ OCOL_UPPERLIMIT_S ];
           break;
 
         case UI_KEY_UPPERLIMITSIGMA:
-          ((float *)colarr)[oind] = ( ( oi[ OCOL_NUM ]>0.0f
+          ((float *)colarr)[tind] = ( ( oi[ OCOL_NUM ]>0.0f
                                         ? oi[ OCOL_SUM ] : NAN )
                                       / oi[ OCOL_UPPERLIMIT_S ] );
           break;
 
         case UI_KEY_UPPERLIMITQUANTILE:
-          ((float *)colarr)[oind] = oi[ OCOL_UPPERLIMIT_Q ];
+          ((float *)colarr)[tind] = oi[ OCOL_UPPERLIMIT_Q ];
           break;
 
         case UI_KEY_UPPERLIMITSKEW:
-          ((float *)colarr)[oind] = oi[ OCOL_UPPERLIMIT_SKEW ];
+          ((float *)colarr)[tind] = oi[ OCOL_UPPERLIMIT_SKEW ];
           break;
 
         case UI_KEY_SN:
-          ((float *)colarr)[oind] = columns_sn(p, oi, 0);
+          ((float *)colarr)[tind] = columns_sn(p, oi, 0);
           break;
 
         case UI_KEY_SKY:
-          ((float *)colarr)[oind] = MKC_RATIO(oi[OCOL_SUMSKY],
+          ((float *)colarr)[tind] = MKC_RATIO(oi[OCOL_SUMSKY],
                                               oi[OCOL_NUMSKY]);
           break;
 
         case UI_KEY_SKYSTD:
-          ((float *)colarr)[oind] = sqrt( MKC_RATIO( oi[ OCOL_SUMVAR ],
+          ((float *)colarr)[tind] = sqrt( MKC_RATIO( oi[ OCOL_SUMVAR ],
                                                      oi[ OCOL_NUMVAR ]) );
           break;
 
         case UI_KEY_SEMIMAJOR:
-          ((float *)colarr)[oind] = columns_second_order(pp, oi, key, 0);
+          ((float *)colarr)[tind] = columns_second_order(pp, oi, key, 0);
           break;
 
         case UI_KEY_SEMIMINOR:
-          ((float *)colarr)[oind] = columns_second_order(pp, oi, key, 0);
+          ((float *)colarr)[tind] = columns_second_order(pp, oi, key, 0);
           break;
 
         case UI_KEY_AXISRATIO:
-          ((float *)colarr)[oind]
+          ((float *)colarr)[tind]
             = ( columns_second_order(pp, oi, UI_KEY_SEMIMINOR, 0)
                 / columns_second_order(pp, oi, UI_KEY_SEMIMAJOR, 0) );
           break;
 
         case UI_KEY_POSITIONANGLE:
-          ((float *)colarr)[oind] = columns_second_order(pp, oi, key, 0);
+          ((float *)colarr)[tind] = columns_second_order(pp, oi, key, 0);
           break;
 
         case UI_KEY_GEOSEMIMAJOR:
-          ((float *)colarr)[oind] = columns_second_order(pp, oi, key, 0);
+          ((float *)colarr)[tind] = columns_second_order(pp, oi, key, 0);
           break;
 
         case UI_KEY_GEOSEMIMINOR:
-          ((float *)colarr)[oind] = columns_second_order(pp, oi, key, 0);
+          ((float *)colarr)[tind] = columns_second_order(pp, oi, key, 0);
           break;
 
         case UI_KEY_GEOAXISRATIO:
-          ((float *)colarr)[oind]
+          ((float *)colarr)[tind]
             = ( columns_second_order(pp, oi, UI_KEY_GEOSEMIMINOR, 0)
                 / columns_second_order(pp, oi, UI_KEY_GEOSEMIMAJOR, 0) );
           break;
 
         case UI_KEY_GEOPOSITIONANGLE:
-          ((float *)colarr)[oind] = columns_second_order(pp, oi, key, 0);
+          ((float *)colarr)[tind] = columns_second_order(pp, oi, key, 0);
           break;
 
         case UI_KEY_HALFSUMAREA:
-          ((int32_t *)colarr)[oind] = oi[OCOL_HALFSUMNUM];
+          ((int32_t *)colarr)[tind] = oi[OCOL_HALFSUMNUM];
           break;
 
         case UI_KEY_HALFMAXAREA:
-          ((int32_t *)colarr)[oind] = oi[OCOL_HALFMAXNUM];
+          ((int32_t *)colarr)[tind] = oi[OCOL_HALFMAXNUM];
           break;
 
         case UI_KEY_HALFMAXSUM:
-          ((float *)colarr)[oind] = oi[OCOL_HALFMAXNUM];
+          ((float *)colarr)[tind] = oi[OCOL_HALFMAXNUM];
           break;
 
         case UI_KEY_HALFMAXSB:
-          ((float *)colarr)[oind] = MKC_SB( oi[OCOL_HALFMAXSUM],
+          ((float *)colarr)[tind] = MKC_SB( oi[OCOL_HALFMAXSUM],
                                             oi[OCOL_HALFMAXNUM] );
           break;
 
         case UI_KEY_FRACMAX1SUM:
-          ((float *)colarr)[oind] = oi[OCOL_FRACMAX1SUM];
+          ((float *)colarr)[tind] = oi[OCOL_FRACMAX1SUM];
           break;
 
         case UI_KEY_FRACMAX2SUM:
-          ((float *)colarr)[oind] = oi[OCOL_FRACMAX2SUM];
+          ((float *)colarr)[tind] = oi[OCOL_FRACMAX2SUM];
           break;
 
         case UI_KEY_FRACMAX1AREA:
-          ((int32_t *)colarr)[oind] = oi[OCOL_FRACMAX1NUM];
+          ((int32_t *)colarr)[tind] = oi[OCOL_FRACMAX1NUM];
           break;
 
         case UI_KEY_FRACMAX2AREA:
-          ((int32_t *)colarr)[oind] = oi[OCOL_FRACMAX2NUM];
+          ((int32_t *)colarr)[tind] = oi[OCOL_FRACMAX2NUM];
           break;
 
         case UI_KEY_HALFSUMSB:
-          ((float *)colarr)[oind] = MKC_SB( oi[OCOL_SUM]/2.0f,
+          ((float *)colarr)[tind] = MKC_SB( oi[OCOL_SUM]/2.0f,
                                             oi[OCOL_HALFSUMNUM] );
           break;
 
@@ -3154,9 +3150,9 @@ columns_fill(struct mkcatalog_passparams *pp)
             }
           tmp = sqrt( oi[tmpind]/(tmp*M_PI) );
           if(key==UI_KEY_FWHM)
-            ((float *)colarr)[oind] = tmp<1e-6 ? NAN : (tmp*2);
+            ((float *)colarr)[tind] = tmp<1e-6 ? NAN : (tmp*2);
           else
-            ((float *)colarr)[oind] = tmp<1e-6 ? NAN : tmp;
+            ((float *)colarr)[tind] = tmp<1e-6 ? NAN : tmp;
           break;
 
         case UI_KEY_SUMINSLICE:
@@ -3168,7 +3164,7 @@ columns_fill(struct mkcatalog_passparams *pp)
         case UI_KEY_AREAOTHERINSLICE:
         case UI_KEY_SUMPROJERRINSLICE:
         case UI_KEY_SUMOTHERERRINSLICE:
-          columns_vector_fill(key, column, vec, oind);
+          columns_vector_fill(key, column, pp->vector, tind);
           break;
 
         default:
@@ -3192,8 +3188,7 @@ columns_fill(struct mkcatalog_passparams *pp)
 
         /* Put the object ID of this clump into the temporary array that we
            will later need to sort the final clumps catalog. */
-        if(p->hostobjid_c)
-          p->hostobjid_c[cind]=pp->object;
+        if(p->hosttind_c) p->hosttind_c[cind]=tind;
 
         /* Parse columns */
         switch(key)
@@ -3204,7 +3199,7 @@ columns_fill(struct mkcatalog_passparams *pp)
 
           case UI_KEY_IDINHOSTOBJ:
             ((int32_t *)colarr)[cind] = ( p->origclpid
-                                          ? p->origclpid[pp->object][coind]
+                                          ? p->origclpid[tind][coind]
                                           : coind+1 );
             break;
 

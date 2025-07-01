@@ -43,6 +43,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/list.h>
 #include <gnuastro/pool.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/label.h>
 #include <gnuastro/units.h>
 #include <gnuastro/qsort.h>
 #include <gnuastro/binary.h>
@@ -4349,6 +4350,14 @@ gal_arithmetic_set_operator(char *string, size_t *num_operands)
   else if (!strcmp(string, "noblank"))
     { op=GAL_ARITHMETIC_OP_NOBLANK;           *num_operands=1;  }
 
+  /* Measuring values on labeled pixels. */
+  else if (!strcmp(string, "label-area"))
+    { op=GAL_ARITHMETIC_OP_LABEL_AREA;        *num_operands=1;  }
+  else if (!strcmp(string, "label-minimum"))
+    { op=GAL_ARITHMETIC_OP_LABEL_MINIMUM;     *num_operands=2;  }
+  else if (!strcmp(string, "label-maximum"))
+    { op=GAL_ARITHMETIC_OP_LABEL_MAXIMUM;     *num_operands=2;  }
+
   /* Adding noise operators. */
   else if (!strcmp(string, "mknoise-sigma"))
     { op=GAL_ARITHMETIC_OP_MKNOISE_SIGMA;     *num_operands=2; }
@@ -4597,6 +4606,10 @@ gal_arithmetic_operator_string(int operator)
 
     case GAL_ARITHMETIC_OP_UNIQUE:          return "unique";
     case GAL_ARITHMETIC_OP_NOBLANK:         return "noblank";
+
+    case GAL_ARITHMETIC_OP_LABEL_AREA:      return "label-area";
+    case GAL_ARITHMETIC_OP_LABEL_MINIMUM:   return "label-minimum";
+    case GAL_ARITHMETIC_OP_LABEL_MAXIMUM:   return "label-maximum";
 
     case GAL_ARITHMETIC_OP_MIN:             return "min";
     case GAL_ARITHMETIC_OP_MAX:             return "max";
@@ -4918,6 +4931,19 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_NOBLANK:
       d1 = va_arg(va, gal_data_t *);
       out=arithmetic_to_oned(operator, flags, d1);
+      break;
+
+    /* Measurements over labels; some take a single argument, others take
+       two.*/
+    case GAL_ARITHMETIC_OP_LABEL_AREA:
+      d1 = va_arg(va, gal_data_t *);
+      out=gal_label_measure(d1, NULL, operator, numthreads, flags);
+      break;
+    case GAL_ARITHMETIC_OP_LABEL_MINIMUM:
+    case GAL_ARITHMETIC_OP_LABEL_MAXIMUM:
+      d1 = va_arg(va, gal_data_t *);
+      d2 = va_arg(va, gal_data_t *);
+      out=gal_label_measure(d1, d2, operator, numthreads, flags);
       break;
 
     /* Absolute operator. */
