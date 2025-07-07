@@ -22,6 +22,19 @@ See the end of the file for license conditions.
       given filter size. These are useful when you need to measure the
       spread of nearby pixels (in the presence of outliers).
 
+    - label-area:
+    - label-minimum:
+    - label-maximum:
+      Given a labeled and a values image do the requested measurements on
+      the label and set the label's pixels to the output of the measurement
+      in the output. For example, if you want to remove all labels with an
+      area less than 3, you can use the 'label-area' option followed by the
+      'gt' (greater-than) operator. Until now, to do this, we needed to run
+      MakeCatalog, extract the rows, and write loops to remove the labels
+      one by one (which was slow, in efficient and could by buggy). These
+      new operators greatly simply such operations while significantly
+      improving the speed. See example usages within the book.
+
     - luminosity-to-mag:
     - mag-to-luminosity: Convert apparent magnitude to luminosity and
       vice-versa. Implemented by Sepideh Eskandarlou.
@@ -135,12 +148,18 @@ See the end of the file for license conditions.
     (adding the contents of the second array into the first) in
     single-dimensional datasets.
 
+  - gal_label_measure: Replace a label with measured values over it (see
+    description of newly added 'label-*' operators in Arithmetic).
+
   - gal_statistics_minimums_three: return the three smallest values of the
     given dataset.
 
   - gal_statistics_range_double: return the difference between the minimum
     and maximum as a double-precision floating point of a dataset (with any
     type).
+
+  - gal_tile_per_label: create an array/list of tiles that cover the
+    separate labels within the input.
 
   - gal_table_sort: sort the given table by a given column.
 
