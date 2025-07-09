@@ -514,15 +514,6 @@ ui_read_check_mode_extension(struct fitsparams *p)
                   "(like ""'--pixelscale' or '--skycoverage'. Please "
                   "use the '--hdu' (or '-h') option to select one");
         }
-      else
-        {
-          if(p->cp.output)
-            gal_checkset_writable_remove(p->cp.output, p->input->v, 1,
-                                         p->cp.dontdelete);
-          else
-            p->cp.output=gal_checkset_automatic_output(&p->cp, p->input->v,
-                                                       "_ext.fits");
-        }
 
       /* Set the operating mode. */
       p->mode=FITS_MODE_HDU;
@@ -564,8 +555,6 @@ ui_check_only_options(struct fitsparams *p)
 static void
 ui_check_options_and_arguments(struct fitsparams *p)
 {
-
-
   /* Other than the '--keyvalue' option, the rest of the operations only
      require a single file. */
   if(p->keyvalue)
@@ -592,6 +581,19 @@ ui_check_options_and_arguments(struct fitsparams *p)
       if( gal_list_str_number(p->input) > 1)
         error(EXIT_FAILURE, 0, "one input file is expected but %zu input "
               "files are given", gal_list_str_number(p->input));
+    }
+
+  /* Having checked the name of the inputs, we can work on the output
+     name. But only when we are in HDU-mode; which can create new output
+     files. */
+  if(p->mode==FITS_MODE_HDU)
+    {
+      if(p->cp.output)
+        gal_checkset_writable_remove(p->cp.output, p->input->v, 1,
+                                     p->cp.dontdelete);
+      else
+        p->cp.output=gal_checkset_automatic_output(&p->cp, p->input->v,
+                                                   "_ext.fits");
     }
 }
 

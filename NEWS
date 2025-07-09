@@ -354,6 +354,9 @@ See the end of the file for license conditions.
     generation when input labels not contiguous (for example you are
     feeding a crop of a larger object/clump map).
 
+  - bug #67297: Fits program segmentation fault when no input specified and
+    a HDU operation requested.
+
 
 
 
