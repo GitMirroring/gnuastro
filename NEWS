@@ -101,6 +101,13 @@ See the end of the file for license conditions.
 
 *** Match
 
+  - Ambiguous matches (multiple counterparts in other catalog within
+    aperture) will not be present in the main output. When present, the
+    ambiguous rows of the second input will be listed in a dedicated HDU of
+    the output (called 'FLAGGED-IN-2ND'). A dedicated new section (called
+    "Unambiguous matching") has been added to the book that describes the
+    intricacies of this new behavior.
+
   --arrange: the arrangement of the match output. Until now, the Match
     program only had the 'inner' arrangement (known in SQL as "INNER
     JOIN"). From this version, other arrangements are also available and
@@ -150,6 +157,11 @@ See the end of the file for license conditions.
 
   - gal_label_measure: Replace a label with measured values over it (see
     description of newly added 'label-*' operators in Arithmetic).
+
+  - gal_list_sizetsizetf64_add:
+  - gal_list_sizetsizetf64_pop:
+  - gal_list_sizetsizetf64_free: new functions to use a new list type that
+    includes a 'size_t' and a 'double'.
 
   - gal_statistics_minimums_three: return the three smallest values of the
     given dataset.
@@ -267,19 +279,55 @@ See the end of the file for license conditions.
     '--meta-measure' option. This is because it was only useful for
     calculating the surface brighntess limit (which is a metameasure).
 
+*** Match
+
+  - The default arrangement of outputs is set to sort-based due to a bug in
+    the k-d tree match (sometimes producing ambiguous matches) as described
+    in https://savannah.gnu.org/bugs/?67364. Once this bug has been fixed,
+    the default arrangement will be set to k-d tree again.
+
+  - Output can only be in FITS format. Until this version, the output could
+    be plain-text also. However, plain-text tables can only be a single
+    table, so multiple files where necessary when multiple tables were
+    created. Managing all the files in the various run-time scenarios was
+    causing a significant slow-down of the development and was also bugging
+    (for example '--logasoutput' which was not thread-safe). If a
+    plain-text format is necessary in your pipelines, you can call
+    Gnuastro's Table program to convert the given HDU into plain-text.
+
+  --outcols: can now be invoked multiple times in one command. Until this
+    version it was only possible to call it once, causing inconveniently
+    long options for large tables. This was suggested by Sepideh
+    Eskandarlou.
+
 *** astscript-pointing-simulate
 
   --coadd-operator: new name for '--stack-operator'.
 
-*** Library
+*** astscript-zeropoint
 
-  - gal_
+  - The default matching radius for stars has been changed to 0.5
+    arcseconds. Until this version it was 0.2 arcseconds.
+
+  - If less than three stars are matched between the reference and query
+    catalogs, the script will abort with an elaborate error message
+    (guiding you on how to fix the problem. This is because the result will
+    not statistically reliable.
+
+*** Library
 
   - gal_blank_remove: new 'free_if_all_blank' to enable optional freeing of
     the input array when all elements are blank.
 
-  - gal_match_kdtree: a new 'arrange' argument has been added to define the
-    arrangement of the output.
+  - gal_kdtree_nearest_neighbour: two new argument to input a "distance
+    error" (or 'disterr') and return the set of points that within that
+    error during the parsing of the tree.
+
+  - gal_match_kdtree: a new 'arrange' and 'flag' argument have been added
+    to define the arrangement of the output.
+
+  - gal_match_sort_based: a new 'flag' argument has been added that will be
+    filled if there are ambiguous matches.
 
   - gal_table_write_log: a new 'format' argument is added to allow setting
     the format of the table (until now, it was always plain-text).

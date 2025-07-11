@@ -307,6 +307,7 @@ outkeys_confusion_limit(struct mkcatalogparams *p, gal_data_t *wcscrd,
 {
   size_t root;
   size_t nummatched;
+  uint8_t *flag=NULL;
   gal_data_t *kdtree, *matched;
 
   /* Make sure the inputs are good (we plan to later take this function
@@ -331,7 +332,14 @@ outkeys_confusion_limit(struct mkcatalogparams *p, gal_data_t *wcscrd,
   matched=gal_match_kdtree(wcscrd, wcscrd, kdtree, root,
                            GAL_MATCH_ARRANGE_OUTER, NULL,
                            p->cp.numthreads, p->cp.minmapsize,
-                           p->cp.quietmmap, &nummatched, 1);
+                           p->cp.quietmmap, &nummatched, &flag, 1);
+
+  /* This should be tested later. */
+  if(flag)
+    error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' "
+          "to fix the problem. The match for finding the confusion "
+          "limit should not have produced any flags", __func__,
+          PACKAGE_BUGREPORT);
 
   /* Calculate spherical distances and write the check table in the output
      if requested */

@@ -63,11 +63,11 @@ struct matchparams
   char            *input1name;  /* First input filename.                */
   char            *input2name;  /* Second input filename.               */
   char                  *hdu2;  /* Second input's HDU.                  */
-  uint8_t                type;  /* Type of matching: inner, outer, full */
+  uint8_t             arrange;  /* Type of matching: inner, outer, full */
   gal_data_t           *ccol1;  /* Array of first input column names.   */
   gal_data_t           *ccol2;  /* Array of second input column names.  */
   gal_data_t           *coord;  /* Array of manual coordinate values.   */
-  gal_data_t         *outcols;  /* Array of second input column names.  */
+  gal_list_str_t     *outcols;  /* List of given columns.               */
   gal_data_t        *aperture;  /* Acceptable matching aperture.        */
   char                *kdtree;  /* The mode to use k-d tree mode.       */
   char             *kdtreehdu;  /* k-d tree HDU when its a (FITS) file. */
@@ -81,13 +81,11 @@ struct matchparams
   gal_list_str_t       *bcols;  /* Output columns from second input.    */
   size_t                 anum;  /* Number of columns in first input.    */
   size_t                 bnum;  /* Number of columns in second input.   */
-  char               *logname;  /* Name of log file.                    */
-  char              *out1name;  /* Name of first matched output.        */
-  char              *out2name;  /* Name of second matched output.       */
   gal_list_str_t  *stdinlines;  /* Lines given by Standard input.       */
   int              kdtreemode;  /* The k-d tree mode.                   */
   gal_data_t      *kdtreedata;  /* The k-d tree data.                   */
   size_t           kdtreeroot;  /* The root node of the k-d tree.       */
+  uint8_t               *flag;  /* Problematic matches of second input. */
 
   /* Output: */
   time_t              rawtime;  /* Starting time of the program.        */

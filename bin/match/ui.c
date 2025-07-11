@@ -62,10 +62,10 @@ static char
 args_doc[] = "ASTRdata";
 
 const char
-doc[] = GAL_STRINGS_TOP_HELP_INFO PROGRAM_NAME" matches catalogs of objects "
-  "and (by default) will return the re-arranged matching inputs. The "
-  "optional log file will return low-level information about the match "
-  "(indexs and distances).\n"
+doc[] = GAL_STRINGS_TOP_HELP_INFO PROGRAM_NAME" matches catalogs of "
+  "objects and (by default) will return the re-arranged matching "
+  "inputs. The optional log file will return low-level information "
+  "about the match (indexs and distances).\n"
   GAL_STRINGS_MORE_HELP_INFO
   /* After the list of options: */
   "\v"
@@ -278,6 +278,22 @@ ui_parse_match_type(struct argp_option *option, char *arg,
 /**************************************************************/
 /***************       Sanity Check         *******************/
 /**************************************************************/
+#define UI_ONLY_FITS_ERR \
+  "Only output FITS tables are supported in Gnuastro's Match " \
+  "program. This is because depending on the run-time options, " \
+  "the number of output tables can be very different and it is " \
+  "easiest to manage them (for the user and developer!) as " \
+  "sparate HDUs of a single FITS file. If you need a final " \
+  "output table as plain-text, you can use Gnuastro's Table " \
+  "program with a command like this: 'asttable --hdu=N table.fits " \
+  "--output=table.txt' (to extract the N-th HDU (counting from " \
+  "0) and write it as a plain-text table. You can see the list " \
+  "of HDUs in a FITS file with 'astfits table.fits'"
+
+
+
+
+
 /* Check ONLY the options. When arguments are involved, do the check
    in 'ui_check_options_and_arguments'. */
 static void
@@ -300,6 +316,10 @@ ui_check_only_options(struct matchparams *p)
           "'disable' (to not use a k-d tree at all), a FITS file "
           "name (the file to read a created k-d tree from)", p->kdtree);
 
+  /* In case '--logasoutput' is given, we also need to activate '--log',
+     otherwise, the output will not have a log-table at all. */
+  if(p->logasoutput) p->cp.log=1;
+
   /* Make sure that the k-d tree build mode is not called with
      '--outcols'. */
   if( p->kdtreemode==MATCH_KDTREE_BUILD && (p->outcols || p->coord) )
@@ -321,8 +341,8 @@ ui_check_only_options(struct matchparams *p)
           p->kdtree);
 
   /* For an outer match, we only operate in k-d tree mode. */
-  if( (   p->type==GAL_MATCH_ARRANGE_OUTER
-       || p->type==GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE )
+  if( (   p->arrange==GAL_MATCH_ARRANGE_OUTER
+       || p->arrange==GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE )
       && p->kdtreemode==MATCH_KDTREE_DISABLE )
     error(EXIT_FAILURE, 0, "the 'outer' arrangement only works with the "
           "k-d tree algorithm (in other words, it conflicts with "
@@ -335,11 +355,36 @@ ui_check_only_options(struct matchparams *p)
           "in Gnuastro manual for more (by running 'info %s')",
           PROGRAM_EXEC);
 
-  /* The '--notmatched' option is only valid for the inner type of
-     matching. */
-  if(p->notmatched && p->type!=GAL_MATCH_ARRANGE_INNER)
-    error(EXIT_FAILURE, 0, "the '--notmatched' option is only defined "
-          "with the '--arrange=inner' match type");
+  /* The '--notmatched' option is not compatible with some options. */
+  if(p->notmatched)
+    {
+      if(p->arrange!=GAL_MATCH_ARRANGE_INNER)
+        error(EXIT_FAILURE, 0, "the '--notmatched' option is only "
+              "defined with the '--arrange=inner' match type");
+    }
+
+  /* Match will only produce FITS images. */
+  if(p->cp.tableformat==GAL_TABLE_FORMAT_TXT)
+    error(EXIT_FAILURE, 0, "the value of '--tableformat' cannot be 'txt'"
+          UI_ONLY_FITS_ERR);
+
+  /* Until the following bug is fixed, the users should be warned about the
+     issue with k-d tree matching. */
+  if(p->kdtreemode!=MATCH_KDTREE_DISABLE
+     && p->arrange==GAL_MATCH_ARRANGE_INNER
+     && p->arrange==GAL_MATCH_ARRANGE_FULL
+     && p->cp.quiet==0)
+    error(EXIT_SUCCESS, 0, "WARNING: k-d tree based matching currently "
+          "has a bug (regarding multiple matches within the aperture "
+          "that may not be flagged and the order of the inputs). "
+          "Therefore the output can be different from sort-based "
+          "matching and duplicate matches may be missed. We recommend "
+          "to use '--kdtree=disable' until this bug has been fixed "
+          "(and this notice is removed). For the current status of this "
+          "bug, see https://savannah.gnu.org/bugs/index.php?67364. "
+          "If it has been fixed you can update your Gnuastro version "
+          "to comfortably use k-d tree based matching. To suppress this "
+          "warning add the '--quiet' option");
 }
 
 
@@ -917,7 +962,7 @@ ui_read_columns(struct matchparams *p)
       && p->kdtreemode!=MATCH_KDTREE_BUILD
       && p->kdtreemode!=MATCH_KDTREE_DISABLE
       && p->cols1->size > (2*p->cols2->size)
-      && p->type!=GAL_MATCH_ARRANGE_OUTER)
+      && p->arrange!=GAL_MATCH_ARRANGE_OUTER)
     error(EXIT_SUCCESS, 0, "TIP: the matching speed will improve "
           "if you swap the two inputs. Recall that for an inner or "
           "full match, the order of inputs does not matter. "
@@ -957,19 +1002,20 @@ ui_preparations_out_cols_read(gal_list_str_t **list, char *string)
 static void
 ui_preparations_out_cols(struct matchparams *p)
 {
+  char *col;
   void *rptr;
   int goodvalue;
   gal_data_t *read;
   uint8_t readtype;
-  char *col, **strarr=p->outcols->array;
-  size_t i, one=1, ndim=p->coord?p->coord->size:0;
+  gal_list_str_t *ocol;
+  size_t one=1, ndim=p->coord?p->coord->size:0;
 
   /* Go over all the values and put the respective column identifier in the
      proper list. */
-  for(i=0;i<p->outcols->size;++i)
+  for(ocol=p->outcols; ocol!=NULL; ocol=ocol->next)
     {
       /* For easy reading. */
-      col=strarr[i];
+      col=ocol->v;
 
       /* In no-match mode, the same column will be used from both catalogs
          so things are easier. */
@@ -1043,122 +1089,26 @@ ui_preparations_out_cols(struct matchparams *p)
 
 
 
-#define UI_OUT_SUFFNAME "-matched"
 static void
 ui_preparations_out_name(struct matchparams *p)
 {
   /* To temporarily keep the original value. */
-  char *suffix;
-  uint8_t keepinputdir_orig;
   char *refname = p->input1name ? p->input1name : p->input2name;
 
-  /* Set the output file(s) name(s). */
-  if(p->logasoutput)
+  /* If the output name is set, make sure it is a FITS file, otherwise, set
+     a name from the input. */
+  if(p->cp.output)
     {
-      if(p->cp.output)
-        gal_checkset_allocate_copy(p->cp.output, &p->logname);
-      else
-        {
-          if(p->cp.tableformat==GAL_TABLE_FORMAT_TXT)
-            p->logname=gal_checkset_automatic_output(&p->cp, refname,
-                                                     UI_OUT_SUFFNAME".txt");
-          else
-            p->logname=gal_checkset_automatic_output(&p->cp, refname,
-                                                     UI_OUT_SUFFNAME".fits");
-        }
-
-      /* Make sure a file with this name doesn't exist. */
-      gal_checkset_writable_remove(p->logname, NULL, 0, p->cp.dontdelete);
-
-      /* The main output name needs to be available in p->out1name (for the
-         final step when we want to write the input configurations as FITS
-         keywords). */
-      gal_checkset_allocate_copy(p->logname, &p->out1name);
+      if( ! gal_fits_name_is_fits(p->cp.output) )
+        error(EXIT_FAILURE, 0, "'%s' is not a recognized FITS file "
+              "name. " UI_ONLY_FITS_ERR, p->cp.output);
     }
   else
-    {
-      if(p->outcols || p->coord || p->kdtreemode==MATCH_KDTREE_BUILD)
-        {
-          if(p->cp.output)
-            gal_checkset_allocate_copy(p->cp.output, &p->out1name);
-          else
-            {
-              suffix = ( p->kdtreemode==MATCH_KDTREE_BUILD
-                         ? "-kdtree.fits"
-                         : ( p->cp.tableformat==GAL_TABLE_FORMAT_TXT
-                             ? UI_OUT_SUFFNAME".txt"
-                             : UI_OUT_SUFFNAME".fits") );
-              p->out1name = gal_checkset_automatic_output(&p->cp,
-                                                          refname, suffix);
-            }
-          gal_checkset_writable_remove(p->out1name, refname, 0,
-                                       p->cp.dontdelete);
-        }
-      else
-        {
-          /* Set 'p->out1name' and 'p->out2name'. */
-          if(p->cp.output)
-            {
-              if( gal_fits_name_is_fits(p->cp.output) )
-                {
-                  gal_checkset_allocate_copy(p->cp.output, &p->out1name);
-                  gal_checkset_allocate_copy(p->cp.output, &p->out2name);
-                }
-              else
-                {
-                  /* Here, we are be using the output name as input to the
-                     automatic output generating function (usually it is
-                     the input name, not the output name). Therefore, the
-                     'keepinputdir' variable should be 1. So we will
-                     temporarily change it here, then set it back to what
-                     it was. */
-                  keepinputdir_orig=p->cp.keepinputdir;
-                  p->cp.keepinputdir=1;
-                  p->out1name=gal_checkset_automatic_output(&p->cp,
-                                                            p->cp.output,
-                                                            UI_OUT_SUFFNAME
-                                                            "-1.txt");
-                  p->out2name=gal_checkset_automatic_output(&p->cp,
-                                                            p->cp.output,
-                                                            UI_OUT_SUFFNAME
-                                                            "-2.txt");
-                  p->cp.keepinputdir=keepinputdir_orig;
-                }
-            }
-          else
-            {
-              if(p->cp.tableformat==GAL_TABLE_FORMAT_TXT)
-                {
-                  p->out1name=gal_checkset_automatic_output(&p->cp, refname,
-                                                            UI_OUT_SUFFNAME
-                                                            "-1.txt");
-                  p->out2name=gal_checkset_automatic_output(&p->cp,
-                                                            p->input2name,
-                                                            UI_OUT_SUFFNAME
-                                                            "-2.txt");
-                }
-              else
-                {
-                  p->out1name=gal_checkset_automatic_output(&p->cp, refname,
-                                                            UI_OUT_SUFFNAME
-                                                            ".fits");
-                  gal_checkset_allocate_copy(p->out1name, &p->out2name);
-                }
-            }
+    p->cp.output=gal_checkset_automatic_output(&p->cp, refname,
+                                               "-matched.fits");
 
-          /* Make sure no file with these names exists. */
-          gal_checkset_writable_remove(p->out1name, refname, 0,
-                                       p->cp.dontdelete);
-          gal_checkset_writable_remove(p->out2name, refname, 0,
-                                       p->cp.dontdelete);
-        }
-
-      /* If a log file is necessary, set its name here. */
-      if(p->cp.log)
-        p->logname=gal_checkset_automatic_output(&p->cp, p->out1name,
-                                                 UI_OUT_SUFFNAME
-                                                 "-log.fits");
-    }
+  /* Make sure a file with this name doesn't exist. */
+  gal_checkset_writable_remove(p->cp.output, NULL, 0, p->cp.dontdelete);
 }
 
 
@@ -1281,9 +1231,8 @@ ui_read_check_inputs_setup(int argc, char *argv[], struct matchparams *p)
 
 
   /* If the output is a FITS table, prepare all the options as FITS
-     keywords to write in output later. */
-  if(gal_fits_name_is_fits(p->out1name))
-    gal_options_as_fits_keywords(&p->cp);
+     keywords to later write in output. */
+  gal_options_as_fits_keywords(&p->cp);
 
 
   /* Let the user know that processing has started. */
@@ -1340,17 +1289,15 @@ ui_free_report(struct matchparams *p, struct timeval *t1)
   /* Free the allocated arrays: */
   free(p->cp.hdu);
   free(p->aperture);
-  free(p->out1name);
-  free(p->out2name);
   free(p->cp.output);
   gal_data_free(p->ccol1);
   gal_data_free(p->ccol2);
-  gal_data_free(p->outcols);
   gal_list_data_free(p->cols1);
   gal_list_data_free(p->cols2);
   if(p->kdtree) free(p->kdtree);
   gal_list_str_free(p->acols, 0);
   gal_list_str_free(p->bcols, 0);
+  gal_list_str_free(p->outcols, 1);
   if(p->kdtreehdu) free(p->kdtreehdu);
   gal_list_str_free(p->stdinlines, 1);
 

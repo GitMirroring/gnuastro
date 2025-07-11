@@ -243,6 +243,55 @@ gal_list_f64_free(gal_list_f64_t *list);
 
 
 /****************************************************************
+ *****************     size_t & double       ********************
+ ****************************************************************/
+typedef struct gal_list_sizetf64_t
+{
+  size_t i;
+  double v;
+  struct gal_list_sizetf64_t *next;
+} gal_list_sizetf64_t;
+
+void
+gal_list_sizetf64_add(gal_list_sizetf64_t **list, size_t i, double v);
+
+void
+gal_list_sizetf64_pop(gal_list_sizetf64_t **list, size_t *i, double *v);
+
+void
+gal_list_sizetf64_free(gal_list_sizetf64_t **list);
+
+
+
+
+
+/****************************************************************
+ *****************     size_t & double       ********************
+ ****************************************************************/
+typedef struct gal_list_sizetsizetf64_t
+{
+  size_t i;
+  size_t j;
+  double v;
+  struct gal_list_sizetsizetf64_t *next;
+} gal_list_sizetsizetf64_t;
+
+void
+gal_list_sizetsizetf64_add(gal_list_sizetsizetf64_t **list, size_t i,
+                           size_t j, double v);
+
+void
+gal_list_sizetsizetf64_pop(gal_list_sizetsizetf64_t **list, size_t *i,
+                           size_t *j, double *v);
+
+void
+gal_list_sizetsizetf64_free(gal_list_sizetsizetf64_t **list);
+
+
+
+
+
+/****************************************************************
  *****************          void *           ********************
  ****************************************************************/
 typedef struct gal_list_void_t

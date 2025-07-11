@@ -1052,7 +1052,7 @@ arithmetic_operator_run(struct tableparams *p,
                         gal_data_t **stack)
 {
   int flags=GAL_ARITHMETIC_FLAGS_BASIC;
-  gal_data_t *d1=NULL, *d2=NULL, *d3=NULL, *d4=NULL, *d5=NULL;
+  gal_data_t *o, *d1=NULL, *d2=NULL, *d3=NULL, *d4=NULL, *d5=NULL;
 
   /* Set the operating-mode flags if necessary. */
   if(p->cp.quiet) flags |= GAL_ARITHMETIC_FLAG_QUIET;
@@ -1120,9 +1120,9 @@ arithmetic_operator_run(struct tableparams *p,
          arguments it uses depend on the operator. In other words, when the
          operator doesn't need three operands, the extra arguments will be
          ignored. */
-      gal_list_data_add(stack, gal_arithmetic(token->operator,
-                                              p->cp.numthreads,
-                                              flags, d1, d2, d3, d4, d5) );
+      o=gal_arithmetic(token->operator, p->cp.numthreads, flags,
+                       d1, d2, d3, d4, d5);
+      if(o) gal_list_data_add(stack, o); /* o==NULL for 'free' opertor. */
 
       /* Reset the meta-data for the element that was just put on the
          stack. */

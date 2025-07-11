@@ -997,6 +997,155 @@ gal_list_f64_free(gal_list_f64_t *list)
 
 
 
+
+/****************************************************************
+ *****************     size_t & double       ********************
+ ****************************************************************/
+void
+gal_list_sizetf64_add(gal_list_sizetf64_t **list, size_t i, double v)
+{
+  gal_list_sizetf64_t *newnode;
+
+  errno=0;
+  newnode=malloc(sizeof *newnode);
+  if(newnode==NULL)
+    error(EXIT_FAILURE, errno, "%s: new node couldn't be allocated",
+          __func__);
+
+  newnode->i=i;
+  newnode->v=v;
+  newnode->next=*list;
+  *list=newnode;
+}
+
+
+
+
+
+void
+gal_list_sizetf64_pop(gal_list_sizetf64_t **list, size_t *i, double *v)
+{
+  gal_list_sizetf64_t *tmp;
+  tmp=*list;
+  *i=tmp->i;
+  *v=tmp->v;
+  *list=tmp->next;
+  free(tmp);
+}
+
+
+
+
+
+void
+gal_list_sizetf64_free(gal_list_sizetf64_t **list)
+{
+  gal_list_sizetf64_t *tmp, *ttmp;
+  tmp=*list;
+  while(tmp!=NULL)
+    {
+      ttmp=tmp->next;
+      free(tmp);
+      tmp=ttmp;
+    }
+  *list=NULL;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/****************************************************************
+ *****************     two size_t & double       ****************
+ ****************************************************************/
+void
+gal_list_sizetsizetf64_add(gal_list_sizetsizetf64_t **list, size_t i,
+                           size_t j, double v)
+{
+  gal_list_sizetsizetf64_t *newnode;
+
+  errno=0;
+  newnode=malloc(sizeof *newnode);
+  if(newnode==NULL)
+    error(EXIT_FAILURE, errno, "%s: new node couldn't be allocated",
+          __func__);
+
+  newnode->i=i;
+  newnode->j=j;
+  newnode->v=v;
+  newnode->next=*list;
+  *list=newnode;
+}
+
+
+
+
+
+void
+gal_list_sizetsizetf64_pop(gal_list_sizetsizetf64_t **list, size_t *i,
+                           size_t *j, double *v)
+{
+  gal_list_sizetsizetf64_t *tmp;
+  tmp=*list;
+  *i=tmp->i;
+  *j=tmp->j;
+  *v=tmp->v;
+  *list=tmp->next;
+  free(tmp);
+}
+
+
+
+
+
+void
+gal_list_sizetsizetf64_free(gal_list_sizetsizetf64_t **list)
+{
+  gal_list_sizetsizetf64_t *tmp, *ttmp;
+  tmp=*list;
+  while(tmp!=NULL)
+    {
+      ttmp=tmp->next;
+      free(tmp);
+      tmp=ttmp;
+    }
+  *list=NULL;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /****************************************************************
  *****************          void *           ********************
  ****************************************************************/

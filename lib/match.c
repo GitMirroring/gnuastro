@@ -42,73 +42,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/statistics.h>
 #include <gnuastro/permutation.h>
 
-
-
-
-
-
-
-
-
-/**********************************************************************/
-/*****************   Sort-Based match custom list   *******************/
-/**********************************************************************/
-struct match_sfll
-{
-  float f;
-  size_t v;
-  struct match_sfll *next;
-};
-
-
-
-
-
-static void
-match_add_to_sfll(struct match_sfll **list, size_t value,
-                  float fvalue)
-{
-  struct match_sfll *newnode;
-
-  errno=0;
-  newnode=malloc(sizeof *newnode);
-  if(newnode==NULL)
-    error(EXIT_FAILURE, errno, "%s: new node couldn't be allocated",
-          __func__);
-
-  newnode->v=value;
-  newnode->f=fvalue;
-  newnode->next=*list;
-  *list=newnode;
-}
-
-
-
-
-
-static void
-match_pop_from_sfll(struct match_sfll **list,
-                               size_t *value, float *fvalue)
-{
-  struct match_sfll *tmp;
-  tmp=*list;
-  *value=tmp->v;
-  *fvalue=tmp->f;
-  *list=tmp->next;
-  free(tmp);
-}
-
-
-
-
-
-
-
-
-
-
-
-
+#include <gnuastro-internal/timing.h>
 
 
 
@@ -280,108 +214,176 @@ match_distance(double *delta, int iscircle, size_t ndim,
 
 
 
-/* In the 'match_*_second_in_first' functions, we made an array of lists,
-   here we want to reverse that list to fix the second two issues that were
-   discussed there. */
-void
-match_rearrange(gal_data_t *A, gal_data_t *B, struct match_sfll **bina)
+/* In the 'match_*_second_in_first' functions, we made an array of lists
+   that keep the second catalog's rows which fall in the acceptable region
+   of each row of the first catalo, here we want to reverse that list to
+   fix the second two issues that were discussed there.
+
+   Two good files to test all the complicated situations: the output should
+   be the same irrespective of what order they files are given for the
+   inner match (only the first row should match, the others have duplicates
+   on both sides).
+
+      green.txt:              red.txt:
+       -2  -2                 -2  -1
+        2   3                  1   4
+        4   1                  2   1
+        7   4                  7   0
+        8   0                  8   4
+        9   4                  9   0
+
+   Run these with the following command (on 'astmatch'). The 'outcols' are
+   set so in both cases the first two columns are from 'green.txt' and the
+   second two columns are from 'red.txt'.
+
+       astmatch green.txt red.txt --output=green-first.fits \
+                --ccol1=1,2 --ccol2=1,2 --aperture=3  \
+                --outcols=a1,a2,b1,b2 -N1
+
+       astmatch red.txt green.txt --output=red-first.fits \
+                --ccol1=1,2 --ccol2=1,2 --aperture=3  \
+                --outcols=b1,b2,a1,a2 -N1
+
+   The output of both should have the same points such that the command
+   below doesn't have any rows in the output.
+
+       astmatch green-first.fits red-first.fits --ccol1=1,2 --ccol2=1,2 \
+                -h1 --hdu2=1 --aperture=1 --notmatched \
+                --output=not-matched.fits
+*/
+
+//#define CHECKPOINT ai==3726 || ai==3820
+
+static void
+match_rearrange(gal_data_t *A, gal_data_t *B, gal_list_sizetf64_t **bina,
+                uint8_t *flag)
 {
-  size_t bi;
-  float *fp, *fpf, r, *ainb;
+  double d, *fp, *fpf, *ainbr;
+  size_t bi, *sp, *spf, *ainbi;
   size_t ai, ar=A->size, br=B->size;
 
-  /* Allocate the space for 'ainb' and initialize it to NaN (since zero is
-     meaningful in this context; both for indexs and also for floats). This
-     is a two column array that will keep the distance and index of the
-     closest element in catalog 'a' for each element in catalog b. */
-  errno=0; ainb=calloc(2*br, sizeof *ainb);
-  if(ainb==NULL)
-    error(EXIT_FAILURE, errno, "%s: %zu bytes for 'ainb'", __func__,
-          br*sizeof *ainb);
-  fpf=(fp=ainb)+2*br; do *fp++=NAN; while(fp<fpf);
+  /* Allocate the space for 'ainbi' (for indexs) and 'ainbr' (for
+     distances) and initialize them to blank (since zero is meaningful in
+     this context; both for indexs and also for distances). 'ainbia' is to
+     keep track of which 'bi' an 'ai' is best suited for. */
+  ainbi=gal_pointer_allocate(GAL_TYPE_SIZE_T,  br, 0, __func__, "ainbi");
+  ainbr=gal_pointer_allocate(GAL_TYPE_FLOAT64, br, 0, __func__, "ainbr");
+  fpf=(fp=ainbr)+br;  do *fp++=NAN;              while(fp<fpf);
+  spf=(sp=ainbi)+br;  do *sp++=GAL_BLANK_SIZE_T; while(sp<spf);
 
-  /* Go over each object in catalog 'a' and re-distribute the near objects,
-     to find which ones in catalog 'a' are within the search radius of
-     catalog b in a sorted manner. Note that we only need the 'ai' with the
-     minimum distance to 'bi', the rest are junk. */
+  /* Go over each object in the first catalog ('a') and re-distribute the
+     near objects, to find which ones in catalog 'a' are within the search
+     radius of catalog 'b' in a sorted manner. Note that we only need the
+     'ai' with the minimum distance to 'bi', the rest are junk. */
   for( ai=0; ai<ar; ++ai )
-    while( bina[ai] )	/* As long as its not NULL.            */
+    if(bina[ai])
       {
-	/* Pop out a 'bi' and its distance to this 'ai' from 'bina' (this
-           is the nearest B item to this A element). */
-	match_pop_from_sfll(&bina[ai], &bi, &r);
+        /* More than one 'bi' matches this 'ai', all must be flagged. */
+        if(bina[ai]->next)
+          {
+            while(bina[ai])
+              {
+                gal_list_sizetf64_pop(&bina[ai], &bi, &d);
+                flag[bi]=1;
 
-	/* If nothing has been put here (the 'isnan' condition below is
-	   true), or something exists (the isnan is false, and so it will
-	   check the second OR test) with a distance that is larger than
-	   this distance then just put this value in. */
-	if( isnan(ainb[bi*2]) || r<ainb[bi*2+1] )
-	  {
-	    ainb[bi*2  ] = ai;
-	    ainb[bi*2+1] = r;
-	  }
+                /* For a check:
+                if(CHECKPOINT)
+                  printf("%s: ai:%zu: caused FLAG on bi:%zu "
+                         "(at dist: %g)\n", __func__, ai, bi, d);
+                //*/
+              }
+          }
+
+        /* Only a single 'bi' matched this 'ai', put it in 'ainb'. */
+        else
+          {
+            /* Pop the value and its elliptical distance. */
+            gal_list_sizetf64_pop(&bina[ai], &bi, &d);
+            bina[ai]=NULL;
+
+            /* Write the popped 'bi' and its distane. */
+            ainbr[bi]=d;
+            ainbi[bi]=ai;
+
+            /* For a check:
+            if(CHECKPOINT)
+              printf("%s: ai:%zu: written for bi:%zu\n", __func__,
+                     ai, bi);
+            //*/
+          }
       }
 
-  /* For checking the status of affairs uncomment this block
+  //printf("%s: flag[34314]: %u\n", __func__, flag[34314]);
+
+  /* For checking the status of affairs uncomment this block.
   {
     printf("\n\nFilled ainb:\n");
     for(bi=0;bi<br;++bi)
-      if( !isnan(ainb[bi*2]) )
-	printf("bi: %lu: %.0f, %f\n", bi, ainb[bi*2], ainb[bi*2+1]);
+      if( ainbi[bi]!=GAL_BLANK_SIZE_T && flag[bi]==0 )
+	printf("bi:%zu matches ai:%zu with distance %g\n", bi,
+               ainbi[bi], ainbr[bi]);
+    exit(0);
   }
-  */
+  //*/
 
-  /* Re-fill the bina array, but this time only with the 'bi' that is
-     closest to it. Note that bina was fully set to NULL after popping all
-     the elements in the loop above. */
+  /* Re-fill the 'bina' array, but only if a single 'bi' is found for
+     it. */
   for( bi=0; bi<br; ++bi )
-    if( !isnan(ainb[bi*2]) )
+    if( ainbi[bi]!=GAL_BLANK_SIZE_T && flag[bi]==0 )
       {
 	/* Just to keep the same terminology as before and easier
 	   reading. */
-	r=ainb[bi*2+1];
-	ai=(size_t)(ainb[bi*2]);
+	d=ainbr[bi];
+	ai=ainbi[bi];
 
-	/* Check if this is the first time we are associating a 'bi' to
-	   this 'ai'. If so, then just allocate a single element
-	   list. Otherwise, see if the distance is closer or not. If so,
-	   replace the values in the single node. */
+        /* This 'ai' has already been filled. */
 	if( bina[ai] )
 	  {
-	    /* If the distance of this record is smaller than the existing
-	       entry, then replace the values. */
-	    if( r < bina[ai]->f )
-	      {
-		bina[ai]->f=r;
-		bina[ai]->v=bi;
-	      }
+            /* Flag both 'bi's. */
+            flag[bi] = flag[ bina[ai]->i ] = 1;
+
+            /* For a check:
+            if(CHECKPOINT)
+              printf("\n%s: ai:%zu: matches bi:%zu and bi:%zu "
+                     "(BOTH FLAGGED)\n", __func__, ai, bi, bina[ai]->i);
+            //*/
 	  }
-	else
-          match_add_to_sfll(&bina[ai], bi, r);
+
+        /* First time that this 'ai' has come up, so add it. */
+	else gal_list_sizetf64_add(&bina[ai], bi, d);
       }
 
-  /* For checking the status of affairs uncomment this block
+  /* Loop over the first input and if any of the items were flagged, free
+     them. */
+  for( ai=0; ai<ar; ++ai )
+    if( bina[ai] && flag[ bina[ai]->i ]!=0 )
+      gal_list_sizetf64_free( &bina[ai] );
+
+  /* For checking the status of affairs uncomment this block.
   {
     size_t bi, counter=0;
     double *a[2]={A->array, A->next->array};
     double *b[2]={B->array, B->next->array};
-    printf("\n\nRearranged bina:\n");
+    printf("\n\nRe-arranged bina:\n");
     for(ai=0;ai<ar;++ai)
       if(bina[ai])
         {
           ++counter;
-          bi=bina[ai]->v;
-          printf("A_%lu (%.8f, %.8f) <--> B_%lu (%.8f, %.8f):\n\t%f\n",
+          bi=bina[ai]->i;
+          printf("ai:%zu (%g, %g) <--> bi:%zu (%g, %g); dist: %f\n",
                  ai, a[0][ai], a[1][ai], bi, b[0][bi], b[1][bi],
-                 bina[ai]->f);
+                 bina[ai]->v);
         }
+    printf("\nFlagged in second: \n");
+    for(bi=0;bi<br;++bi) if(flag[bi]) printf("bi:%zu ", bi);
     printf("\n-----------\nMatched: %zu\n", counter);
   }
   exit(0);
   */
 
   /* Clean up. */
-  free(ainb);
+  free(ainbi);
+  free(ainbr);
 }
 
 
@@ -391,13 +393,12 @@ match_rearrange(gal_data_t *A, gal_data_t *B, struct match_sfll **bina)
 /* The matching has been done, write the output. */
 static gal_data_t *
 match_output_inner(gal_data_t *A, gal_data_t *B, size_t *A_perm,
-                   size_t *B_perm, struct match_sfll **bina,
-                   size_t minmapsize, int quietmmap)
+                   size_t *B_perm, gal_list_sizetf64_t **bina,
+                   uint8_t *flag, size_t minmapsize, int quietmmap)
 {
-  float r;
-  double *rval;
-  gal_data_t *out;
+  double r, *rval;
   uint8_t *Bmatched;
+  gal_data_t *out, *tmp;
   size_t ai, bi, nummatched=0;
   size_t *aind, *bind, match_i, nomatch_i;
 
@@ -448,7 +449,7 @@ match_output_inner(gal_data_t *A, gal_data_t *B, size_t *A_perm,
       if(bina[ai])
         {
           /* Note that the permutation keeps the original indexs. */
-          match_pop_from_sfll(&bina[ai], &bi, &r);
+          gal_list_sizetf64_pop(&bina[ai], &bi, &r);
           rval[ match_i   ] = r;
           aind[ match_i   ] = A_perm ? A_perm[ai] : ai;
           bind[ match_i++ ] = B_perm ? B_perm[bi] : bi;
@@ -472,6 +473,19 @@ match_output_inner(gal_data_t *A, gal_data_t *B, size_t *A_perm,
       bind[ nomatch_i++ ] = bi;
 
 
+  /* If a flag was given along with a permutation on the second input, we
+     need to apply the permutation to the flag also. But we need to put
+     the array inside of a 'gal_data_t' */
+  if(flag && B_perm)
+    {
+      tmp=gal_data_alloc(flag, GAL_TYPE_UINT8, 1, &B->size,
+                         NULL, 0, B->minmapsize, B->quietmmap,
+                         NULL, NULL, NULL);
+      gal_permutation_apply_inverse(tmp, B_perm);
+      tmp->array=NULL; /* The array should not be freed! */
+      gal_data_free(tmp);
+    }
+
   /* For a check
   printf("\nFirst input's permutation (starred items not matched):\n");
   for(ai=0;ai<A->size;++ai)
@@ -480,7 +494,7 @@ match_output_inner(gal_data_t *A, gal_data_t *B, size_t *A_perm,
   for(bi=0;bi<B->size;++bi)
     printf("%s%zu\n", bi<nummatched?"  ":"* ", bind[bi]+1);
   exit(0);
-  */
+  //*/
 
   /* Clean up and return. */
   free(Bmatched);
@@ -721,10 +735,10 @@ match_sort_based_prepare_sort(gal_data_t *coords, size_t minmapsize)
 /* Do the preparations for matching of coordinates. */
 static void
 match_sort_based_prepare(gal_data_t *coord1, gal_data_t *coord2,
-                          int sorted_by_first, int inplace, int allf64,
-                          gal_data_t **A_out, gal_data_t **B_out,
-                          size_t **A_perm, size_t **B_perm,
-                          size_t minmapsize)
+                         int sorted_by_first, int inplace, int allf64,
+                         gal_data_t **A_out, gal_data_t **B_out,
+                         size_t **A_perm, size_t **B_perm,
+                         size_t minmapsize)
 {
   gal_data_t *c, *tmp, *A=NULL, *B=NULL;
 
@@ -786,18 +800,20 @@ match_sort_based_prepare(gal_data_t *coord1, gal_data_t *coord2,
    the first (a). */
 static void
 match_sort_based_second_in_first(gal_data_t *A, gal_data_t *B,
-                                  double *aperture,
-                                  struct match_sfll **bina)
+                                 double *aperture,
+                                 gal_list_sizetf64_t **bina,
+                                 uint8_t *flag)
 {
   /* To keep things easy to read, all variables related to catalog 1 start
      with an 'a' and things related to catalog 2 are start with a 'b'. The
      redundant variables (those that equal a previous variable) are only
      defined to make it easy to read the code.*/
   int iscircle=0;
-  size_t i, ar=A->size, br=B->size;
-  size_t ai, bi, blow=0, prevblow=0;
+  //gal_list_sizetf64_t *tmp;
+  size_t ai, bi, alow=0, prevalow=0;
   size_t ndim=gal_list_data_number(A);
-  double r, c[3]={NAN, NAN, NAN}, s[3]={NAN, NAN, NAN};
+  size_t i, nmatch, ar=A->size, br=B->size;
+  double d, c[3]={NAN, NAN, NAN}, s[3]={NAN, NAN, NAN};
   double dist[3]={NAN, NAN, NAN}, delta[3]={NAN, NAN, NAN};
   double *a[3]={NULL, NULL, NULL}, *b[3]={NULL, NULL, NULL};
 
@@ -805,20 +821,20 @@ match_sort_based_second_in_first(gal_data_t *A, gal_data_t *B,
   match_aperture_prepare(A, B, aperture,  ndim, a, b, dist,
                          c, s, &iscircle);
 
-  /* For each row/record of catalog 'a', make a list of the nearest records
-     in catalog b within the maximum distance. Note that both catalogs are
-     sorted by their first axis coordinate.*/
-  for(ai=0;ai<ar;++ai)
-    if( !isnan(a[0][ai]) && blow<br)
+  /* For each row/record of catalog 'b', make a list of the nearest records
+     in catalog 'a' within the maximum distance. Note that both catalogs
+     are sorted by their first axis coordinate.*/
+  for(bi=0;bi<br;++bi)
+    if( !isnan(b[0][bi]) && alow<ar)
       {
-        /* Initialize 'bina'. */
-        bina[ai]=NULL;
+        /* Initialize. */
+        nmatch=0;
 
         /* Find the first (lowest first axis value) row/record in catalog
-           'b' that is within the search radius for this record of catalog
-           'a'. 'blow' is the index of the first element to start searching
-           in the catalog 'b' for a match to 'a[][ai]' (the record in
-           catalog a that is currently being searched). 'blow' is only
+           'a' that is within the search radius for this record of catalog
+           'b'. 'alow' is the index of the first element to start searching
+           in the catalog 'a' for a match to 'b[][bi]' (the record in
+           catalog a that is currently being searched). 'alow' is only
            based on the first coordinate, not the second.
 
            Both catalogs are sorted by their first coordinate, so the
@@ -827,18 +843,18 @@ match_sort_based_second_in_first(gal_data_t *A, gal_data_t *B,
            account for possibly large distances between the records, we do
            a search here to change 'blow' if necessary before doing further
            searching.*/
-        for( blow=prevblow; blow<br && b[0][blow] < a[0][ai]-dist[0];
-             ++blow)
+        for( alow=prevalow; alow<ar && a[0][alow] < b[0][bi]-dist[0];
+             ++alow)
           { /* This can be blank, the 'for' does all we need :-). */ }
 
-        /* 'blow' is now found for this 'ai' and will be used unchanged to
+        /* 'alow' is now found for this 'bi' and will be used unchanged to
            the end of the loop. So keep its value to help the search for
            the next entry in catalog 'a'. */
-        prevblow=blow;
+        prevalow=alow;
 
-        /* Go through catalog 'b' (starting at 'blow') with a first axis
+        /* Go through catalog 'a' (starting at 'alow') with a first axis
            value smaller than the maximum acceptable range for 'si'. */
-        for( bi=blow; bi<br && b[0][bi] <= a[0][ai] + dist[0]; ++bi )
+        for( ai=alow; ai<ar && a[0][ai] <= b[0][bi] + dist[0]; ++ai )
           {
             /* Only consider records with a second axis value in the
                correct range, note that unlike the first axis, the second
@@ -853,24 +869,24 @@ match_sort_based_second_in_first(gal_data_t *A, gal_data_t *B,
                each other to easily define an independent sorting in the
                second axis. */
             if( ndim<2
-                || (    b[1][bi] >= a[1][ai]-dist[1]
-                     && b[1][bi] <= a[1][ai]+dist[1] ) )
+                || (    a[1][ai] >= b[1][bi]-dist[1]
+                     && a[1][ai] <= b[1][bi]+dist[1] ) )
               {
-                /* Now, 'bi' is within the rectangular range of 'ai'. But
+                /* Now, 'ai' is within the rectangular range of 'bi'. But
                    this is not enough to consider the two objects matched
                    for the following reasons:
 
                    1) Until now we have avoided calculations other than
                    larger or smaller on double precision floating point
-                   variables for efficiency. So the 'bi' is within a square
-                   of side 'dist[0]*dist[1]' around 'ai' (not within a
+                   variables for efficiency. So the 'ai' is within a square
+                   of side 'dist[0]*dist[1]' around 'bi' (not within a
                    fixed radius).
 
-                   2) Other objects in the 'b' catalog may be closer to
-                   'ai' than this 'bi'.
+                   2) Other objects in the 'a' catalog may be closer to
+                   'bi' than this 'ai'.
 
-                   3) The closest 'bi' to 'ai' might be closer to another
-                   catalog 'a' record.
+                   3) The closest 'ai' to 'bi' might be closer to another
+                   catalog 'b' record.
 
                    To address these problems, we will use a linked list to
                    keep the indexes of the 'b's near 'ai', along with their
@@ -885,35 +901,44 @@ match_sort_based_second_in_first(gal_data_t *A, gal_data_t *B,
                    The next two problems will be solved with the list after
                    parsing of the whole catalog is complete.*/
                 if( ndim<3
-                    || ( b[2][bi] >= a[2][ai]-dist[2]
-                         && b[2][bi] <= a[2][ai]+dist[2] ) )
+                    || (    a[2][ai] >= b[2][bi]-dist[2]
+                         && a[2][ai] <= b[2][bi]+dist[2] ) )
                   {
+                    /* Find the distance to the point. */
                     for(i=0;i<ndim;++i) delta[i]=b[i][bi]-a[i][ai];
-                    r=match_distance(delta, iscircle, ndim, aperture,
+                    d=match_distance(delta, iscircle, ndim, aperture,
                                      c, s);
-                    if(r<aperture[0])
-                      match_add_to_sfll(&bina[ai], bi, r);
+
+                    /* If the distance is within the aperture, add it. */
+                    if(d<=aperture[0])
+                      {
+                        ++nmatch;
+                        gal_list_sizetf64_add(&bina[ai], bi, d);
+
+                        /* For a check:
+                        if(b[0][bi]==809 && b[1][bi]==109)
+                          printf("%s: bi:%zu (%g,%g) added for ai:%zu "
+                                 "(%g,%g) at dist: %g, nmatch: %zu\n",
+                                 __func__, bi, b[0][bi], b[1][bi], ai,
+                                 a[0][ai], a[1][ai], d, nmatch);
+                        //*/
+                      }
                   }
               }
           }
 
-        /* If there was no objects within the acceptable distance, then the
-           linked list pointer will be NULL, so go on to the next 'ai'. */
-        if(bina[ai]==NULL)
-          continue;
+        /* If there was more than one matching 'ai', flag this 'bi'. */
+        if(nmatch>1)
+          {
+            flag[bi]=1;
 
-        /* For checking the status of affairs uncomment this block
-        {
-          struct match_sfll *tmp;
-          printf("\n\nai: %lu:\n", ai);
-          printf("ax: %f (%f -- %f)\n", a[0][ai], a[0][ai]-dist[0],
-                 a[0][ai]+dist[0]);
-          printf("ay: %f (%f -- %f)\n", a[1][ai], a[1][ai]-dist[1],
-                 a[1][ai]+dist[1]);
-          for(tmp=bina[ai];tmp!=NULL;tmp=tmp->next)
-            printf("%lu: %f\n", tmp->v, tmp->f);
-        }
-        */
+            /* For a check:
+            if(b[0][bi]==809 && b[1][bi]==109)
+              printf("%s: bi:%zu (%g,%g) FLAGGED because of %zu "
+                     "matches\n", __func__, bi, b[0][bi], b[1][bi],
+                     nmatch);
+            //*/
+          }
       }
 }
 
@@ -942,22 +967,22 @@ match_sort_based_second_in_first(gal_data_t *A, gal_data_t *B,
        Node 3: Distance between the match.                    */
 gal_data_t *
 gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
-                      double *aperture, int sorted_by_first,
-                      int inplace, size_t minmapsize, int quietmmap,
-                      size_t *nummatched)
+                     double *aperture, int sorted_by_first,
+                     int inplace, size_t minmapsize, int quietmmap,
+                     uint8_t **flag, size_t *nummatched)
 {
   int allf64=1;
   gal_data_t *A, *B, *out;
-  struct match_sfll **bina;
+  gal_list_sizetf64_t **bina;
   size_t *A_perm=NULL, *B_perm=NULL;
 
   /* Do a small sanity check and make the preparations. After this point,
      we'll call the two arrays 'a' and 'b'.*/
   match_sort_based_sanity_check(coord1, coord2, aperture, inplace,
-                                 &allf64);
+                                &allf64);
   match_sort_based_prepare(coord1, coord2, sorted_by_first, inplace,
-                            allf64, &A, &B, &A_perm, &B_perm,
-                            minmapsize);
+                           allf64, &A, &B, &A_perm, &B_perm,
+                           minmapsize);
 
   /* Allocate the 'bina' array (an array of lists). Let's call the first
      catalog 'a' and the second 'b'. This array has 'a->size' elements
@@ -968,16 +993,18 @@ gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
   if(bina==NULL)
     error(EXIT_FAILURE, errno, "%s: %zu bytes for 'bina'", __func__,
           A->size*sizeof *bina);
+  *flag=gal_pointer_allocate(GAL_TYPE_UINT8, B->size, 1,
+                             __func__, "p->flag");
 
   /* All records in 'b' that match each 'a' (possibly duplicate). */
-  match_sort_based_second_in_first(A, B, aperture, bina);
+  match_sort_based_second_in_first(A, B, aperture, bina, *flag);
 
   /* Two re-arrangings will fix the issue. */
-  match_rearrange(A, B, bina);
+  match_rearrange(A, B, bina, *flag);
 
   /* The match is done, write the output. */
-  out=match_output_inner(A, B, A_perm, B_perm, bina, minmapsize,
-                         quietmmap);
+  out=match_output_inner(A, B, A_perm, B_perm, bina, *flag,
+                         minmapsize, quietmmap);
 
   /* Clean up. */
   free(bina);
@@ -1019,14 +1046,16 @@ gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
 struct match_kdtree_params
 {
   /* Input arguments. */
-  uint8_t           arrange;  /* Arrangement: outer, inner, full...   */
-  uint8_t        nosamenode;  /* Avoid exact matches.                 */
-  gal_data_t             *A;  /* 1st coordinate list of 'gal_data_t's */
-  gal_data_t             *B;  /* 2nd coordinate list of 'gal_data_t's */
-  size_t               ndim;  /* The number of dimensions.            */
-  double          *aperture;  /* Acceptable aperture for match.       */
-  size_t        kdtree_root;  /* Index (counting from 0) of root.     */
-  gal_data_t      *A_kdtree;  /* k-d tree of first coordinate.        */
+  uint8_t           arrange;  /* Arrangement: outer, inner, full...     */
+  uint8_t        nosamenode;  /* Avoid exact matches.                   */
+  gal_data_t             *A;  /* 1st coordinate list of 'gal_data_t's   */
+  gal_data_t             *B;  /* 2nd coordinate list of 'gal_data_t's   */
+  size_t               ndim;  /* The number of dimensions.              */
+  double          *aperture;  /* Acceptable aperture for match.         */
+  size_t        kdtree_root;  /* Index (counting from 0) of root.       */
+  gal_data_t      *A_kdtree;  /* k-d tree of first coordinate.          */
+  uint8_t             *flag;  /* Identify problematic matches.          */
+  size_t         numthreads;  /* The number of threads requested.       */
 
   /* Internal parameters for easy aperture checking. For example there is
      no need to calculate the fixed 'cos()' and 'sin()' functions every
@@ -1039,7 +1068,8 @@ struct match_kdtree_params
   /* Internal items. */
   double              *a[3];  /* Direct pointers to column arrays.    */
   double              *b[3];  /* Direct pointers to column arrays.    */
-  struct match_sfll  **bina;  /* Second cat. items in first.          */
+  gal_list_sizetf64_t **bina; /* Second cat. items in first.          */
+  gal_list_sizetsizetf64_t **binant; /* 'bina' but for each thread.   */
   size_t             *aoinb;  /* For outer: 1st cat element in 2nd.   */
   double            *aoinbd;  /* Distance of the aoinb match.         */
   gal_data_t        *Aexist;  /* If any element of A exists in bins.  */
@@ -1174,8 +1204,6 @@ match_kdtree_A_coverage(struct match_kdtree_params *p)
       if(range) { gal_data_free(range); range=NULL; }
     }
 
-  //printf("%s: Good!\n", __func__); exit(0);
-
   /* Reverse the list to be in the proper dimensional order. */
   gal_list_data_reverse(&p->Aexist);
 }
@@ -1235,14 +1263,24 @@ match_kdtree_sanity_check(struct match_kdtree_params *p)
   switch(p->arrange)
     {
 
-    /* For inner and full, we need the bina array. */
+    /* For inner and full, we need the bina array as well as the flag
+       array. */
     case GAL_MATCH_ARRANGE_FULL:
     case GAL_MATCH_ARRANGE_INNER:
+
+      /* Final bina array. */
       errno=0;
       p->bina=calloc(p->A->size, sizeof *p->bina);
       if(p->bina==NULL)
         error(EXIT_FAILURE, errno, "%s: %zu bytes for 'bina'",
               __func__, p->A->size*sizeof *p->bina);
+
+      /* List of found matches on each thread. */
+      errno=0;
+      p->binant=calloc(p->numthreads, sizeof *p->binant);
+      if(p->binant==NULL)
+        error(EXIT_FAILURE, errno, "%s: %zu bytes for 'binant'",
+              __func__, p->numthreads*sizeof *p->binant);
       break;
 
     /* For the outer matches, we need the aoinb array, which is initialized
@@ -1297,6 +1335,24 @@ match_kdtree_sanity_check(struct match_kdtree_params *p)
          tree is very computationally expensive. */
       match_kdtree_A_coverage(p);
     }
+
+  /* Array to keep flags of the match (on second catalog). */
+  p->flag=gal_pointer_allocate(GAL_TYPE_UINT8, p->B->size, 1,
+                               __func__, "p->flag");
+}
+
+
+
+
+
+static double
+match_distance_find(struct match_kdtree_params *p, size_t ai, size_t bi)
+{
+  size_t i;
+  double delta[3];
+  for(i=0;i<p->ndim;++i) delta[i]=p->b[i][bi] - p->a[i][ai];
+  return match_distance(delta, p->iscircle, p->ndim, p->aperture, p->c,
+                        p->s);
 }
 
 
@@ -1314,10 +1370,10 @@ match_kdtree_worker(void *in_prm)
   /* High level definitions. */
   int iscovered;
   uint8_t *existA;
-  double r, delta[3];
   size_t i, j, ai, bi, h_i;
   gal_data_t *ccol, *Aexist;
-  double po, *point=NULL, least_dist;
+  gal_list_sizet_t *same_dist;
+  double d, po, *point=NULL, least_dist;
 
   /* Allocate space for all the matching points (based on the number of
      dimensions). */
@@ -1352,7 +1408,8 @@ match_kdtree_worker(void *in_prm)
                  defined). */
               if( p->arrange!=GAL_MATCH_ARRANGE_OUTER )
                 {
-                  if ( po >= p->Amin[j] && po <= p->Amax[j] )
+                  if (    po >= p->Amin[j] - p->aperture[0]
+                       && po <= p->Amax[j] + p->aperture[0] )
                     {
                       existA=Aexist->array;
                       h_i=(po-p->Amin[j])/p->Abinwidth[j];
@@ -1378,49 +1435,91 @@ match_kdtree_worker(void *in_prm)
              this point in the second catalog. */
           ai = gal_kdtree_nearest_neighbour(p->A, p->A_kdtree,
                                             p->kdtree_root, point,
-                                            &least_dist, p->nosamenode);
+                                            p->aperture[0], &least_dist,
+                                            &same_dist, p->nosamenode);
 
-          /* If nothing was found, then the 'ai' will be
-             'GAL_BLANK_SIZE_T'. */
-          if(ai!=GAL_BLANK_SIZE_T)
+          /* For a check:
+          int checkpoint = CHECKPOINT;
+          if(checkpoint)
+            printf("%s: bi:%zu nearest_neighbour ai:%zu (r: %g)%s\n",
+                   __func__, bi, ai, least_dist,
+                   (same_dist && same_dist->next)?" WITH SAME":"");
+          //*/
+
+          /* Keep the index and distance based on the arrangement of this
+             match. */
+          switch(p->arrange)
             {
-              /* Make sure the matched point is within the given aperture
-                 (which may be elliptical). */
-              for(j=0;j<p->ndim;++j)
-                delta[j]=p->b[j][bi] - p->a[j][ai];
-              r=match_distance(delta, p->iscircle, p->ndim, p->aperture,
-                               p->c, p->s);
+            case GAL_MATCH_ARRANGE_FULL:
+            case GAL_MATCH_ARRANGE_INNER:
 
-              /* If the radial distance is smaller than the radial measure,
-                 then add this item to a match with 'ai'. */
-              if(p->arrange==GAL_MATCH_ARRANGE_OUTER || r<p->aperture[0])
+              /* There was more than one match within the aperture (this
+                 includes 'ai' that was returned), so we need to parse
+                 through them (and flag them all!). */
+              if(same_dist && same_dist->next)
+                while(same_dist) /* Go over all the 'ai's with similar */
+                  {              /* distances: we need them.           */
+                    ai=gal_list_sizet_pop(&same_dist);
+                    d=match_distance_find(p, ai, bi);
+                    if(d <= p->aperture[0])
+                      {
+                        /* Put this point in the list of this thread, but
+                           also activate the flag for this 'bi'. */
+                        p->flag[bi]=1;
+                        if(p->numthreads==1)
+                          gal_list_sizetf64_add(&p->bina[ai], bi, d);
+                        else
+                          gal_list_sizetsizetf64_add(&p->binant[tprm->id],
+                                                     ai, bi, d);
+
+                        /* For a check:
+                        if(checkpoint)
+                          printf("%s: bi:%zu (FLAGGED) added for ai:%zu "
+                                 "(r:%g)\n", __func__, bi, ai, d);
+                        //*/
+                      }
+                  }
+
+              /* If 'same_dist' has a single element, there was only a
+                 single match (with the returned 'ai'), so calculate the
+                 distance and add it. */
+              else
                 {
-                  switch(p->arrange)
+                  d=match_distance_find(p, ai, bi);
+                  if(d <= p->aperture[0])
                     {
-                    case GAL_MATCH_ARRANGE_FULL:
-                    case GAL_MATCH_ARRANGE_INNER:
-                      match_add_to_sfll(&p->bina[ai], bi, r);
-                      break;
+                      /* Put this point in the list of this thread. */
+                      if(p->numthreads==1)
+                        gal_list_sizetf64_add(&p->bina[ai], bi, d);
+                      else
+                        gal_list_sizetsizetf64_add(&p->binant[tprm->id],
+                                                   ai, bi, d);
 
-                    case GAL_MATCH_ARRANGE_OUTER:
-                    case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
-                      p->aoinb[bi]=ai;
-                      p->aoinbd[bi]=r;
-                      break;
+                      /* For a check:
+                      if(checkpoint)
+                        printf("%s: bi:%zu added for ai:%zu (r:%g)\n",
+                               __func__, bi, ai, d);
+                      //*/
                     }
+
+                  /* Clean up: same_dist is redundant here: if it exists,
+                     it has 'ai' in it, if it doesn't exist, it means that
+                     'ai' was more distant than the aperture's radius! */
+                  if(same_dist) free(same_dist);
                 }
+              break;
+
+            /* For the 'outer' match if there is a 'same_dist', it should
+               be freed (it is not relevant). */
+            case GAL_MATCH_ARRANGE_OUTER:
+            case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+              d=match_distance_find(p, ai, bi);
+              if(same_dist) free(same_dist);
+              p->aoinb[bi]=ai;
+              p->aoinbd[bi]=d;
+              break;
             }
         }
-      else ai=GAL_BLANK_SIZE_T;
-
-      /* For a check:
-      if(ai==GAL_BLANK_SIZE_T)
-        printf("%s: second[%zu] DIDN'T match with first.\n",
-               __func__, bi);
-      else
-        printf("%s: second[%zu] matched with first[%zu].\n",
-               __func__, bi, ai);
-      */
     }
 
   /* Clean up. */
@@ -1465,8 +1564,10 @@ gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
                  gal_data_t *coord1_kdtree, size_t kdtree_root,
                  uint8_t arrange, double *aperture, size_t numthreads,
                  size_t minmapsize, int quietmmap, size_t *nummatched,
-                 uint8_t nosamenode)
+                 uint8_t **flag, uint8_t nosamenode)
 {
+  double d;
+  size_t i, ai, bi;
   gal_data_t *out=NULL;
   struct match_kdtree_params p={0};
 
@@ -1479,6 +1580,7 @@ gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
   p.B=coord2;
   p.arrange=arrange;
   p.aperture=aperture;
+  p.numthreads=numthreads;
   p.nosamenode=nosamenode;
   p.A_kdtree=coord1_kdtree;
   p.kdtree_root=kdtree_root;
@@ -1488,17 +1590,31 @@ gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
 
   /* Find all of the second catalog points that are within the acceptable
      radius of the first. */
+  /*struct timeval t1; gettimeofday(&t1, NULL);*/
   match_kdtree_second_in_first(&p, numthreads, minmapsize, quietmmap);
+  /*gal_timing_report(&t1, "Kd-tree raw", 2);*/
 
   /* The match is done, write the output. */
   switch(arrange)
     {
     case GAL_MATCH_ARRANGE_FULL:
     case GAL_MATCH_ARRANGE_INNER:
-      match_rearrange(p.A, p.B, p.bina);
-      out=match_output_inner(p.A, p.B, NULL, NULL, p.bina, minmapsize,
-                             quietmmap);
+
+      /* Put the list of each thread in the final list. */
+      if(numthreads>1)
+        for(i=0;i<numthreads;++i)
+          while(p.binant[i])
+            {
+              gal_list_sizetsizetf64_pop(&p.binant[i], &ai, &bi, &d);
+              gal_list_sizetf64_add(&p.bina[ai], bi, d);
+            }
+
+      /* Rearrange the 'bina' array and add flags. */
+      match_rearrange(p.A, p.B, p.bina, p.flag);
+      out=match_output_inner(p.A, p.B, NULL, NULL, p.bina,
+                             p.flag, minmapsize, quietmmap);
       *nummatched = out ?  out->next->next->size : 0;
+      *flag=p.flag;
       break;
 
     case GAL_MATCH_ARRANGE_OUTER:
@@ -1519,6 +1635,7 @@ gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
   free(p.Amax);
   free(p.Abinwidth);
   if(p.bina) free(p.bina);
+  if(p.binant) free(p.binant);
   gal_list_data_free(p.Aexist);
   return out;
 }

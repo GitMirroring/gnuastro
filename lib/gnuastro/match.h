@@ -79,16 +79,16 @@ enum gal_match_arrange{
 
 gal_data_t *
 gal_match_sort_based(gal_data_t *coord1, gal_data_t *coord2,
-                      double *aperture, int sorted_by_first,
-                      int inplace, size_t minmapsize, int quietmmap,
-                      size_t *nummatched);
+                     double *aperture, int sorted_by_first,
+                     int inplace, size_t minmapsize, int quietmmap,
+                     uint8_t **flag, size_t *nummatched);
 
 gal_data_t *
 gal_match_kdtree(gal_data_t *coord1, gal_data_t *coord2,
                  gal_data_t *coord1_kdtree, size_t kdtree_root,
                  uint8_t arrange, double *aperture, size_t numthreads,
                  size_t minmapsize, int quietmmap, size_t *nummatched,
-                 uint8_t nosamenode);
+                 uint8_t **flag, uint8_t nosamenode);
 
 
 

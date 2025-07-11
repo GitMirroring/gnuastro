@@ -29,25 +29,25 @@
 # Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this Makefile.  If not, see <http://www.gnu.org/licenses/>.  Set
-# input & Final target
+# with this Makefile.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
 
 
+# Include the configure file. It contains all the variables that were
+# passed by the user to the higher-level script that calls this Makefile
+# (for example the 'output' variable, which is a prerequisite of 'all').
+include $(tmpdir)/zeropoint.conf
 
 # Final target.
-all: final
+all: $(output)
 
 # Second expansion.
 .SECONDEXPANSION:
 
 # Stop the recipe's shell if the command fails
 .SHELLFLAGS = -ec
-
-# Include the configure file.
-include $(tmpdir)/zeropoint.conf
 
 
 
@@ -188,8 +188,24 @@ $(magdiff): $(tmpdir)/%-magdiff.fits: \
 	astmatch $< --hdu=1 $(word 2,$^) --hdu2=1 \
 	         --ccol1=RA,DEC --ccol2=RA,DEC \
 	         --outcols=aMAGNITUDE,bMAGNITUDE \
-	         --aperture=$(matchradius) \
+	         --aperture=$(matchradius)/3600 \
 	         --output=$$match; \
+	nmatch=$$(asttable $$match --info-num-rows); \
+	if [ $$nmatch -lt 3 ]; then \
+	   printf "$(scriptname): $$nmatch stars matched! This is "; \
+	   printf "not enough for good statistics so the script will "; \
+	   printf "abort. If you are sure that the reference "; \
+	   printf "image/catalog is the on the same region of sky and "; \
+	   printf "cover the same brightness levels, the problem is "; \
+	   printf "with the match radius (currently set to "; \
+	   printf "$(matchradius) arcseconds). If your field is very "; \
+	   printf "dense with usable stars you need to decrease it "; \
+	   printf "by giving a smaller value to '--matchradius'. "; \
+	   printf "Alternatively, if the the errors in positions are "; \
+	   printf "high, you need to give a larger value to "; \
+	   printf "'--matchradius'\n"; \
+	   exit 1; \
+	fi; \
 	asttable $$match -c1 -c'arith $$1 $$2 -' \
 	         --colmetadat=1,MAG-REF,f32,"Magnitude of reference." \
                  --colmetadat=2,MAG-DIFF,f32,"Magnitude diff with input." \
@@ -242,8 +258,7 @@ $(aperzeropoint): $(tmpdir)/zeropoint-%.txt: \
 #
 # For each aperture, one zeropoint and its STD has been computed. The best
 # value is the one with the lowest STD value.
-zeropoint=$(output)
-$(zeropoint): $(aperzeropoint)
+$(output): $(aperzeropoint)
 
 #	Obtain the zeropoint and zero point STD of each aperture.
 #	Find the best aperture; its zero point and STD.
@@ -303,10 +318,3 @@ $(zeropoint): $(aperzeropoint)
 	  mv $@.fits $@; \
 	fi; \
 	rm $$zp
-
-
-
-
-
-# Final target.
-final: $(zeropoint)

@@ -82,14 +82,14 @@ struct argp_option program_options[] =
       UI_KEY_OUTCOLS,
       "STR",
       0,
-      "Out cols in CSV, 'a': first, 'b': second input.",
+      "Out cols in CSV, 'a': 1st, 'b': 2nd input.",
       GAL_OPTIONS_GROUP_OUTPUT,
       &p->outcols,
-      GAL_OPTIONS_NO_ARG_TYPE,
-      GAL_OPTIONS_RANGE_0_OR_1,
+      GAL_TYPE_STRLL,
+      GAL_OPTIONS_RANGE_ANY,
       GAL_OPTIONS_NOT_MANDATORY,
       GAL_OPTIONS_NOT_SET,
-      gal_options_parse_csv_strings
+      gal_options_parse_csv_strings_append
     },
     {
       "arrange",
@@ -98,7 +98,7 @@ struct argp_option program_options[] =
       0,
       "inner, outer, outer-within-aperture or full.",
       GAL_OPTIONS_GROUP_OUTPUT,
-      &p->type,
+      &p->arrange,
       GAL_TYPE_STRING,
       GAL_OPTIONS_RANGE_ANY,
       GAL_OPTIONS_MANDATORY,

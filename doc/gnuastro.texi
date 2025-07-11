@@ -726,9 +726,10 @@ Invoking MakeCatalog
 
 Match
 
-* Arranging match output::      Various meanings of matching
-* Matching algorithms::         Different ways to find the match
-* Invoking astmatch::           Inputs, outputs and options of Match
+* Arranging match output::      Various meanings of matching.
+* Unambiguous matching::        How we avoid multiple matches.
+* Matching algorithms::         Different ways to find the match.
+* Invoking astmatch::           Inputs, outputs and options of Match.
 
 Data modeling
 
@@ -1844,6 +1845,7 @@ Therefore when typing (recommended) or copy-pasting (not recommended) the comman
 Gnuastro would not have been possible without scholarships and grants from several funding institutions.
 We thus ask that if you used Gnuastro in any of your papers/reports, please add the proper citation and acknowledge the funding agencies/projects.
 For details of which papers to cite (may be different for different programs) and get the acknowledgment statement to include in your paper, please run the relevant programs with the common @option{--cite} option like the example commands below (for more on @option{--cite}, please see @ref{Operating mode options}).
+The full list of Gnuastro's papers related to various features of Gnuastro are in @url{https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew, Gnuastro's ADS library}.
 
 @example
 $ astnoisechisel --cite
@@ -2003,7 +2005,7 @@ University of Salento, Lecce, Italy.@*
 Centre de Recherche Astrophysique de Lyon (CRAL), Lyon, France.@*
 Instituto de Astrofisica de Canarias (IAC), Tenerife, Spain.@*
 Centro de Estudios de F@'isica del Cosmos de Arag@'on (CEFCA), Teruel, Spain.@*
-Google Summer of Code 2020, 2021 and 2022
+Google Summer of Code 2020, 2021, 2022, 2023, 2024
 @end quotation
 
 
@@ -31975,40 +31977,42 @@ Therefore, in case you have generated the input labels with Segment, we do not r
 @node Match,  , MakeCatalog, Data analysis
 @section Match
 
-High-level data (catalogs) of a single astronomical source can come come from different telescopes, filters, software (detection, segmentation and cataloging tools) and even different configurations for a single software.
-As a result, one of the first things we usually do after generating or querying data (for example, with @ref{MakeCatalog} or @ref{Query}), is to find which sources in one catalog correspond to which in the other(s).
+High-level data (catalogs) of a single astronomical source can come come from different telescopes, filters, software (detection, segmentation and cataloging tools on the same image) and even different configurations for a single software.
+As a result, one of the first things we usually do after generating or querying catalog data (for example, with @ref{MakeCatalog} or @ref{Query}), is to find which sources in one catalog correspond to which in the other(s).
 In other words, to `match' the two catalogs with each other.
 Within Gnuastro, the Match program is in charge of such operations.
 The matching rows are defined within an aperture, which can be a circle or an ellipse with any orientation.
 
-Before digging into the usage and command-line execution details of @ref{Invoking astmatch}, we will first review the @ref{Matching algorithms} that are currently available.
-We will then review @ref{Arranging match output} to fit the output arrangement that will be necessary in different contexts.
-If this is the first time you are using Match, please take the time to read these three sections.
-They will help a lot in optimizing your outputs for your needs; especially when the catalogs are large, it does make a difference!
+Before digging into the usage and command-line execution details (in @ref{Invoking astmatch}), it is important to discuss several concepts in detail.
+If this is the first time you are using Match, please take the time to read these three sections (before @ref{Invoking astmatch}) in detail to optimize your usage of Match and understanding its outputs.
+The first is @ref{Arranging match output} which introduces how the matched rows should be arranged in the outputs and is determined by the purpose/context of your analysis (there are examples in that section).
+When you want an ``inner'' or ``full'' match, some matches can become ambiguous; in @ref{Unambiguous matching} Gnuastro's Match strategy for those is discussed.
+We will then review the @ref{Matching algorithms}.
 
 @menu
-* Arranging match output::      Various meanings of matching
-* Matching algorithms::         Different ways to find the match
-* Invoking astmatch::           Inputs, outputs and options of Match
+* Arranging match output::      Various meanings of matching.
+* Unambiguous matching::        How we avoid multiple matches.
+* Matching algorithms::         Different ways to find the match.
+* Invoking astmatch::           Inputs, outputs and options of Match.
 @end menu
 
-@node Arranging match output, Matching algorithms, Match, Match
+@node Arranging match output, Unambiguous matching, Match, Match
 @subsection Arranging match output
 
-When we say ``match'' we mean different things in different contexts.
+Once the unambiguous match (see @ref{Unambiguous matching}) between two catalogs is found the thing you want to do with the matched rows can be different based on context.
 For example, sometimes you exclusively want the matched rows of the two input catalogs.
 In other times you want to find the nearest row in a reference catalog for every row of a query catalog.
 Yet other times, you want to merge two catalogs (having all the matched and non-matched rows in one table).
 Within Match, these are defined as different ``arrangements'' of the output.
 
-The core matching algorithm (to find the nearest points between two catalogs) is the same (described in @ref{Matching algorithms}).
+The core matching algorithm (to find the nearest points between two catalogs @ref{Matching algorithms}) is the same in all the arrangements.
 The thing that is different is how you want to use that information in constructing/arranging the output.
 The various arrangements (that should be given to the @option{--arrange} option) are formally defined below.
 
 @table @code
 @item inner
-The output of an inner match will contain exclusively-matched rows in both catalogs within a given aperture.
-In other words, the number of rows in the output will be fewer (or equal) to the input with fewest rows, @emph{and} no two rows of any input can be repeated.
+The output of an inner match will contain umambiguously/exclusively matched rows in both catalogs within a given aperture.
+In other words, the number of rows in the output will be fewer (or equal) to the input with fewest rows, @emph{and} that no two rows of any input can be repeated.
 Another way to say this is that the order of the inputs does not matter for the final number of matched rows in an inner match.
 An important aspect of an inner match is the necessity of an aperture to define the maximum/largest acceptable distance to have a match.
 Without an aperture to define a reasonable match, there is always bound to be a ``nearest'' item in both catalogs!
@@ -32057,17 +32061,17 @@ $ asttable inner.fits -Y
 @cindex PSF
 As you see, while both inputs had more than two rows, the output of an inner arrangement only contains the rows that matched in both catalogs (two in this case).
 For inner matching, we rarely need both coordinate columns; instead, we can simply only select the coordinates of the catalog that had a better precision (in other words, a better point spread function, or PSF).
-For example, assuming that @file{a.fits} had better precision, we could simplify the output above with @option{--outcols=a1,a2,a3,b3} (which has removed @code{b1} and @code{b2} compared to the one in the example.
-Try this out for your self as an exercise to visually understand this important feature of inner arrangements.
+For example, assuming that @file{a.fits} had better precision, we could simplify the output above with @option{--outcols=a1,a2,a3,b3} (which has removed @code{b1} and @code{b2} compared to the one in the example).
+Try this out for yourself as an exercise to visually understand this important feature of inner arrangements.
 
 @item full
-The output will contain matching and non-matching rows in both catalogs.
-In other words, when there is a match between the two catalogs, it is exclusive (as in the ``Inner'' mode above).
+The output of a full match will contain matching and non-matching rows in both catalogs.
+In other words, when there is a match between the two catalogs, it is unambiguous and exclusive (as in the ``Inner'' mode above).
 However, if a row from any of the two inputs does not match, it is still present in the output catalog, but rows that belong to the other input are given blank values for it.
 In @url{https://www.w3schools.com/sql/sql_join.asp, SQL jargon} this is known as ``full-outer joining''.
 
-A ``full'' output arrangement is effectively an inner match with the appendage of non-matching rows from both catalogs after it.
-Therefore, similar to an inner match, the order of inputs is irrelevant in a full arrangement and an aperture is mandatory.
+A ``full'' output arrangement is therefore effectively an inner match with the non-matching rows from both catalogs appended to it.
+Therefore, similar to an inner match an aperture is mandatory.
 
 Let's use the same two example demo inputs of the inner arrangement above, but call the Match program with a @code{--arrange=full} this time:
 
@@ -32121,9 +32125,9 @@ $ asttable full.fits --noblank=_all
 
 @item outer
 An outer row arrangement will produce a table with the same number of rows as the second input to the Match program: every row of the second input is matched with the nearest row of the first.
-An outer match is useful when you want to find the nearest row of a @emph{reference} catalog (first input) for each of a @emph{query} catalog's entries (second input).
+An outer match is useful when you want to find the nearest row of a @emph{reference} catalog (first input) for each row of a @emph{query} catalog's entries (second input).
 In this scenario, if there are multiple entries of the reference catalog in the output, there is no problem (in other words, the match is not exclusive).
-Also, since you simply want the nearest entry, no aperture is necessary for the matching algorithm itself; but only necessary to optimize the k-d tree construction.
+Also, since you simply want the nearest entry, no aperture is necessary.
 
 @cindex SQL
 @cindex Join (SQL)
@@ -32137,7 +32141,7 @@ In other words, within the scope of Gnuastro's Match, there is no need for the e
 @cindex Extinction (Galactic)
 For example, let's assume you want to find the Galactic extinction for the galaxies in your catalog.
 In this scenario, the reference catalog is a table of Galactic extinction values for a grid of positions in the sky and the check catalog contains one row for each of your target galaxies.
-If two or more galaxies are near the same entry in the reference catalog, you expect them to have will have the same extinction column value.
+If two or more galaxies are near the same entry in the reference catalog, you expect them to have the same extinction column value.
 
 To see it in practice, let's use the @file{b.fits} of the inner arrangement example above as our query catalog.
 For the reference catalog, let's make a new @file{c.fits}; assuming that it has galactic extinction for some points you have already measured:
@@ -32152,7 +32156,8 @@ $ cat c.txt
 
 $ astmatch c.txt --ccol1=X,Y b.txt --ccol2=X,Y \
            --aperture=0.5 --outcols=bX,bY,bMAGb,aEXT \
-           --arrange=outer --output=outer.fits
+           --arrange=outer --kdtree=internal \
+           --output=outer.fits
 
 $ asttable outer.fits -Y
 1   1   18.5   0.04
@@ -32174,7 +32179,7 @@ As an example, let's repeat the command from the example for the outer arrangeme
 @example
 $ astmatch c.txt --ccol1=X,Y b.txt --ccol2=X,Y \
            --aperture=0.5 --outcols=bX,bY,bMAGb,aEXT \
-           --arrange=outer-within-aperture \
+           --arrange=outer-within-aperture --kdtree=internal \
            --output=outer-wa.fits
 
 $ asttable outer-wa.fits -Y
@@ -32186,17 +32191,123 @@ $ asttable outer-wa.fits -Y
 @end example
 
 You can confirm that only the reference rows that were within the given aperture, are not NaN/blank.
-
 @end table
 
 
-@node Matching algorithms, Invoking astmatch, Arranging match output, Match
+
+@node Unambiguous matching, Matching algorithms, Arranging match output, Match
+@subsection Unambiguous matching
+
+When you want an ``inner'' or ``full'' match (discussed previously in @ref{Arranging match output}), it is important that the matches are unambiguous.
+Within Gnuastro's Match program, an ambiguous match is defined when there is more than one ``match'' within the given aperture or the output depends on the order of the inputs.
+In other words, to be unambiguous, there should only a single row/entry in both catalogs within the given aperture and the match should not depend on the order of the inputs (which one is given first on the command-line).
+If there is more than one match in either catalog to the other, Gnuastro's Match program will remove the match and put all the entries of the second catalog that have multiple matches in a HDU of the output FITS file called @code{FLAGGED-IN-2ND}.
+These are necessary for the match output to be reliable: simply reporting the nearest match when there is more than one match within the given aperture will lead to an ambiguous result.
+
+@cartouche
+@noindent
+@strong{Bug in k-d tree for unambiguous match:} as of this writing, there is a bug in the k-d tree based inner/full arrangement that cannot guarantee an unambiguous match.
+For the status of this bug, see @url{https://savannah.gnu.org/bugs/?67364}.
+This notice will be removed when the bug has been fixed.
+As long as this bug has not been fixed, the default matching algorithm will be the sort-based algorithm.
+@end cartouche
+
+The issue is best displayed in practice.
+Let's assume you have two catalogs called @file{x.fits} and @file{o.fits} and the points are distributed as follows (in four ``clusters''):
+
+@example
+$ asttable x.fits
+-2    -1
+ 1     4
+ 7     0
+ 8     4
+ 8    -1
+ 2     1
+ 9     0
+
+$ asttable o.fits
+-2    -2
+ 2     3
+ 4     1
+ 7     4
+ 8     0
+ 9     4
+
+## ASCII visualization of the points in the two tables
+|
+|            x                o  x  o
+|              o
+|
+|              x   o
+|                             x  o  x
+|   x                            x
+|   o
+--------------------------------------->
+@end example
+
+When you run Gnuastro's Match program on these two tables (and your aperture is large enough to fit the various ``clusters'' of points) only the first two points of the two catalogs (on the bottom-left side of the chart) will match.
+The rest will be flagged and the row-counter of the second input for those matches will be saved in the @code{FLAGGED-IN-2ND} HDU of the output.
+This is very important, especially when you consider the matching aperture to be analogous to your error in the two positions.
+In other words, while the other points do indeed have a closest match, they have other points that are also within the error/aperture of the match and therefore they will contaminate/pollute any higher-level analysis you want to do with the match.
+
+You can check if your match command produced flagged/ambiguous matches:
+@itemize
+@item
+On the lines that Match prints on the terminal, the number of flagged sources will be printed just under the number of unambiguous matches.
+But this will require human checking (which is not easy in large pipelines!) and is primarily good when you are developing/debugging your higher-level scripts or just understanding your data.
+@item
+Read the number of rows of the @code{FLAGGED-IN-2ND} HDU of the output and put that in a conditional, like the minimal working example below (you can replace the @code{echo GOOD} and @code{echo BAD} parts with any series of complex operations):
+
+@example
+$ nflag=$(asttable red-first.fits -hFLAGGED-IN-2ND \
+                   --info-num-rows)
+$ if [ $nflag = 0 ]; then echo GOOD; else echo BAD; fi
+@end example
+@end itemize
+
+As mentioned above, the @code{FLAGGED-IN-2ND} HDU will only contain the row counter (starting from 1) of the ambiguous matches of the second input.
+To get the full row of the second input from that, you can use the commands below.
+It uses Table's @ref{Column arithmetic} and a second call on Match with the column counters (a one-dimensional match):
+
+@example
+$ asttable second.fits --output=2nd-with-counter.fits
+           -c'arith $1 counter swap free',_all
+$ astmatch original-output.fits  --hdu=FLAGGED-IN-2ND --ccol1=1 \
+           2nd-with-counter.fits --hdu2=1             --ccol2=1 \
+           --aperture=0.1 --outcols=b_all \
+           --output=flagged-in-2nd.fits
+@end example
+
+
+The solution to having flagged matches depends on the context, so there is not one easy solution unfortunately.
+For example one situation where this can occur is the following:
+You have two catalogs of galaxies and one is from a much deeper image (with a higher spatial resolution) than the other.
+Due to its depth and higher resolution, the deeper catalog's points will be much more dense in the same region of the sky and the probability of such ambiguous matches will increase.
+
+@cindex Completeness limit
+@cindex Limit (Completeness)
+To fix the problem above, before doing the match, you can remove all the points in the deep catalog that would not be detectable in the shallow one.
+To find the points of the deep catalog that should be removed, you can generate the number-counts of your two catalogs (histogram of their magnitudes) and plot them together.
+This will show your shallower catalog's completeness limit (the magnitude where the shallower catalog start to deviate (drop) compared to the deeper catalog.
+You can then remove the sources from the deeper catalog that are fainter than the completeness limit of the shallower catalog (for example, when the limit is on the 24th magnitude, you can use @code{asttable deep.fits --range=MAG,-inf,24}).
+Finally, you can do the match on the the resulting sub-set of the deeper catalog.
+
+
+@node Matching algorithms, Invoking astmatch, Unambiguous matching, Match
 @subsection Matching algorithms
 
 Matching involves two catalogs, let's call them catalog A (with N rows) and catalog B (with M rows).
 The most basic matching algorithm that immediately comes to mind is this:
 for each row in A (let's call it @mymath{A_i}), go over all the rows in B (@mymath{B_j}, where @mymath{0<j<M}) and calculate the distance @mymath{d(A_i,B_j)}.
 Find the @mymath{B_j} that has the smallest distance to @mymath{A_i}, and if that distance is smaller than the acceptable distance threshold (or radius, or aperture), consider @mymath{A_i} and @mymath{B_j} as a match.
+
+@cartouche
+@noindent
+@strong{Bug in k-d tree for unambiguous match:} as of this writing, there is a bug in the k-d tree based inner/full arrangement that cannot guarantee an unambiguous match.
+For the status of this bug, see @url{https://savannah.gnu.org/bugs/?67364}.
+This notice will be removed when the bug has been fixed.
+As long as this bug has not been fixed, the default matching algorithm will be the sort-based algorithm.
+@end cartouche
 
 However, this basic parsing algorithm is very computationally expensive:
 @mymath{N\times M} distances have to measured, and calculating the distance requires a square root and power of 2: in 2 dimensions it would be @mymath{d(A_i,B_j)=\sqrt{(B_{ix}-A_{ix})^2+(B_{iy}-A_{iy})^2}}.
@@ -32297,7 +32408,12 @@ Multi-threading is done on the rows of the second input table and it scales in a
 @node Invoking astmatch,  , Matching algorithms, Match
 @subsection Invoking Match
 
-When given two catalogs, Match finds the rows that are nearest to each other within an input aperture.
+Match will find the rows that are nearest to each other in two catalogs (given some coordinate columns) and can arrange the outputs in different ways (see @ref{Arranging match output}).
+When an ``inner'' or ``full'' match is requested, Match will flag ambiguous matches, see @ref{Unambiguous matching} for more on those.
+To understand the inner working of Match and its algorithms, see @ref{Matching algorithms}.
+When you need a k-d tree based match, Match can also construct the k-d tree of one catalog to save in a FITS file for future matching of the same catalog with many others.
+
+@noindent
 The executable name is @file{astmatch} with the following general template
 
 @example
@@ -32353,11 +32469,7 @@ $ astmatch --ccol1=2,3,4 --ccol2=2,3,4 -a0.5/3600,0.5/3600,5e-10 \
            in1.fits in2.txt
 @end example
 
-Match will find the rows that are nearest to each other in two catalogs (given some coordinate columns).
-Alternatively, it can construct the k-d tree of one catalog to save in a FITS file for future matching of the same catalog with many others.
-To understand the inner working of Match and its algorithms, see @ref{Matching algorithms}.
-
-When matching, two catalogs are necessary for input.
+When doing a match two input catalogs are necessary as input command-line @ref{Arguments}.
 But for constructing a k-d tree, only a single catalog should be given.
 The input tables can be plain text tables or FITS tables, for more see @ref{Tables}.
 But other ways of feeding inputs area also supported:
@@ -32371,42 +32483,37 @@ When you only want to match one point with another catalog, you can use the @opt
 Match follows the same basic behavior of all Gnuastro programs as fully described in @ref{Common program behavior}.
 If the first input is a FITS file, the common @option{--hdu} option (see @ref{Input output options}) should be used to identify the extension.
 When the second input is FITS, the extension must be specified with @option{--hdu2}.
-
 When @option{--quiet} is not called, Match will print its various processing phases (including the number of matches found) in standard output (on the command-line).
-When matches are found, by default, two tables will be output (if in FITS format, as two HDUs).
-Each output table will contain the re-arranged rows of the respective input table.
-In other words, both tables will have the same number of rows, and row N in both corresponds to the 10th match between the two.
+
+The output of Match is a single FITS file (with possibly multiple HDUs; depending on the run-time options).
+If no output file name is given with the @option{--output} option, then automatic output @ref{Automatic output} will be used to determine the output name(s).
+Generally, giving a filename to @option{--output} is recommended.
+
+By default, the output will contain two tables/HDUs; each table will contain the re-arranged rows of the respective input table.
+In other words, both tables will have the same number of rows, and row 10 in both corresponds to the 10th match between the two.
 If no matches are found, the columns of the output table(s) will have zero rows (with proper meta-data).
+For the ``inner'' or ``full'' arrangements, if there are any flagged/ambiguous rows in the second input (depending on the given aperture/error), a dedicated HDU for those rows will also be created, see @ref{Unambiguous matching}.
+
 The output format can be changed with the following options:
 @itemize
 @item
-@option{--outcols}: The output will be a single table with rows chosen from either of the two inputs in any order.
+@option{--outcols}: The output will be a single table with columns chosen from either of the two inputs in any order.
+In other words, with this option, the main output table will be a single table, not two: it will merge columns from the two catalogs into one for the matching rows.
 @item
 @option{--notmatched}: The output tables will contain the rows that did not match between the two tables.
 If called with @option{--outcols}, the output will be a single table with all non-matched rows of both tables.
 @item
-@option{--logasoutput}: The output will be a single table with the contents of the log file, see below.
+@option{--logasoutput}: The input tables will not be arranged, but only the @code{LOG} table (described below) will be present (along with possible ambiguous/flagged matches) in the output.
 @end itemize
 
-If no output file name is given with the @option{--output} option, then automatic output @ref{Automatic output} will be used to determine the output name(s).
-Depending on @option{--tableformat} (see @ref{Input output options}), the output will be a (possibly multi-extension) FITS file or (possibly two) plain text file(s).
-Generally, giving a filename to @option{--output} is recommended.
-
-When the @option{--log} option is called (see @ref{Operating mode options}), and there was a match, Match will also create a file named @file{astmatch.fits} (or @file{astmatch.txt}, depending on @option{--tableformat}, see @ref{Input output options}) in the directory it is run in.
-This log table will have three columns.
+When the @option{--log} option is called (see @ref{Operating mode options}), and there was a match, Match will also add a new HDU (called @code{LOG}) to the output.
+This log-table will have three columns.
 The first and second columns show the matching row/record number (counting from 1) of the first and second input catalogs respectively.
 The third column is the distance between the two matched positions.
 The units of the distance are the same as the given coordinates (given the possible ellipticity, see description of @option{--aperture} below).
-When @option{--logasoutput} is called, no log file (with a fixed name) will be created.
-In this case, the output file (possibly given by the @option{--output} option) will have the contents of this log file.
 
-@cartouche
 @noindent
-@strong{@option{--log} is not thread-safe}: As described above, when @option{--logasoutput} is not called, the Log file has a fixed name for all calls to Match.
-Therefore if a separate log is requested in two simultaneous calls to Match in the same directory, Match will try to write to the same file.
-This will cause problems like unreasonable log file, undefined behavior, or a crash.
-Remember that @option{--log} is mainly intended for debugging purposes, if you want the log file with a specific name, simply use @option{--logasoutput} (which will also be faster, since no arranging of the input columns is necessary).
-@end cartouche
+The various run-time options of Match are described below:
 
 @table @option
 @item -H STR
@@ -32444,7 +32551,7 @@ The HDU of the FITS file, when a FITS file is given to the @option{--kdtree} opt
 
 @item --outcols=STR[,STR,[...]]
 Columns (from both inputs) to write into a single matched table output.
-The value to @code{--outcols} must be a comma-separated list of column identifiers (number or name, see @ref{Selecting table columns}).
+The value to @code{--outcols} must be a comma-separated list of column identifiers (number or name, see @ref{Selecting table columns}), and it can be called multiple times (values to multiple invocations will be merged into one table).
 The expected format depends on @option{--notmatched} and explained below.
 By default (when @option{--nomatched} is not called), the number of rows in the output will be equal to the number of matches.
 However, when @option{--notmatched} is called, all the rows (from the requested columns) of the first input are placed in the output, and the not-matched rows of the second input are inserted afterwards (useful when you want to merge unique entries of multiple catalogs into one).
@@ -32498,9 +32605,7 @@ $ astmatch input1.txt  --ccol1=RA,DEC \
 
 @item -l
 @itemx --logasoutput
-The output file will have the contents of the log file: indexes in the two catalogs that match with each other along with their distance, see description of the log file above.
-
-When this option is called, a separate log file will not be created and the output will not contain any of the input columns (either as two tables containing the re-arranged columns of each input, or a single table mixing columns), only their indices in the log format.
+The output FITS file will not rearrange the input rows, but will only contain the log file: indexes in the two catalogs that match with each other along with their distance, see description of the log file above (in this section, before list options).
 
 @item --notmatched
 Write the non-matching rows into the outputs, not the matched ones.
@@ -40222,6 +40327,76 @@ Free every node in @code{list}.
 
 
 
+
+@node List of size_t and double
+@subsubsection List of @code{size_t} and @code{double}
+
+The list structure below is useful when you need to keep floating point values and indexs (most common usage of @code{size_t} in Gnuastro) together within a higher-level program.
+
+@deftp {Type (C @code{struct})} gal_list_sizetf64_t
+Each node in this singly-linked list contains a @code{size_t} value and a floating point value with a type of double-precision floating point.
+@end deftp
+
+@example
+typedef struct gal_list_sizetf64_t
+@{
+  size_t i;
+  double v;
+  struct gal_list_sizetf64_t *next;
+@} gal_list_sizetf64_t;
+@end example
+
+@deftypefun void gal_list_sizetf64_add (gal_list_sizetf64_t @code{**list}, size_t @code{index}, float @code{value})
+Allocate space for a new node in @code{list}, to store the @code{index} and @code{value} into it.
+As a simply-linked list, the added node will be placed at the top of the list.
+@end deftypefun
+
+@deftypefun size_t gal_list_sizetf64_pop (gal_list_sizetf64_t @code{**list}, size_t @code{*index}, float @code{*value})
+Pop a node from the top of @code{list}, return the node's index and value in the respective places that @code{index} and @code{value} point to.
+This function will also free the allocated space for the popped node and after this function, @code{list} will point to the next node (which has a larger @code{tosort} element).
+@end deftypefun
+
+@deftypefun void gal_list_sizetf64_free (gal_list_sizetf64_t @code{**list})
+Free any element within the input list.
+@end deftypefun
+
+@deftp {Type (C @code{struct})} gal_list_sizetsizetf64_t
+Each node in this singly-linked list contains a @code{size_t} value and a floating point value with a type of double-precision floating point.
+@end deftp
+
+@node List of two size_ts and a double
+@subsubsection List of two @code{size_t}s and a @code{double}
+
+When it is necessary to keep two indexs and a double value, the structure and respective functions below can be used.
+
+@example
+typedef struct gal_list_sizetsizetf64_t
+@{
+  size_t i;
+  size_t j;
+  double v;
+  struct gal_list_sizetsizetf64_t *next;
+@} gal_list_sizetsizetf64_t;
+@end example
+
+@deftypefun void gal_list_sizetsizetf64_add (gal_list_sizetsizetf64_t @code{**list}, size_t @code{i}, size_t @code{i}, float @code{v})
+Allocate space for a new node in @code{list}, to store the @code{i}, @code{j} and @code{v} into it.
+As a simply-linked list, the added node will be placed at the top of the list.
+@end deftypefun
+
+@deftypefun size_t gal_list_sizetsizetf64_pop (gal_list_sizetsizetf64_t @code{**list}, size_t @code{*i}, size_t @code{*j}, float @code{*v})
+Pop a node from the top of @code{list}, return the node's index and value in the respective places that @code{i}, @code{j} and @code{v} point to.
+This function will also free the allocated space for the popped node and after this function, @code{list} will point to the next node (which has a larger @code{tosort} element).
+@end deftypefun
+
+@deftypefun void gal_list_sizetsizetf64_free (gal_list_sizetsizetf64_t @code{**list})
+Free any element within the input list.
+@end deftypefun
+
+
+
+
+
 @node List of void, Ordered list of size_t, List of double, Linked lists
 @subsubsection List of @code{void *}
 
@@ -40325,7 +40500,6 @@ After the conversion is done, this function will free the input list.
 Note that the @code{out} list does not have to be empty.
 If it already contains some nodes, the new nodes will be added on top of them.
 @end deftypefun
-
 
 @node Doubly linked ordered list of size_t, List of gal_data_t, Ordered list of size_t, Linked lists
 @subsubsection Doubly linked ordered list of @code{size_t}
@@ -44005,7 +44179,7 @@ If internal allocation is necessary and the space is larger than @code{minmapsiz
 @end deftypefun
 
 @deftypefun {gal_data_t *} gal_match_kdtree (gal_data_t @code{*coord1},
-gal_data_t @code{*coord2}, gal_data_t @code{*coord1_kdtree}, size_t @code{kdtree_root}, uint8_t @code{arrange}, double @code{*aperture}, size_t @code{numthreads}, size_t @code{minmapsize}, int @code{quietmmap}, size_t @code{*nummatched}, uint8_t @code{nosamenode})
+gal_data_t @code{*coord2}, gal_data_t @code{*coord1_kdtree}, size_t @code{kdtree_root}, uint8_t @code{arrange}, double @code{*aperture}, size_t @code{numthreads}, size_t @code{minmapsize}, int @code{quietmmap}, size_t @code{*nummatched}, uint8_t @code{**flag}, uint8_t @code{nosamenode})
 
 @cindex Matching by k-d tree
 @cindex k-d tree matching
@@ -44016,6 +44190,7 @@ The desired @code{aperture} array is the same as @code{gal_match_sort_based} and
 If @code{coord1_kdtree==NULL}, this function will return a @code{NULL} pointer and write a value of @code{0} in the space that @code{nummatched} points to.
 If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbour within the same dataset.
 If @code{numthreads} threads is larger than one, the matching will be done in parallel.
+For inner and full arragements, this function will allocate and return a @code{flag} array that has a value of 1 for ambiguous elements of the second input and 0 for good or non-matching elements (see @ref{Unambiguous matching}).
 
 The final number of matches is returned in @code{nummatched} and the format of the returned dataset (three columns) is described above.
 If internal allocation is necessary and the space is larger than @code{minmapsize}, the space will be not allocated in the RAM, but in a file, see description of @option{--minmapsize} and @code{--quietmmap} in @ref{Processing options}.

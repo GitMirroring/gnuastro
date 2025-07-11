@@ -63,7 +63,7 @@ refcatra="RA"
 refimgshdu=""
 starcatra="RA"
 refcatdec="DEC"
-matchradius=0.2
+matchradius=0.5
 starcatdec="DEC"
 magnituderange=""
 version=@VERSION@
@@ -118,7 +118,7 @@ $scriptname options:
   -r, --refcatra=STR           Reference catalog Right Ascension (R.A.) column.
   -d, --refcatdec=STR          Reference catalog Declination (Dec) column.
   -m, --refcatmag=STR          Reference catalog Magnitude column.
-  -s, --matchradius=FLT        Radius (arcsec) to match stars and ref. catalog.
+  -s, --matchradius=FLT        Radius (in arcsec) to match with reference.
 
  Reference image mode
   -R, --refimgs=STR[,STR]      Reference image name(s) with known zeropoint.
@@ -589,6 +589,7 @@ echo "output = $output" >> $config
 echo "tmpdir = $tmpdir" >> $config
 echo "starcat = $starcat" >> $config
 echo "starcatra = $starcatra" >> $config
+echo "scriptname = $scriptname" >> $config
 echo "starcatdec = $starcatdec" >> $config
 echo "starcathdu = $starcathdu" >> $config
 echo "matchradius = $matchradius" >> $config
@@ -678,12 +679,12 @@ fi
 # Call the Makefile
 # -----------------
 #
-# Here, Makefile is invoked.
+# Here, Make is invoked for the actual operation.
 if [ x$mksrc = x ]; then
     mksrc=$installdir/zeropoint.mk
 fi
+rm -f $output
 make -f $mksrc tmpdir=$tmpdir --jobs=$numthreads
-
 
 
 

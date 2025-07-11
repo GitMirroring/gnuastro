@@ -232,7 +232,7 @@ match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
   size_t i, j, n, c=0, offset=0;
 
   /* Set the match types. */
-  switch(p->type)
+  switch(p->arrange)
     {
     case GAL_MATCH_ARRANGE_INNER:
       istart=p->notmatched ? nummatched : 0;
@@ -260,7 +260,7 @@ match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
     default:
       error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
             "fix the problem. The code '%u' is not recognized for "
-            "'p->type'", __func__, PACKAGE_BUGREPORT, p->type);
+            "'p->type'", __func__, PACKAGE_BUGREPORT, p->arrange);
     }
 
   /* Set the number of values in this column (for vectors). */
@@ -275,8 +275,8 @@ match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
   /* Except for inner and outer, the other types of match can lead to empty
      rows. So we'll initialize all the values to blank in the given
      type. */
-  if(   p->type==GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE
-     || p->type==GAL_MATCH_ARRANGE_FULL )
+  if(   p->arrange==GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE
+     || p->arrange==GAL_MATCH_ARRANGE_FULL )
     for(i=0;i<outrows*n;++i)
       gal_blank_write(gal_pointer_increment(out, i, in->type),
                       in->type);
@@ -296,7 +296,7 @@ match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
 
   /* If we are doing a full match, we need to write the non-matching rows
      in the last rows. */
-  if(p->type==GAL_MATCH_ARRANGE_FULL)
+  if(p->arrange==GAL_MATCH_ARRANGE_FULL)
     {
       i=offset;
       for(j=iend;j<in->size;++j)
@@ -448,8 +448,7 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
   char *hdu              = (f1s2==1) ? p->cp.hdu     : p->hdu2;
   gal_list_str_t *incols = (f1s2==1) ? p->acols      : p->bcols;
   size_t *numcols        = (f1s2==1) ? &p->anum      : &p->bnum;
-  char *extname          = (f1s2==1) ? "INPUT_1"     : "INPUT_2";
-  char *outname          = (f1s2==1) ? p->out1name   : p->out2name;
+  char *extname          = (f1s2==1) ? "IN1-MATCHED" : "IN2-MATCHED";
   char *filename         = (f1s2==1) ? p->input1name : p->input2name;
 
   /* If special columns are requested. */
@@ -482,7 +481,6 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
     }
   else cols=incols;
 
-
   /* Read the full table. NOTE that with '--coord', for the second input,
      both 'filename' and 'p->stdinlines' will be NULL. */
   if(filename || p->stdinlines)
@@ -494,7 +492,7 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
     cat=match_cat_from_coord(p, cols, *numcolmatch);
 
   /* Arrange the rows (depends on the type of match). */
-  switch(p->type)
+  switch(p->arrange)
     {
     case GAL_MATCH_ARRANGE_FULL:
     case GAL_MATCH_ARRANGE_INNER:
@@ -510,7 +508,7 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
     default:
       error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
             "fix the problem. The value '%u' of the 'type' variable is "
-            "not recognized", __func__, PACKAGE_BUGREPORT, p->type);
+            "not recognized", __func__, PACKAGE_BUGREPORT, p->arrange);
     }
 
   /* Write the catalog to the output. */
@@ -518,8 +516,8 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
   else if(cat)
     {
       /* Write the catalog to a file. */
-      gal_table_write(cat, NULL, NULL, p->cp.tableformat, outname,
-                      extname, 0, 0);
+      gal_table_write(cat, NULL, NULL, p->cp.tableformat,
+                      p->cp.output, extname, 0, 0);
 
       /* Clean up. */
       gal_list_data_free(cat);
@@ -597,15 +595,15 @@ match_catalog_write_one_row(struct matchparams *p, gal_data_t *a,
       /* Reverse the table and write it out. */
       gal_list_data_reverse(&cat);
       gal_table_write(cat, NULL, NULL, p->cp.tableformat,
-                      p->out1name, "MATCHED", 0, 0);
+                      p->cp.output, "MATCHED", 0, 0);
       gal_list_data_free(cat);
     }
 
   /* There wasn't any row to add, just write the 'a' columns and don't free
      it ('a' will be freed in the higher-level function). */
   else
-    gal_table_write(a, NULL, NULL, p->cp.tableformat, p->out1name,
-                    "MATCHED", 0, 0);
+    gal_table_write(a, NULL, NULL, p->cp.tableformat,
+                    p->cp.output, "MATCHED", 0, 0);
 }
 
 
@@ -620,17 +618,17 @@ match_catalog_write_one_col(struct matchparams *p, gal_data_t *a,
                             size_t *bcolmatch)
 {
   gal_data_t *cat=NULL;
-  char **strarr=p->outcols->array;
-  size_t i, j, k, ac=0, bc=0, npop;
+  gal_list_str_t *ocol;
+  size_t j, k, ac=0, bc=0, npop;
 
   /* Go over the initial list of strings. */
-  for(i=0; i<p->outcols->size; ++i)
-    switch(strarr[i][0])
+  for(ocol=p->outcols;ocol!=NULL;ocol=ocol->next)
+    switch(ocol->v[0])
       {
       case 'a':
         for(j=0;j<acolmatch[ac];++j)
           {
-            npop = strcmp(strarr[i]+1,"_all") ? 1 : p->anum;
+            npop = strcmp(ocol->v+1,"_all") ? 1 : p->anum;
             for(k=0;k<npop;++k)
               gal_list_data_add(&cat, gal_list_data_pop(&a));
           }
@@ -640,7 +638,7 @@ match_catalog_write_one_col(struct matchparams *p, gal_data_t *a,
       case 'b':
         for(j=0;j<bcolmatch[bc];++j)
           {
-            npop = strcmp(strarr[i]+1,"_all") ? 1 : p->bnum;
+            npop = strcmp(ocol->v+1,"_all") ? 1 : p->bnum;
             for(k=0;k<npop;++k)
               gal_list_data_add(&cat, gal_list_data_pop(&b));
           }
@@ -648,9 +646,10 @@ match_catalog_write_one_col(struct matchparams *p, gal_data_t *a,
         break;
 
       default:
-        error(EXIT_FAILURE, 0, "a bug! Please contact us at %s to "
-              "fix the problem. the value to strarr[%zu][0] (%c) "
-              "is not recognized", PACKAGE_BUGREPORT, i, strarr[i][0]);
+        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
+              "'%s' to fix the problem. the value to ocol->v[0] "
+              "(%c) is not recognized", __func__, PACKAGE_BUGREPORT,
+              ocol->v[0]);
       }
 
   /* A small sanity check. */
@@ -662,7 +661,7 @@ match_catalog_write_one_col(struct matchparams *p, gal_data_t *a,
 
   /* Reverse the table and write it out. */
   gal_list_data_reverse(&cat);
-  gal_table_write(cat, NULL, NULL, p->cp.tableformat, p->out1name,
+  gal_table_write(cat, NULL, NULL, p->cp.tableformat, p->cp.output,
                   "MATCHED", 0, 0);
   gal_list_data_free(cat);
 }
@@ -706,13 +705,66 @@ match_catalog_kdtree_build(struct matchparams *p)
                             MATCH_KDTREE_ROOT_KEY, 0, &root, 0,
                             comment, 0, unit, 0);
   gal_table_write(kdtree, keylist, NULL, GAL_TABLE_FORMAT_BFITS,
-                  p->out1name, "kdtree", 0, 1);
+                  p->cp.output, "kdtree", 0, 1);
 
   /* Let the user know that the k-d tree has been built. */
   if(!p->cp.quiet)
-    fprintf(stdout, "  - Output (k-d tree): %s\n", p->out1name);
+    fprintf(stdout, "  - Output (k-d tree): %s\n", p->cp.output);
 }
 
+
+
+static void
+match_message_print(struct matchparams *p, struct timeval *t1,
+                    size_t nummatched)
+{
+  char *msg;
+  size_t i, nflag;
+
+  /* Print number of matches. */
+  switch(p->arrange)
+    {
+    /* Inner and full arrangements need to report number of ambiguous. */
+    case GAL_MATCH_ARRANGE_FULL:
+    case GAL_MATCH_ARRANGE_INNER:
+      if( asprintf(&msg, "... %zu unambiguous matches found.",
+                   nummatched)<0 )
+        error(EXIT_FAILURE, errno, "asprintf allocation");
+      gal_timing_report(t1, msg, 1);
+      free(msg);
+
+      /* Print any flagged match. */
+      if(p->flag)
+        {
+          nflag=0;
+          for(i=0;i<p->cols2->size;++i) if(p->flag[i]) ++nflag;
+          if( asprintf(&msg, "... %zu initial matches removed in "
+                       "Input-2 (e.g., multiple matches).",
+                       nflag)<0 )
+            error(EXIT_FAILURE, errno, "asprintf allocation");
+          gal_timing_report(NULL, msg, 1);
+          free(msg);
+        }
+      break;
+
+    /* For the outer, we just need to report the number of matches. */
+    case GAL_MATCH_ARRANGE_OUTER:
+    case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
+      if( asprintf(&msg, "... %zu matches found.",
+                   nummatched)<0 )
+        error(EXIT_FAILURE, errno, "asprintf allocation");
+      gal_timing_report(t1, msg, 1);
+      free(msg);
+      break;
+
+    /* A bug! */
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
+            "'%s' to fix the problem. The code '%u' is not "
+            "recognized for 'p->arrange'", __func__,
+            PACKAGE_BUGREPORT, p->arrange);
+    }
+}
 
 
 
@@ -722,7 +774,6 @@ match_catalog_kdtree_build(struct matchparams *p)
 static gal_data_t *
 match_catalog_kdtree(struct matchparams *p, size_t *nummatched)
 {
-  char *msg;
   struct timeval t1;
   gal_data_t *out=NULL;
 
@@ -756,18 +807,13 @@ match_catalog_kdtree(struct matchparams *p, size_t *nummatched)
           printf("  - Match using the k-d tree ...\n");
         }
       out = gal_match_kdtree(p->cols1, p->cols2, p->kdtreedata,
-                             p->kdtreeroot, p->type,
+                             p->kdtreeroot, p->arrange,
                              p->aperture ? p->aperture->array : NULL,
                              p->cp.numthreads, p->cp.minmapsize,
-                             p->cp.quietmmap, nummatched, 0);
-      if(!p->cp.quiet)
-        {
-          if( asprintf(&msg, "... %zu matches found, done!",
-                       *nummatched)<0 )
-            error(EXIT_FAILURE, errno, "asprintf allocation");
-          gal_timing_report(&t1, msg, 1);
-          free(msg);
-        }
+                             p->cp.quietmmap, nummatched, &p->flag, 0);
+
+      /* Inform the user and clean up.*/
+      if(!p->cp.quiet) match_message_print(p, &t1, *nummatched);
       gal_list_data_free(p->kdtreedata);
       break;
 
@@ -789,7 +835,6 @@ match_catalog_kdtree(struct matchparams *p, size_t *nummatched)
 static gal_data_t *
 match_catalog_sort_based(struct matchparams *p, size_t *nummatched)
 {
-  char *msg;
   gal_data_t *mcols;
   struct timeval t1;
 
@@ -803,16 +848,10 @@ match_catalog_sort_based(struct matchparams *p, size_t *nummatched)
   /* Do the matching. */
   mcols=gal_match_sort_based(p->cols1, p->cols2, p->aperture->array,
                              0, 1, p->cp.minmapsize, p->cp.quietmmap,
-                             nummatched);
+                             &p->flag, nummatched);
 
   /* Let the user know that it finished. */
-  if(!p->cp.quiet)
-    {
-      if( asprintf(&msg, "... %zu matches found, done!", *nummatched)<0 )
-        error(EXIT_FAILURE, errno, "asprintf allocation");
-      gal_timing_report(&t1, msg, 1);
-      free(msg);
-    }
+  if(!p->cp.quiet) match_message_print(p, &t1, *nummatched);
 
   /* Return the permutations. */
   return mcols;
@@ -919,16 +958,45 @@ match_catalog_log(struct matchparams *p, gal_data_t *mcols,
     "from 1).";
 
   /* Write them into the table. */
-  gal_table_write(mcols, NULL, NULL, p->cp.tableformat, p->logname,
-                  "LOG_INFO", 0, 0);
+  gal_table_write(mcols, NULL, NULL, p->cp.tableformat,
+                  p->cp.output, "LOG", 0, 0);
 
   /* Set the comment pointer to NULL: they weren't allocated. */
   mcols->comment=NULL;
   mcols->next->comment=NULL;
+}
 
-  /* Inform the user that a log-file has been created. */
-  if(!p->cp.quiet)
-    fprintf(stdout, "  - Output (log): %s\n", p->logname);
+
+
+
+
+static void
+match_flags_write(struct matchparams *p)
+{
+  uint32_t *oarr;
+  gal_data_t *out;
+  size_t c, i, nflag=0;
+
+  /* Allocate the necessary dataset. But we first need to know the number
+     of elements. */
+  for(i=0;i<p->cols2->size;++i) if(p->flag[i]) ++nflag;
+  out=gal_data_alloc(NULL, GAL_TYPE_UINT32, 1, &nflag, NULL, 0,
+                     p->cp.minmapsize, p->cp.quietmmap,
+                     "ROW-COUNTER", "counter",
+                     "Rows of 2nd input that had problems "
+                     "(for example double matches)");
+
+  /* Fill the output indexs and write the array. */
+  oarr=out->array;
+  c=0; for(i=0;i<p->cols2->size;++i) if(p->flag[i]) oarr[c++]=i+1;
+  gal_table_write(out, NULL, NULL, p->cp.tableformat,
+                  p->cp.output, "FLAGGED-IN-2ND", 0, 0);
+
+  /* Clean up and return. */
+  gal_data_free(out);
+  free(p->flag);
+  p->flag=NULL;
+  return;
 }
 
 
@@ -959,18 +1027,15 @@ match_catalog(struct matchparams *p)
   if(p->logasoutput==0) match_catalog_output(p, mcols, nummatched);
 
   /* Write the raw information in a log file if necessary.  */
-  if(p->logname && mcols) match_catalog_log(p, mcols, nummatched);
+  if(p->cp.log && mcols) match_catalog_log(p, mcols, nummatched);
+
+  /* If a flag table was created, write the columns. */
+  if(p->flag) match_flags_write(p);
 
   /* Clean up and print the number of matches if not in quiet mode. */
   gal_list_data_free(mcols);
   if(!p->cp.quiet)
-    {
-      if(p->out2name && strcmp(p->out1name, p->out2name))
-        fprintf(stdout, "  - Output-1: %s\n  - Output-2: %s\n",
-                p->out1name, p->out2name);
-      else
-        fprintf(stdout, "  - Output: %s\n", p->out1name);
-    }
+    fprintf(stdout, "  - Output: %s\n", p->cp.output);
 }
 
 
@@ -1003,15 +1068,12 @@ match(struct matchparams *p)
 
   /* Write Match's configuration as keywords into the first extension of
      the output. */
-  if(gal_fits_name_is_fits(p->out1name))
-    {
-      gal_fits_key_write_filename("input1", ( p->input1name
-                                              ? p->input1name
-                                              : "Standard input" ),
-                                  &p->cp.ckeys, 1, p->cp.quiet);
-      gal_fits_key_write_filename("input2",
-                                  p->input2name?p->input2name:"--coord",
-                                  &p->cp.ckeys, 1, p->cp.quiet);
-      gal_fits_key_write(p->cp.ckeys, p->out1name, "0", "NONE", 1, 0);
-    }
+  gal_fits_key_write_filename("input1", ( p->input1name
+                                          ? p->input1name
+                                          : "Standard input" ),
+                              &p->cp.ckeys, 1, p->cp.quiet);
+  gal_fits_key_write_filename("input2",
+                              p->input2name?p->input2name:"--coord",
+                              &p->cp.ckeys, 1, p->cp.quiet);
+  gal_fits_key_write(p->cp.ckeys, p->cp.output, "0", "NONE", 1, 0);
 }
