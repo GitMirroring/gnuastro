@@ -912,6 +912,8 @@ Linked lists (@file{list.h})
 * List of size_t::              Simply linked list of size_ts.
 * List of float::               Simply linked list of floats.
 * List of double::              Simply linked list of doubles
+* List of size_t and double::   Simply linked list of a size_t and double.
+* List of two size_ts and a double::  Simply linked list of two size_ts and a double.
 * List of void::                Simply linked list of void * pointers.
 * Ordered list of size_t::      Simply linked, ordered list of size_t.
 * Doubly linked ordered list of size_t::  Definition and functions.
@@ -39894,6 +39896,8 @@ All these structures and functions are defined and declared in @file{gnuastro/li
 * List of size_t::              Simply linked list of size_ts.
 * List of float::               Simply linked list of floats.
 * List of double::              Simply linked list of doubles
+* List of size_t and double::   Simply linked list of a size_t and double.
+* List of two size_ts and a double::  Simply linked list of two size_ts and a double.
 * List of void::                Simply linked list of void * pointers.
 * Ordered list of size_t::      Simply linked, ordered list of size_t.
 * Doubly linked ordered list of size_t::  Definition and functions.
@@ -40242,7 +40246,7 @@ Free every node in @code{list}.
 
 
 
-@node List of double, List of void, List of float, Linked lists
+@node List of double, List of size_t and double, List of float, Linked lists
 @subsubsection List of @code{double}
 
 Double precision floating point numbers can accurately store real number until 15.9 decimals and consume 8 bytes (64-bits) of memory, see @ref{Numeric data types}.
@@ -40328,7 +40332,7 @@ Free every node in @code{list}.
 
 
 
-@node List of size_t and double
+@node List of size_t and double, List of two size_ts and a double, List of double, Linked lists
 @subsubsection List of @code{size_t} and @code{double}
 
 The list structure below is useful when you need to keep floating point values and indexs (most common usage of @code{size_t} in Gnuastro) together within a higher-level program.
@@ -40364,7 +40368,7 @@ Free any element within the input list.
 Each node in this singly-linked list contains a @code{size_t} value and a floating point value with a type of double-precision floating point.
 @end deftp
 
-@node List of two size_ts and a double
+@node List of two size_ts and a double, List of void, List of size_t and double, Linked lists
 @subsubsection List of two @code{size_t}s and a @code{double}
 
 When it is necessary to keep two indexs and a double value, the structure and respective functions below can be used.
@@ -40397,7 +40401,7 @@ Free any element within the input list.
 
 
 
-@node List of void, Ordered list of size_t, List of double, Linked lists
+@node List of void, Ordered list of size_t, List of two size_ts and a double, Linked lists
 @subsubsection List of @code{void *}
 
 In C, @code{void *} is the most generic pointer.
