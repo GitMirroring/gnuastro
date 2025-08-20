@@ -1435,8 +1435,9 @@ match_kdtree_worker(void *in_prm)
              this point in the second catalog. */
           ai = gal_kdtree_nearest_neighbour(p->A, p->A_kdtree,
                                             p->kdtree_root, point,
-                                            p->aperture[0], &least_dist,
-                                            &same_dist, p->nosamenode);
+                                            p->aperture?p->aperture[0]:0,
+                                            &least_dist, &same_dist,
+                                            p->nosamenode);
 
           /* For a check:
           int checkpoint = CHECKPOINT;
