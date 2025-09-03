@@ -1780,13 +1780,13 @@ statistics_fit_linear(struct statisticsparams *p)
              of squares of residuals). */
           if(   p->fitid==GAL_FIT_LINEAR
                 || p->fitid==GAL_FIT_LINEAR_WEIGHTED )
-            printf("%+-.10f %+-.10f\n"    /* The Two coefficients. */
-                   "%+-20.10f %+-20.10f\n"/* First row of cov. matrix. */
-                   "%+-20.10f %+-20.10f\n"/* Second row of cov. matrix. */
-                   "%+-.10f\n",           /* Residual. */
+            printf("%+-.15e %+-.15e\n"    /* The Two coefficients. */
+                   "%+-20.15e %+-20.15e\n"/* First row of cov. matrix. */
+                   "%+-20.15e %+-20.15e\n"/* Second row of cov. matrix. */
+                   "%+-.15e\n",           /* Residual. */
                    f[0], f[1], f[2], f[3], f[3], f[4], f[5]);
           else
-            printf("%+-.10f\n%+-.10f\n%+-.10f\n", f[0], f[1], f[2]);
+            printf("%+-.15e\n%+-.15e\n%+-.15e\n", f[0], f[1], f[2]);
         }
     }
   else
@@ -1798,12 +1798,12 @@ statistics_fit_linear(struct statisticsparams *p)
           redchisq=f[5];
           if( asprintf(&funcvals,
                        "Fit function: Y = c0 + (c1 * X)\n"
-                       "  c0:  %+-.10f\n"
-                       "  c1:  %+-.10f\n\n"
+                       "  c0:  %+-.15e\n"
+                       "  c1:  %+-.15e\n\n"
                        "Covariance matrix (off-diagonal are identical "
                        "same):\n"
-                       "  %+-20.10f %+-20.10f\n"
-                       "  %+-20.10f %+-20.10f\n", f[0], f[1], f[2], f[3],
+                       "  %+-20.15e %+-20.15e\n"
+                       "  %+-20.15e %+-20.15e\n", f[0], f[1], f[2], f[3],
                        f[3], f[4])<0 )
             error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
         }
@@ -1812,9 +1812,9 @@ statistics_fit_linear(struct statisticsparams *p)
           redchisq=f[2];
           if( asprintf(&funcvals,
                        "Fit function: Y = c1 * X\n"
-                       "  c1: %+-.10f\n\n"
+                       "  c1: %+-.15e\n\n"
                        "Variance of 'c1':\n"
-                       "  %+-.10f\n", f[0], f[1])<0 )
+                       "  %+-.15e\n", f[0], f[1])<0 )
             error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
         }
 
@@ -1822,7 +1822,7 @@ statistics_fit_linear(struct statisticsparams *p)
       intro=statistics_fit_print_intro(p, &whtnat);
 
       /* Final printed report.*/
-      printf("%s\n%s\nReduced chi^2 of fit:\n  %+f\n", intro,
+      printf("%s\n%s\nReduced chi^2 of fit:\n  %+.15e\n", intro,
              funcvals, redchisq);
 
       /* Clean up. */
@@ -1858,7 +1858,7 @@ statistics_fit_polynomial_print(struct statisticsparams *p, gal_data_t *fit,
     {
       if(p->fitestval==NULL)
         {
-          for(i=0;i<nconst;++i) printf("%+-.10f ", farr[i]);
+          for(i=0;i<nconst;++i) printf("%+-.15e ", farr[i]);
           printf("\b\n");
         }
     }
@@ -1880,7 +1880,7 @@ statistics_fit_polynomial_print(struct statisticsparams *p, gal_data_t *fit,
 
       /* Print the fitted values. */
       for(i=0;i<nconst;++i)
-        printf("  c%zu: %s%+-.10f\n", i, i<10?" ":"", farr[i]);
+        printf("  c%zu: %s%+-.15e\n", i, i<10?" ":"", farr[i]);
 
       /* Print the information on the covariance matrix. */
       printf("\nCovariance matrix:\n");
@@ -1899,14 +1899,14 @@ statistics_fit_polynomial_print(struct statisticsparams *p, gal_data_t *fit,
         {
           if(p->cp.quiet==0) printf("  ");
           for(j=0;j<nconst;++j)
-            printf("%+-20.10f ", carr[i*nconst+j]);
+            printf("%+-20.15e ", carr[i*nconst+j]);
           printf("\b\n");
         }
 
       /* Print the chi^2. */
       if(p->cp.quiet==0)
         printf("\nReduced chi^2 of fit:\n");
-      printf("%s%+-.10f\n", p->cp.quiet?"":"  ", redchisq);
+      printf("%s%+-.15e\n", p->cp.quiet?"":"  ", redchisq);
     }
 }
 
