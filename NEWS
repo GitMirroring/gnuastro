@@ -127,6 +127,12 @@ See the end of the file for license conditions.
       reference catalog entry is more distant than the given aperture, it
       will be NaN/blank in the output.
 
+*** astscript-ds9-region
+
+  --fontsize: new option to allow setting the font size of the values
+    within the name column (given to '--namecol'). The values of the name
+    column are printed as text on top of each region in DS9.
+
 *** astscript-fits-view
 
   --topcat4k (or '-k') option is added for easy display on 4K monitors
@@ -299,6 +305,14 @@ See the end of the file for license conditions.
     version it was only possible to call it once, causing inconveniently
     long options for large tables. This was suggested by Sepideh
     Eskandarlou.
+
+*** astscript-ds9-region
+
+  - The default coordinate system to write WCS coordinates for DS9 is now
+    ICRS. Until now, it was FK5 (based on the default system that DS9 would
+    propose for writing regions). But DS9's latest versions have changed to
+    ICRS, so we are also doing the same here. In practice, the difference
+    is very small and only relevant for extremely precise positioning.
 
 *** astscript-pointing-simulate
 
