@@ -43,6 +43,7 @@ mode=wcs
 radius=""
 command=""
 namecol=""
+fontsize=12
 out=ds9.reg
 color=green
 dontdelete=0
@@ -91,9 +92,10 @@ $scriptname options:
   -n, --namecol=STR       ID of each region (name or number of a column)
 
  Output:
-  -C, --color             Color for the regions (read by DS9).
-  -w, --width             Line thickness of the regions (in DS9).
-  -r, --radius            Radius of each region (arcseconds if in WCS mode).
+  -C, --color=STR         Color for the regions (read by DS9).
+  -w, --width=INT         Line thickness of the regions (in DS9).
+  -r, --radius=FLT        Radius of each region (arcseconds if in WCS mode).
+  -s, --fontsize=INT      Font size for name.
   -D, --dontdelete        Don't delete output if it exists.
   -o, --output=STR        Name of output file.
       --command="STR"     DS9 command to run after making region.
@@ -212,6 +214,9 @@ do
         -r|--radius)        radius="$2";                           check_v "$1" "$radius";  shift;shift;;
         -r=*|--radius=*)    radius="${1#*=}";                      check_v "$1" "$radius";  shift;;
         -r*)                radius=$(echo "$1"  | sed -e's/-r//'); check_v "$1" "$radius";  shift;;
+        -s|--fontsize)      fontsize="$2";                           check_v "$1" "$fontsize";  shift;shift;;
+        -s=*|--fontsize=*)  fontsize="${1#*=}";                      check_v "$1" "$fontsize";  shift;;
+        -s*)                fontsize=$(echo "$1"  | sed -e's/-s//'); check_v "$1" "$fontsize";  shift;;
         -D|--dontdelete)    dontdelete=1; shift;;
         -D*|--dontdelete=*) on_off_option_error --dontdelete -D;;
         -o|--output)        out="$2";                              check_v "$1" "$out";     shift;shift;;
@@ -312,6 +317,9 @@ fi
 # Set the units of the radius.
 if [ x"$mode" = xwcs ]; then unit="\""; else unit=""; fi
 
+# Set the font size.
+font="font=\"helvetica $fontsize normal roman\""
+
 
 
 
@@ -327,7 +335,7 @@ if [ x"$namecol" != x ]; then
     printf "# Region name (or label) column: $namecol\n" >> $out
 fi
 printf "global color=%s width=%d\n" $color $width >> $out
-if [ "$mode" = wcs ]; then  printf "fk5\n" >> $out
+if [ "$mode" = wcs ]; then  printf "icrs\n" >> $out
 else                        printf "image\n" >> $out;   fi
 
 
@@ -359,13 +367,13 @@ else
         cat /dev/stdin \
             | asttable --column=$col --column=$namecol \
             | while read a b c; do \
-                  printf "circle(%f,%f,%f%s) # text={%g}\n" \
+                  printf "circle(%f,%f,%f%s) # $font text={%g}\n" \
                          $a $b $radius "$unit" $c >> $out; \
               done
     else
         asttable $input --hdu=$hdu --column=$col --column=$namecol \
             | while read a b c; do \
-                  printf "circle(%f,%f,%f%s) # text={%g}\n" \
+                  printf "circle(%f,%f,%f%s) # $font text={%g}\n" \
                          $a $b $radius "$unit" $c >> $out; \
               done
     fi

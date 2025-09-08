@@ -3100,8 +3100,8 @@ $ astarithmetic $in $det not nan where --output=mask-sky.fits
 Look again at the @code{DETECTIONS} extension, in particular the long worm-like structure around @footnote{To find a particular coordiante easily in DS9, you can do this: Click on the ``Edit'' menu, and select ``Region''.
 Then click on any random part of the image to see a circle show up in that location (this is the ``region'').
 Double-click on the region and a ``Circle'' window will open.
-If you have celestial coordinates, keep the default ``fk5'' in the scroll-down menu after the ``Center''.
-But if you have pixel/image coordinates, click on the ``fk5'' and select ``Image''.
+If you have celestial coordinates, keep the default ``icrs'' or ``fk5'' in the scroll-down menu after the ``Center''.
+But if you have pixel/image coordinates, click on the ``icrs'' or ``fk5'' and select ``Image''.
 Now you can set the ``Center'' coordinates of the region (@code{1650} and @code{1470} in this case) by manually typing them in the two boxes in front of ``Center''.
 Finally, when everything is ready, click on the ``Apply'' button and your region will go over your requested coordinates.
 You can zoom out (to see the whole image) and visually find it.} pixel 1650 (X) and 1470 (Y).
@@ -20881,7 +20881,7 @@ Click on the approximate center of the region you want and a small square will a
 By clicking on the vertices of the square you can shrink or expand it, clicking and dragging anywhere on the edges will enable you to define a new vertex.
 After the region has been nicely defined, save it as a file with @clicksequence{Region@click{}``Save Regions''}.
 You can then select the name and address of the output file, keep the format as @command{REG (*.reg)} and press the ``OK'' button.
-In the next window, keep format as ``ds9'' and ``Coordinate System'' as ``fk5'' for RA and Dec (or ``Image'' for pixel coordinates).
+In the next window, keep format as ``ds9'' and ``Coordinate System'' as ``icrs'' or ``fk5'' for RA and Dec (or ``Image'' for pixel coordinates).
 A plain text file is now created (let's call it @file{ds9.reg}) which you can pass onto Crop with @command{--polygon=ds9.reg}.
 
 For the expected format of the region file, see the description of @code{gal_ds9_reg_read_polygon} in @ref{SAO DS9 library}.
@@ -35241,6 +35241,11 @@ The radius of all the regions.
 In WCS mode, the radius is assumed to be in arc-seconds, in image mode, it is in pixel units.
 If this option is not explicitly given, in WCS mode the default radius is 1 arc-seconds and in image mode it is 3 pixels.
 
+@item -s INT
+@itemx --fontsize=INT
+The size of the display font for the name column (only relevant when @option{--namecol} is given).
+When not given, the default font size of 12 points will be applied.
+
 @item --dontdelete
 If the output file name exists, abort the program and do not over-write the contents of the file.
 This option is thus good if you want to avoid accidentally writing over an important file.
@@ -35438,7 +35443,7 @@ Any number of region files can be loaded with a single call to this command (sep
 @item -O img/wcs
 @itemx --ds9mode=img/wcs
 The coordinate system (or mode) to interpret the values given to @option{--ds9center}.
-This can either be @option{img} (or DS9's ``Image'' coordinates) or @option{wcs} (or DS9's ``wcs fk5'' coordinates).
+This can either be @option{img} (or DS9's ``Image'' coordinates) or @option{wcs} (or DS9's ``wcs icrs'' coordinates).
 
 @item -g INTxINT
 @itemx --ds9geometry=INTxINT
@@ -46319,14 +46324,14 @@ The mode to interpret the vertice coordinates is also read from the SAO DS9 regi
 The coordinate mode can be one of the @code{GAL_DS9_COORD_MODE_*} macros, mentioned above.
 
 It is assumed that the file begins with @code{# Region file format: DS9} and it has two more lines (at least):
-a line containing the mode of the coordinates (the line should only contain either @code{fk5} or @code{image}),
+a line containing the mode of the coordinates (the line should only contain either @code{icrs} or @code{fk5} or @code{image}),
 a line with the polygon vertices following this format: @code{polygon(V1X,V1Y,V2X,V2Y,...)} where @code{V1X} and @code{V1Y} are the horizontal and vertical coordinates of the first vertice, and so on.
 
 For example, here is a minimal acceptable SAO DS9 region file:
 
 @example
 # Region file format: DS9
-fk5
+icrs
 polygon(53.187414,-27.779152,53.159507,-27.759633,...)
 @end example
 @end deftypefun

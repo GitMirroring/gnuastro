@@ -375,7 +375,7 @@ ds9pan=""
 if [ x"$ds9center" != x ]; then
     ds9pancent=$(echo $ds9center | awk 'BEGIN{FS=","} {print $1, $2}')
     if [ $ds9mode = wcs ]; then
-        ds9pan="-pan to $ds9pancent wcs fk5"
+        ds9pan="-pan to $ds9pancent wcs icrs"
     else
         ds9pan="-pan to $ds9pancent image"
     fi

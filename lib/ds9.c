@@ -89,7 +89,9 @@ gal_ds9_reg_read_polygon(char *filename)
 
       /* If we are on the coordinate mode line, then set the mode of Crop
          based on it. */
-      if( !strcmp(line, "fk5\n") || !strcmp(line, "image\n") )
+      if(    !strcmp(line, "fk5\n")
+          || !strcmp(line, "icrs\n")
+          || !strcmp(line, "image\n") )
         {
           /* Make sure it hasn't been called more than once. */
           if(coordmode!=GAL_DS9_COORD_MODE_INVALID)
@@ -97,8 +99,9 @@ gal_ds9_reg_read_polygon(char *filename)
                           "more than one coordinate line defined");
 
           /* Set the proper mode. */
-          if(!strcmp(line, "fk5\n")) coordmode=GAL_DS9_COORD_MODE_WCS;
-          else                       coordmode=GAL_DS9_COORD_MODE_IMG;
+          if( !strcmp(line, "icrs\n") || !strcmp(line, "fk5\n") )
+               coordmode=GAL_DS9_COORD_MODE_WCS;
+          else coordmode=GAL_DS9_COORD_MODE_IMG;
 
           /* Stop parsing the file if the polygon has also been found by
              this point (we don't need any more information, no need to
@@ -152,8 +155,8 @@ gal_ds9_reg_read_polygon(char *filename)
   /* If no coordinate mode was found in the file, print an error. */
   if(coordmode==GAL_DS9_COORD_MODE_INVALID)
     error(EXIT_FAILURE, 0, "%s: no coordinate mode found! "
-          "We expect one line to be either 'fk5' or 'image'",
-          filename);
+          "We expect one line to be either 'icrs' or 'fk5' (for "
+          "WCS) or 'image' (for pixel coordinates)", filename);
 
   /* If no polygon line was in the file, abort with an error. */
   if(out==NULL)
