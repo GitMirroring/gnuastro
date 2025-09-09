@@ -6,6 +6,7 @@ Original author:
      Sachin Kumar Singh <sachinkumarsingh092@gmail.com>
 Contributing author(s):
      Mohammad Akhlaghi <mohammad@akhlaghi.org>
+     Barış Güngör <barisgungor1010@gmail.com>
 Copyright (C) 2020-2025 Free Software Foundation, Inc.
 
 Gnuastro is free software: you can redistribute it and/or modify it
@@ -54,6 +55,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 
 
+
 /****************************************************************
  ********                  Utilities                      *******
  ****************************************************************/
@@ -63,10 +65,8 @@ struct kdtree_params
   size_t ndim;            /* Number of dimentions in the nodes.         */
   size_t *input_row;      /* The indexes of the input table.            */
   gal_data_t **coords;    /* The input coordinates array.               */
-  uint32_t *left, *right; /* The indexes of the left and right nodes.   */
   uint8_t nosamenode;     /* ==1: the exact same match will be ignored. */
-  double aperture;        /* Aperture for acceptable matches.           */
-  gal_list_sizet_t *same_dist;  /* Indexs of objects at same dist.      */
+  uint32_t *left, *right; /* The indexes of the left and right nodes.   */
 
   /* The values of the left and right columns. */
   gal_data_t *left_col, *right_col;
@@ -104,8 +104,7 @@ kdtree_node_swap(struct kdtree_params *p, size_t node1, size_t node2)
 /* Return the distance between 2 given nodes. The distance is equivalent
    to the radius of the hypersphere having node as its center.
 
-   Return: Radial distace from given point to the node.
-*/
+   Return: Radial distace from given point to the node. */
 static double
 kdtree_distance_find(struct kdtree_params *p, size_t node,
                      double *point)
@@ -123,15 +122,7 @@ kdtree_distance_find(struct kdtree_params *p, size_t node,
       node_distance += t_distance*t_distance;
     }
 
-  /* The distance: previously we kept this to be in the power of two and
-     used all other distances in the second power (to avoid having to take
-     too many 'sqrt's, which can affect performance. But after accounting
-     for the error in distance, it caused a problem: very small errors
-     would be smaller than the floating point error after taking to the
-     power of two and therefore giving wrong results. The performance cost
-     of this is also not significant in the overall scheme of things:
-     for a KD */
-  return sqrt(node_distance);
+  return node_distance;
 }
 
 
@@ -190,20 +181,20 @@ kdtree_prepare(struct kdtree_params *p, gal_data_t *coords_raw)
     {
       /* Make sure there is more than one column. */
       if(p->left_col->next==NULL)
-        error(EXIT_FAILURE, 0, "%s: the input kd-tree should be 2 "
+        error(EXIT_FAILURE, 0, "%s: the input kd-tree should be two "
               "columns", __func__);
 
       /* Set the right column and check if there aren't any
          more columns. */
       p->right_col=p->left_col->next;
       if(p->right_col->next)
-        error(EXIT_FAILURE, 0, "%s: the input kd-tree shoudn't be "
-              "more than 2 columns", __func__);
+        error(EXIT_FAILURE, 0, "%s: the input kd-tree shoudn't be more "
+              "than 2 columns", __func__);
 
       /* Make sure they are the same size. */
       if(p->left_col->size!=p->right_col->size)
-        error(EXIT_FAILURE, 0, "%s: left and right columns should "
-              "have same size", __func__);
+        error(EXIT_FAILURE, 0, "%s: left and right columns should have "
+              "same size", __func__);
 
       /* Make sure left is 'uint32_t'. */
       if(p->left_col->type!=GAL_TYPE_UINT32)
@@ -231,14 +222,14 @@ kdtree_prepare(struct kdtree_params *p, gal_data_t *coords_raw)
                                  coords_raw->dsize, NULL, 0,
                                  coords_raw->minmapsize,
                                  coords_raw->quietmmap, "left",
-                                 "index", "index of left subtree "
-                                 "in the kd-tree");
+                                 "index",
+                                 "index of left subtree in the kd-tree");
       p->right_col=gal_data_alloc(NULL, GAL_TYPE_UINT32, 1,
                                   coords_raw->dsize, NULL, 0,
                                   coords_raw->minmapsize,
                                   coords_raw->quietmmap, "right",
-                                  "index", "index of right "
-                                  "subtree in the kd-tree");
+                                  "index",
+                                  "index of right subtree in the kd-tree");
 
       /* Fill the elements of the params structure. */
       p->left_col->next=p->right_col;
@@ -301,8 +292,7 @@ kdtree_cleanup(struct kdtree_params *p, gal_data_t *coords_raw)
    and values less than k'th node.
 
    Return: Index of the node whose value is greater than all
-           the nodes before it.
-*/
+           the nodes before it. */
 static size_t
 kdtree_make_partition(struct kdtree_params *p, size_t node_left,
                       size_t node_right, size_t node_k,
@@ -347,22 +337,25 @@ kdtree_make_partition(struct kdtree_params *p, size_t node_left,
    find median node in linear time between the left and right node.
    This also makes the values in the current axis partially sorted.
 
-   See https://en.wikipedia.org/wiki/Quickselect for pseudocode and more
-   details of the algorithm.
+   See `https://en.wikipedia.org/wiki/Quickselect`
+   for pseudocode and more details of the algorithm.
 
-   Return: Median node between the given left and right nodes. */
+   Return: Median node between the given left and right nodes.
+*/
 static size_t
 kdtree_median_find(struct kdtree_params *p, size_t node_left,
                    size_t node_right, double *coordinate)
 {
   size_t node_pivot, node_median;
 
-  /* False state, these are programming errors that should not occur. */
+  /* False state, this is a programming error. */
   if(node_right < node_left)
     error(EXIT_FAILURE, 0, "%s: a bug! Please contact us to fix "
           "the problem! For some reason, the node_right (%zu) is "
           "smaller than node_left (%zu)", __func__, node_right,
           node_left);
+
+  /* If the two nodes are the same, just return the node. */
   if(node_right == node_left)
     error(EXIT_FAILURE, 0, "%s: a bug! Please contact us to fix "
           "the problem! For some reason, the node_right (%zu) is "
@@ -378,7 +371,6 @@ kdtree_median_find(struct kdtree_params *p, size_t node_left,
         (here median) node. */
       node_pivot = kdtree_make_partition(p, node_left, node_right,
                                          node_median, coordinate);
-
       /* If median is found, break the loop and return median node. */
       if(node_median == node_pivot) break;
 
@@ -387,7 +379,6 @@ kdtree_median_find(struct kdtree_params *p, size_t node_left,
       if(node_median < node_pivot)  node_right = node_pivot - 1;
       else                          node_left  = node_pivot + 1;
     }
-
   /* Return the median node. */
   return node_median;
 }
@@ -522,7 +513,7 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
                          double *point, double *least_dist,
                          size_t *out_nn, size_t depth)
 {
-  double d, dx;
+  double d, dx, dx2;
   size_t axis=depth % p->ndim;    /* Set the working axis. */
   double *coordinates=p->coords[axis]->array;
 
@@ -559,30 +550,6 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
       //*/
     }
 
-  /* In case this point's distance is within the acceptable aperture, we
-     should add it to the list. Note that this will only be the finally
-     returned index if no closer point is found: if a point is found later
-     that is closer than this one, 'out_nn' will be over-written. So the
-     only way that this macro goes out of this recursive function is for
-     the nearest point to be repeated. */
-  if( d<=p->aperture )
-    {
-      /* 'same_dist==NULL': the first found point needs to be added. */
-      gal_list_sizet_add(&p->same_dist, node_current);
-
-      /* For a check:
-      if(checkpoint)
-        {
-          gal_list_sizet_t *tmp;
-          printf("%s: (%g,%g) same dists: ", __func__, point[0],
-                 point[1]);
-          for(tmp=p->same_dist; tmp!=NULL; tmp=tmp->next)
-            printf("%zu ", tmp->v);
-          printf("\n");
-        }
-      //*/
-    }
-
   /* If an exact match is found (least distance 0), return it. But if
      'nosamenode' is true, abort with an error; given that the second part
      (after '&&') of the 'if' statement above should have prevented such
@@ -591,7 +558,7 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
     {
       if(p->nosamenode)
         error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
-              "fix the problem. a neighbour with distance zero is found, "
+              "fix the problem. A neighbour with distance zero is found, "
               " even though it was asked to avoid exact match",
               __func__, PACKAGE_BUGREPORT);
       return;
@@ -603,13 +570,14 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
                               : p->right[node_current],
                            point, least_dist, out_nn, depth+1);
 
-  /* Since the hyperplanes are all axis-aligned, the check to see if there
-     is a node in other branch which is nearer to the current node is done
-     by a simple comparison to see whether the distance between the
-     splitting coordinate (median node) of the search point and current
-     node is lesser (i.e on same side of hyperplane) than the distance
-     (overall coordinates) from the search point to the current nearest. */
-  if(fabs(dx) >= *least_dist) return;
+  /* Since the hyperplanes are all axis-aligned, to check if there is a
+     node in other branch which is nearer to the current node is done by a
+     simple comparison to see whether the distance between the splitting
+     coordinate (median node) of the search point and current node is
+     lesser (i.e on same side of hyperplane) than the distance (overall
+     coordinates) from the search point to the current nearest. */
+  dx2 = dx*dx;
+  if(dx2 >= *least_dist) return;
 
   /* Recursively search other subtrees. */
   kdtree_nearest_neighbour(p, dx > 0
@@ -630,9 +598,7 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
 */
 size_t
 gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
-                             size_t root, double *point, double aperture,
-                             double *least_dist,
-                             gal_list_sizet_t **same_dist,
+                             size_t root, double *point, double *least_dist,
                              uint8_t nosamenode)
 {
   struct kdtree_params p={0};
@@ -640,23 +606,23 @@ gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
 
   /* Initialisation. */
   p.left_col=kdtree;
-  p.aperture=aperture;
   *least_dist=DBL_MAX;
   p.nosamenode=nosamenode;
   kdtree_prepare(&p, coords_raw);
 
-  /* For a check on the processing time, add the lines below before and
-     after 'kdtree_nearest_neighbour'. */
-  /* struct timeval t1; gettimeofday(&t1, NULL); */
-  /*gal_timing_report(&t1, "Single kdtree", 2); //exit(0); */
+  /* For a check on the processing time: add the lines below before and
+     after 'kdtree_nearest_neighbour'.
+  struct timeval t1; gettimeofday(&t1, NULL);
+  gal_timing_report(&t1, "Single kdtree", 2);
+  //*/
 
   /* Use the low-level function to find th nearest neighbour. */
   kdtree_nearest_neighbour(&p, root, point, least_dist, &out_nn, 0);
 
-  /* Set output pointers. Note that all the pointesr inside of 'p' where
-     initialized to NULL when 'p' was defined at the start of the
-     function. */
-  *same_dist=p.same_dist;
+  /* least_dist is the square of the distance between the nearest
+     neighbour and the point (used to improve processing).
+     Square root of that is the actual distance. */
+  *least_dist = sqrt(*least_dist);
 
   /* For a check
   printf("%s: root=%zu, out_nn=%zu, least_dis=%f\n",
@@ -666,4 +632,90 @@ gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
   /* Clean up and return. */
   kdtree_cleanup(&p, coords_raw);
   return out_nn;
+}
+
+
+
+
+
+/* Low-level function to recursively search for all points within a given
+   radius from a target point in the k-d tree. */
+static void
+kdtree_range_search(struct kdtree_params *p, uint32_t node_current,
+                    double *point, double radius_squared,
+                    gal_data_t *results, size_t depth)
+{
+  size_t j;
+  double dx, dist_squared;
+
+  /* If we have reached a blank node, return. */
+  if(node_current==GAL_BLANK_UINT32) return;
+
+  /* Calculate the distance from the current node to the target point. */
+  dist_squared = kdtree_distance_find(p, p->input_row[node_current], point);
+
+  /* If this node is within the radius, add it to results. */
+  if(dist_squared <= radius_squared)
+    {
+      /* Resize the results array to accommodate the new point. */
+      results->array = realloc(results->array,
+                               (results->size + 1) * sizeof(size_t));
+      if(results->array == NULL)
+        error(EXIT_FAILURE, errno, "%s: couldn't allocate memory for "
+              "range search results", __func__);
+
+      /* Add the index of this node to the results. */
+      ((size_t *)results->array)[results->size] = p->input_row[node_current];
+      results->size++;
+    }
+
+  /* Determine which dimension we're splitting on at this depth. */
+  j = depth % p->ndim;
+
+  /* Calculate the distance along the splitting dimension. */
+  dx = point[j] - ((double *)(p->coords[j]->array))[p->input_row[node_current]];
+
+  /* Recursively search the subtree that contains the target point. */
+  kdtree_range_search(p, dx <= 0 ? p->left[node_current] : p->right[node_current],
+                      point, radius_squared, results, depth + 1);
+
+  /* If the distance to the splitting plane is less than the radius,
+     we need to search the other subtree as well. */
+  if(dx * dx <= radius_squared)
+    kdtree_range_search(p, dx <= 0 ? p->right[node_current] : p->left[node_current],
+                        point, radius_squared, results, depth + 1);
+}
+
+
+
+
+
+/* High-level function to find all points within a given radius from a
+   target point in a k-d tree.
+
+   Return: A gal_data_t structure containing the indices of all points
+           within the specified radius. */
+gal_data_t *
+gal_kdtree_range_search(gal_data_t *coords_raw, gal_data_t *kdtree,
+                        size_t root, double *point, double radius)
+{
+  struct kdtree_params p={0};
+  gal_data_t *results;
+  double radius_squared = radius * radius;
+
+  /* Initialize the results structure. */
+  results = gal_data_alloc(NULL, GAL_TYPE_SIZE_T, 1, &(size_t){0}, NULL, 0,
+                           -1, 1, NULL, NULL, NULL);
+  results->size = 0;
+
+  /* Prepare the k-d tree parameters. */
+  p.left_col = kdtree;
+  kdtree_prepare(&p, coords_raw);
+
+  /* Perform the range search. */
+  kdtree_range_search(&p, root, point, radius_squared, results, 0);
+
+  /* Clean up and return results. */
+  kdtree_cleanup(&p, coords_raw);
+  return results;
 }

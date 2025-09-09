@@ -6,6 +6,7 @@ Original author:
      Sachin Kumar Singh <sachinkumarsingh092@gmail.com>
 Contributing author(s):
      Mohammad Akhlaghi <mohammad@akhlaghi.org>
+     Barış Güngör <barisgungor1010@gmail.com>
 Copyright (C) 2020-2025 Free Software Foundation, Inc.
 
 Gnuastro is free software: you can redistribute it and/or modify it
@@ -27,7 +28,6 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 /* Include other headers if necessary here. Note that other header files
    must be included before the C++ preparations below */
 #include <gnuastro/data.h>
-#include <gnuastro/list.h>
 
 
 /* C++ Preparations */
@@ -56,12 +56,12 @@ gal_kdtree_create(gal_data_t *coords_raw, size_t *root);
 
 size_t
 gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
-                             size_t root, double *point, double aperture,
-                             double *least_dist,
-                             gal_list_sizet_t **same_dist,
-                             uint8_t nosamenode);
+                             size_t root, double *point,
+                             double *least_dist, uint8_t nosamenode);
 
-
+gal_data_t *
+gal_kdtree_range_search(gal_data_t *coords_raw, gal_data_t *kdtree,
+                        size_t root, double *point, double radius);
 
 
 
