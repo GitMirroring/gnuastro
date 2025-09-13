@@ -86,8 +86,10 @@ See the end of the file for license conditions.
     measurements) as keywords in the 0th HDU of the output. These include
     the measured surface brightness limit, the noise-based magnitude limit
     and the confusion limit. Until now, only the first was always
-    automatically measured, but from this version, if you need it be sure
-    to call this option (the keyword names have also changed).
+    automatically measured, but from this version, if you need to call this
+    option to get it (the keyword names have also changed, see "MakeCatalog
+    output keywords" section of the book). For more, see the newly added
+    section in the book called "Metameasurements on full input".
 
   --nml-sigma and --nml-area: the multiple of standard deviation and area
     (in square arcseconds) to use for the noise-based magntiude limit (also
@@ -97,7 +99,8 @@ See the end of the file for license conditions.
     clumps (only recommended if you are not generating your labels with
     Segment).
 
-  --cnl-check: add an extra HDU to the output
+  --cnl-check: add an extra HDU to the output that contains the distances
+    to the nearest neighbor of each row used in the confusion limit.
 
 *** Match
 

@@ -257,35 +257,31 @@ outkeys_confusion_limit_write(struct mkcatalogparams *p,
   comment=gal_pointer_allocate(GAL_TYPE_UINT8, FLEN_VALUE+1, 0,
                                __func__, "fval");
 
-  /* Fill the values. We are claculating the values once here to print the
-     valus in similar units in the same place. */
+  /* Fill the values. We are claculating the values here, but not writing
+     them, so the 'CNL' can be the first keyword. */
   for(i=0; i<OUTKEYS_CNL_NUMBER; ++i)
     {
-      /* Calculate the statistic (in arcseconds: same as input). */
+      /* Calculate the statistic (in pixels). */
       stat=gal_statistics_quantile(dists, percentiles[i]/100.0f, 1);
-      fval[i]=((double *)(stat->array))[0];
+      fval[i]=((double *)(stat->array))[0]/ps;
+    }
 
+  /* Write the final CNL in units of arcsec. */
+  tmp = fval[3] - fval[1];
+  outkeys_numeric(keylist, &tmp, GAL_TYPE_FLOAT32, "CNL",
+                  "Confusion limit: CNLP75-CNLP25.", "pixels");
+  printf("%s: %f, %f\n", __func__, fval[1], fval[3]);
+
+  /* Write the values. */
+  for(i=0; i<OUTKEYS_CNL_NUMBER; ++i)
+    {
       /* Set the strings to write. */
-      sprintf(name, "CNLP%02uW", percentiles[i]);
-      sprintf(comment, "Quantile %.2f dist. to nearest label.",
+      sprintf(name, "CNLP%02u", percentiles[i]);
+      sprintf(comment, "Quant. %.2f of. dist. to nearest lab.",
               percentiles[i]/100.0f);
 
       /* Write the keyword. */
       outkeys_numeric(keylist, &fval[i], GAL_TYPE_FLOAT32, name,
-                      comment, "arcsec");
-    }
-
-  /* Write the values in units of pixels. */
-  for(i=0; i<OUTKEYS_CNL_NUMBER; ++i)
-    {
-      /* Set the strings to write. */
-      sprintf(name, "CNLP%02uI", percentiles[i]);
-      sprintf(comment, "Quantile %.2f dist. to nearest label.",
-              percentiles[i]/100.0f);
-
-      /* Write the keyword. */
-      tmp=fval[i]/ps;
-      outkeys_numeric(keylist, &tmp, GAL_TYPE_FLOAT32, name,
                       comment, "pixels");
     }
 
@@ -566,7 +562,7 @@ outkeys_pixinfo(struct mkcatalogparams *p, gal_fits_list_key_t **keylist)
         {
           fval=sqrt(p->pixelarcsecsq);
           outkeys_numeric(keylist, &fval, GAL_TYPE_FLOAT32, "PIXWIDTH",
-                          "Pixel area of input image.", "arcsec");
+                          "Pixel width of input image.", "arcsec");
           outkeys_numeric(keylist, &pixarea, GAL_TYPE_FLOAT32, "PIXAREA",
                           "Pixel area of input image.", "arcsec^2");
         }
@@ -579,8 +575,8 @@ outkeys_pixinfo(struct mkcatalogparams *p, gal_fits_list_key_t **keylist)
 
   /* Standard devaition for noise-based measurements. */
   if( !isnan(p->medstd) )
-    outkeys_numeric(keylist, &p->medstd, GAL_TYPE_FLOAT32, "STDUSED",
-                    "Pixel STD for noise-based measures.", NULL);
+    outkeys_numeric(keylist, &p->medstd, GAL_TYPE_FLOAT32, "MMSTD",
+                    "Pixel STD for noise-based meta-measures.", NULL);
 
   /* The count-per-second correction. */
   if(p->cpscorr>1.0f)

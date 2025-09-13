@@ -31224,7 +31224,7 @@ The reason for the ``noise-based'' prefix is that the equation above is purely b
 However, different objects have different profiles: some are sharp/concentrated (like stars or elliptical galaxies), others are diffuse (like ultra diffuse galaxies) and others are clumpy (like a globular cluster) and etc.
 Therefore, we classify the more robust ``magnitude limit'' (that actually takes morphology into account) as a @emph{manual} metameasurement (that you should do after calling MakeCatalog based on your desired targets/goals), it is described in @ref{Magnitude limit for certain objects}.
 
-When MakeCatalog is called with @option{--meta-measurements}, it will calculate the input dataset's noise-based magnitude limit and will write it @code{NML} keyword the 0th HDU of the output.
+When MakeCatalog is called with @option{--meta-measurements} and @option{--clumpscat}, it will calculate the input dataset's noise-based magnitude limit and will write it @code{NML} keyword the 0th HDU of the output.
 You can set your desired @mymath{n}-th multiple of @mymath{\sigma} and the @mymath{A} arcsec@mymath{^2} area using the following two options respectively: @option{--nml-sigma} and @option{--nml-area}.
 See @ref{MakeCatalog output keywords} for more.
 
@@ -31233,28 +31233,35 @@ See @ref{MakeCatalog output keywords} for more.
 
 @cindex Confusion limit
 @cindex Limit, confusion
-The confusion limit is a measure of density reported in units of distance (pixels or arcseconds): the median distance of all resolved sources with their nearest neighbor in the image.
-The confusion limit depends on several factors, including the pointing on the sky.
-For example a shallow image taken from the center of a globular cluster, or close to the disk of the milky way will have a bad confusion limit (resolved sources will be very close to each other).
-But at exactly the same imaging conditions (depth, PSF and etc), an image of an "empty" region of the sky will have a good/high confusion limit (sources can be more distant).
 
-Therefore, unlike the previously discussed automatic metameasurements like @ref{Surface brightness limit of image} and @ref{Noise based magnitude limit of image} the confusion limit depends on the pointing on sky.
-This is because those are defined purely based on the noise of the image, but the confusion limit comes from the signal's distribution in the image.
+The confusion limit is expressed in units of distance (pixels or arcseconds), derived from the distribution of the distances of all resolved sources with their nearest neighbor.
+The confusion limit therefore depends on several factors, including the pointing on the sky.
+For example, a shallow image taken on the disk of M31, or the center of a large globular cluster, or close to the disk of the Milky Way will be heavily contaminated by confusion limit (resolved sources will be very close to each other) even if it has a low exposure time on a small telescope.
+But at exactly the same imaging conditions (exposure time, telescope aperture, PSF and etc), a random pointing away from the disk of the Milky Way will have a good confusion limit (resolved sources are more distant).
+But as we go very deep (more exposure time or larger telescope) without a similar improvement in the pixel scale, the confusion limit will become mostly uniform (assuming a relatively uniform background galaxy population).
+In wide field imaging, it is also important to account for the projection effects when calculating the projected distances (so centers have to be in RA and Dec; and distances have to be measured on a sphere, not on a plane).
+
+Therefore, unlike the previously discussed automatic meta-measurements like @ref{Surface brightness limit of image} and @ref{Noise based magnitude limit of image} the confusion limit depends on the pointing on sky.
+This is because those are defined purely based on the noise of the image, but the confusion limit comes from the resolved signal's distribution in the image.
 But as we go very deep in extra-galactic fields (high galactic latitudes: away from the disk of the milky wayw) the density of sources as you go deeper should become mostly uniform (assuming a relatively uniform background galaxy population).
 
-To help in interpreting the confusion limit, here is one example: if you take images of the same pointing of the sky but at very different PSFs, the confusion limit will increase (which is bad) as a function of the PSF.
-This is because the smaller objects that are closer to larger ones get washed-out in the larger PSF of their brighter neighbors.
-
-Technically (when calculating the distance between the clump and its nearest neighbor), it is also important to account for the spherical nature of RA and Dec.
-Otherwise, distances will have a dependency on the declination and may make it hard to interpret the statistics.
+The confusion limit is found by finding the nearest resolved source to each source (Segment's clumps by default, see @ref{Segment}).
+Technically (when calculating the distance between the clump and its nearest neighbor), it is also important to account for the spherical nature of RA and Dec and to use spherical distance measures (see description of @code{gal_wcs_angular_distance_deg} in @ref{World Coordinate System}).
+Otherwise (if using pixel coordinates/distances) the confusion limit will be affected by projection/distortion issues.
 
 @cindex Skewness
-When MakeCatalog is called with @option{--meta-measurements}, it will find the nearest neighbor to each clump and return information about the distribution of values using the output keywords that start with @code{CNL} within the 0th HDU of the output.
-The distribution to the nearest label is by nature a very non-symmetric distribution (skewed to the positive), so it cannot be simply parametrized as in the other metameasures here.
-As mentioned at the start, the main parameter that the community uses is the median.
-But to identify the spread and shape of the distribution, that is not enough.
+The distribution of distances to the nearest neighbor (in arcsec) will naturally be heavily skewed (since distance is always positive).
+The distribution relies heavily on the depth, pixel scale and PSF of the image (which can be very different from one image to another).
+Therefore, the best measure we have found so far is to use the ``width'' of the distribution (difference between the 0.75 and 0.25 quantiles).
+However, this distance is most relevant in pixel units, not arcseconds.
+This is because the confusion limit depends on detection and segmentation which are done on the pixel grid not in the abstract, continuous or instrument-agnostic units of arcseconds.
 
-Therefore as described in  @ref{MakeCatalog output keywords}, MakeCatalog doesn't just return the median (at quantile of 0.5 or percentile of 50), but several other quantiles.
+When MakeCatalog is called with @option{--meta-measurements} and @option{--clumpscat}, it will measure the confusion limit and store it in the @code{CNL} output keyword (see @ref{MakeCatalog output keywords}).
+Further information (five percentiles) about the distribution of distances to the nearest neighbor are provided in the @code{CNLP*}.
+The percentile information is necessary because the distribution to the nearest label is by nature a very non-symmetric distribution (skewed to the positive).
+As a result, it cannot be simply parametrized as in the other metameasures here.
+
+Therefore as described in  , MakeCatalog doesn't just return the median (at quantile of 0.5 or percentile of 50), but several other quantiles.
 Ultimately, you can see each clump's nearest neighbor as well as the spherical distance to its nearest clump by activating the @option{--cnl-check} option (see @ref{MakeCatalog output HDUs}).
 
 @node Manual metameasurements, Adding new columns to MakeCatalog, Metameasurements on full input, MakeCatalog
@@ -31915,27 +31922,25 @@ Measured surface brighntess limit (in units of mag/arcsec@mymath{^2}); as descri
 @end table
 
 @item Confusion limit
-The confusion limit is a measure of density in the input image.
+The confusion limit (CNL) is a measure of density of resolved sources in the input image.
 For a complete review on its goals and how to interpret the values to these keywords, see @ref{Confusion limit of image}.
 In particular, if you would like to see the full distribution of nearest neighbors and their distances, you can use @option{--cnl-check} as described in @ref{MakeCatalog output HDUs}.
 By default, the clumps catalog is used for the distribution, however if you would like to use the objects for any reason, you can use @option{--cnl-with-objects} as described below in this section (not recommended unless you understand the risks).
-@table @code
-@item  CNLP05W
-@itemx CNLP25W
-@itemx CNLP50W
-@itemx CNLP75W
-@itemx CNLP95W
-Various percentiles of the distribution of distances to the nearest neighbor in units of arcseconds.
-The @code{W} suffix is for ``WCS'' and the @code{P} after @code{CNL} is for percentile.
-Note that a quantile is just the percentile after division by 100.
-We are using percentiles in the keyword names because they are simple integers and do not need a floating point.
 
-@item  CNLP05I
-@itemx CNLP25I
-@itemx CNLP50I
-@itemx CNLP75I
-@itemx CNLP95I
-Similar to the @code{CNLP*W} keywords but in units of pixels: the @code{I} suffix is for ``image''.
+@table @code
+
+@item CNL
+The confusion limit: difference between @code{CNLP75} and @code{CNLP25}.
+
+@item  CNLP05
+@itemx CNLP25
+@itemx CNLP50
+@itemx CNLP75
+@itemx CNLP95
+Various percentiles of the distribution of distances to the nearest neighbor in units of pixels.
+The @code{P} before each number is for percentile, so @code{CNLP50} shows the median value of the distribution to nearest neighbors.
+Note that a quantile is just the percentile after division by 100.
+Percentiles are used in the keyword names because they are simple integers and do not need a floating point.
 @end table
 
 @end table
