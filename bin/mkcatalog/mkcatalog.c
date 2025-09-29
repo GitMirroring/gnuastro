@@ -522,6 +522,21 @@ sort_clumps_by_objid(struct mkcatalogparams *p)
       /* Find the tile-id of this clump and depending on how many clumps
          there are in this tile, increment the clump-index ('i'). */
       tind = p->hosttind_c[i];
+      if(tind==GAL_BLANK_SIZE_T)
+        error(EXIT_FAILURE, 0, "the number of clumps in the image does "
+              "not match the 'NUMLABS' keyword of the input clumps HDU. "
+              "This can happen when the clumps have been derived from "
+              "Segment's output over one image while the object labels "
+              "were derived from another image. As a result, there are "
+              "multiple separate clumps with the same label but not with "
+              "different object labels. If this the case, the safest "
+              "solution is to re-run Segment with the '--noobjects' "
+              "option for generating the clump labels independent of any "
+              "objects (which will also be faster!). If you can no "
+              "longer run Segment, you can re-label the clumps with this "
+              "command: 'astarithmetic file-with-clumps.fits -hCLUMPS 0 "
+              "gt 2 connected-components --output=out.fits' and replace "
+              "the output with the clumps image you gave in this run");
       for(j=0; j<p->numclumps_c[tind]; ++j)
         {
           permute[i++] = rowstart[tind] + j;

@@ -778,6 +778,7 @@ ui_one_tile_per_object(struct mkcatalogparams *p)
 static void
 ui_read_labels(struct mkcatalogparams *p)
 {
+  size_t *s, *sf;
   gal_list_i32_t *colcode;
   gal_data_t *tmp, *keys=gal_data_array_calloc(2);
 
@@ -947,12 +948,19 @@ ui_read_labels(struct mkcatalogparams *p)
          the following two arrays (that will be filled later). */
       if(!p->noclumpsort && p->cp.numthreads>1)
         {
+          /* Allocate the arrays. */
           p->hosttind_c=gal_pointer_allocate(GAL_TYPE_SIZE_T,
                                              p->numclumps, 0, __func__,
                                              "p->hosttind_c");
           p->numclumps_c=gal_pointer_allocate(GAL_TYPE_SIZE_T,
                                               p->numtiles, 0, __func__,
                                               "p->numclumps_c");
+
+          /* Initialize 'hosttind' to be able to later catch problematic
+             cases (see the error message of 'sort_clumps_by_objid' in
+             'mkcatalog.c'). */
+          sf=(s=p->hosttind_c)+p->numclumps;
+          do *s=GAL_BLANK_SIZE_T; while(++s<sf);
         }
     }
 
@@ -1476,7 +1484,8 @@ ui_preparations_read_keywords(struct mkcatalogparams *p)
               minstd=*((float *)(tmp->array));
               gal_data_free(tmp);
 
-              /* If the units are in variance, then take the square root. */
+              /* If the units are in variance, then take the square
+                 root. */
               if(p->variance) minstd=sqrt(minstd);
             }
           p->cpscorr = minstd>1 ? 1.0f : minstd;
@@ -1635,9 +1644,6 @@ ui_preparations(struct mkcatalogparams *p)
      'envseed', then we want it to be different for every run, so we need
      to re-set the seed. */
   if(p->upperlimit) ui_preparations_upperlimit(p);
-
-  if( p->hasmag && isnan(p->zeropoint) )
-    error(EXIT_FAILURE, 0, "no zeropoint specified");
 }
 
 

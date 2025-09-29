@@ -2324,6 +2324,11 @@ columns_define_alloc(struct mkcatalogparams *p)
     }
 
 
+  /* If a magnitude was requested, make sure that a zero point is given. */
+  if( p->hasmag && isnan(p->zeropoint) )
+    error(EXIT_FAILURE, 0, "no zeropoint specified");
+
+
   /* Free the general columns information because it is no longe needed,
      we'll set it back to NULL afterwards so it is not mistakenly used. */
   gal_list_i32_free(p->columnids);
