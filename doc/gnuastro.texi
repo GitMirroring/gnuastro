@@ -16701,8 +16701,8 @@ The special names (first string) below will cause a special behavior:
 @table @option
 
 @item /
-Write a ``title'' to the list of keywords.
-A title consists of one blank line and another which is blank for several spaces and starts with a slash (@key{/}).
+Write a commentary ``title'' to the list of keywords.
+A title consists of one blank (on @key{SPACE} characters) line and another which is blank for several 22 bytes and then starts with a slash (@key{/}).
 The second string given to this option is the ``title'' or string printed after the slash.
 For example, with the command below you can add a ``title'' of `My keywords' after the existing keywords and add the subsequent @code{K1} and @code{K2} keywords under it (note that keyword names are not case sensitive).
 
@@ -16720,9 +16720,7 @@ END
 @end example
 
 Adding a ``title'' before each contextually separate group of header keywords greatly helps in readability and visual inspection of the keywords.
-So generally, when you want to add new FITS keywords, it is good practice to also add a title before them.
-
-The reason you need to use @key{/} as the keyword name for setting a title is that @key{/} is the first non-white character.
+So generally, when you want to add new FITS keywords, it is good practice to also add a title before them or classify them under different titles.
 
 The title(s) is(are) written into the FITS with the same order that @option{--write} is called.
 Therefore in one run of the Fits program, you can specify many different titles (with their own keywords under them).
@@ -16736,6 +16734,11 @@ $ astfits test.fits -h1 --write=/,"My keywords"   \
           --write=a1,7.89,"First keyword"         \
           --write=a2,0.12,"Second keyword"
 @end example
+
+The reason you need to use @key{/} instead of the keyword name in the call to @option{--write} is that @key{/} is the first non-white character in the printed title.
+Technically (in the FITS standard), the two extra lines added in the header as a title are considered to be ``commentary keywords'' (where the name-value indicator '@code{= }' does not exist on the 9th and 10th byte).
+Such lines will be treated as comment lines by any FITS reader and as mentioned in the FITS standard, they are primarily for improving the human experience (aesthetics).
+For details, see Sections 4.1.2.2 and 4.4.2.4 of the @url{https://fits.gsfc.nasa.gov/fits_standard.html, FITS standard} version 4.0 (latest as of this writing).
 
 @item checksum
 @cindex CFITSIO
