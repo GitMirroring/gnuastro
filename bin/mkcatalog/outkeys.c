@@ -99,7 +99,7 @@ outkeys_sbl_nml(struct mkcatalogparams *p,
                         : ( sigma * p->medstd * area / pixarea ),
                         p->zeropoint);
               outkeys_numeric(keylist, &fvalue, GAL_TYPE_FLOAT32, rname,
-                              rcom, "mag/arcsec^2");
+                              rcom, m0s1?"mag/arcsec^2":"mag");
             }
           else
             gal_fits_key_list_fullcomment_add_end(keylist, "Can not "
