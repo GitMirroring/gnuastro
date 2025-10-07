@@ -5,6 +5,7 @@ This is part of GNU Astronomy Utilities (Gnuastro) package.
 Original author:
      Mohammad Akhlaghi <mohammad@akhlaghi.org>
 Contributing author(s):
+     Giacomo Lorenzetti <glorenzetti@cefca.es>
 Copyright (C) 2022-2025 Free Software Foundation, Inc.
 
 Gnuastro is free software: you can redistribute it and/or modify it
@@ -430,20 +431,10 @@ gal_fit_1d_linear_estimate(gal_data_t *fit, gal_data_t *xin)
 
 
 static void
-fit_1d_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
-                          gal_data_t *ywht, int nconst,
-                          gsl_matrix **x,   gsl_vector **c,
-                          gsl_matrix **cov, gsl_vector *y,
-                          gsl_vector *w)
+fit_1d_polynomial_matrix_fill(gal_data_t *xin, int nconst, gsl_matrix **x)
 {
   size_t i, j;
   double *xo, *xi;
-
-  /* Use GSL's own matrix allocation functions for the structures that need
-     allocation and we can't use the same allocated space of the inputs. */
-  *c   = gsl_vector_alloc(nconst);
-  *cov = gsl_matrix_alloc(nconst, nconst);
-  *x   = gsl_matrix_alloc(xin->size, nconst);
 
   /* Fill in the X matrix. */
   xi=xin->array;
@@ -454,7 +445,7 @@ fit_1d_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
          a value of 1.0. */
       xo[ i*nconst ] = 1.0f;
 
-      /* Column i is the multiplication of column i-1 with the input
+      /* Column j is the multiplication of column j-1 with the input
          horizontal value. This will make it a polynomial. */
       for(j=1;j<nconst;++j)
         xo[ i*nconst + j ] = xo[ i*nconst + j-1 ] * xi[i];
@@ -469,6 +460,83 @@ fit_1d_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
     printf("\n");
     exit(0);
   } */
+}
+
+
+
+
+
+static void
+fit_2d_polynomial_matrix_fill(gal_data_t *xin, int nconst,
+                              gsl_matrix **x, size_t maxpower)
+{
+  size_t i, j, k, deg;
+  gal_data_t *xin1, *xin2;
+  double *xo, *xi1, *xi2, *xi1_pow, *xi2_pow;
+
+  xin1=xin;
+  xin2=xin->next;
+
+  xi1_pow=calloc(maxpower+1, sizeof(double));
+  xi2_pow=calloc(maxpower+1, sizeof(double));
+
+  /* Fill in the X matrix. */
+  xi1=xin1->array;
+  xi2=xin2->array;
+  xo=(*x)->data;
+  for(i=0;i<xin1->size;++i)
+    {
+      /* Restart from first column */
+      k=0;
+
+      /* Column k is a combination of powers of the input values.
+         This will make it a polynomial. */
+      for(deg=0; deg<=maxpower; deg++)
+        {
+          /* Store the precomputed powers of xi1 and xi2 */
+          xi1_pow[deg] = deg>0 ? xi1[i]*xi1_pow[deg-1] : 1.0;
+          xi2_pow[deg] = deg>0 ? xi2[i]*xi2_pow[deg-1] : 1.0;
+
+          /* Use the previously computed powers to fill the matrix */
+          for(j=deg+1; j-->0;)
+            xo[ i*nconst + k++ ] = xi1_pow[j] * xi2_pow[deg-j];
+        }
+    }
+
+  /* For a check.
+  {
+    size_t checki=4;
+    printf("Row %zu: ", checki);
+    for(j=0;j<nconst;++j)
+      printf("%.3f ", xo[ checki*nconst + j ]);
+    printf("\n");
+    exit(0);
+  } */
+
+  free(xi1_pow);
+  free(xi2_pow);
+}
+
+
+
+
+
+static void
+fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
+                       gal_data_t *ywht, int nconst,
+                       gsl_matrix **x,   gsl_vector **c,
+                       gsl_matrix **cov, gsl_vector *y,
+                       gsl_vector *w,
+                       size_t maxpower)
+{
+  /* Use GSL's own matrix allocation functions for the structures that need
+     allocation and we can't use the same allocated space of the inputs. */
+  *c   = gsl_vector_alloc(nconst);
+  *cov = gsl_matrix_alloc(nconst, nconst);
+  *x   = gsl_matrix_alloc(xin->size, nconst);
+
+  if(xin->next) fit_2d_polynomial_matrix_fill(xin, nconst, x, maxpower);
+  else          fit_1d_polynomial_matrix_fill(xin, nconst, x);
 
   /* Set the pointers of the 'y' and 'w' GSL vectors. */
   y->data=yin->array;
@@ -479,13 +547,15 @@ fit_1d_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
 
 
 
-gal_data_t *
-gal_fit_1d_polynomial_base(gal_data_t *xin, gal_data_t *yin,
-                           gal_data_t *ywht, size_t maxpower,
-                           uint8_t robustid, double *redchisq)
+static gal_data_t *
+fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
+                    gal_data_t *ywht, size_t maxpower,
+                    uint8_t robustid, double *redchisq)
 {
   /* Low-level variable. */
-  size_t nconst=maxpower+1;
+  size_t nconst = ( xin->next
+                    ? (maxpower+1)*(maxpower+2)/2
+                    : maxpower+1 );
 
   /* Other variables */
   gsl_vector *c=NULL;
@@ -506,13 +576,30 @@ gal_fit_1d_polynomial_base(gal_data_t *xin, gal_data_t *yin,
   gsl_vector *y=&yvec, *w=&wvec; /* These have to be after the two above.*/
 
   /* Basic sanity checks. */
+  if(xin->next)
+    {
+      if(xin->next->next)
+            error(EXIT_FAILURE, 0, "%s: only 1d and 2d polynomials are "
+                  "supported, but more than 2 columns are detected. "
+                  "This might also happen if 'xin->next' "
+                  "(or xin->next->next) is not set to NULL before "
+                  "calling 'gal_fit_polynomial'", __func__);
+      else if(xin->next==yin)
+            error(EXIT_FAILURE, 0, "%s: The second independent variable is "
+                  "points to the measurement variable. Set 'x->next=NULL' "
+                  "before calling 'gal_fit_polynomial'", __func__);
+    }
+
   xdata =        fit_1d_sanity_check(xin,  xin, __func__);
   ydata =        fit_1d_sanity_check(yin,  xin, __func__);
   wdata = ywht ? fit_1d_sanity_check(ywht, xin, __func__) : NULL;
+  xdata->next = ( xin->next
+                  ? fit_1d_sanity_check(xin->next, xin, __func__)
+                  : NULL );
 
   /* Fill all the GSL structures. */
-  fit_1d_polynomial_prepare(xdata, ydata, wdata, nconst,
-                            &x, &c, &cov, y, w);
+  fit_polynomial_prepare(xdata, ydata, wdata, nconst,
+                         &x, &c, &cov, y, w, maxpower);
 
   /* Do the fit (depending on if it is robust or not. */
   if(robustid==GAL_FIT_ROBUST_INVALID)
@@ -596,13 +683,13 @@ gal_fit_1d_polynomial_base(gal_data_t *xin, gal_data_t *yin,
 
 
 gal_data_t *
-gal_fit_1d_polynomial(gal_data_t *xin, gal_data_t *yin,
-                      gal_data_t *ywht, size_t maxpower,
-                      double *redchisq)
+gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
+                   gal_data_t *ywht, size_t maxpower,
+                   double *redchisq)
 {
-  return gal_fit_1d_polynomial_base(xin, yin, ywht, maxpower,
-                                    GAL_FIT_ROBUST_INVALID,
-                                    redchisq);
+  return fit_polynomial_base(xin, yin, ywht, maxpower,
+                             GAL_FIT_ROBUST_INVALID,
+                             redchisq);
 }
 
 
@@ -610,14 +697,14 @@ gal_fit_1d_polynomial(gal_data_t *xin, gal_data_t *yin,
 
 
 gal_data_t *
-gal_fit_1d_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
+gal_fit_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
                              size_t maxpower, uint8_t robustid,
                              double *redchisq)
 {
   /* Robust fitting doesn't use weights (the functions are effectively the
      weight). */
-  return gal_fit_1d_polynomial_base(xin, yin, NULL, maxpower,
-                                    robustid, redchisq);
+  return fit_polynomial_base(xin, yin, NULL, maxpower,
+                             robustid, redchisq);
 }
 
 

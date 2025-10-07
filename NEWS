@@ -198,6 +198,15 @@ See the end of the file for license conditions.
 ** Removed features
 ** Changed features
 
+*** Library
+
+  - gal_fit_polynomial:
+  - gal_fit_polynomial_robust: new names for 'gal_fit_1d_polynomial' and
+    'gal_fit_1d_polynomial_robust'. This is because they have generalized to
+    also accept 2D inputs. The low level implementation now reads the first
+    argument as a list, performing a 1d polynomial (robust) fit if
+    xin->next=NULL, and a 2d one otherwise.
+
 *** Book
 
   - The term "stack" was used in two contexts within the Arithmetic

@@ -5,6 +5,7 @@ This is part of GNU Astronomy Utilities (Gnuastro) package.
 Original author:
      Mohammad Akhlaghi <mohammad@akhlaghi.org>
 Contributing author(s):
+     Giacomo Lorenzetti <glorenzetti@cefca.es>
 Copyright (C) 2022-2025 Free Software Foundation, Inc.
 
 Gnuastro is free software: you can redistribute it and/or modify it
@@ -109,14 +110,14 @@ gal_data_t *
 gal_fit_1d_linear_estimate(gal_data_t *fit, gal_data_t *xin);
 
 gal_data_t *
-gal_fit_1d_polynomial(gal_data_t *xin, gal_data_t *yin,
-                      gal_data_t *ywht, size_t maxpower,
-                      double *redchisq);
+gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
+                   gal_data_t *ywht, size_t maxpower,
+                   double *redchisq);
 
 gal_data_t *
-gal_fit_1d_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
-                             size_t maxpower, uint8_t robustid,
-                             double *redchisq);
+gal_fit_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
+                          size_t maxpower, uint8_t robustid,
+                          double *redchisq);
 
 gal_data_t *
 gal_fit_1d_polynomial_estimate(gal_data_t *fit, gal_data_t *xin);

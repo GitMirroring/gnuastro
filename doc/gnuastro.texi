@@ -44683,7 +44683,7 @@ The respective GSL function is mentioned under each function.
 Identifiers for the various types of fitting functions.
 These can be used by the callers of these functions to select between various fitting types.
 They can easily be converted to, and from, fixed human-readable strings using the @code{gal_fit_name_*} functions below.
-The last one @code{GAL_FIT_ROBUST_NUMBER} is the total number of available fitting methods (can be used to add more macros in the calling program and to avoid overlaps with existing codes).
+The last one @code{GAL_FIT_POLYNOMIAL_NUMBER} is the total number of available fitting methods (can be used to add more macros in the calling program and to avoid overlaps with existing codes).
 @end deffn
 
 @deffn  {Global integer} GAL_FIT_ROBUST_INVALID
@@ -44784,14 +44784,14 @@ Naturally, both have the same number of elements as @code{xin}.
 Being a list, helps in easily printing the output columns to a table (see @ref{Table input output}).
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_1d_polynomial (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, size_t @code{maxpower}, double @code{*redchisq})
+@deftypefun {gal_data_t *} gal_fit_polynomial (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, size_t @code{maxpower}, double @code{*redchisq})
 @cindex Polynomial fit
 @cindex Fitting (polynomial)
-Preform a 1D polynomial fit, formally: @mymath{Y=c+0+c_1X+c_2X^2+\cdots+c_nX^n} (using GSL's multi-parameter regression@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#multi-parameter-regression}}).
-The largest power of @mymath{X} is determined with the @code{maxpower} argument (which is @mymath{n} in the equation above).
+Perform a 1D (or 2D) polynomial fit, formally: @mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_dX^d} (or @mymath{Y=c_0+c_1X_1+c_2X_2+c_3X_1^2+c_4X_1X_2+c_5X_2^2+\cdots+c_nX_1^jX_2^{d-j}}), using GSL's multi-parameter regression@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#multi-parameter-regression}}.
+The degree of the polynomial is determined with the @code{maxpower} argument (which is @mymath{d} in the equation above).
 The reduced @mymath{\chi^2} of the fit is written in the space that @code{*redchisq} points to.
 
-The input @code{xin} contains the independent variable values and the input @code{yin} contains the measured variable values for each independent variable.
+The input @code{xin} contains a list of the independent variable values: given that the function detects the dimensionality of the polynomial checking the number of datasets in the list, it is important to set @code{xin->next=NULL} (or @code{xin->next->next=NULL}, in the 2D case). The input @code{yin} contains the measured variable values for each independent variable.
 When @code{ywht!=NULL}, it is assumed to contain the ``weight'' of each Y measurement (if you don't have weights on your measured values, simply set this to @code{NULL}).
 The weight of each measurement is the inverse of its variance.
 For a Gaussian error distribution with standard deviation @mymath{\sigma}, the weight is therefore @mymath{1/\sigma^2}.
@@ -44809,12 +44809,12 @@ A two dimensional variance-covariance matrix with @mymath{(n+1)\times(n+1)} elem
 @end enumerate
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_1d_polynomial_robust (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{maxpower}, uint8_t @code{robustid}, double @code{*redchisq})
+@deftypefun {gal_data_t *} gal_fit_polynomial_robust (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{maxpower}, uint8_t @code{robustid}, double @code{*redchisq})
 @cindex Robust Polynomial fit
-Preform a 1D robust polynomial fit, formally: @mymath{Y=c+0+c_1X+c_2X^2+\cdots+c_nX^n} (using GSL's robust linear regression@footnote{@url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression}}).
+Perform a 1D (or 2D) robust polynomial fit, formally: @mymath{Y=c+c_1X+c_2X^2+\cdots+c_dX^d} (or @mymath{Y=c_0+c_1X+c_2Y+c_3X^2+c_4XY+c_5Y^2+\cdots+c_nX^jY^{d-j}}), using GSL's robust linear regression@footnote{@url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression}}.
 See the description there for the details.
 
-The inputs and outputs of this function are almost identical to @code{gal_fit_1d_polynomial}, with the difference that you need to specify the function to reject outliers through the @code{robustid} input argument.
+The inputs and outputs of this function are almost identical to @code{gal_fit_polynomial}, with the difference that you need to specify the function to reject outliers through the @code{robustid} input argument.
 You can pass any of the @code{GAL_FIT_ROBUST_*} codes defined at the top of this section to this (the names are identical to the names in GSL).
 @end deftypefun
 
@@ -46784,7 +46784,7 @@ main(void)
 
   /* Read the desired columns. */
   columns = gal_table_read(inname, hdu, NULL, column_ids,
-                           GAL_TABLE_SEARCH_NAME, 0, 1, -1, 1, NULL);
+                           GAL_TABLE_SEARCH_NAME, 0, 1, -1, 1, NULL, NULL);
 
   /* Go over the columns, we will assume that you do not know their type
    * a-priori, so we will check  */

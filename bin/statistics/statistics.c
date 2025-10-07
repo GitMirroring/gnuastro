@@ -1922,23 +1922,24 @@ statistics_fit_polynomial(struct statisticsparams *p)
   double redchisq=NAN; /* Important to initialize. */
   gal_data_t *x=p->input, *y=x->next?x->next:NULL, *w=y->next?y->next:NULL;
 
+  /* Temporarily set the 'next' elements to NULL so the fitting
+     functions interpret the arrays as 1D. */
+  x->next=y->next=NULL;
+
   /* Sanity check and call the fitting functions. */
   switch(p->fitid)
     {
     case GAL_FIT_POLYNOMIAL:
-      if(gal_list_data_number(p->input)!=2) return 2; /* Sanity check. */
-      fit=gal_fit_1d_polynomial(x, y, NULL, p->fitmaxpower, &redchisq);
+      fit=gal_fit_polynomial(x, y, NULL, p->fitmaxpower, &redchisq);
       break;
 
     case GAL_FIT_POLYNOMIAL_ROBUST:
-      if(gal_list_data_number(p->input)!=2) return 2; /* Sanity check. */
-      fit=gal_fit_1d_polynomial_robust(x, y, p->fitmaxpower,
+      fit=gal_fit_polynomial_robust(x, y, p->fitmaxpower,
                                        p->fitrobustid, &redchisq);
       break;
 
     case GAL_FIT_POLYNOMIAL_WEIGHTED:
-      if(gal_list_data_number(p->input)!=3) return 3; /* Sanity check. */
-      fit=gal_fit_1d_polynomial(x, y, w, p->fitmaxpower, &redchisq);
+      fit=gal_fit_polynomial(x, y, w, p->fitmaxpower, &redchisq);
       break;
 
     default:
@@ -1946,6 +1947,10 @@ statistics_fit_polynomial(struct statisticsparams *p)
             "fix the problem. '%d' isn't recognized as a fitting ID",
             __func__, PACKAGE_BUGREPORT, p->fitid);
     }
+
+  /* Put the inputs as a list again. */
+  x->next=y;
+  y->next=w;
 
   /* Print the output. */
   statistics_fit_polynomial_print(p, fit, redchisq, &whtnat);
