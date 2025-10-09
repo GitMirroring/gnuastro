@@ -496,7 +496,7 @@ oneprofile_pix_by_pix(struct mkonthread *mkp)
       /* Save the peak flux if this is the first pixel: */
       if(ispeak) { mkp->peakflux=array[p]; ispeak=0; }
 
-      /* Go over the neighbours and add them to queue of elements
+      /* Go over the neighbors and add them to queue of elements
          to check. */
       GAL_DIMENSION_NEIGHBOR_OP(p, ndim, dsize, 1, dinc,
         {

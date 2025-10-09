@@ -294,7 +294,7 @@ outkeys_confusion_limit_write(struct mkcatalogparams *p,
 
 
 /* Confusion limit: create a k-d tree using the image coordinates of the
-   clumps, then find the nearest neighbour of each clump and return a struct
+   clumps, then find the nearest neighbor of each clump and return a struct
    with the mad-clipped stats. */
 static void
 outkeys_confusion_limit(struct mkcatalogparams *p, gal_data_t *wcscrd,
@@ -323,7 +323,7 @@ outkeys_confusion_limit(struct mkcatalogparams *p, gal_data_t *wcscrd,
   /* Initialize the k-d tree. */
   kdtree=gal_kdtree_create(wcscrd, &root);
 
-  /* Find the nearest neighbour of each clump */
+  /* Find the nearest neighbor of each clump */
   matched=gal_match_kdtree(wcscrd, wcscrd, kdtree, root,
                            GAL_MATCH_ARRANGE_OUTER, NULL,
                            p->cp.numthreads, p->cp.minmapsize,

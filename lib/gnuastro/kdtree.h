@@ -1,5 +1,5 @@
 /*********************************************************************
-kdtree -- Create kd-tree and nearest neighbour searches.
+kdtree -- Create kd-tree and nearest neighbor searches.
 This is part of GNU Astronomy Utilities (Gnuastro) package.
 
 Original author:
@@ -55,13 +55,13 @@ gal_data_t *
 gal_kdtree_create(gal_data_t *coords_raw, size_t *root);
 
 size_t
-gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
-                             size_t root, double *point,
-                             double *least_dist, uint8_t nosamenode);
+gal_kdtree_nearest_neighbor(gal_data_t *coords_raw, gal_data_t *kdtree,
+                            size_t root, double *point,
+                            double *least_dist, uint8_t nosamenode);
 
-gal_data_t *
-gal_kdtree_range_search(gal_data_t *coords_raw, gal_data_t *kdtree,
-                        size_t root, double *point, double radius);
+gal_list_sizet_t *
+gal_kdtree_range(gal_data_t *coords_raw, gal_data_t *kdtree,
+                 size_t root, double *point, double radius);
 
 
 

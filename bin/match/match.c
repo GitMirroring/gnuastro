@@ -260,7 +260,7 @@ match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
     default:
       error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
             "fix the problem. The code '%u' is not recognized for "
-            "'p->type'", __func__, PACKAGE_BUGREPORT, p->arrange);
+            "'p->arrange'", __func__, PACKAGE_BUGREPORT, p->arrange);
     }
 
   /* Set the number of values in this column (for vectors). */
@@ -804,7 +804,7 @@ match_catalog_kdtree(struct matchparams *p, size_t *nummatched)
       if(!p->cp.quiet)
         {
           gettimeofday(&t1, NULL);
-          printf("  - Match using the k-d tree ...\n");
+          printf("  - k-d tree based matching ...\n");
         }
       out = gal_match_kdtree(p->cols1, p->cols2, p->kdtreedata,
                              p->kdtreeroot, p->arrange,
@@ -842,7 +842,7 @@ match_catalog_sort_based(struct matchparams *p, size_t *nummatched)
   if(!p->cp.quiet)
     {
       gettimeofday(&t1, NULL);
-      printf("  - Matching by sorting ...\n");
+      printf("  - Sort-based matching ...\n");
     }
 
   /* Do the matching. */
@@ -874,7 +874,7 @@ match_catalog_output(struct matchparams *p, gal_data_t *mcols,
     {
       gettimeofday(&t1, NULL);
       printf("  - Arranging matched rows (skip this with "
-             "'--logasoutput')...\n");
+             "'--logasoutput') ...\n");
     }
 
   /* Read (and possibly write) the outputs. Note that we only need to

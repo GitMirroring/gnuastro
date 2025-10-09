@@ -1,5 +1,5 @@
 /*********************************************************************
-kdtree -- Create k-d tree and nearest neighbour searches.
+kdtree -- Create k-d tree and nearest neighbor searches.
 This is part of GNU Astronomy Utilities (Gnuastro) package.
 
 Original author:
@@ -62,14 +62,19 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 /* Main structure to keep kd-tree parameters. */
 struct kdtree_params
 {
+  /* Generic */
   size_t ndim;            /* Number of dimentions in the nodes.         */
   size_t *input_row;      /* The indexes of the input table.            */
   gal_data_t **coords;    /* The input coordinates array.               */
-  uint8_t nosamenode;     /* ==1: the exact same match will be ignored. */
   uint32_t *left, *right; /* The indexes of the left and right nodes.   */
+  gal_data_t *left_col, *right_col; /* Values of the left/right columns.*/
 
-  /* The values of the left and right columns. */
-  gal_data_t *left_col, *right_col;
+  /* Nearest neighbor. */
+  uint8_t nosamenode;     /* ==1: the exact same match will be ignored. */
+
+  /* Range search. */
+  double rsq;               /* Radius for region search */
+  gal_list_sizet_t *inrange;/* List of points for range searching.      */
 };
 
 
@@ -101,10 +106,9 @@ kdtree_node_swap(struct kdtree_params *p, size_t node1, size_t node2)
 
 
 
-/* Return the distance between 2 given nodes. The distance is equivalent
-   to the radius of the hypersphere having node as its center.
-
-   Return: Radial distace from given point to the node. */
+/* Return the distance-squared between 2 given nodes. The distance is
+   equivalent to the radius of the hypersphere having node as its
+   center. */
 static double
 kdtree_distance_find(struct kdtree_params *p, size_t node,
                      double *point)
@@ -340,8 +344,7 @@ kdtree_make_partition(struct kdtree_params *p, size_t node_left,
    See `https://en.wikipedia.org/wiki/Quickselect`
    for pseudocode and more details of the algorithm.
 
-   Return: Median node between the given left and right nodes.
-*/
+   Return: Median node between the given left and right nodes. */
 static size_t
 kdtree_median_find(struct kdtree_params *p, size_t node_left,
                    size_t node_right, double *coordinate)
@@ -371,6 +374,7 @@ kdtree_median_find(struct kdtree_params *p, size_t node_left,
         (here median) node. */
       node_pivot = kdtree_make_partition(p, node_left, node_right,
                                          node_median, coordinate);
+
       /* If median is found, break the loop and return median node. */
       if(node_median == node_pivot) break;
 
@@ -467,8 +471,8 @@ gal_kdtree_create(gal_data_t *coords_raw, size_t *root)
   printf("root: %zu\n", *root);
   //*/
 
-  /* Do a reverse permutation to sort the indexes
-     back in the input order. */
+  /* Do a reverse permutation to sort the indexes back in the input
+     order. */
   gal_permutation_apply_inverse(p.left_col, p.input_row);
   gal_permutation_apply_inverse(p.right_col, p.input_row);
 
@@ -499,39 +503,38 @@ gal_kdtree_create(gal_data_t *coords_raw, size_t *root)
 
 
 /****************************************************************
- ********          Nearest-Neighbour Search               *******
+ ********          Nearest-Neighbor Search               *******
  ****************************************************************/
-/* This is a helper function which finds the nearest neighbour of
+/* This is a helper function which finds the nearest neighbor of
    the given point in a kdtree. It calculates the least distance
    from the point, and the index of that nearest node (out_nn).
 
-   See `https://en.wikipedia.org/wiki/K-d_tree#Nearest_neighbour_search`
-   for more information.
-*/
+   See `https://en.wikipedia.org/wiki/K-d_tree#Nearest_neighbor_search`
+   for more information. */
 static void
-kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
-                         double *point, double *least_dist,
-                         size_t *out_nn, size_t depth)
+kdtree_nearest_neighbor(struct kdtree_params *p, uint32_t nodecurr,
+                        double *point, double *least_dist,
+                        size_t *out_nn, size_t depth)
 {
   double d, dx, dx2;
-  size_t axis=depth % p->ndim;    /* Set the working axis. */
+  size_t axis = depth % p->ndim; /* The current working dimension. */
   double *coordinates=p->coords[axis]->array;
 
   /* If no subtree present, don't search further. */
-  if(node_current==GAL_BLANK_UINT32) return;
+  if(nodecurr==GAL_BLANK_UINT32) return;
 
   /* The distance between search point to the current node. */
-  d = kdtree_distance_find(p, node_current, point);
+  d = kdtree_distance_find(p, nodecurr, point);
 
   /* Distance between the splitting coordinate of the search
      point and current node. */
-  dx = coordinates[node_current]-point[axis];
+  dx = coordinates[nodecurr]-point[axis];
 
   /* For a check:
   int checkpoint = point[0]==809 && point[1]==109;
   if(checkpoint)
     printf("%s: (%g,%g) checked row %d with dist %g (leastdist: %g)\n",
-           __func__, point[0], point[1], node_current, d, *least_dist);
+           __func__, point[0], point[1], nodecurr, d, *least_dist);
   //*/
 
   /* Check if the current node is nearer than the previous
@@ -541,12 +544,12 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
     {
       /* Update the distance and nearest-neighbor index. */
       *least_dist = d;
-      *out_nn = node_current;
+      *out_nn = nodecurr;
 
       /* For a check:
       if(checkpoint)
         printf("%s: (%g,%g) new match on %d with dist %g\n", __func__,
-               point[0], point[1], node_current, d);
+               point[0], point[1], nodecurr, d);
       //*/
     }
 
@@ -558,17 +561,17 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
     {
       if(p->nosamenode)
         error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
-              "fix the problem. A neighbour with distance zero is found, "
+              "fix the problem. A neighbor with distance zero is found, "
               " even though it was asked to avoid exact match",
               __func__, PACKAGE_BUGREPORT);
       return;
     }
 
   /* Recursively search in subtrees. */
-  kdtree_nearest_neighbour(p, dx > 0
-                              ? p->left[node_current]
-                              : p->right[node_current],
-                           point, least_dist, out_nn, depth+1);
+  kdtree_nearest_neighbor(p, dx > 0
+                             ? p->left[nodecurr]
+                             : p->right[nodecurr],
+                          point, least_dist, out_nn, depth+1);
 
   /* Since the hyperplanes are all axis-aligned, to check if there is a
      node in other branch which is nearer to the current node is done by a
@@ -580,9 +583,9 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
   if(dx2 >= *least_dist) return;
 
   /* Recursively search other subtrees. */
-  kdtree_nearest_neighbour(p, dx > 0
-                              ? p->right[node_current]
-                              : p->left[node_current],
+  kdtree_nearest_neighbor(p, dx > 0
+                             ? p->right[nodecurr]
+                             : p->left[nodecurr],
                            point, least_dist, out_nn, depth+1);
 }
 
@@ -590,16 +593,15 @@ kdtree_nearest_neighbour(struct kdtree_params *p, uint32_t node_current,
 
 
 
-/* High-level function used to find the nearest neighbour of a given
+/* High-level function used to find the nearest neighbor of a given
    point in a kd-tree. It calculates the least distance of the point
    from the nearest node and returns the index of that node.
 
-   Return: The index of the nearest neighbour node in the kd-tree.
-*/
+   Return: The index of the nearest neighbor node in the kd-tree. */
 size_t
-gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
-                             size_t root, double *point, double *least_dist,
-                             uint8_t nosamenode)
+gal_kdtree_nearest_neighbor(gal_data_t *coords_raw, gal_data_t *kdtree,
+                            size_t root, double *point,
+                            double *least_dist, uint8_t nosamenode)
 {
   struct kdtree_params p={0};
   size_t out_nn=GAL_BLANK_SIZE_T;
@@ -611,16 +613,16 @@ gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
   kdtree_prepare(&p, coords_raw);
 
   /* For a check on the processing time: add the lines below before and
-     after 'kdtree_nearest_neighbour'.
+     after 'kdtree_nearest_neighbor'.
   struct timeval t1; gettimeofday(&t1, NULL);
   gal_timing_report(&t1, "Single kdtree", 2);
   //*/
 
-  /* Use the low-level function to find th nearest neighbour. */
-  kdtree_nearest_neighbour(&p, root, point, least_dist, &out_nn, 0);
+  /* Use the low-level function to find th nearest neighbor. */
+  kdtree_nearest_neighbor(&p, root, point, least_dist, &out_nn, 0);
 
   /* least_dist is the square of the distance between the nearest
-     neighbour and the point (used to improve processing).
+     neighbor and the point (used to improve processing).
      Square root of that is the actual distance. */
   *least_dist = sqrt(*least_dist);
 
@@ -641,49 +643,35 @@ gal_kdtree_nearest_neighbour(gal_data_t *coords_raw, gal_data_t *kdtree,
 /* Low-level function to recursively search for all points within a given
    radius from a target point in the k-d tree. */
 static void
-kdtree_range_search(struct kdtree_params *p, uint32_t node_current,
-                    double *point, double radius_squared,
-                    gal_data_t *results, size_t depth)
+kdtree_range(struct kdtree_params *p, uint32_t nodecurr,
+             double *point, size_t depth)
 {
-  size_t j;
-  double dx, dist_squared;
+  double dx, distsq, rsq=p->rsq;
+  size_t axis = depth % p->ndim; /* The current working dimension. */
+  double *coordinates=p->coords[axis]->array;
 
   /* If we have reached a blank node, return. */
-  if(node_current==GAL_BLANK_UINT32) return;
+  if(nodecurr==GAL_BLANK_UINT32) return;
 
   /* Calculate the distance from the current node to the target point. */
-  dist_squared = kdtree_distance_find(p, p->input_row[node_current], point);
+  distsq = kdtree_distance_find(p, nodecurr, point);
 
   /* If this node is within the radius, add it to results. */
-  if(dist_squared <= radius_squared)
-    {
-      /* Resize the results array to accommodate the new point. */
-      results->array = realloc(results->array,
-                               (results->size + 1) * sizeof(size_t));
-      if(results->array == NULL)
-        error(EXIT_FAILURE, errno, "%s: couldn't allocate memory for "
-              "range search results", __func__);
-
-      /* Add the index of this node to the results. */
-      ((size_t *)results->array)[results->size] = p->input_row[node_current];
-      results->size++;
-    }
-
-  /* Determine which dimension we're splitting on at this depth. */
-  j = depth % p->ndim;
+  if(distsq <= rsq)
+    gal_list_sizet_add(&p->inrange, nodecurr);
 
   /* Calculate the distance along the splitting dimension. */
-  dx = point[j] - ((double *)(p->coords[j]->array))[p->input_row[node_current]];
+  dx = point[axis] - coordinates[nodecurr];
 
   /* Recursively search the subtree that contains the target point. */
-  kdtree_range_search(p, dx <= 0 ? p->left[node_current] : p->right[node_current],
-                      point, radius_squared, results, depth + 1);
+  kdtree_range(p, dx<=0 ? p->left[nodecurr] : p->right[nodecurr],
+               point, depth + 1);
 
   /* If the distance to the splitting plane is less than the radius,
      we need to search the other subtree as well. */
-  if(dx * dx <= radius_squared)
-    kdtree_range_search(p, dx <= 0 ? p->right[node_current] : p->left[node_current],
-                        point, radius_squared, results, depth + 1);
+  if(dx*dx <= rsq)
+    kdtree_range(p, dx<=0 ? p->right[nodecurr] : p->left[nodecurr],
+                 point, depth + 1);
 }
 
 
@@ -691,31 +679,23 @@ kdtree_range_search(struct kdtree_params *p, uint32_t node_current,
 
 
 /* High-level function to find all points within a given radius from a
-   target point in a k-d tree.
-
-   Return: A gal_data_t structure containing the indices of all points
-           within the specified radius. */
-gal_data_t *
-gal_kdtree_range_search(gal_data_t *coords_raw, gal_data_t *kdtree,
-                        size_t root, double *point, double radius)
+   target point in a k-d tree. It will return a a 'gal_data_t' containing
+   the indices of all points within the specified radius. */
+gal_list_sizet_t *
+gal_kdtree_range(gal_data_t *coords_raw, gal_data_t *kdtree,
+                 size_t root, double *point, double radius)
 {
   struct kdtree_params p={0};
-  gal_data_t *results;
-  double radius_squared = radius * radius;
-
-  /* Initialize the results structure. */
-  results = gal_data_alloc(NULL, GAL_TYPE_SIZE_T, 1, &(size_t){0}, NULL, 0,
-                           -1, 1, NULL, NULL, NULL);
-  results->size = 0;
 
   /* Prepare the k-d tree parameters. */
   p.left_col = kdtree;
+  p.rsq = radius * radius;
   kdtree_prepare(&p, coords_raw);
 
   /* Perform the range search. */
-  kdtree_range_search(&p, root, point, radius_squared, results, 0);
+  kdtree_range(&p, root, point, 0);
 
   /* Clean up and return results. */
   kdtree_cleanup(&p, coords_raw);
-  return results;
+  return p.inrange;
 }

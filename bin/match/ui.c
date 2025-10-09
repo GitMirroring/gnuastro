@@ -367,24 +367,6 @@ ui_check_only_options(struct matchparams *p)
   if(p->cp.tableformat==GAL_TABLE_FORMAT_TXT)
     error(EXIT_FAILURE, 0, "the value of '--tableformat' cannot be 'txt'"
           UI_ONLY_FITS_ERR);
-
-  /* Until the following bug is fixed, the users should be warned about the
-     issue with k-d tree matching. */
-  if(p->kdtreemode!=MATCH_KDTREE_DISABLE
-     && p->cp.quiet==0
-     && (   p->arrange==GAL_MATCH_ARRANGE_INNER
-         || p->arrange==GAL_MATCH_ARRANGE_FULL ) )
-    error(EXIT_SUCCESS, 0, "WARNING: k-d tree based matching currently "
-          "has a bug (regarding multiple matches within the aperture "
-          "that may not be flagged and the order of the inputs). "
-          "Therefore the output can be different from sort-based "
-          "matching and duplicate matches may be missed. We recommend "
-          "to use '--kdtree=disable' until this bug has been fixed "
-          "(and this notice is removed). For the current status of this "
-          "bug, see https://savannah.gnu.org/bugs/index.php?67364. "
-          "If it has been fixed you can update your Gnuastro version "
-          "to comfortably use k-d tree based matching. To suppress this "
-          "warning add the '--quiet' option");
 }
 
 
@@ -1241,12 +1223,9 @@ ui_read_check_inputs_setup(int argc, char *argv[], struct matchparams *p)
       printf(PROGRAM_NAME" "PACKAGE_VERSION" started on %s",
              ctime(&p->rawtime));
       nthreads=p->kdtreemode==MATCH_KDTREE_DISABLE ? 1 : p->cp.numthreads;
-      printf("  - Using %zu CPU thread%s%s\n", nthreads,
-             nthreads==1 ? "." : "s.",
+      printf("  - Using %zu CPU thread%s\n", nthreads,
              ( p->kdtreemode==MATCH_KDTREE_DISABLE
                ? " (sort-based match only uses a single thread)" : ""));
-      printf("  - Match algorithm: %s\n",
-             p->kdtree ? "k-d tree" : "sort-based");
       printf("  - Input-1: %s; %zu rows\n",
              gal_fits_name_save_as_string(p->input1name, p->cp.hdu),
              p->cols1->size);

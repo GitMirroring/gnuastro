@@ -104,7 +104,7 @@ $scriptname options:
   -p, --parallaxanderrorcolumn=STR,STR The name of the parallax column.
   -m, --magnituderange=FLT,FLT The range of magnitude.
   -Q, --minaxisratio=FLT  Minimum axis ratio to be accepted (default to 0.9).
-  -M, --mindistdeg=FLT    Minimum distance to more bright neighbour stars.
+  -M, --mindistdeg=FLT    Minimum distance to more bright neighbor stars.
                           to be accepted, in degrees.
   -c, --catalog=STR       Catalog of stars containing:
                           ra, dec, magnitude, parrallax, parrallax_error.
@@ -740,7 +740,7 @@ echo "# Column 3: $field [mag,f64] Magnitude"       >> $moreneighbor
 asttable $circular -c$racolumn,$deccolumn,$field \
          | while read r d mag; do
 
-   # Make a file for number of neighbourhood.
+   # Make a file for number of neighborhood.
    numberneighbor=$tmpdir/"$r_$d"th-star-neighbor.fits
 
    # Find number of neighborhod for each star.

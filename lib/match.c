@@ -1350,9 +1350,9 @@ match_distance_find(struct match_kdtree_params *p, size_t ai, size_t bi)
 {
   size_t i;
   double delta[3];
-  for(i=0;i<p->ndim;++i) delta[i]=p->b[i][bi] - p->a[i][ai];
-  return match_distance(delta, p->iscircle, p->ndim, p->aperture, p->c,
-                        p->s);
+  for(i=0;i<p->ndim;++i) delta[i] = p->b[i][bi] - p->a[i][ai];
+  return match_distance(delta, p->iscircle, p->ndim, p->aperture,
+                        p->c, p->s);
 }
 
 
@@ -1372,7 +1372,7 @@ match_kdtree_worker(void *in_prm)
   uint8_t *existA;
   size_t i, j, ai, bi, h_i;
   gal_data_t *ccol, *Aexist;
-  gal_list_sizet_t *same_dist;
+  gal_list_sizet_t *inrange;
   double d, po, *point=NULL, least_dist;
 
   /* Allocate space for all the matching points (based on the number of
@@ -1431,19 +1431,29 @@ match_kdtree_worker(void *in_prm)
       /* Continue with the match if the point is in-range. */
       if(iscovered)
         {
-          /* Find the index of the nearest neighbor in the first catalog to
-             this point in the second catalog. */
-          ai = gal_kdtree_nearest_neighbour(p->A, p->A_kdtree,
+          /* If an aperture was defined and it is non-zero, find all the
+             points in the given aperture. Otherwise, return the index of
+             the nearest neighbor in the first catalog to this point in the
+             second catalog. */
+          if(p->aperture || p->aperture[0]>0.0f)
+            {
+              inrange=gal_kdtree_range(p->A, p->A_kdtree, p->kdtree_root,
+                                       point, p->aperture[0]);
+              if(inrange==NULL) continue; /* Nothing matched. */
+              else if(inrange->next==NULL) /* Only one match. */
+                ai=gal_list_sizet_pop(&inrange);
+            }
+          else
+            ai=gal_kdtree_nearest_neighbor(p->A, p->A_kdtree,
                                             p->kdtree_root, point,
-                                            p->aperture[0], &least_dist,
-                                            &same_dist, p->nosamenode);
+                                            &least_dist, p->nosamenode);
 
           /* For a check:
           int checkpoint = CHECKPOINT;
           if(checkpoint)
-            printf("%s: bi:%zu nearest_neighbour ai:%zu (r: %g)%s\n",
+            printf("%s: bi:%zu nearest_neighbor ai:%zu (r: %g)%s\n",
                    __func__, bi, ai, least_dist,
-                   (same_dist && same_dist->next)?" WITH SAME":"");
+                   (inrange && inrange->next)?" WITH SAME":"");
           //*/
 
           /* Keep the index and distance based on the arrangement of this
@@ -1456,10 +1466,10 @@ match_kdtree_worker(void *in_prm)
               /* There was more than one match within the aperture (this
                  includes 'ai' that was returned), so we need to parse
                  through them (and flag them all!). */
-              if(same_dist && same_dist->next)
-                while(same_dist) /* Go over all the 'ai's with similar */
-                  {              /* distances: we need them.           */
-                    ai=gal_list_sizet_pop(&same_dist);
+              if(inrange)
+                while(inrange) /* Go over all the 'ai's with similar */
+                  {            /* distances: we need them.           */
+                    ai=gal_list_sizet_pop(&inrange);
                     d=match_distance_find(p, ai, bi);
                     if(d <= p->aperture[0])
                       {
@@ -1480,9 +1490,7 @@ match_kdtree_worker(void *in_prm)
                       }
                   }
 
-              /* If 'same_dist' has a single element, there was only a
-                 single match (with the returned 'ai'), so calculate the
-                 distance and add it. */
+              /* If only the single nearest neighbor was requested. */
               else
                 {
                   d=match_distance_find(p, ai, bi);
@@ -1502,22 +1510,28 @@ match_kdtree_worker(void *in_prm)
                       //*/
                     }
 
-                  /* Clean up: same_dist is redundant here: if it exists,
-                     it has 'ai' in it, if it doesn't exist, it means that
+                  /* Clean up: inrange is redundant here: if it exists, it
+                     has 'ai' in it, if it doesn't exist, it means that
                      'ai' was more distant than the aperture's radius! */
-                  if(same_dist) free(same_dist);
+                  if(inrange) free(inrange);
                 }
               break;
 
-            /* For the 'outer' match if there is a 'same_dist', it should
-               be freed (it is not relevant). */
+            /* For the 'outer' match if there is a 'inrange', it should be
+               freed (it is not relevant). */
             case GAL_MATCH_ARRANGE_OUTER:
             case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
               d=match_distance_find(p, ai, bi);
-              if(same_dist) free(same_dist);
+              if(inrange) free(inrange);
               p->aoinb[bi]=ai;
               p->aoinbd[bi]=d;
               break;
+
+            default:
+              error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
+                    "'%s' to fix the problem. The identifier '%d' is not "
+                    "a recognized arrangement identifier", __func__,
+                    PACKAGE_BUGREPORT, p->arrange);
             }
         }
     }

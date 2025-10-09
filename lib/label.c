@@ -280,7 +280,7 @@ gal_label_watershed(gal_data_t *values, gal_data_t *indexs,
            the same flux as this one, it does not guarantee that it should
            be given the same label. Similar to the breadth first search
            algorithm for finding connected components, we will search all
-           the neighbours and the neighbours of those neighbours that have
+           the neighbors and the neighbours of those neighbours that have
            the same flux of this pixel to see if they touch any label or
            not and to finally give them all the same label. */
         if( (a+1)<af && arr[*a]==arr[*(a+1)] )
@@ -407,7 +407,7 @@ gal_label_watershed(gal_data_t *values, gal_data_t *indexs,
             /* Go over all the fully connected neighbors of this pixel and
                see if all the neighbors (with maximum connectivity: the
                number of dimensions) that have a non-macro value belong to
-               one label or not. If the pixel is neighboured by more than
+               one label or not. If the pixel is neighbored by more than
                one label, set it as a river pixel. Also if it is touching a
                zero valued pixel (which does not belong to this object),
                set it as a river pixel. */
@@ -989,7 +989,7 @@ gal_label_grow_indexs(gal_data_t *labels, gal_data_t *indexs, int withrivers,
 
              n1==0                    --> No labeled neighbor was found.
              n1==GAL_LABEL_RIVER      --> Connecting two labeled regions.
-             n1>0                     --> Only has one neighbouring label.
+             n1>0                     --> Only has one neighboring label.
 
              The first one means that no neighbors were found and this
              pixel should be kept for the next loop (we'll be growing the

@@ -32346,14 +32346,6 @@ In other words, to be unambiguous, there should only a single row/entry in both 
 If there is more than one match in either catalog to the other, Gnuastro's Match program will remove the match and put all the entries of the second catalog that have multiple matches in a HDU of the output FITS file called @code{FLAGGED-IN-2ND}.
 These are necessary for the match output to be reliable: simply reporting the nearest match when there is more than one match within the given aperture will lead to an ambiguous result.
 
-@cartouche
-@noindent
-@strong{Bug in k-d tree for unambiguous match:} as of this writing, there is a bug in the k-d tree based inner/full arrangement that cannot guarantee an unambiguous match.
-For the status of this bug, see @url{https://savannah.gnu.org/bugs/?67364}.
-This notice will be removed when the bug has been fixed.
-As long as this bug has not been fixed, the default matching algorithm will be the sort-based algorithm.
-@end cartouche
-
 The issue is best displayed in practice.
 Let's assume you have two catalogs called @file{x.fits} and @file{o.fits} and the points are distributed as follows (in four ``clusters''):
 
@@ -32442,14 +32434,6 @@ Matching involves two catalogs, let's call them catalog A (with N rows) and cata
 The most basic matching algorithm that immediately comes to mind is this:
 for each row in A (let's call it @mymath{A_i}), go over all the rows in B (@mymath{B_j}, where @mymath{0<j<M}) and calculate the distance @mymath{d(A_i,B_j)}.
 Find the @mymath{B_j} that has the smallest distance to @mymath{A_i}, and if that distance is smaller than the acceptable distance threshold (or radius, or aperture), consider @mymath{A_i} and @mymath{B_j} as a match.
-
-@cartouche
-@noindent
-@strong{Bug in k-d tree for unambiguous match:} as of this writing, there is a bug in the k-d tree based inner/full arrangement that cannot guarantee an unambiguous match.
-For the status of this bug, see @url{https://savannah.gnu.org/bugs/?67364}.
-This notice will be removed when the bug has been fixed.
-As long as this bug has not been fixed, the default matching algorithm will be the sort-based algorithm.
-@end cartouche
 
 However, this basic parsing algorithm is very computationally expensive:
 @mymath{N\times M} distances have to measured, and calculating the distance requires a square root and power of 2: in 2 dimensions it would be @mymath{d(A_i,B_j)=\sqrt{(B_{ix}-A_{ix})^2+(B_{iy}-A_{iy})^2}}.
@@ -44129,16 +44113,13 @@ astfits kd-tree.fits -h1
 
 @end deftypefun
 
-@deftypefun size_t gal_kdtree_nearest_neighbour (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{aperture}, double @code{*least_dist}, gal_list_sizet_t @code{**same_dist}, uint8_t @code{nosamenode})
+@deftypefun size_t gal_kdtree_nearest_neighbor (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{*least_dist}, uint8_t @code{nosamenode})
 Returns the index of the nearest input point to the query point (@code{point}, assumed to be an array with same number of elements as @code{gal_data_t}s in @code{coords_raw}).
-If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbour within the same dataset.
+If @code{nosamenode} is not zero, exact matches are discarded.
+This is useful for instance when we want to search the nearest neighbor within the same dataset.
 The distance between the query point and its nearest neighbor is stored in the space that @code{least_dist} points to.
 This search is efficient due to the constant checking for the presence of possible best points in other branches.
 If it is not possible for the other branch to have a better nearest neighbor, that branch is not searched.
-
-If @code{aperture} is greater than 0, the set of points whose distance is smaller than the given value will be returned as a list in the @code{**same_dist} list.
-However, this is known to miss some of the points within the aperture (see @url{https://savannah.gnu.org/bugs/?67364, bug 67364}).
-Please update if/when that bug is fixed.
 
 As an example, let's use the k-d tree that was created in the example of @code{gal_kdtree_create} (above) and find the nearest row to a given coordinate (@code{point}).
 This will be a very common scenario, especially in large and multi-dimensional datasets where the k-d tree creation can take long and you do not want to re-create the k-d tree every time.
@@ -44185,9 +44166,9 @@ main (void)
   rkey=gal_data_copy_to_new_type(&keysll[0], GAL_TYPE_SIZE_T);
   root=((size_t *)(rkey->array))[0];
 
-  /* Find the nearest neighbour of the point. */
-  nearest_index=gal_kdtree_nearest_neighbour(input, kdtree, root,
-                                             point, &least_dist);
+  /* Find the nearest neighbor of the point. */
+  nearest_index=gal_kdtree_nearest_neighbor(input, kdtree, root,
+                                            point, &least_dist);
 
   /* Print the results. */
   in_x=input->array;
@@ -44204,6 +44185,13 @@ main (void)
   return EXIT_SUCCESS;
 @}
 @end example
+@end deftypefun
+
+@deftypefun {gal_list_sizet_t *} gal_kdtree_range (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{radius})
+
+Return the list of all input indexs that are within the given @code{radius} of the desired point.
+The rest of the input arguments are like the @code{gal_kdtree_nearest_neighbor}.
+For more on the usage of @code{size_t} lists, see @ref{List of size_t}.
 @end deftypefun
 
 
@@ -44345,7 +44333,7 @@ The @code{arrange}-ment of the match output should be set with one of the @code{
 The k-d tree of the first input (@code{coord1_kdtree}), and its root index (@code{kdtree_root}), should be constructed and found before calling this function, to do this, you can use the @code{gal_kdtree_create} of @ref{K-d tree}.
 The desired @code{aperture} array is the same as @code{gal_match_sort_based} and described at the top of this section, but the appreture array can be @code{NULL} for an outer arrangement (it will not be used).
 If @code{coord1_kdtree==NULL}, this function will return a @code{NULL} pointer and write a value of @code{0} in the space that @code{nummatched} points to.
-If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbour within the same dataset.
+If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbor within the same dataset.
 If @code{numthreads} threads is larger than one, the matching will be done in parallel.
 For inner and full arragements, this function will allocate and return a @code{flag} array that has a value of 1 for ambiguous elements of the second input and 0 for good or non-matching elements (see @ref{Unambiguous matching}).
 

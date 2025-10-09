@@ -186,6 +186,9 @@ See the end of the file for license conditions.
   - GAL_FIT_MATRIX_NUMBER_ALL: the number of 1D matrices and total
     matrices used in fitting.
 
+  - gal_kdtree_range: returns the list of points that are within a given
+    radius of the given point. Implemented by Barış Güngör.
+
   - gal_label_measure: Replace a label with measured values over it (see
     description of newly added 'label-*' operators in Arithmetic).
 
@@ -312,10 +315,10 @@ See the end of the file for license conditions.
 
 *** Match
 
-  - The default arrangement of outputs is set to sort-based due to a bug in
-    the k-d tree match (sometimes producing ambiguous matches) as described
-    in https://savannah.gnu.org/bugs/?67364. Once this bug has been fixed,
-    the default arrangement will be set to k-d tree again.
+  - Ambiguous matches (when more than one object is within the given
+    aperture) are flagged and kept in a new HDU of the output. A new
+    "Unambiguous matching" section has been added in the "Match" section of
+    the book to describe this important feature.
 
   - Output can only be in FITS format. Until this version, the output could
     be plain-text also. However, plain-text tables can only be a single
@@ -358,9 +361,8 @@ See the end of the file for license conditions.
   - gal_blank_remove: new 'free_if_all_blank' to enable optional freeing of
     the input array when all elements are blank.
 
-  - gal_kdtree_nearest_neighbour: two new argument to input a "distance
-    error" (or 'aperture') and return the set of points that within that
-    error during the parsing of the tree.
+  - gal_kdtree_nearest_neighbor: new name of 'gal_kdtree_nearest_neighbour'
+    which was in British English (Gnuastro uses American English).
 
   - gal_match_kdtree: a new 'arrange' and 'flag' argument have been added
     to define the arrangement of the output.
