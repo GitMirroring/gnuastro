@@ -613,6 +613,9 @@ ui_check_only_options(struct statisticsparams *p)
                       "function in the polynomial fittings, please see "
                       "the manual for the acceptable names",
                       p->fitrobustname);
+
+              /* If the user asked for 'default', write the actual name */
+              p->fitrobustname=gal_fit_name_robust_from_id(p->fitrobustid);
             }
         }
     }

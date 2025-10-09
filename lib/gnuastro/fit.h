@@ -72,6 +72,7 @@ enum gal_fit_types
 enum gal_fit_robust_types
 {
   GAL_FIT_ROBUST_INVALID,   /* Invalid (=0 by C standard).  */
+  GAL_FIT_ROBUST_DEFAULT,
   GAL_FIT_ROBUST_BISQUARE,
   GAL_FIT_ROBUST_CAUCHY,
   GAL_FIT_ROBUST_FAIR,

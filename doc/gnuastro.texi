@@ -44678,12 +44678,13 @@ The respective GSL function is mentioned under each function.
 @deffnx {Global integer} GAL_FIT_LINEAR_NO_CONSTANT
 @deffnx {Global integer} GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED
 @deffnx {Global integer} GAL_FIT_POLYNOMIAL
+@deffnx {Global integer} GAL_FIT_POLYNOMIAL_ROBUST
 @deffnx {Global integer} GAL_FIT_POLYNOMIAL_WEIGHTED
-@deffnx {Global integer} GAL_FIT_POLYNOMIAL_NUMBER
+@deffnx {Global integer} GAL_FIT_NUMBER
 Identifiers for the various types of fitting functions.
 These can be used by the callers of these functions to select between various fitting types.
 They can easily be converted to, and from, fixed human-readable strings using the @code{gal_fit_name_*} functions below.
-The last one @code{GAL_FIT_POLYNOMIAL_NUMBER} is the total number of available fitting methods (can be used to add more macros in the calling program and to avoid overlaps with existing codes).
+The last one @code{GAL_FIT_NUMBER} is the total number of available fitting methods (can be used to add more macros in the calling program and to avoid overlaps with existing codes).
 @end deffn
 
 @deffn  {Global integer} GAL_FIT_ROBUST_INVALID

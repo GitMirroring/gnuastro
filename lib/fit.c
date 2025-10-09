@@ -112,7 +112,8 @@ gal_fit_name_robust_to_id(char *name)
   if(name==NULL) return GAL_FIT_ROBUST_INVALID;
 
   /* Match the name. */
-  if(      !strcmp(name, "bisquare") ) return GAL_FIT_ROBUST_BISQUARE;
+  if(      !strcmp(name, "default")  ) return GAL_FIT_ROBUST_DEFAULT;
+  else if( !strcmp(name, "bisquare") ) return GAL_FIT_ROBUST_BISQUARE;
   else if( !strcmp(name, "cauchy")   ) return GAL_FIT_ROBUST_CAUCHY;
   else if( !strcmp(name, "fair")     ) return GAL_FIT_ROBUST_FAIR;
   else if( !strcmp(name, "huber")    ) return GAL_FIT_ROBUST_HUBER;
@@ -136,6 +137,7 @@ gal_fit_name_robust_from_id(uint8_t robustid)
 {
   switch(robustid)
     {
+    case GAL_FIT_ROBUST_DEFAULT:
     case GAL_FIT_ROBUST_BISQUARE:   return "bisquare";
     case GAL_FIT_ROBUST_CAUCHY:     return "cauchy";
     case GAL_FIT_ROBUST_FAIR:       return "fair";
@@ -614,6 +616,7 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
       /* Select the robust function type. */
       switch(robustid)
         {
+        case GAL_FIT_ROBUST_DEFAULT:
         case GAL_FIT_ROBUST_BISQUARE: rtype=gsl_multifit_robust_bisquare;
           break;
         case GAL_FIT_ROBUST_CAUCHY:   rtype=gsl_multifit_robust_cauchy;
