@@ -35507,10 +35507,11 @@ The zero point is therefore an important calibration of pixel values (as astrome
 The fundamental concepts behind the zero point are described in @ref{Brightness flux magnitude}.
 We will therefore not go deeper into the basics here and stick to the practical aspects of it.
 
-The purpose of Gnuastro’s @command{astscript-zeropoint} script is to obtain the zero point of an image by considering another image (where the zero point is already known), or a catalog.
-In the
-The operation involves multiple lower-level programs in a standard series of steps.
-For example, when using another image, the script will take the following steps:
+The purpose of Gnuastro’s @command{astscript-zeropoint} script is to obtain the zero point of an image using a reference image, or a reference catalog.
+The reference image must have a known zero point, and the reference should contain known positions and magnitudes of stars; both should ofcourse also contain some spatial overlap (on the sky) with the input image.
+The reference data (catalog or image) serve as the anchor point to which your input image will be calibrated (a zero point will be found for it).
+By comparing the instrumental magnitudes of the stars with their catalogued (standard) magnitudes, the differences can be calculated and used to determine the zero point.
+For example, when using a reference image, the script will take the following steps:
 
 @enumerate
 @item
@@ -35526,7 +35527,7 @@ Match the two catalogs@footnote{For a tutorial on matching catalogs, see @ref{Ma
 The difference between the input and reference magnitudes should be independent of the magnitude of the stars.
 This does not hold when the stars are saturated in one/both the images (giving us a bright-limit for the magnitude range to use) or for stars fainter than a certain magnitude, where the signal-to-noise ratio drops significantly in one/both images (giving us a faint limit for the magnitude range to use).
 @item
-Since a zero point of 0 was used for the input image, the magnitude difference above (in the reliable magnitude range) is the zero point of the input image.
+Since the input image was assigned a zero point of zero, the magnitude difference shown above (within the reliable magnitude range) corresponds to the zero point of the input image.
 @end enumerate
 
 In the ``Tutorials'' chapter of this Gnuastro book, there are two tutorials dedicated to the usage of this script.
