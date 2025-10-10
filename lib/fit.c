@@ -158,6 +158,28 @@ gal_fit_name_robust_from_id(uint8_t robustid)
 
 
 
+static char *
+fit_name_matrix_from_id(uint8_t matrixid)
+{
+  switch(matrixid)
+    {
+    case GAL_FIT_MATRIX_1D_POLYNOMIAL:     return "1d-polynomial";
+    case GAL_FIT_MATRIX_2D_POLYNOMIAL:     return "2d-polynomial";
+    case GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV: return "1d-polynomial-tpv";
+    default:                               return NULL;
+    }
+
+  /* If control reaches here, there was a bug! */
+  error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+        "find a fix it. Control should not have reached this point",
+        __func__, PACKAGE_BUGREPORT);
+  return NULL;
+}
+
+
+
+
+
 
 
 
@@ -432,6 +454,32 @@ gal_fit_1d_linear_estimate(gal_data_t *fit, gal_data_t *xin)
 
 
 
+static size_t
+fit_polynomial_nconst(uint8_t maxpower, uint8_t matrixid)
+{
+  size_t nconst;
+
+  switch(matrixid)
+    {
+      case GAL_FIT_MATRIX_1D_POLYNOMIAL:
+        nconst=maxpower+1;
+        break;
+      case GAL_FIT_MATRIX_2D_POLYNOMIAL:
+        nconst=(maxpower+1)*(maxpower+2)/2;
+        break;
+      case GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV:
+        /* Allow the odd radial terms */
+        nconst=(maxpower+1)*(maxpower+2)/2 + (maxpower/2 + 1);
+        break;
+    }
+
+  return nconst;
+}
+
+
+
+
+
 static void
 fit_1d_polynomial_matrix_fill(gal_data_t *xin, int nconst, gsl_matrix **x)
 {
@@ -470,8 +518,9 @@ fit_1d_polynomial_matrix_fill(gal_data_t *xin, int nconst, gsl_matrix **x)
 
 static void
 fit_2d_polynomial_matrix_fill(gal_data_t *xin, int nconst,
-                              gsl_matrix **x, size_t maxpower)
+                              gsl_matrix **x, size_t maxpower, uint8_t tpv)
 {
+  double r, r_pow;
   size_t i, j, k, deg;
   gal_data_t *xin1, *xin2;
   double *xo, *xi1, *xi2, *xi1_pow, *xi2_pow;
@@ -491,6 +540,10 @@ fit_2d_polynomial_matrix_fill(gal_data_t *xin, int nconst,
       /* Restart from first column */
       k=0;
 
+      /* Compute the radius */
+      r=sqrt( xi1[i]*xi1[i] + xi2[i]*xi2[i] );
+      r_pow=r;
+
       /* Column k is a combination of powers of the input values.
          This will make it a polynomial. */
       for(deg=0; deg<=maxpower; deg++)
@@ -502,6 +555,15 @@ fit_2d_polynomial_matrix_fill(gal_data_t *xin, int nconst,
           /* Use the previously computed powers to fill the matrix */
           for(j=deg+1; j-->0;)
             xo[ i*nconst + k++ ] = xi1_pow[j] * xi2_pow[deg-j];
+
+          /* If a tpv polynomial is requested, add odd powers of
+             the radial term
+             See: https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html */
+          if(tpv && deg%2)
+            {
+              xo[ i*nconst + k++ ] = r_pow;
+              r_pow*=(r*r);
+            }
         }
     }
 
@@ -529,7 +591,7 @@ fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
                        gsl_matrix **x,   gsl_vector **c,
                        gsl_matrix **cov, gsl_vector *y,
                        gsl_vector *w,
-                       size_t maxpower)
+                       size_t maxpower, uint8_t matrixid)
 {
   /* Use GSL's own matrix allocation functions for the structures that need
      allocation and we can't use the same allocated space of the inputs. */
@@ -537,8 +599,23 @@ fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
   *cov = gsl_matrix_alloc(nconst, nconst);
   *x   = gsl_matrix_alloc(xin->size, nconst);
 
-  if(xin->next) fit_2d_polynomial_matrix_fill(xin, nconst, x, maxpower);
-  else          fit_1d_polynomial_matrix_fill(xin, nconst, x);
+  /* Fill the design matrix */
+  switch(matrixid)
+    {
+    case GAL_FIT_MATRIX_1D_POLYNOMIAL:
+      fit_1d_polynomial_matrix_fill(xin, nconst, x);
+      break;
+    case GAL_FIT_MATRIX_2D_POLYNOMIAL:
+      fit_2d_polynomial_matrix_fill(xin, nconst, x, maxpower, 0);
+      break;
+    case GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV:
+      fit_2d_polynomial_matrix_fill(xin, nconst, x, maxpower, 1);
+      break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "fix the problem. '%d' isn't recognized as a design matrix ID",
+            __func__, PACKAGE_BUGREPORT, matrixid);
+    }
 
   /* Set the pointers of the 'y' and 'w' GSL vectors. */
   y->data=yin->array;
@@ -552,12 +629,11 @@ fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
 static gal_data_t *
 fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
                     gal_data_t *ywht, size_t maxpower,
-                    uint8_t robustid, double *redchisq)
+                    uint8_t robustid, double *redchisq,
+                    uint8_t matrixid)
 {
   /* Low-level variable. */
-  size_t nconst = ( xin->next
-                    ? (maxpower+1)*(maxpower+2)/2
-                    : maxpower+1 );
+  size_t nconst = fit_polynomial_nconst(maxpower, matrixid);
 
   /* Other variables */
   gsl_vector *c=NULL;
@@ -581,16 +657,24 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
   if(xin->next)
     {
       if(xin->next->next)
-            error(EXIT_FAILURE, 0, "%s: only 1d and 2d polynomials are "
-                  "supported, but more than 2 columns are detected. "
-                  "This might also happen if 'xin->next' "
-                  "(or xin->next->next) is not set to NULL before "
-                  "calling 'gal_fit_polynomial'", __func__);
+        error(EXIT_FAILURE, 0, "%s: only 1d and 2d polynomials are "
+              "supported, but more than 2 columns are detected. "
+              "This might also happen if 'xin->next' "
+              "(or xin->next->next) is not set to NULL before "
+              "calling 'gal_fit_polynomial'", __func__);
       else if(xin->next==yin)
-            error(EXIT_FAILURE, 0, "%s: The second independent variable is "
-                  "points to the measurement variable. Set 'x->next=NULL' "
-                  "before calling 'gal_fit_polynomial'", __func__);
+        error(EXIT_FAILURE, 0, "%s: The second independent variable is "
+              "points to the measurement variable. Set 'x->next=NULL' "
+              "before calling 'gal_fit_polynomial'", __func__);
+      else if(matrixid < GAL_FIT_MATRIX_1D_NUMBER)
+        error(EXIT_FAILURE, 0, "%s: 'matrixid=%s' describes a 1d design "
+              "matrix, but 'xin' is a list of more than one datasets",
+              __func__, fit_name_matrix_from_id(matrixid));
     }
+  else if(matrixid > GAL_FIT_MATRIX_1D_NUMBER)
+    error(EXIT_FAILURE, 0, "%s: 'matrixid=%s' describes a 2d design "
+          "matrix, but 'xin' is a list of just one dataset",
+          __func__, fit_name_matrix_from_id(matrixid));
 
   xdata =        fit_1d_sanity_check(xin,  xin, __func__);
   ydata =        fit_1d_sanity_check(yin,  xin, __func__);
@@ -601,7 +685,7 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
 
   /* Fill all the GSL structures. */
   fit_polynomial_prepare(xdata, ydata, wdata, nconst,
-                         &x, &c, &cov, y, w, maxpower);
+                         &x, &c, &cov, y, w, maxpower, matrixid);
 
   /* Do the fit (depending on if it is robust or not. */
   if(robustid==GAL_FIT_ROBUST_INVALID)
@@ -688,11 +772,11 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
 gal_data_t *
 gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
                    gal_data_t *ywht, size_t maxpower,
-                   double *redchisq)
+                   double *redchisq, uint8_t matrixid)
 {
   return fit_polynomial_base(xin, yin, ywht, maxpower,
                              GAL_FIT_ROBUST_INVALID,
-                             redchisq);
+                             redchisq, matrixid);
 }
 
 
@@ -702,12 +786,12 @@ gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
 gal_data_t *
 gal_fit_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
                              size_t maxpower, uint8_t robustid,
-                             double *redchisq)
+                             double *redchisq, uint8_t matrixid)
 {
   /* Robust fitting doesn't use weights (the functions are effectively the
      weight). */
   return fit_polynomial_base(xin, yin, NULL, maxpower,
-                             robustid, redchisq);
+                             robustid, redchisq, matrixid);
 }
 
 

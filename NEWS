@@ -202,10 +202,11 @@ See the end of the file for license conditions.
 
   - gal_fit_polynomial:
   - gal_fit_polynomial_robust: new names for 'gal_fit_1d_polynomial' and
-    'gal_fit_1d_polynomial_robust'. This is because they have generalized to
-    also accept 2D inputs. The low level implementation now reads the first
-    argument as a list, performing a 1d polynomial (robust) fit if
-    xin->next=NULL, and a 2d one otherwise.
+    'gal_fit_1d_polynomial_robust'. This is because they have generalized
+    to also accept 2D inputs. The design matrix is selected by the user
+    using the newly implemented enum `gal_fit_matrix_types`. Currently only
+    ordinary polynomials and the TPV one (2D, with extra radial terms) are
+    supported.
 
 *** Book
 

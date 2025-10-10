@@ -84,6 +84,24 @@ enum gal_fit_robust_types
   GAL_FIT_ROBUST_NUMBER
 };
 
+enum gal_fit_matrix_types
+{
+  GAL_FIT_MATRIX_INVALID,   /* Invalid (=0 by C standard).  */
+  GAL_FIT_MATRIX_1D_POLYNOMIAL,
+
+  /* This will be the total number (+1) of 1d supported design matrices
+     (used as sanitizer). */
+  GAL_FIT_MATRIX_1D_NUMBER,
+
+  GAL_FIT_MATRIX_2D_POLYNOMIAL,
+  GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV,
+
+  /* This will be the total number of shapes (good for scripts). */
+  GAL_FIT_MATRIX_TOTAL_NUMBER
+};
+
+
+
 
 
 /* Functions */
@@ -113,12 +131,12 @@ gal_fit_1d_linear_estimate(gal_data_t *fit, gal_data_t *xin);
 gal_data_t *
 gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
                    gal_data_t *ywht, size_t maxpower,
-                   double *redchisq);
+                   double *redchisq, uint8_t matrixid);
 
 gal_data_t *
 gal_fit_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
                           size_t maxpower, uint8_t robustid,
-                          double *redchisq);
+                          double *redchisq, uint8_t matrixid);
 
 gal_data_t *
 gal_fit_1d_polynomial_estimate(gal_data_t *fit, gal_data_t *xin);

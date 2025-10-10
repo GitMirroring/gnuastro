@@ -1930,16 +1930,19 @@ statistics_fit_polynomial(struct statisticsparams *p)
   switch(p->fitid)
     {
     case GAL_FIT_POLYNOMIAL:
-      fit=gal_fit_polynomial(x, y, NULL, p->fitmaxpower, &redchisq);
+      fit=gal_fit_polynomial(x, y, NULL, p->fitmaxpower, &redchisq,
+                             GAL_FIT_MATRIX_1D_POLYNOMIAL);
       break;
 
     case GAL_FIT_POLYNOMIAL_ROBUST:
       fit=gal_fit_polynomial_robust(x, y, p->fitmaxpower,
-                                       p->fitrobustid, &redchisq);
+                                    p->fitrobustid, &redchisq,
+                                    GAL_FIT_MATRIX_1D_POLYNOMIAL);
       break;
 
     case GAL_FIT_POLYNOMIAL_WEIGHTED:
-      fit=gal_fit_polynomial(x, y, w, p->fitmaxpower, &redchisq);
+      fit=gal_fit_polynomial(x, y, w, p->fitmaxpower, &redchisq,
+                             GAL_FIT_MATRIX_1D_POLYNOMIAL);
       break;
 
     default:

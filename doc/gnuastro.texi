@@ -44701,6 +44701,16 @@ For a description of each, see @url{https://www.gnu.org/s/gsl/doc/html/lls.html#
 The last one @code{GAL_FIT_ROBUST_NUMBER} is the total number of available functions (can be used to add more macros in the calling program and to avoid overlaps with existing codes).
 @end deffn
 
+@deffn  {Global integer} GAL_FIT_MATRIX_INVALID
+@deffnx {Global integer} GAL_FIT_MATRIX_1D_POLYNOMIAL
+@deffnx {Global integer} GAL_FIT_MATRIX_1D_NUMBER
+@deffnx {Global integer} GAL_FIT_MATRIX_2D_POLYNOMIAL
+@deffnx {Global integer} GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV
+@deffnx {Global integer} GAL_FIT_MATRIX_TOTAL_NUMBER
+Identifiers for the various types of design matrices.
+The last one @code{GAL_FIT_MATRIX_TOTAL_NUMBER} is the total number of available matrices (can be used to add more macros in the calling program and to avoid overlaps with existing codes), while @code{GAL_FIT_MATRIX_1D_NUMBER} is mainly used as a separator between the two blocks.
+@end deffn
+
 @deftypefun uint8_t gal_fit_name_to_id (char @code{*name})
 Return the internal code of a standard human-readable name for the various fitting functions.
 If the name is not recognized, the returned value will be @code{GAL_FIT_INVALID}.
@@ -44785,10 +44795,10 @@ Naturally, both have the same number of elements as @code{xin}.
 Being a list, helps in easily printing the output columns to a table (see @ref{Table input output}).
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_polynomial (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, size_t @code{maxpower}, double @code{*redchisq})
+@deftypefun {gal_data_t *} gal_fit_polynomial (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, size_t @code{maxpower}, double @code{*redchisq}, uint8_t @code{matrixid})
 @cindex Polynomial fit
 @cindex Fitting (polynomial)
-Perform a 1D (or 2D) polynomial fit, formally: @mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_dX^d} (or @mymath{Y=c_0+c_1X_1+c_2X_2+c_3X_1^2+c_4X_1X_2+c_5X_2^2+\cdots+c_nX_1^jX_2^{d-j}}), using GSL's multi-parameter regression@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#multi-parameter-regression}}.
+Perform a polynomial fit according to @code{matrixid}. Currently only ordinary 1D and 2D polynomials are supported (formally: @mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_dX^d} and @mymath{Y=c_0+c_1X_1+c_2X_2+c_3X_1^2+c_4X_1X_2+c_5X_2^2+\cdots+c_nX_1^jX_2^{d-j}}), as well as the one used by the TPV distortion@footnote{@url{https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html}} (same as the 2D above, but with extra @mymath{r^m=\sqrt{(X_1^2+X_2^2)}^m} terms for the odd orders), using GSL's multi-parameter regression@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#multi-parameter-regression}}.
 The degree of the polynomial is determined with the @code{maxpower} argument (which is @mymath{d} in the equation above).
 The reduced @mymath{\chi^2} of the fit is written in the space that @code{*redchisq} points to.
 
@@ -44810,9 +44820,9 @@ A two dimensional variance-covariance matrix with @mymath{(n+1)\times(n+1)} elem
 @end enumerate
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_polynomial_robust (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{maxpower}, uint8_t @code{robustid}, double @code{*redchisq})
+@deftypefun {gal_data_t *} gal_fit_polynomial_robust (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{maxpower}, uint8_t @code{robustid}, double @code{*redchisq}, uint8_t @code{matrixid})
 @cindex Robust Polynomial fit
-Perform a 1D (or 2D) robust polynomial fit, formally: @mymath{Y=c+c_1X+c_2X^2+\cdots+c_dX^d} (or @mymath{Y=c_0+c_1X+c_2Y+c_3X^2+c_4XY+c_5Y^2+\cdots+c_nX^jY^{d-j}}), using GSL's robust linear regression@footnote{@url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression}}.
+Perform a 1D (or 2D) robust polynomial fit, as already described in @code{gal_fit_polynomial}, using GSL's robust linear regression@footnote{@url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression}}.
 See the description there for the details.
 
 The inputs and outputs of this function are almost identical to @code{gal_fit_polynomial}, with the difference that you need to specify the function to reject outliers through the @code{robustid} input argument.
