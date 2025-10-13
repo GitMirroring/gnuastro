@@ -72,7 +72,6 @@ enum gal_fit_types
 enum gal_fit_robust_types
 {
   GAL_FIT_ROBUST_INVALID,   /* Invalid (=0 by C standard).  */
-  GAL_FIT_ROBUST_DEFAULT,
   GAL_FIT_ROBUST_BISQUARE,
   GAL_FIT_ROBUST_CAUCHY,
   GAL_FIT_ROBUST_FAIR,
@@ -87,20 +86,28 @@ enum gal_fit_robust_types
 enum gal_fit_matrix_types
 {
   GAL_FIT_MATRIX_INVALID,   /* Invalid (=0 by C standard).  */
-  GAL_FIT_MATRIX_1D_POLYNOMIAL,
+
+  /* One-dimensional matrices. */
+  GAL_FIT_MATRIX_POLYNOMIAL_1D,
 
   /* This will be the total number (+1) of 1d supported design matrices
      (used as sanitizer). */
-  GAL_FIT_MATRIX_1D_NUMBER,
+  GAL_FIT_MATRIX_NUMBER_1D,
 
-  GAL_FIT_MATRIX_2D_POLYNOMIAL,
-  GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV,
+  /* Two-dimensional matrices. */
+  GAL_FIT_MATRIX_POLYNOMIAL_2D,
+  GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV,
 
-  /* This will be the total number of shapes (good for scripts). */
-  GAL_FIT_MATRIX_TOTAL_NUMBER
+  /* To enable counting total number of matrices (will be extra by one
+     because it also counts 'GAL_FIT_MATRIX_NUMBER_1D'. Since this is just
+     a place-holder macro, it is not documented in the book to avoid
+     confusion: for the user 'GAL_FIT_MATRIX_NUMBER_ALL' is relevant. */
+  GAL_FIT_MATRIX_NUMBER_ALL_ONE_EXTRA
 };
 
-
+/* Total number of matrices: we subtract one from the one inside the 'enum'
+   to be correct. */
+#define GAL_FIT_MATRIX_NUMBER_ALL (GAL_FIT_MATRIX_NUMBER_ALL_ONE_EXTRA - 1)
 
 
 
@@ -118,15 +125,15 @@ char *
 gal_fit_name_robust_from_id(uint8_t robustid);
 
 gal_data_t *
-gal_fit_1d_linear(gal_data_t *xin, gal_data_t *yin,
+gal_fit_linear_1d(gal_data_t *xin, gal_data_t *yin,
                   gal_data_t *ywht);
 
 gal_data_t *
-gal_fit_1d_linear_no_constant(gal_data_t *xin, gal_data_t *yin,
+gal_fit_linear_no_constant_1d(gal_data_t *xin, gal_data_t *yin,
                               gal_data_t *ywht);
 
 gal_data_t *
-gal_fit_1d_linear_estimate(gal_data_t *fit, gal_data_t *xin);
+gal_fit_linear_estimate_1d(gal_data_t *fit, gal_data_t *xin);
 
 gal_data_t *
 gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
@@ -139,7 +146,10 @@ gal_fit_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
                           double *redchisq, uint8_t matrixid);
 
 gal_data_t *
-gal_fit_1d_polynomial_estimate(gal_data_t *fit, gal_data_t *xin);
+gal_fit_polynomial_estimate_1d(gal_data_t *fit, gal_data_t *xin);
+
+gal_data_t *
+gal_fit_polynomial_estimate_2d(gal_data_t *fit, gal_data_t *xin);
 
 __END_C_DECLS    /* From C++ preparations */
 

@@ -89,7 +89,8 @@ size_t *
 gal_dimension_increment(size_t ndim, size_t *dsize)
 {
   int i;
-  size_t *out=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0, __func__, "out");
+  size_t *out=gal_pointer_allocate(GAL_TYPE_SIZE_T, ndim, 0,
+                                   __func__, "out");
 
   /* Along the fastest dimension, it is 1. */
   out[ndim-1]=1;
@@ -245,6 +246,57 @@ gal_dimension_index_to_coord(size_t index, size_t ndim, size_t *dsize,
       /* Clean up. */
       free(dinc);
     }
+}
+
+
+
+
+
+/* Given an input image, extract the non-blank pixels into three separate
+   columns: X, Y and value (where X and Y are defined according to the FITS
+   standard). */
+
+
+gal_data_t *
+gal_dimension_image_to_table(gal_data_t *input)
+{
+  uint32_t *x, *y;
+  gal_data_t *out=NULL;
+  int qmm=input->quietmmap;
+  size_t pw=input->dsize[1];
+  size_t i, j=0, nout=input->size-gal_blank_number(input, 1);
+  size_t bw=gal_type_sizeof(input->type), mms=input->minmapsize;
+  uint8_t *v, *arr=input->array; /* Type-agnostic: for pointer-arith. */
+
+  /* Sanity checks. */
+  if(input->ndim!=2)
+    error(EXIT_FAILURE, 0, "%s: the input should be a 2-dimensional "
+          "image, but it has %zu-dimensions", __func__, input->ndim);
+
+  /* Allocate the three output columns (note that they are added in the
+     last-in-first-out order) */
+  gal_list_data_add_alloc(&out, NULL, input->type, 1, &nout, NULL, 0,
+                          mms, qmm, NULL, NULL, NULL);
+  gal_list_data_add_alloc(&out, NULL, GAL_TYPE_UINT32, 1, &nout, NULL,
+                          0, mms, qmm, NULL, NULL, NULL);
+  gal_list_data_add_alloc(&out, NULL, GAL_TYPE_UINT32, 1, &nout, NULL,
+                          0, mms, qmm, NULL, NULL, NULL);
+
+  /* Parse over the input and extract non-blank elements. */
+  x=out->array;
+  y=out->next->array;
+  v=out->next->next->array;
+  for(i=0;i<input->size;++i)
+    if(!gal_blank_is(arr+i*bw, input->type))
+      { x[j]=i%pw+1; y[j]=i/pw+1; memcpy(v+j*bw, arr+i*bw, bw); j++; }
+
+  /* For a check.
+  gal_table_write(out, NULL, NULL, GAL_TABLE_FORMAT_BFITS, "out.fits",
+                  "TESTOUT", 0, 0); exit(0);
+  //*/
+
+  /* Clean up and return. */
+  return out;
 }
 
 

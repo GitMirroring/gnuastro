@@ -1565,42 +1565,13 @@ statistics_fit_params_to_keys(struct statisticsparams *p, gal_data_t *fit,
 
 
 
+/* Write to file or print the estimated values for 1D inputs. */
 static void
-statistics_fit_estimate(struct statisticsparams *p, gal_data_t *fit,
-                        char *whtnat, double *redchisq)
+statistics_fit_estimate_1d(struct statisticsparams *p, gal_data_t *est,
+                           gal_data_t *fit, char *whtnat, double *redchisq)
 {
-  gal_data_t *est=NULL;
   double *x, *y, *yerr;
   struct gal_fits_list_key_t *keys=NULL;
-
-  /* If the input had no metadata, add them. */
-  if(p->fitestval->name==NULL)
-    gal_checkset_allocate_copy("X-INPUT", &p->fitestval->name);
-  if(p->fitestval->comment==NULL)
-    gal_checkset_allocate_copy("Requested values to estimate fit.",
-                               &p->fitestval->comment);
-
-  /* Estimations are done on a per-row level. */
-  switch(p->fitid)
-    {
-    case GAL_FIT_LINEAR:
-    case GAL_FIT_LINEAR_WEIGHTED:
-    case GAL_FIT_LINEAR_NO_CONSTANT:
-    case GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED:
-      est=gal_fit_1d_linear_estimate(fit, p->fitestval);
-      break;
-
-    case GAL_FIT_POLYNOMIAL:
-    case GAL_FIT_POLYNOMIAL_ROBUST:
-    case GAL_FIT_POLYNOMIAL_WEIGHTED:
-      est=gal_fit_1d_polynomial_estimate(fit, p->fitestval);
-      break;
-
-    default:
-      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
-            "fix the problem. The code '%d' isn't recognized for 'fitid'",
-            __func__, PACKAGE_BUGREPORT, p->fitid);
-    }
 
   /* Set the estimated columns to be after the input's columns. */
   p->fitestval->next=est;
@@ -1623,7 +1594,7 @@ statistics_fit_estimate(struct statisticsparams *p, gal_data_t *fit,
                       p->cp.output, "FIT_ESTIMATE", 0, 1);
     }
 
-  /* Print estimated value on the commandline. */
+  /* Print estimated value on the command-line. */
   else
     {
       x=p->fitestval->array;
@@ -1635,6 +1606,57 @@ statistics_fit_estimate(struct statisticsparams *p, gal_data_t *fit,
         printf("  X:         %f       (given on command-line)\n"
                "  Y:         %f\n"
                "  Y_error:   %f\n", x[0], y[0], yerr[0]);
+    }
+}
+
+
+
+
+
+static void
+statistics_fit_estimate(struct statisticsparams *p, gal_data_t *fit,
+                        char *whtnat, double *redchisq)
+{
+  gal_data_t *est=NULL;
+
+  /* If the input had no metadata, add them. */
+  if(p->fitestval->name==NULL)
+    gal_checkset_allocate_copy("X-INPUT", &p->fitestval->name);
+  if(p->fitestval->comment==NULL)
+    gal_checkset_allocate_copy("Requested values to estimate fit.",
+                               &p->fitestval->comment);
+
+  /* Estimations are done on a per-row level. */
+  switch(p->fitid)
+    {
+    case GAL_FIT_LINEAR:
+    case GAL_FIT_LINEAR_WEIGHTED:
+    case GAL_FIT_LINEAR_NO_CONSTANT:
+    case GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED:
+      est=gal_fit_linear_estimate_1d(fit, p->fitestval);
+      break;
+
+    case GAL_FIT_POLYNOMIAL:
+    case GAL_FIT_POLYNOMIAL_ROBUST:
+    case GAL_FIT_POLYNOMIAL_WEIGHTED:
+      est = ( p->fitndim==1
+              ? gal_fit_polynomial_estimate_1d(fit, p->fitestval)
+              : gal_fit_polynomial_estimate_2d(fit, p->fitestval) );
+      break;
+
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "fix the problem. The code '%d' isn't recognized for 'fitid'",
+            __func__, PACKAGE_BUGREPORT, p->fitid);
+    }
+
+  /* Write the estimated values. */
+  switch(p->fitndim)
+    {
+    case 1: statistics_fit_estimate_1d(p, est, fit, whtnat, redchisq);
+      break;
+    case 2: printf("%s: Write the file to disk\n", __func__); exit(0);
+      break;
     }
 
   /* Clean up. */
@@ -1677,14 +1699,12 @@ statistics_fit_print_intro(struct statisticsparams *p, char **whtnat)
 {
   char *colspace;
   char *filename, *intro, *wcolstr=NULL;
-  gal_list_str_t *xn=p->columns, *yn=xn->next?xn->next:NULL,
-                 *wn=yn->next?yn->next:NULL;
+  gal_list_str_t *xn=p->columns?p->columns:NULL,
+                 *yn=(xn && xn->next)?xn->next:NULL,
+                 *wn=(yn && yn->next)?yn->next:NULL;
 
   /* Set the full file name (for easy reading later!).*/
   filename=gal_fits_name_save_as_string(p->inputname, p->cp.hdu);
-
-  /* Prepare string for nature of weight (if any weight was given!). */
-  *whtnat = p->input->next->next ? statistics_fit_whtnat(p) : NULL;
 
   /* Set the Weight column string(s). */
   if(   p->fitid==GAL_FIT_LINEAR_WEIGHTED
@@ -1692,11 +1712,12 @@ statistics_fit_print_intro(struct statisticsparams *p, char **whtnat)
      || p->fitid==GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED )
     {
       colspace="      ";
+      statistics_fit_whtnat(p);
       if( asprintf(&wcolstr, "  Weight column: %s    "
                    "[%s of Y in each row]\n", wn->v, *whtnat)<0 )
         error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
     }
-  else colspace=" ";
+  else { colspace=" "; *whtnat=NULL; }
 
   /* Put everything into one string. */
   if( asprintf(&intro,
@@ -1709,7 +1730,8 @@ statistics_fit_print_intro(struct statisticsparams *p, char **whtnat)
                "  Y%scolumn: %s\n"
                "%s",
                PROGRAM_STRING, filename, p->input->size,
-               colspace, xn->v, colspace, yn->v,
+               colspace, xn?xn->v:"Horizontal position of non-NAN pixels.",
+               colspace, yn?yn->v:"Vertical position of non-NAN pixels.",
                wcolstr ? wcolstr : "")<0 )
     error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
 
@@ -1741,25 +1763,25 @@ statistics_fit_linear(struct statisticsparams *p)
     /* Linear fit. */
     case GAL_FIT_LINEAR:
       if(gal_list_data_number(p->input)!=2) return 2;
-      fit=gal_fit_1d_linear(x, y, NULL);
+      fit=gal_fit_linear_1d(x, y, NULL);
       break;
 
     /* Linear (weighted). */
     case GAL_FIT_LINEAR_WEIGHTED:
       if(gal_list_data_number(p->input)!=3) return 3;
-      fit=gal_fit_1d_linear(x, y, w);
+      fit=gal_fit_linear_1d(x, y, w);
       break;
 
     /* Linear (no constant) */
     case GAL_FIT_LINEAR_NO_CONSTANT:
       if(gal_list_data_number(p->input)!=2) return 2;
-      fit=gal_fit_1d_linear_no_constant(x, y, NULL);
+      fit=gal_fit_linear_no_constant_1d(x, y, NULL);
       break;
 
     /* Linear (no constant, weighted) */
     case GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED:
       if(gal_list_data_number(p->input)!=3) return 3;
-      fit=gal_fit_1d_linear_no_constant(x, y, w);
+      fit=gal_fit_linear_no_constant_1d(x, y, w);
       break;
 
     default:
@@ -1845,12 +1867,13 @@ statistics_fit_linear(struct statisticsparams *p)
 
 
 static void
-statistics_fit_polynomial_print(struct statisticsparams *p, gal_data_t *fit,
-                                double redchisq, char **whtnat)
+statistics_fit_polynomial_print(struct statisticsparams *p,
+                                gal_data_t *fit, double redchisq,
+                                char **whtnat)
 {
   size_t i, j;
   char *intro;
-  size_t nconst=p->fitmaxpower+1;
+  size_t nconst=fit->size;
   double *farr=fit->array, *carr=fit->next->array;
 
   /* Print fitted constants */
@@ -1868,9 +1891,18 @@ statistics_fit_polynomial_print(struct statisticsparams *p, gal_data_t *fit,
       intro=statistics_fit_print_intro(p, whtnat);
 
       /* Final printed report.*/
-      printf("%s\n"
-             "Fit function: Y = c0 + (c1 * X^1) + (c2 * X^2) "
-             "+ ... (cN * X^N)\n", intro);
+      printf("%s\n", intro);
+      switch(p->fitndim)
+        {
+        case 1:
+          printf("Fit function [1d]: Y = c0 + (c1 * X^1) + "
+                 "(c2 * X^2) + ... (cN * X^N)\n"); break;
+        case 2:
+          printf("Fit function [2d, Y=f(X1,X2)]: Y = c0 + c1.X1 "
+                 "+ c2.X2 + c3.X1^2 + c4.X1.X2 + c5.X2^2 + c6.X1^3 "
+                 "+ c7.X1^2.X2 + c8.X1.X2^2 + c9.X2^3 + ... "
+                 "+ cn.X1^(j).X2^(d-j)\n"); break;
+        }
 
       /* Notice for the (possible) robust function and maximum power of
          polynomial. */
@@ -1914,35 +1946,69 @@ statistics_fit_polynomial_print(struct statisticsparams *p, gal_data_t *fit,
 
 
 
+static void
+statistics_fit_polynomial_extract(struct statisticsparams *p,
+                                  gal_data_t **X, gal_data_t **Y,
+                                  gal_data_t **W, uint8_t *matrixid)
+{
+  gal_data_t *x, *y, *w;
+
+  /* Adjust the 'next' columns based on the number of dimensions. */
+  switch(p->fitndim)
+    {
+    case 1:
+      x=p->input; y=x->next?x->next:NULL; w=y->next?y->next:NULL;
+      *matrixid=GAL_FIT_MATRIX_POLYNOMIAL_1D;
+      x->next=y->next=NULL; /* Must be after the definitions. */
+      break;
+
+    case 2:
+      x=p->input; y=x->next->next?x->next->next:NULL;
+      *matrixid=GAL_FIT_MATRIX_POLYNOMIAL_2D;
+      x->next->next=y->next=NULL;
+      w=y->next?y->next:NULL; /* has to be after 'y'. */
+      break;
+
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "fix the problem. The number of dimensions of the fit "
+            "cannot be '%zu'", __func__, PACKAGE_BUGREPORT, p->fitndim);
+    }
+
+  /* Set the output pointers. */
+  *X=x; *Y=y; *W=w;
+}
+
+
+
+
+
 static int
 statistics_fit_polynomial(struct statisticsparams *p)
 {
   char *whtnat;
-  gal_data_t *fit=NULL;
+  uint8_t matrixid;
+  gal_data_t *x, *y, *w, *fit=NULL;
   double redchisq=NAN; /* Important to initialize. */
-  gal_data_t *x=p->input, *y=x->next?x->next:NULL, *w=y->next?y->next:NULL;
 
-  /* Temporarily set the 'next' elements to NULL so the fitting
-     functions interpret the arrays as 1D. */
-  x->next=y->next=NULL;
-
-  /* Sanity check and call the fitting functions. */
+  /* Call the respective fitting functions after extracting the columns. */
+  statistics_fit_polynomial_extract(p, &x, &y, &w, &matrixid);
   switch(p->fitid)
     {
     case GAL_FIT_POLYNOMIAL:
       fit=gal_fit_polynomial(x, y, NULL, p->fitmaxpower, &redchisq,
-                             GAL_FIT_MATRIX_1D_POLYNOMIAL);
+                             matrixid);
       break;
 
     case GAL_FIT_POLYNOMIAL_ROBUST:
       fit=gal_fit_polynomial_robust(x, y, p->fitmaxpower,
                                     p->fitrobustid, &redchisq,
-                                    GAL_FIT_MATRIX_1D_POLYNOMIAL);
+                                    matrixid);
       break;
 
     case GAL_FIT_POLYNOMIAL_WEIGHTED:
       fit=gal_fit_polynomial(x, y, w, p->fitmaxpower, &redchisq,
-                             GAL_FIT_MATRIX_1D_POLYNOMIAL);
+                             matrixid);
       break;
 
     default:
@@ -1951,9 +2017,13 @@ statistics_fit_polynomial(struct statisticsparams *p)
             __func__, PACKAGE_BUGREPORT, p->fitid);
     }
 
-  /* Put the inputs as a list again. */
-  x->next=y;
+  /* Put the inputs as a single list again. */
   y->next=w;
+  switch(p->fitndim)
+    {
+    case 1: x->next=y; break;
+    case 2: x->next->next=y; break;;
+    }
 
   /* Print the output. */
   statistics_fit_polynomial_print(p, fit, redchisq, &whtnat);
@@ -1977,11 +2047,20 @@ static void
 statistics_fit(struct statisticsparams *p)
 {
   size_t neededcols=0;
+  gal_data_t *rawin=p->input;
 
-  /* Make sure that at least two columns are provided. */
+  /* Make sure that at least two columns are provided: in case the input is
+     an image, extract the non-blank elements into a three-column table. */
   if(p->input->next==NULL)
-    error(EXIT_FAILURE, 0, "at least two columns are necessary for "
-          "the fitting operations");
+    {
+      if(p->input->ndim==2) p->input=gal_dimension_image_to_table(rawin);
+      else error(EXIT_FAILURE, 0, "at least two columns are necessary "
+              "for the fitting operations");
+    }
+
+  /* size==0 can happen when an input image has all blank values. */
+  if(p->input==NULL || p->input->size==0)
+    error(EXIT_FAILURE, 0, "all input elements are blank");
 
   /* Do the fitting. */
   switch(p->fitid)
@@ -2004,6 +2083,10 @@ statistics_fit(struct statisticsparams *p)
             "fix the problem. '%s' is not a recognized as a fit type",
             __func__, PACKAGE_BUGREPORT, p->fitname);
     }
+
+  /* If 'p->input' is not the raw input, free the temporary 'p->input' and
+     put the raw input point back in its place. */
+  if(rawin!=p->input) { gal_data_free(p->input); p->input=rawin; }
 
   /* If the number of columns is not sufficient, then 'neededcols' will be
      non-zero. In this case, we should abort and inform the user. */

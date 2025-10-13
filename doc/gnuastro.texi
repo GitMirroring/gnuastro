@@ -645,6 +645,11 @@ Statistics
 * 2D histogram as a table for plotting::  Format and usage in table format.
 * 2D histogram as an image::    Format and usage in image format
 
+Least squares fitting
+
+* One dimensional polynomial fitting::  Independent variable is a column.
+* Two dimensional polynomial fitting::  Independent variable is an image or two columns.
+
 Sky value
 
 * Sky value definition::        Definition of the Sky/reference value.
@@ -26960,7 +26965,7 @@ PGFPlots can also built the PDF of the plot separately from the rest of the pape
 @cindex Star formation main sequence
 After completing a good observation, doing robust data reduction and finalizing the measurements, it is commonly necessary to parameterize the derived correlations.
 For example, you have derived the radial profile of the PSF of your image (see @ref{Building the extended PSF}).
-You now want to parameterize the radial profile to estimate the slope.
+You may want to parameterize the radial profile to estimate the slope.
 Alternatively, you may have found the star formation rate and stellar mass of your sample of galaxies.
 Now, you want to derive the star formation main sequence as a parametric relation between the two.
 The fitting functions below can be used for such purposes.
@@ -26980,6 +26985,18 @@ A fully working example is shown below.
 @cindex Gaussian noise
 @cindex Noise (Gaussian)
 To activate fitting in Statistics, simply give your desired fitting method to the @option{--fit} option (for the full list of acceptable methods, see @ref{Fitting options}).
+Statistics accepts both 1-dimensional and 2-dimensional inputs which we'll describe in the sub-sections below.
+
+@menu
+* One dimensional polynomial fitting::  Independent variable is a column.
+* Two dimensional polynomial fitting::  Independent variable is an image or two columns.
+@end menu
+
+@node One dimensional polynomial fitting, Two dimensional polynomial fitting, Least squares fitting, Least squares fitting
+@subsubsection One dimensional polynomial fitting
+
+In @ref{Least squares fitting} an introduction was given for fitting in Gnuastro.
+Here, we'll go through a hands-on review of 1D fiting.
 For example, with the command below, we'll build a fake measurement table (including noise) from the polynomial @mymath{y=1.23-4.56x+7.89x^2}.
 To understand how this equation translates to the command below (part before @code{set-y}), see @ref{Reverse polish notation} and @ref{Column arithmetic}.
 We will set the X axis to have values from 0.1 to 2, with steps of 0.01 and let's assume a random Gaussian noise to each @mymath{y} measurement: @mymath{\sigma_y=0.1y}.
@@ -27218,6 +27235,121 @@ For a description of the outlier rejection methods, see the @url{https://www.gnu
 You may have noticed that unlike the cases before the last Statistics command above didn't print anything on the standard output.
 This is becasue @option{--quiet} and @option{--fitestimate} were called together.
 In this case, because all the fitting parameters are written as FITS keywords, because of the @option{--quiet} option, they are no longer printed on standard output.
+
+@node Two dimensional polynomial fitting,  , One dimensional polynomial fitting, Least squares fitting
+@subsubsection Two dimensional polynomial fitting
+
+In @ref{Least squares fitting} an introduction was given for fitting in Gnuastro and one-dimensional fitting was reviewed in @ref{One dimensional polynomial fitting} (which should be read before this in a first read).
+For a 2D polynomial fit, two independent variables are needed.
+The two independent variables cna be given either as an image or as table columns.
+We'll start with an image here, and end with using table columns.
+
+@cartouche
+@noindent
+@strong{Fitting estimation not yet implemented in 2D}: as of this version, fitting estimation is not yet implemented in 2D.
+We will try to implement it as soon as time allows.
+@end cartouche
+
+Let's use the Arithmetic program to generate an image from the following 2D polynomial: @mymath{Y=5+10X_2+X_1X_2}.
+In a FITS image, @mymath{X_1} is the first FITS axis (horizontal) and @mymath{X_2} is the second FITS axis (vertical).
+For the details of the operators, see @ref{Arithmetic operators}.
+
+@example
+$ astarithmetic 100 100 2 makenew indexonly set-i \
+                i 100 % 1 + set-X1 \
+                i 100 / 1 + set-X2 \
+                5 10 X2 x + X1 X2 x + f64 \
+                --output=pixels.fits
+$ astscript-fits-view pixels.fits
+@end example
+
+The gradient of the 2D polynomial is clearly visible in the image.
+You can directly give such an image to the statistics program for fitting in a very similar way @ref{One dimensional polynomial fitting} as shown below (with some outputs printed):
+
+@example
+$ aststatistics pixels.fits --fit=polynomial --fitmaxpower=2
+Statistics (GNU Astronomy Utilities) @value{VERSION}
+-------
+Fitting results (remove extra info with '--quiet' or '-q)
+  Input file:    pixels.fits (hdu: 1) with 10000 non-blank rows.
+  X column: Horizontal position of non-NAN pixels.
+  Y column: Vertical position of non-NAN pixels.
+
+Fit function [2d, Y=f(X1,X2)]: Y = c0 + c1.X1 + c2.X2 + c3.X1^2
++ c4.X1.X2 + c5.X2^2 + c6.X1^3 + c7.X1^2.X2 + c8.X1.X2^2 + c9.X2^3
++ ... + cn.X1^(j).X2^(d-j)
+  N:  2
+  c0:  +5.000000000073776e+00
+  c1:  +2.460254222569347e-13
+  c2:  +9.999999999995385e+00
+  c3:  -2.773822838086915e-15
+  c4:  +1.000000000000002e+00
+  c5:  +4.474025316891783e-14
+
+Covariance matrix:
+  +3.318964094598024e-24 -6.837076956939867e-26 -6.837076956940090e-26
+  +3.786011000755381e-28 +4.497322158473032e-28 +3.786011000755588e-28
+  ...
+@end example
+
+@noindent
+Except for the functional form of the the 2D fit and the number of constants, all the outputs are similar to what was introduced in @ref{One dimensional polynomial fitting}.
+In this context, the extremely small values (@mymath{\sim10^{-14}}) are just floating point errors and can be considered equal to zero.
+We therefore see that the three constants that we ahd originally set and nicely determined.
+But we are rarely lucky enough to have a value for the full plane like above.
+Let's simulate such a situation by adding a noisy dataset (@code{n}, with each pixel having a random value from a Gaussian distribution with @mymath{\sigma=100}).
+In the command below, we'll use that noisy dataset to randomly remove (set to NaN/blank) all pixels that have a value below 50 in it.
+
+@example
+$ astarithmetic 100 100 2 makenew indexonly set-i \
+                i 100 % 1 + set-X1 \
+                i 100 / 1 + set-X2 \
+                5 10 X2 x + X1 X2 x + f64 set-p \
+                i 0 constant 100 mknoise-sigma set-n \
+                p n 50 lt nan where --output=pixels.fits
+
+$ astscript-fits-view pixels.fits
+
+$ aststatistics pixels.fits --fit=polynomial --fitmaxpower=2
+@end example
+
+With the second command, you can see that many of the pixels have become NaN and from the third command, you can see that the fit is still good.
+You can try decreasing the number of useful (non-NaN) pixels (by increasing the @code{50} threshold above) and see how robust the fit is to fewer pixels.
+
+As mentioned at the start of this section, you can also feed your input data as table columns.
+First let's generate some table columns from the @file{pixels.fits} image we made above: we will feed the resulting table to statistics instead of table.
+The top command below will generate a 3 column table with the same number of rows as pixels in the image (one row per pixel).
+The first and second columns will be the first (horizontal) and second (vertical) positions of the pixel and the third column will be the pixel value.
+
+@example
+$ astarithmetic pixels.fits set-i \
+                i 1 size    set-width \
+                i indexonly set-ind \
+                ind width % 1 + u32 set-X1 \
+                ind width / 1 + u32 set-X2 \
+                i to-1d X2 to-1d X1 to-1d \
+                --writeall --output=pixels-tab-raw.fits
+@end example
+
+@noindent
+If you inspect this table, you will notice that many rows are NaN (as expected!).
+To remove the NaN rows, you can use Table's @option{--noblank} option:
+
+@example
+$ asttable pixels-tab-raw.fits --noblank=_all \
+           --output=for-2d-fit.fits
+@end example
+
+Now that we have the two independent variables (horizontal and vertical positions) along with the function/pixel value, we are ready to call Statistics for a 2D polynomial fit:
+
+@example
+$ aststatistics for-2d-fit.fits --fit=polynomial -c1,2,3 \
+                --fitmaxpower=2
+@end example
+
+@noindent
+You will notice that the fitted parameters are the same as the case where you gave an image.
+In fact, when given an image, Statistics does a similar thing to what we did here to extract the positions and values of all the non-NaN pixels into a table and then feed them to Gnuastro's internal fitting library.
 
 @node Sky value, Invoking aststatistics, Least squares fitting, Statistics
 @subsection Sky value
@@ -28150,6 +28282,7 @@ Welsch function which is useful when the residuals follow an exponential distrib
 
 @item --fitestimate=STR/FLT
 Estimate the fitted function at a single point or a complete column of points.
+Note that this option is currently only available for a 1D fit (due to lack of time); we will try our best to implement it in 2D fitting as soon as time allows.
 The input @mymath{X} axis positions to estimate the function can be specified in the following ways:
 @itemize
 @item
@@ -44688,7 +44821,6 @@ The last one @code{GAL_FIT_NUMBER} is the total number of available fitting meth
 @end deffn
 
 @deffn  {Global integer} GAL_FIT_ROBUST_INVALID
-@deffnx {Global integer} GAL_FIT_ROBUST_DEFAULT
 @deffnx {Global integer} GAL_FIT_ROBUST_BISQUARE
 @deffnx {Global integer} GAL_FIT_ROBUST_CAUCHY
 @deffnx {Global integer} GAL_FIT_ROBUST_FAIR
@@ -44702,13 +44834,12 @@ The last one @code{GAL_FIT_ROBUST_NUMBER} is the total number of available funct
 @end deffn
 
 @deffn  {Global integer} GAL_FIT_MATRIX_INVALID
-@deffnx {Global integer} GAL_FIT_MATRIX_1D_POLYNOMIAL
-@deffnx {Global integer} GAL_FIT_MATRIX_1D_NUMBER
-@deffnx {Global integer} GAL_FIT_MATRIX_2D_POLYNOMIAL
-@deffnx {Global integer} GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV
-@deffnx {Global integer} GAL_FIT_MATRIX_TOTAL_NUMBER
-Identifiers for the various types of design matrices.
-The last one @code{GAL_FIT_MATRIX_TOTAL_NUMBER} is the total number of available matrices (can be used to add more macros in the calling program and to avoid overlaps with existing codes), while @code{GAL_FIT_MATRIX_1D_NUMBER} is mainly used as a separator between the two blocks.
+@deffnx {Global integer} GAL_FIT_MATRIX_POLYNOMIAL_1D
+@deffnx {Global integer} GAL_FIT_MATRIX_NUMBER_1D
+@deffnx {Global integer} GAL_FIT_MATRIX_POLYNOMIAL_2D
+@deffnx {Global integer} GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV
+@deffnx {Global integer} GAL_FIT_MATRIX_NUMBER_ALL
+The last one @code{GAL_FIT_MATRIX_TOTAL_ALL} is the total number of available matrices (can be used to add more macros in the calling program and to avoid overlaps with existing codes), while @code{GAL_FIT_MATRIX_NUMBER_1D} show how many of them are 1D.
 @end deffn
 
 @deftypefun uint8_t gal_fit_name_to_id (char @code{*name})
@@ -44731,7 +44862,7 @@ Return a standard human-readable name for the input robust fitting type.
 If the fitting ID couldn't be recognized, a NULL pointer is returned.
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_1d_linear (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht})
+@deftypefun {gal_data_t *} gal_fit_linear_1d (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht})
 @cindex Weight (in fitting)
 Preform a 1D linear regression fit with a constant term@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#linear-regression-with-a-constant-term}} in the form of @mymath{Y=c_0+c_1X}.
 The input @code{xin} contains the independent variable values and @code{yin} contains the measured variable values for each independent variable.
@@ -44763,7 +44894,7 @@ The reduced @mymath{\chi^2} of the fit.
 @end enumerate
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_1d_linear_no_constant (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht})
+@deftypefun {gal_data_t *} gal_fit_linear_1d_no_constant (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht})
 @cindex Weight (in fitting)
 Preform a 1D linear regression fit @emph{without} a constant term@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#linear-regression-without-a-constant-term}}, formally: @mymath{Y=c_1X}.
 The input @code{xin} contains the independent variable values and @code{yin} contains the measured variable values for each independent variable.
@@ -44785,9 +44916,9 @@ The reduced @mymath{\chi^2} of the fit.
 @end enumerate
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_1d_linear_estimate (gal_data_t @code{*fit}, gal_data_t @code{*xin})
+@deftypefun {gal_data_t *} gal_fit_linear_1d_estimate (gal_data_t @code{*fit}, gal_data_t @code{*xin})
 Given a linear least squares fit output (@code{fit}), estimate the fit on an arbitrary number of independent variable (horizontal axis, or X, in an X-Y plot) within @code{xin}.
-@code{fit} is assumed to be the output of either @code{gal_fit_1d_linear} or @code{gal_fit_1d_linear_no_constant}.
+@code{fit} is assumed to be the output of either @code{gal_fit_linear_1d} or @code{gal_fit_linear_1d_no_constant}.
 In case you haven't used those functions to obtain the constants and covariance matrix elements, see the description of those functions for the expected format of @code{fit}.
 
 This function returns two columns (as a @ref{List of gal_data_t}): The top node of the list is the estimated values at the input X-axis positions, and the next node is the errors in the estimation.
@@ -44798,11 +44929,29 @@ Being a list, helps in easily printing the output columns to a table (see @ref{T
 @deftypefun {gal_data_t *} gal_fit_polynomial (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, size_t @code{maxpower}, double @code{*redchisq}, uint8_t @code{matrixid})
 @cindex Polynomial fit
 @cindex Fitting (polynomial)
-Perform a polynomial fit according to @code{matrixid}. Currently only ordinary 1D and 2D polynomials are supported (formally: @mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_dX^d} and @mymath{Y=c_0+c_1X_1+c_2X_2+c_3X_1^2+c_4X_1X_2+c_5X_2^2+\cdots+c_nX_1^jX_2^{d-j}}), as well as the one used by the TPV distortion@footnote{@url{https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html}} (same as the 2D above, but with extra @mymath{r^m=\sqrt{(X_1^2+X_2^2)}^m} terms for the odd orders), using GSL's multi-parameter regression@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#multi-parameter-regression}}.
+Perform a polynomial fit on the independent variable(s), @code{xin} to best fit the values in @code{yin}.
+Currently only ordinary 1D and 2D polynomial models are supported using GSL's multi-parameter regression@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#multi-parameter-regression}}.
 The degree of the polynomial is determined with the @code{maxpower} argument (which is @mymath{d} in the equation above).
 The reduced @mymath{\chi^2} of the fit is written in the space that @code{*redchisq} points to.
 
-The input @code{xin} contains a list of the independent variable values: given that the function detects the dimensionality of the polynomial checking the number of datasets in the list, it is important to set @code{xin->next=NULL} (or @code{xin->next->next=NULL}, in the 2D case). The input @code{yin} contains the measured variable values for each independent variable.
+The available polynomial model/matrix is determined with the @code{matrixid} argument which can accept one of the following models:
+@table @code
+@item GAL_FIT_MATRIX_POLYNOMIAL_1D
+@mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_dX^d}
+@item GAL_FIT_MATRIX_POLYNOMIAL_2D
+@mymath{Y = c_0 + c_1X_1 + c_2X_2 + c_3X_1^2 + c_4X_1X_2 + c_5X_2^2 + c_6X_1^3 + c_7X_1^2X_2 + c_8X_1X_2^2 + c_9X_2^3 + \cdots c_nX_1^jX_2^{d-j}}
+@item GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV
+Same as the 2D above, but with extra @mymath{r^m=\sqrt{X_1^2+X_2^2}^m} terms for the odd orders according to the FITS TPV standard@footnote{@url{https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html}}.
+These terms are added at the end of the terms in that order:
+@mymath{Y = c_0 + c_1X_1 + c_2X_2 + c_3r + c_4X_1^2 + \cdots}
+
+@end table
+
+The input @code{xin} contains a list of the independent variable values.
+The function detects the dimensions of the independent variable by checking the number of nodes in @code{xin}.
+Therefore, if your input is one-dimensional it is important to set @code{xin->next=NULL}.
+Similarly, for a two-dimensional input, set @code{xin->next->next=NULL}.
+The input @code{yin} contains the measured variable values for each independent variable.
 When @code{ywht!=NULL}, it is assumed to contain the ``weight'' of each Y measurement (if you don't have weights on your measured values, simply set this to @code{NULL}).
 The weight of each measurement is the inverse of its variance.
 For a Gaussian error distribution with standard deviation @mymath{\sigma}, the weight is therefore @mymath{1/\sigma^2}.
@@ -44829,9 +44978,9 @@ The inputs and outputs of this function are almost identical to @code{gal_fit_po
 You can pass any of the @code{GAL_FIT_ROBUST_*} codes defined at the top of this section to this (the names are identical to the names in GSL).
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_1d_polynomial_estimate (gal_data_t @code{*fit}, gal_data_t @code{*xin})
+@deftypefun {gal_data_t *} gal_fit_polynomial_1d_estimate (gal_data_t @code{*fit}, gal_data_t @code{*xin})
 Given a 1D polynomial fit output (@code{fit}), estimate the fit on an arbitrary number of independent variable (horizontal axis, or X, in an X-Y plot) within @code{xin}.
-@code{fit} is assumed to be the output of @code{gal_fit_1d_polynomial}.
+@code{fit} is assumed to be the output of @code{gal_fit_polynomial_1d}.
 In case you haven't used this function to obtain the constants and covariance matrix, see the description of that function for the expected format of @code{fit}.
 
 This function returns two columns (as a @ref{List of gal_data_t}): The top node of the list is the estimated values at the input X-axis positions, and the next node is the errors in the estimation.

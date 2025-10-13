@@ -211,8 +211,10 @@ if COND_STATISTICS
   MAYBE_STATISTICS_TESTS = statistics/basicstats.sh \
                            statistics/from-stdin.sh \
                            statistics/estimate_sky.sh \
+                           statistics/fitting-polynomial-2d.sh \
                            statistics/fitting-polynomial-robust.sh
   statistics/from-stdin.sh: prepconf.sh.log
+  statistics/fitting-polynomial-2d.sh: prepconf.sh.log
   statistics/fitting-polynomial-robust.sh: prepconf.sh.log
   statistics/basicstats.sh: arithmetic/mknoise-sigma-from-mean.sh.log
   statistics/estimate_sky.sh: arithmetic/mknoise-sigma-from-mean.sh.log

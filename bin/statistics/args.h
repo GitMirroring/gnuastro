@@ -969,7 +969,7 @@ struct argp_option program_options[] =
 
     {
       0, 0, 0, 0,
-      "Fitting (1 dimensional)",
+      "Fitting (1 and 2 dimensional)",
       UI_GROUP_FIT
     },
     {

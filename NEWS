@@ -130,6 +130,14 @@ See the end of the file for license conditions.
       reference catalog entry is more distant than the given aperture, it
       will be NaN/blank in the output.
 
+*** Statistics
+
+ - Polynomial fitting is now possible for 2D inputs: given either as an
+   image (assuming the pixel's horizontal and vertical positions are the
+   independent variables) or as a three columns (where the first two are
+   independent variables). A new "Two dimensional polynomial fitting"
+   section has been added in the book to demonstrate its usage.
+
 *** astscript-ds9-region
 
   --fontsize: new option to allow setting the font size of the values
@@ -163,6 +171,16 @@ See the end of the file for license conditions.
   - gal_data_append_second_array_to_first_free: for easily appending
     (adding the contents of the second array into the first) in
     single-dimensional datasets.
+
+  - GAL_FIT_MATRIX_INVALID:
+  - GAL_FIT_MATRIX_POLYNOMIAL_1D:
+  - GAL_FIT_MATRIX_POLYNOMIAL_2D:
+  - GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV: Macros to identify different types of
+    fitting matrices.
+
+  - GAL_FIT_MATRIX_NUMBER_1D:
+  - GAL_FIT_MATRIX_NUMBER_ALL: the number of 1D matrices and total
+    matrices used in fitting.
 
   - gal_label_measure: Replace a label with measured values over it (see
     description of newly added 'label-*' operators in Arithmetic).
@@ -200,13 +218,15 @@ See the end of the file for license conditions.
 
 *** Library
 
-  - gal_fit_polynomial:
-  - gal_fit_polynomial_robust: new names for 'gal_fit_1d_polynomial' and
-    'gal_fit_1d_polynomial_robust'. This is because they have generalized
-    to also accept 2D inputs. The design matrix is selected by the user
-    using the newly implemented enum `gal_fit_matrix_types`. Currently only
-    ordinary polynomials and the TPV one (2D, with extra radial terms) are
-    supported.
+  - New names for the fitting library functions (old --> new). This is
+    because (as described in the new features), the fitting functions have
+    generalized to also accept 2D inputs.
+
+    - gal_fit_1d_linear --> gal_fit_linear_1d
+    - gal_fit_1d_polynomial --> gal_fit_polynomial
+    - gal_fit_1d_polynomial_robust --> gal_fit_polynomial_robust
+    - gal_fit_1d_linear_estimate --> gal_fit_linear_no_constant_1d
+    - gal_fit_1d_linear_no_constant --> gal_fit_linear_no_constant_1d
 
 *** Book
 

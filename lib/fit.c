@@ -112,8 +112,7 @@ gal_fit_name_robust_to_id(char *name)
   if(name==NULL) return GAL_FIT_ROBUST_INVALID;
 
   /* Match the name. */
-  if(      !strcmp(name, "default")  ) return GAL_FIT_ROBUST_DEFAULT;
-  else if( !strcmp(name, "bisquare") ) return GAL_FIT_ROBUST_BISQUARE;
+  if(      !strcmp(name, "bisquare") ) return GAL_FIT_ROBUST_BISQUARE;
   else if( !strcmp(name, "cauchy")   ) return GAL_FIT_ROBUST_CAUCHY;
   else if( !strcmp(name, "fair")     ) return GAL_FIT_ROBUST_FAIR;
   else if( !strcmp(name, "huber")    ) return GAL_FIT_ROBUST_HUBER;
@@ -137,7 +136,6 @@ gal_fit_name_robust_from_id(uint8_t robustid)
 {
   switch(robustid)
     {
-    case GAL_FIT_ROBUST_DEFAULT:
     case GAL_FIT_ROBUST_BISQUARE:   return "bisquare";
     case GAL_FIT_ROBUST_CAUCHY:     return "cauchy";
     case GAL_FIT_ROBUST_FAIR:       return "fair";
@@ -163,9 +161,9 @@ fit_name_matrix_from_id(uint8_t matrixid)
 {
   switch(matrixid)
     {
-    case GAL_FIT_MATRIX_1D_POLYNOMIAL:     return "1d-polynomial";
-    case GAL_FIT_MATRIX_2D_POLYNOMIAL:     return "2d-polynomial";
-    case GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV: return "1d-polynomial-tpv";
+    case GAL_FIT_MATRIX_POLYNOMIAL_1D:     return "polynomial-1d";
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D:     return "polynomial-2d";
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV: return "polynomial-2d-tpv";
     default:                               return NULL;
     }
 
@@ -199,7 +197,7 @@ fit_name_matrix_from_id(uint8_t matrixid)
 /****************            Common to all             ****************/
 /**********************************************************************/
 static gal_data_t *
-fit_1d_sanity_check(gal_data_t *in, gal_data_t *ref, const char *func)
+fit_sanity_check_col(gal_data_t *in, gal_data_t *ref, const char *func)
 {
   gal_data_t *out;
 
@@ -250,7 +248,7 @@ fit_1d_sanity_check(gal_data_t *in, gal_data_t *ref, const char *func)
 /****************              Linear fit              ****************/
 /**********************************************************************/
 static gal_data_t *
-fit_1d_linear_base(gal_data_t *xin, gal_data_t *yin,
+fit_linear_1d_base(gal_data_t *xin, gal_data_t *yin,
                    gal_data_t *ywht, int fitid)
 {
   double *o, nparam=NAN;
@@ -258,9 +256,12 @@ fit_1d_linear_base(gal_data_t *xin, gal_data_t *yin,
   gal_data_t *x=NULL, *y=NULL, *w=NULL, *out;
 
   /* Basic sanity checks. */
-  x=fit_1d_sanity_check(xin, xin, __func__);
-  y=fit_1d_sanity_check(yin, xin, __func__);
-  if(ywht) w=fit_1d_sanity_check(ywht, xin, __func__);
+  if(xin==NULL || xin->size==0 || yin==NULL || yin->size==0)
+    error(EXIT_FAILURE, 0, "%s: the inputs are either NULL or "
+          "do not contain any data (have a length of zero)", __func__);
+  x=fit_sanity_check_col(xin, xin, __func__);
+  y=fit_sanity_check_col(yin, xin, __func__);
+  if(ywht) w=fit_sanity_check_col(ywht, xin, __func__);
 
   /* Allocate the output dataset. */
   osize = ( fitid==GAL_FIT_LINEAR || fitid==GAL_FIT_LINEAR_WEIGHTED
@@ -274,7 +275,7 @@ fit_1d_linear_base(gal_data_t *xin, gal_data_t *yin,
     double *xa=x->array, *ya=y->array;
     for(i=0;i<x->size;++i)
       printf("%-15f %-15f\n", xa[i], ya[i]);
-  } */
+  } //*/
 
   /* Do the fitting. */
   o=out->array;
@@ -314,7 +315,7 @@ fit_1d_linear_base(gal_data_t *xin, gal_data_t *yin,
     printf("c0: %f\nc1: %f\n"
            "cov00: %f\ncov01: %f\ncov11: %f\nsumsq: %f\n",
            o[0], o[1], o[2], o[3], o[4], o[5]);
-  } */
+  } //*/
 
   /* Calculate the reduced chi^2: As mentioned in [1], in case we have the
      chi^2, then it is simply the chi^2 divided by the degrees of
@@ -339,9 +340,9 @@ fit_1d_linear_base(gal_data_t *xin, gal_data_t *yin,
 
 
 gal_data_t *
-gal_fit_1d_linear(gal_data_t *xin, gal_data_t *yin, gal_data_t *ywht)
+gal_fit_linear_1d(gal_data_t *xin, gal_data_t *yin, gal_data_t *ywht)
 {
-  return fit_1d_linear_base(xin, yin, ywht,
+  return fit_linear_1d_base(xin, yin, ywht,
                             ( ywht
                               ? GAL_FIT_LINEAR_WEIGHTED
                               : GAL_FIT_LINEAR));
@@ -352,10 +353,10 @@ gal_fit_1d_linear(gal_data_t *xin, gal_data_t *yin, gal_data_t *ywht)
 
 
 gal_data_t *
-gal_fit_1d_linear_no_constant(gal_data_t *xin, gal_data_t *yin,
+gal_fit_linear_no_constant_1d(gal_data_t *xin, gal_data_t *yin,
                               gal_data_t *ywht)
 {
-  return fit_1d_linear_base(xin, yin, ywht,
+  return fit_linear_1d_base(xin, yin, ywht,
                             ( ywht
                               ? GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED
                               : GAL_FIT_LINEAR_NO_CONSTANT) );
@@ -365,7 +366,7 @@ gal_fit_1d_linear_no_constant(gal_data_t *xin, gal_data_t *yin,
 
 
 
-gal_data_t *
+static gal_data_t *
 fit_1d_estimate_prepare(gal_data_t *xin, gal_data_t *fit, gal_data_t **xd,
                         const char *func)
 {
@@ -409,7 +410,7 @@ fit_1d_estimate_prepare(gal_data_t *xin, gal_data_t *fit, gal_data_t **xd,
 
 
 gal_data_t *
-gal_fit_1d_linear_estimate(gal_data_t *fit, gal_data_t *xin)
+gal_fit_linear_estimate_1d(gal_data_t *fit, gal_data_t *xin)
 {
   size_t i;
   gal_data_t *out=NULL, *xd;
@@ -440,7 +441,7 @@ gal_fit_1d_linear_estimate(gal_data_t *fit, gal_data_t *xin)
     default:                    /* Un-recognized situation! */
       error(EXIT_FAILURE, 0, "%s: the 'fit' argument should "
             "either have 6 or 3 elements (be an output of "
-            "'gal_fit_1d_linear' or 'gal_fit_1d_linear_no_constant'"
+            "'gal_fit_linear_1d' or 'gal_fit_linear_1d_no_constant'"
             "respectively), but it has %zu elements", __func__,
             fit->size);
     }
@@ -454,6 +455,24 @@ gal_fit_1d_linear_estimate(gal_data_t *fit, gal_data_t *xin)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**********************************************************************/
+/****************           Polynomial fits            ****************/
+/**********************************************************************/
 static size_t
 fit_polynomial_nconst(uint8_t maxpower, uint8_t matrixid)
 {
@@ -461,14 +480,14 @@ fit_polynomial_nconst(uint8_t maxpower, uint8_t matrixid)
 
   switch(matrixid)
     {
-      case GAL_FIT_MATRIX_1D_POLYNOMIAL:
+      case GAL_FIT_MATRIX_POLYNOMIAL_1D:
         nconst=maxpower+1;
         break;
-      case GAL_FIT_MATRIX_2D_POLYNOMIAL:
+      case GAL_FIT_MATRIX_POLYNOMIAL_2D:
         nconst=(maxpower+1)*(maxpower+2)/2;
         break;
-      case GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV:
-        /* Allow the odd radial terms */
+      case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV:
+        /* TPV has odd radial terms. */
         nconst=(maxpower+1)*(maxpower+2)/2 + (maxpower/2 + 1);
         break;
     }
@@ -481,7 +500,7 @@ fit_polynomial_nconst(uint8_t maxpower, uint8_t matrixid)
 
 
 static void
-fit_1d_polynomial_matrix_fill(gal_data_t *xin, int nconst, gsl_matrix **x)
+fit_polynomial_1d_matrix_fill(gal_data_t *xin, int nconst, gsl_matrix **x)
 {
   size_t i, j;
   double *xo, *xi;
@@ -509,7 +528,7 @@ fit_1d_polynomial_matrix_fill(gal_data_t *xin, int nconst, gsl_matrix **x)
       printf("%.3f ", xo[ checki*maxpower + j ]);
     printf("\n");
     exit(0);
-  } */
+  } //*/
 }
 
 
@@ -517,32 +536,31 @@ fit_1d_polynomial_matrix_fill(gal_data_t *xin, int nconst, gsl_matrix **x)
 
 
 static void
-fit_2d_polynomial_matrix_fill(gal_data_t *xin, int nconst,
+fit_polynomial_2d_matrix_fill(gal_data_t *xin, int nconst,
                               gsl_matrix **x, size_t maxpower, uint8_t tpv)
 {
-  double r, r_pow;
   size_t i, j, k, deg;
-  gal_data_t *xin1, *xin2;
+  double r=NAN, r_pow=NAN;
+  gal_data_t *xin1=xin, *xin2=xin->next;
   double *xo, *xi1, *xi2, *xi1_pow, *xi2_pow;
 
-  xin1=xin;
-  xin2=xin->next;
+  /* Allocate the necessary arrays. */
+  xi1_pow=gal_pointer_allocate(GAL_TYPE_FLOAT64, maxpower+1, 1,
+                               __func__, "xi1_pow");
+  xi2_pow=gal_pointer_allocate(GAL_TYPE_FLOAT64, maxpower+1, 1,
+                               __func__, "xi2_pow");
 
-  xi1_pow=calloc(maxpower+1, sizeof(double));
-  xi2_pow=calloc(maxpower+1, sizeof(double));
-
-  /* Fill in the X matrix. */
+  /* Fill in the matrix. */
+  xo=(*x)->data;
   xi1=xin1->array;
   xi2=xin2->array;
-  xo=(*x)->data;
   for(i=0;i<xin1->size;++i)
     {
       /* Restart from first column */
       k=0;
 
       /* Compute the radius */
-      r=sqrt( xi1[i]*xi1[i] + xi2[i]*xi2[i] );
-      r_pow=r;
+      if(tpv) r_pow=r=sqrt( xi1[i]*xi1[i] + xi2[i]*xi2[i] );
 
       /* Column k is a combination of powers of the input values.
          This will make it a polynomial. */
@@ -554,11 +572,17 @@ fit_2d_polynomial_matrix_fill(gal_data_t *xin, int nconst,
 
           /* Use the previously computed powers to fill the matrix */
           for(j=deg+1; j-->0;)
-            xo[ i*nconst + k++ ] = xi1_pow[j] * xi2_pow[deg-j];
+            {
+              /* For a check on the powers of the dimensions.
+              if(i==0) printf("%s: %zu, %zu\n", __func__, j, deg-j);
+              //*/
+
+              xo[ i*nconst + k++ ] = xi1_pow[j] * xi2_pow[deg-j];
+            }
 
           /* If a tpv polynomial is requested, add odd powers of
-             the radial term
-             See: https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html */
+             the radial term. See
+             https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html */
           if(tpv && deg%2)
             {
               xo[ i*nconst + k++ ] = r_pow;
@@ -569,14 +593,15 @@ fit_2d_polynomial_matrix_fill(gal_data_t *xin, int nconst,
 
   /* For a check.
   {
-    size_t checki=4;
+    size_t checki=2;
     printf("Row %zu: ", checki);
     for(j=0;j<nconst;++j)
       printf("%.3f ", xo[ checki*nconst + j ]);
     printf("\n");
     exit(0);
-  } */
+  } //*/
 
+  /* Clean up. */
   free(xi1_pow);
   free(xi2_pow);
 }
@@ -590,8 +615,8 @@ fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
                        gal_data_t *ywht, int nconst,
                        gsl_matrix **x,   gsl_vector **c,
                        gsl_matrix **cov, gsl_vector *y,
-                       gsl_vector *w,
-                       size_t maxpower, uint8_t matrixid)
+                       gsl_vector *w,    size_t maxpower,
+                       uint8_t matrixid)
 {
   /* Use GSL's own matrix allocation functions for the structures that need
      allocation and we can't use the same allocated space of the inputs. */
@@ -602,14 +627,14 @@ fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
   /* Fill the design matrix */
   switch(matrixid)
     {
-    case GAL_FIT_MATRIX_1D_POLYNOMIAL:
-      fit_1d_polynomial_matrix_fill(xin, nconst, x);
+    case GAL_FIT_MATRIX_POLYNOMIAL_1D:
+      fit_polynomial_1d_matrix_fill(xin, nconst, x);
       break;
-    case GAL_FIT_MATRIX_2D_POLYNOMIAL:
-      fit_2d_polynomial_matrix_fill(xin, nconst, x, maxpower, 0);
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D:
+      fit_polynomial_2d_matrix_fill(xin, nconst, x, maxpower, 0);
       break;
-    case GAL_FIT_MATRIX_2D_POLYNOMIAL_TPV:
-      fit_2d_polynomial_matrix_fill(xin, nconst, x, maxpower, 1);
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV:
+      fit_polynomial_2d_matrix_fill(xin, nconst, x, maxpower, 1);
       break;
     default:
       error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
@@ -620,6 +645,51 @@ fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
   /* Set the pointers of the 'y' and 'w' GSL vectors. */
   y->data=yin->array;
   if(ywht) w->data=ywht->array;
+}
+
+
+
+
+
+static void
+fit_polynomial_sanity_check(gal_data_t *xin, gal_data_t *yin,
+                            gal_data_t *ywht, uint8_t matrixid,
+                            gal_data_t **xdata, gal_data_t **ydata,
+                            gal_data_t **wdata)
+{
+  /* Check the dimensionality. */
+  if(xin->next)
+    {
+      if(xin->next->next)
+        error(EXIT_FAILURE, 0, "%s: only 1d and 2d polynomials are "
+              "currently supported, but more than 2 columns have "
+              "been given as the first independenat variable ('x'). "
+              "This might happen if the fitting columns directly "
+              "came from a reading of a table and the columns were "
+              "not separated ('xin->next' or xin->next->next were "
+              "are not set to NULL before calling 'gal_fit_polynomial')",
+              __func__);
+      else if(xin->next==yin)
+        error(EXIT_FAILURE, 0, "%s: the second independent variable "
+              "points to the measurement variable. Set 'x->next=NULL' "
+              "before calling 'gal_fit_polynomial'", __func__);
+      else if(matrixid < GAL_FIT_MATRIX_NUMBER_1D)
+        error(EXIT_FAILURE, 0, "%s: 'matrixid=%s' describes a 1d design "
+              "matrix, but 'xin' is a list of more than one datasets",
+              __func__, fit_name_matrix_from_id(matrixid));
+    }
+  else if(matrixid > GAL_FIT_MATRIX_NUMBER_1D)
+    error(EXIT_FAILURE, 0, "%s: 'matrixid=%s' describes a 2d design "
+          "matrix, but 'xin' is a list of just one dataset",
+          __func__, fit_name_matrix_from_id(matrixid));
+
+  /* Make sure the types and lengths of each column are correct. */
+  *xdata =        fit_sanity_check_col(xin,  xin, __func__);
+  *ydata =        fit_sanity_check_col(yin,  xin, __func__);
+  *wdata = ywht ? fit_sanity_check_col(ywht, xin, __func__) : NULL;
+  (*xdata)->next = ( xin->next
+                   ? fit_sanity_check_col(xin->next, xin, __func__)
+                   : NULL );
 }
 
 
@@ -653,37 +723,15 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
   gsl_vector wvec={yin->size, 1, NULL, NULL, 0}; /* 'ywht' may be NULL!  */
   gsl_vector *y=&yvec, *w=&wvec; /* These have to be after the two above.*/
 
-  /* Basic sanity checks. */
-  if(xin->next)
-    {
-      if(xin->next->next)
-        error(EXIT_FAILURE, 0, "%s: only 1d and 2d polynomials are "
-              "supported, but more than 2 columns are detected. "
-              "This might also happen if 'xin->next' "
-              "(or xin->next->next) is not set to NULL before "
-              "calling 'gal_fit_polynomial'", __func__);
-      else if(xin->next==yin)
-        error(EXIT_FAILURE, 0, "%s: The second independent variable is "
-              "points to the measurement variable. Set 'x->next=NULL' "
-              "before calling 'gal_fit_polynomial'", __func__);
-      else if(matrixid < GAL_FIT_MATRIX_1D_NUMBER)
-        error(EXIT_FAILURE, 0, "%s: 'matrixid=%s' describes a 1d design "
-              "matrix, but 'xin' is a list of more than one datasets",
-              __func__, fit_name_matrix_from_id(matrixid));
-    }
-  else if(matrixid > GAL_FIT_MATRIX_1D_NUMBER)
-    error(EXIT_FAILURE, 0, "%s: 'matrixid=%s' describes a 2d design "
-          "matrix, but 'xin' is a list of just one dataset",
-          __func__, fit_name_matrix_from_id(matrixid));
+  /* Basic check of the inputs. */
+  if(xin==NULL || xin->size==0 || yin==NULL || yin->size==0)
+    error(EXIT_FAILURE, 0, "%s: the inputs are either NULL or "
+          "do not contain any data (have a length of zero)", __func__);
 
-  xdata =        fit_1d_sanity_check(xin,  xin, __func__);
-  ydata =        fit_1d_sanity_check(yin,  xin, __func__);
-  wdata = ywht ? fit_1d_sanity_check(ywht, xin, __func__) : NULL;
-  xdata->next = ( xin->next
-                  ? fit_1d_sanity_check(xin->next, xin, __func__)
-                  : NULL );
-
-  /* Fill all the GSL structures. */
+  /* Fill all the GSL structures after a sanity check of th einput
+     columns. */
+  fit_polynomial_sanity_check(xin, yin, ywht, matrixid, &xdata,
+                              &ydata, &wdata);
   fit_polynomial_prepare(xdata, ydata, wdata, nconst,
                          &x, &c, &cov, y, w, maxpower, matrixid);
 
@@ -700,7 +748,6 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
       /* Select the robust function type. */
       switch(robustid)
         {
-        case GAL_FIT_ROBUST_DEFAULT:
         case GAL_FIT_ROBUST_BISQUARE: rtype=gsl_multifit_robust_bisquare;
           break;
         case GAL_FIT_ROBUST_CAUCHY:   rtype=gsl_multifit_robust_cauchy;
@@ -734,7 +781,7 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
     size_t i;
     double *ca=c->data;
     for(i=0;i<=nconst;++i) { printf("%f ", ca[i]); } printf("\n");
-  } */
+  } //*/
 
   /* Allocate the output dataset containing the fit results as first
      'gal_data_t'. */
@@ -756,12 +803,14 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
   *redchisq = (isnan(chisq) ? sse : chisq) / (xdata->size-nconst);
 
   /* Clean up and return. */
-  gsl_matrix_free(x);
-  gsl_vector_free(c);
-  gsl_matrix_free(cov);
+  if(xdata->next && xdata->next!=xin->next) /* Must be before 'xdata'.*/
+    { gal_data_free(xdata->next); xdata->next=NULL; }
+  if(ywht && wdata!=ywht) gal_data_free(wdata);
   if(xdata!=xin) gal_data_free(xdata);
   if(ydata!=yin) gal_data_free(ydata);
-  if(ywht && wdata!=ywht) gal_data_free(wdata);
+  gsl_matrix_free(cov);
+  gsl_matrix_free(x);
+  gsl_vector_free(c);
   return out;
 }
 
@@ -800,7 +849,7 @@ gal_fit_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
 
 /* Estimate values from a polynomial fit. */
 gal_data_t *
-gal_fit_1d_polynomial_estimate(gal_data_t *fit, gal_data_t *xin)
+gal_fit_polynomial_estimate_1d(gal_data_t *fit, gal_data_t *xin)
 {
   size_t i, j;
   size_t nconst=fit->size;
@@ -838,4 +887,14 @@ gal_fit_1d_polynomial_estimate(gal_data_t *fit, gal_data_t *xin)
   if(xd!=xin) gal_data_free(xd);
   free(xvec.data);
   return out;
+}
+
+
+
+
+
+gal_data_t *
+gal_fit_polynomial_estimate_2d(gal_data_t *fit, gal_data_t *xin)
+{
+  printf("%s: GOOD\n", __func__); exit(0);
 }

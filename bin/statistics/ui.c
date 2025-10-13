@@ -1049,7 +1049,8 @@ ui_preparations_fitestimate(struct statisticsparams *p)
           free(p->fitestimatecol);
           gal_checkset_allocate_copy(p->inputname, &p->fitestimate);
           gal_checkset_allocate_copy(p->cp.hdu, &p->fitestimatehdu);
-          gal_checkset_allocate_copy(p->columns->v, &p->fitestimatecol);
+          if(p->columns)
+            gal_checkset_allocate_copy(p->columns->v, &p->fitestimatecol);
         }
 
       /* Make sure a HDU is specified. We need to do this here (not
@@ -1060,28 +1061,34 @@ ui_preparations_fitestimate(struct statisticsparams *p)
               "'--fitestimate'). Please use the '--fitestimatehdu' "
               "option to specify the HDU", p->fitestimate);
 
-      /* Make sure a column is specified. We need to do this here (not
-         in 'ui_check_only_options') because only here we know
-         that the user specified a file not a value. */
-      if( p->fitestimatecol==NULL )
-        error(EXIT_FAILURE, 0, "no column specified for '%s' (given to "
-              "'--fitestimate'). Please use the '--fitestimatecol' "
-              "option to specify the column", p->fitestimate);
+      if(p->fitndim==1)
+        {
+          /* Make sure a column is specified. We need to do this here (not
+             in 'ui_check_only_options') because only here we know
+             that the user specified a file not a value. */
+          if( p->fitestimatecol==NULL )
+            error(EXIT_FAILURE, 0, "no column specified for '%s' (given to "
+                  "'--fitestimate'). Please use the '--fitestimatecol' "
+                  "option to specify the column", p->fitestimate);
 
-      /* Given string couldn't be read as a number, so try reading it
-         as a table. */
-      gal_list_str_add(&fecols, p->fitestimatecol, 1);
-      p->fitestval=gal_table_read(p->fitestimate, p->fitestimatehdu,
-                                  NULL, fecols,
-                                  p->cp.searchin, p->cp.ignorecase, 1,
-                                  p->cp.minmapsize, p->cp.quietmmap,
-                                  NULL, "--fitestimatehdu");
+          /* Read the given column as a table. */
+          gal_list_str_add(&fecols, p->fitestimatecol, 1);
+          p->fitestval=gal_table_read(p->fitestimate, p->fitestimatehdu,
+                                      NULL, fecols,
+                                      p->cp.searchin, p->cp.ignorecase, 1,
+                                      p->cp.minmapsize, p->cp.quietmmap,
+                                      NULL, "--fitestimatehdu");
 
-      /* If more than one column matched, inform the user. */
-      if(p->fitestval->next)
-        gal_tableintern_error_col_selection(p->fitestimate,
-            p->fitestimatehdu, "More than one column matched "
-            "the value given to '--fitestimatecol'.");
+          /* If more than one column matched, inform the user. */
+          if(p->fitestval->next)
+            gal_tableintern_error_col_selection(p->fitestimate,
+                p->fitestimatehdu, "More than one column matched "
+                "the value given to '--fitestimatecol'.");
+        }
+      else
+        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "
+              "fix the problem. Fit estimation is not yet implemented "
+              "in multi-dimensional fitting", __func__, PACKAGE_BUGREPORT);
     }
   else
     {
@@ -1101,10 +1108,14 @@ ui_preparations_fitestimate(struct statisticsparams *p)
 
 
 void
-ui_preparations_fit_weight(struct statisticsparams *p)
+ui_preparations_fit(struct statisticsparams *p)
 {
+  size_t nin;
   double *d, *df;
   gal_data_t *wht;
+
+  /* The number of input columns. */
+  nin=gal_list_data_number(p->input);
 
   /* This is only necessary for fitting models that require a weight. */
   switch(p->fitid)
@@ -1114,7 +1125,7 @@ ui_preparations_fit_weight(struct statisticsparams *p)
     case GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED:
 
       /* Basic sanity check first. */
-      if( gal_list_data_number(p->input)<3)
+      if(nin<3)
         error(EXIT_FAILURE, 0, "no weight column specified! A "
               "weight-based fit needs a third input column");
       if(p->fitweight==0)
@@ -1149,7 +1160,14 @@ ui_preparations_fit_weight(struct statisticsparams *p)
         error(EXIT_FAILURE, 0, "'%s' is not a recognized weight-type! "
               "Please use either 'std' (standard deviation), 'var' "
               "(variance) or 'inv-var' (inverse variance)", p->fitweight);
+
+      /* If there is only three input columns, then this is a 1D
+         fit. Otherwise, we have a 2D fit. */
+      p->fitndim = nin==3 ? 1 : 2;
       break;
+
+    /* Non-weighted fits. */
+    default: p->fitndim = nin==2 ? 1 : 2;
     }
 }
 
@@ -1241,8 +1259,9 @@ ui_preparations(struct statisticsparams *p)
   /* Set the out-of-range values in the input to blank. */
   ui_out_of_range_to_blank(p);
 
-  /* If we are not to work on tiles, then re-order and change the input. */
-  if(p->ontile==0 && p->sky==0 && p->contour==NULL)
+  /* If the positions of the points are not relevant, then re-order and
+     change the input. */
+  if(p->ontile==0 && p->sky==0 && p->fitid==0 && p->contour==NULL)
     {
       /* Only keep the elements we want. Note that if we have more than one
          column, we need to move the same rows in both (otherwise their
@@ -1276,7 +1295,7 @@ ui_preparations(struct statisticsparams *p)
 
   /* Set the fit-estimate column, and prepare the weight based on the
      user's specification.*/
-  ui_preparations_fit_weight(p);
+  ui_preparations_fit(p);
   if(p->fitestimate) ui_preparations_fitestimate(p);
 }
 

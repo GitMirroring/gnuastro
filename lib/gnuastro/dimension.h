@@ -105,6 +105,9 @@ void
 gal_dimension_index_to_coord(size_t index, size_t ndim, size_t *dsize,
                              size_t *coord);
 
+gal_data_t *
+gal_dimension_image_to_table(gal_data_t *input);
+
 
 
 

@@ -138,6 +138,7 @@ struct statisticsparams
   uint8_t      fitrobustid;  /* ID of robust fit type.                   */
   gal_data_t    *fitestval;  /* Values to estimate over fit.             */
   int             fitwhtid;  /* Code for the nature of the weight column.*/
+  size_t           fitndim;  /* Number of dimensions in the fit.         */
 };
 
 #endif
