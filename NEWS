@@ -172,6 +172,10 @@ See the end of the file for license conditions.
     (adding the contents of the second array into the first) in
     single-dimensional datasets.
 
+  - gal_dimension_image_to_table: function to extract all non-blank
+    elements of an image and save them into a table with their pixel
+    coordiantes (first two columns) and pixel value.
+
   - GAL_FIT_MATRIX_INVALID:
   - GAL_FIT_MATRIX_POLYNOMIAL_1D:
   - GAL_FIT_MATRIX_POLYNOMIAL_2D:

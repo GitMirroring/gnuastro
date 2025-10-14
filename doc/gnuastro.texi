@@ -27244,12 +27244,6 @@ For a 2D polynomial fit, two independent variables are needed.
 The two independent variables cna be given either as an image or as table columns.
 We'll start with an image here, and end with using table columns.
 
-@cartouche
-@noindent
-@strong{Fitting estimation not yet implemented in 2D}: as of this version, fitting estimation is not yet implemented in 2D.
-We will try to implement it as soon as time allows.
-@end cartouche
-
 Let's use the Arithmetic program to generate an image from the following 2D polynomial: @mymath{Y=5+10X_2+X_1X_2}.
 In a FITS image, @mymath{X_1} is the first FITS axis (horizontal) and @mymath{X_2} is the second FITS axis (vertical).
 For the details of the operators, see @ref{Arithmetic operators}.
@@ -27315,6 +27309,13 @@ $ aststatistics pixels.fits --fit=polynomial --fitmaxpower=2
 
 With the second command, you can see that many of the pixels have become NaN and from the third command, you can see that the fit is still good.
 You can try decreasing the number of useful (non-NaN) pixels (by increasing the @code{50} threshold above) and see how robust the fit is to fewer pixels.
+
+@cartouche
+@noindent
+@strong{@option{--fitestimate} not yet implemented in 2D}: as of this version, this option is not yet implemented in 2D.
+We will try to implement it as soon as time allows.
+Until then, the 2D image for a polynomial can be created in formalisim like above: where the @code{X1} and @code{X2} of every pixel are extracted and the constants are multiplied to each term of the polynomial.
+@end cartouche
 
 As mentioned at the start of this section, you can also feed your input data as table columns.
 First let's generate some table columns from the @file{pixels.fits} image we made above: we will feed the resulting table to statistics instead of table.

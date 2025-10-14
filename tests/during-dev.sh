@@ -71,7 +71,8 @@
 # space characters in them, quote the full value
 numjobs=8
 builddir=build
-outdir=~/tmp/in-progress/2dfit
+outdir=
+
 
 
 # Set the utility name, along with its arguments and options. NOTE, for
@@ -86,13 +87,10 @@ outdir=~/tmp/in-progress/2dfit
 # the script, you have to add a line under the line below
 #    'if [ -f "$utility" ]; then rm "$utility"; fi'
 # that will delete that particular program.
-utilname=statistics
+utilname=
+arguments=
+options=
 
-arguments=for-2d-fit.fits
-options="--fit=polynomial -c1,2,3 --fitmaxpower=2"
-
-arguments=pixels.fits
-options="--fit=polynomial --fitmaxpower=2"
 
 
 
@@ -209,7 +207,7 @@ if make -j$numjobs -C "$builddir"; then
     fi
 
     # Run the built utility with the given arguments and options.
-    "$utility" $arguments $options $extraopts --output=out.fits
+    "$utility" $arguments $options $extraopts
 
     # Clean up.
     rm -rf .gnuastro
