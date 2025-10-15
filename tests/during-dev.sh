@@ -83,10 +83,14 @@ outdir=
 # just add the argument/option to the final script that runs the utility
 # rather than these variables.
 #
-# TEST ASTSCRIPTs: if the problem is in the compiled programs used within
-# the script, you have to add a line under the line below
-#    'if [ -f "$utility" ]; then rm "$utility"; fi'
-# that will delete that particular program.
+# TEST ASTSCRIPTs: When testing a script (e.g., astscript-zeropoint), set
+# utilname to 'script-<name>' (e.g., 'utilname=script-zeropoint'). This
+# ensures their correct identification as a script (not a compiled
+# program). If the thing you are debugging/adding is in the compiled
+# programs used within the script, you have to add a line under this line
+# of the script to make sure that program is also re-built: 'if [ -f
+# "$utility" ]; then rm "$utility"; fi' that will delete that particular
+# program.
 utilname=
 arguments=
 options=

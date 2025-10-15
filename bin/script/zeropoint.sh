@@ -315,6 +315,10 @@ do
         -s|--starcat)            starcat="$2";                                 check_v "$1" "$starcat";  shift;shift;;
         -s=*|--starcat=*)        starcat="${1#*=}";                            check_v "$1" "$starcat";  shift;;
         -s*)                     starcat=$(echo "$1" | sed -e's/-c//');        check_v "$1" "$starcat";  shift;;
+        --starcatra)             starcatra="$2";                               check_v "$1" "$starcatra";  shift;shift;;
+        --starcatra=*)           starcatra="${1#*=}";                          check_v "$1" "$starcatra";  shift;;
+        --starcatdec)            starcatdec="$2";                              check_v "$1" "$starcatdec"; shift;shift;;
+        --starcatdec=*)          starcatdec="${1#*=}";                         check_v "$1" "$starcatdec"; shift;;
         --starcathdu)            starcathdu="$2";                              check_v "$1" "$starcathdu";  shift;shift;;
         --starcathdu=*)          starcathdu="${1#*=}";                         check_v "$1" "$starcathdu";  shift;;
         -c|--refcat)             refcat="$2";                                  check_v "$1" "$refcat";  shift;shift;;
