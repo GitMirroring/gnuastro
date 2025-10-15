@@ -220,18 +220,6 @@ See the end of the file for license conditions.
 ** Removed features
 ** Changed features
 
-*** Library
-
-  - New names for the fitting library functions (old --> new). This is
-    because (as described in the new features), the fitting functions have
-    generalized to also accept 2D inputs.
-
-    - gal_fit_1d_linear --> gal_fit_linear_1d
-    - gal_fit_1d_polynomial --> gal_fit_polynomial
-    - gal_fit_1d_polynomial_robust --> gal_fit_polynomial_robust
-    - gal_fit_1d_linear_estimate --> gal_fit_linear_no_constant_1d
-    - gal_fit_1d_linear_no_constant --> gal_fit_linear_no_constant_1d
-
 *** Book
 
   - The term "stack" was used in two contexts within the Arithmetic
@@ -371,7 +359,7 @@ See the end of the file for license conditions.
     the input array when all elements are blank.
 
   - gal_kdtree_nearest_neighbour: two new argument to input a "distance
-    error" (or 'disterr') and return the set of points that within that
+    error" (or 'aperture') and return the set of points that within that
     error during the parsing of the tree.
 
   - gal_match_kdtree: a new 'arrange' and 'flag' argument have been added
@@ -382,6 +370,16 @@ See the end of the file for license conditions.
 
   - gal_table_write_log: a new 'format' argument is added to allow setting
     the format of the table (until now, it was always plain-text).
+
+  - New names for the fitting library functions (old --> new). This is
+    because (as described in the new features), the fitting functions have
+    generalized to also accept 2D inputs.
+
+    - gal_fit_1d_linear --> gal_fit_linear_1d
+    - gal_fit_1d_polynomial --> gal_fit_polynomial
+    - gal_fit_1d_polynomial_robust --> gal_fit_polynomial_robust
+    - gal_fit_1d_linear_estimate --> gal_fit_linear_no_constant_1d
+    - gal_fit_1d_linear_no_constant --> gal_fit_linear_no_constant_1d
 
 ** Bugs fixed
 

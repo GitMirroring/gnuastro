@@ -44131,12 +44131,16 @@ astfits kd-tree.fits -h1
 
 @end deftypefun
 
-@deftypefun size_t gal_kdtree_nearest_neighbour (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{*least_dist}, uint8_t @code{nosamenode})
+@deftypefun size_t gal_kdtree_nearest_neighbour (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{aperture}, double @code{*least_dist}, gal_list_sizet_t @code{**same_dist}, uint8_t @code{nosamenode})
 Returns the index of the nearest input point to the query point (@code{point}, assumed to be an array with same number of elements as @code{gal_data_t}s in @code{coords_raw}).
 If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbour within the same dataset.
 The distance between the query point and its nearest neighbor is stored in the space that @code{least_dist} points to.
 This search is efficient due to the constant checking for the presence of possible best points in other branches.
 If it is not possible for the other branch to have a better nearest neighbor, that branch is not searched.
+
+If @code{aperture} is greater than 0, the set of points whose distance is smaller than the given value will be returned as a list in the @code{**same_dist} list.
+However, this is known to miss some of the points within the aperture (see @url{https://savannah.gnu.org/bugs/?67364, bug 67364}).
+Please update if/when that bug is fixed.
 
 As an example, let's use the k-d tree that was created in the example of @code{gal_kdtree_create} (above) and find the nearest row to a given coordinate (@code{point}).
 This will be a very common scenario, especially in large and multi-dimensional datasets where the k-d tree creation can take long and you do not want to re-create the k-d tree every time.
@@ -44317,10 +44321,13 @@ The arrangement of the match output; for a description of the various match arra
 The invalid keyword is useful when you need to initialize values (and later make sure that your users have actually given a value.
 @end deffn
 
-@deftypefun {gal_data_t *} gal_match_sort_based (gal_data_t @code{*coord1}, gal_data_t @code{*coord2}, double @code{*aperture}, int @code{sorted_by_first}, int @code{inplace}, size_t @code{minmapsize}, int @code{quietmmap}, size_t @code{*nummatched})
+@deftypefun {gal_data_t *} gal_match_sort_based (gal_data_t @code{*coord1}, gal_data_t @code{*coord2}, double @code{*aperture}, int @code{sorted_by_first}, int @code{inplace}, size_t @code{minmapsize}, int @code{quietmmap}, uint8_t @code{**flag}, size_t @code{*nummatched})
 
 Use a basic sort-based match to find the matching points of two input coordinates.
 See the descriptions above on the format of the inputs and outputs.
+For inner and full arragements, this function will allocate and return a @code{flag} array that has a value of 1 for ambiguous elements of the second input and 0 for good or non-matching elements (see @ref{Unambiguous matching}).
+
+The final number of matches is returned in @code{nummatched} and the format of the returned dataset (three columns) is described above.
 To speed up the search, this function will sort the input coordinates by their first column (first axis).
 If @emph{both} are already sorted by their first column, you can avoid the sorting step by giving a non-zero value to @code{sorted_by_first}.
 
