@@ -270,7 +270,6 @@ outkeys_confusion_limit_write(struct mkcatalogparams *p,
   tmp = fval[3] - fval[1];
   outkeys_numeric(keylist, &tmp, GAL_TYPE_FLOAT32, "CNL",
                   "Confusion limit: CNLP75-CNLP25.", "pixels");
-  printf("%s: %f, %f\n", __func__, fval[1], fval[3]);
 
   /* Write the values. */
   for(i=0; i<OUTKEYS_CNL_NUMBER; ++i)
