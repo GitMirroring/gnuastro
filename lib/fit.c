@@ -476,20 +476,25 @@ gal_fit_linear_estimate_1d(gal_data_t *fit, gal_data_t *xin)
 static size_t
 fit_polynomial_nconst(uint8_t maxpower, uint8_t matrixid)
 {
-  size_t nconst;
+  size_t nconst=GAL_BLANK_SIZE_T;
 
   switch(matrixid)
     {
-      case GAL_FIT_MATRIX_POLYNOMIAL_1D:
-        nconst=maxpower+1;
-        break;
-      case GAL_FIT_MATRIX_POLYNOMIAL_2D:
-        nconst=(maxpower+1)*(maxpower+2)/2;
-        break;
-      case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV:
-        /* TPV has odd radial terms. */
-        nconst=(maxpower+1)*(maxpower+2)/2 + (maxpower/2 + 1);
-        break;
+    case GAL_FIT_MATRIX_POLYNOMIAL_1D:
+      nconst=maxpower+1;
+      break;
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D:
+      nconst=(maxpower+1)*(maxpower+2)/2;
+      break;
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV:
+      /* TPV has odd radial terms. */
+      nconst=(maxpower+1)*(maxpower+2)/2 + (maxpower/2 + 1);
+      break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
+            "'%s' to fix the problem. The value '%u' is not "
+            "recognized for 'matrixid'", __func__, PACKAGE_BUGREPORT,
+            matrixid);
     }
 
   return nconst;
