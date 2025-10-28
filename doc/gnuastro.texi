@@ -22624,23 +22624,21 @@ See the description of @option{sigclip-*} for usage details; just remember that 
 
 @item sigclip-all
 @item madclip-all
-Similar to the @option{sigclip-*} or @option{madclip-*} operators, but instead of returning only a single measured statistic (mean, STD, median or MAD) all of them are returned (along with the numbers image).
+Similar to the @option{sigclip-*} or @option{madclip-*} operators, but instead of returning only a single measured statistic (mean, STD, median or MAD) all of them are returned, and in the following order: mean, STD, median, MAD, number.
 This will greatly speed up your analysis pipelines when more than one statistic is required (for example you need both the mean and the standard deviation).
 Just note that as described under the sigma-clip operators, @option{--writeall} will be necessary if you want them all to be put in the output.
 
-For example, let's assume you want the mean and standard deviation after a sigma-clipping like the examples before (not just one of them).
-In that case, the cleanest way is to add metadata to each output in the same Arithmetic call.
-Afterwards, copy the HDUs you want in your output and delete the intermediate file like below:
+For example, let's assume you want the mean and standard deviation after a mad-clipping like the examples before (not just one of them).
+In that case, the cleanest way is to use a combination of the @code{set-} and @code{free} operators like the example below.
+The first (@code{set-} pops the top operand from the stack and stores it in a named variable (that you can use any number of times later), while the second (@option{free}) simply pops and deletes the top operand on the stack.
+For more on these operators, see @ref{Operand storage in memory or a file}.
+Finally, to help in later usage of the HDUs, we use the @option{--metadata} operator to add a name to each output HDU in the same Arithmetic call.
 
 @example
 $ astarithmetic a.fits b.fits c.fits -g1 --writeall \
-                3 5 0.01 madclip-maskfilled \
-                3 4 0.1  sigclip-mean \
-                --output=out-arith.fits \
-                --metaname=MEAN,STD,MEDIAN,MAD,NUMBER
-$ astfits out-arith.fits --copy=MEAN --copy=STD \
-          --output=out.fits
-$ rm out-arith.fits
+                3 7.5 0.2 madclip-all set-m set-s \
+                free free free s m --metaname=MEAN,STD \
+                --output=out.fits
 @end example
 
 Different combinations of the various statistics are commonly necessary for differnet purposes.
@@ -24523,8 +24521,8 @@ $ astarithmetic image.fits 20 repeat 20 add-dimension-slow
 
 @item free
 Free the top operand from the stack and memory.
-This is useful in cases where the operator adds more than one operand on the stack.
-For example operators that do stacking by clipping in @ref{Coadding operators}; see the examples there for more.
+This is useful in cases where the operator adds more than one operand on the stack, but you only need one of them (not all!).
+For an example, see the clipping operators of @ref{Coadding operators}.
 
 @item set-AAA
 Set the characters after the dash (@code{AAA} in the case shown here) as a name for the first popped operand on the stack.
