@@ -371,9 +371,9 @@ ui_check_only_options(struct matchparams *p)
   /* Until the following bug is fixed, the users should be warned about the
      issue with k-d tree matching. */
   if(p->kdtreemode!=MATCH_KDTREE_DISABLE
-     && p->arrange==GAL_MATCH_ARRANGE_INNER
-     && p->arrange==GAL_MATCH_ARRANGE_FULL
-     && p->cp.quiet==0)
+     && p->cp.quiet==0
+     && (   p->arrange==GAL_MATCH_ARRANGE_INNER
+         || p->arrange==GAL_MATCH_ARRANGE_FULL ) )
     error(EXIT_SUCCESS, 0, "WARNING: k-d tree based matching currently "
           "has a bug (regarding multiple matches within the aperture "
           "that may not be flagged and the order of the inputs). "
