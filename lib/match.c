@@ -1370,10 +1370,10 @@ match_kdtree_worker(void *in_prm)
   /* High level definitions. */
   int iscovered;
   uint8_t *existA;
-  size_t i, j, ai, bi, h_i;
   gal_data_t *ccol, *Aexist;
   gal_list_sizet_t *inrange;
   double d, po, *point=NULL, least_dist;
+  size_t i, j, bi, h_i, ai=GAL_BLANK_SIZE_T;
 
   /* Allocate space for all the matching points (based on the number of
      dimensions). */

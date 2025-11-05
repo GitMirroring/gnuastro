@@ -456,6 +456,9 @@ See the end of the file for license conditions.
   - bug #67297: Fits program segmentation fault when no input specified and
     a HDU operation requested.
 
+  - bug #67364: Match's k-d tree based inner matching depends on order of
+    inputs. Fixed by Barış Güngör.
+
   - bug #67475: Statistcs fitting output prints 0 when the values are very
     small. Reported by Faezeh Bidjarchian.
 
