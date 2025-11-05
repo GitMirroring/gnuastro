@@ -1435,7 +1435,7 @@ match_kdtree_worker(void *in_prm)
              points in the given aperture. Otherwise, return the index of
              the nearest neighbor in the first catalog to this point in the
              second catalog. */
-          if(p->aperture || p->aperture[0]>0.0f)
+          if(p->aperture && p->aperture[0]>0.0f)
             {
               inrange=gal_kdtree_range(p->A, p->A_kdtree, p->kdtree_root,
                                        point, p->aperture[0]);
