@@ -235,8 +235,8 @@ match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
   switch(p->arrange)
     {
     case GAL_MATCH_ARRANGE_INNER:
-      istart=p->notmatched ? nummatched : 0;
-      iend=p->notmatched ? in->dsize[0] : nummatched;
+      istart = p->notmatched ? nummatched : 0;
+      iend = p->notmatched ? in->dsize[0] : nummatched;
       outrows = p->notmatched ? in->dsize[0] - nummatched : nummatched;
       break;
 
@@ -245,15 +245,15 @@ match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
          from both catalogs, all the non-matched rows will come after
          that. So the final number of rows will be the addition of the two
          sizes, minus the number of matched rows. */
-      istart=0;
-      iend=nummatched;
+      istart = 0;
+      iend = nummatched;
       offset = f1s2==1 ? nummatched : p->cols1->size;
       outrows = p->cols1->size + p->cols2->size - nummatched;
       break;
 
     case GAL_MATCH_ARRANGE_OUTER:
     case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
-      istart=0;
+      istart = 0;
       iend = outrows = p->cols2->size;
       break;
 
@@ -273,47 +273,57 @@ match_arrange_in_new_col(struct matchparams *p, gal_data_t *in,
                                        __func__, "out");
 
   /* Except for inner and outer, the other types of match can lead to empty
-     rows. So we'll initialize all the values to blank in the given
-     type. */
+     rows. So we'll initialize all the values to blank. */
   if(   p->arrange==GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE
      || p->arrange==GAL_MATCH_ARRANGE_FULL )
     for(i=0;i<outrows*n;++i)
       gal_blank_write(gal_pointer_increment(out, i, in->type),
                       in->type);
 
-  /* Copy the matched rows into the output array. */
-  for(i=istart;i<iend;++i)
+  /* Copy the matched rows into the output array. based on the permutation
+     (if there was a permutation, see below). */
+  if(permut)
     {
-      /* Copy the matched columns. */
-      if(permut[i]!=GAL_BLANK_SIZE_T) /* For 'outer-within-aperture'. */
-        memcpy(gal_pointer_increment(out,       n*c,         in->type),
-               gal_pointer_increment(in->array, n*permut[i], in->type),
-               gal_type_sizeof(in->type) * n);
+      for(i=istart;i<iend;++i)
+        {
+          /* No permutation necessary for 'outer-within-aperture'. */
+          if(permut[i]!=GAL_BLANK_SIZE_T)
+            memcpy(gal_pointer_increment(out,       n*c,         in->type),
+                   gal_pointer_increment(in->array, n*permut[i], in->type),
+                   gal_type_sizeof(in->type) * n);
 
-      /* Increment the output row counter. */
-      ++c;
+          /* Increment the output row counter. */
+          ++c;
+        }
+
+      /* If we are doing a full arrangement, we need to write the non-matching
+         rows in the last rows. */
+      if(p->arrange==GAL_MATCH_ARRANGE_FULL)
+        {
+          i=offset;
+          for(j=iend;j<in->size;++j)
+            memcpy(gal_pointer_increment(out,       n*i++,       in->type),
+                   gal_pointer_increment(in->array, n*permut[j], in->type),
+                   gal_type_sizeof(in->type) * n);
+        }
     }
 
-  /* If we are doing a full match, we need to write the non-matching rows
-     in the last rows. */
-  if(p->arrange==GAL_MATCH_ARRANGE_FULL)
-    {
-      i=offset;
-      for(j=iend;j<in->size;++j)
-        memcpy(gal_pointer_increment(out,       n*i++,       in->type),
-               gal_pointer_increment(in->array, n*permut[j], in->type),
-               gal_type_sizeof(in->type) * n);
-    }
+  /* permut==NULL: happens in a full arrangement, when there was no
+     match. In this case, we should just write the whole input in the
+     proper part of the output (the rest of the rows will be blank). */
+  else
+    memcpy(gal_pointer_increment(out, offset, in->type), in->array,
+           gal_type_sizeof(in->type)*in->size);
 
   /**********************************/
   /* Add a check so if the column is a string, we free the strings that
      aren't included in the output. */
   /**********************************/
 
-  /* Free the existing array, and correct the sizes. */
-  free(in->array);
-  in->dsize[0] = outrows;
+  /* Free the existing array, reset it and correct the sizes. */
+  in->dsize[0] = outrows; /* has to be before setting the 'size'. */
   in->size = in->dsize[0] * (in->ndim==1 ? 1 : in->dsize[1]);
+  free(in->array); /* has to be before resetting 'array'. */
   in->array=out;
 }
 
@@ -371,7 +381,7 @@ match_arrange_inner_full(struct matchparams *p, size_t *permutation,
                          int f1s2, gal_data_t *cat, size_t nummatched)
 {
   gal_data_t *tmp;
-  struct ma_params map;
+  struct ma_params map={0};
 
   /* Arrange the output rows. */
   if(permutation)
@@ -389,24 +399,40 @@ match_arrange_inner_full(struct matchparams *p, size_t *permutation,
                                gal_list_data_number(cat),
                                p->cp.numthreads, p->cp.minmapsize,
                                p->cp.quietmmap);
-
         }
     }
 
-  /* If no match was found ('permutation==NULL'), and the matched columns
-     are requested, empty all the columns that are to be written (only
-     keeping the meta-data). */
+  /* If no match was found ('permutation==NULL'), the action depends on the
+     requested arrangemnent. */
   else
     if(p->notmatched==0)
+      switch(p->arrange)
       {
+      /* In a full match with 'outcols', we want all the input rows in both
+         catalogs. */
+      case GAL_MATCH_ARRANGE_FULL:
+        map.p=p;
+        map.cat=cat;
+        map.f1s2=f1s2;
+        map.nummatched=nummatched;
+        gal_threads_spin_off(match_arrange_worker, &map,
+                             gal_list_data_number(cat),
+                             p->cp.numthreads, p->cp.minmapsize,
+                             p->cp.quietmmap);
+        break;
+
+        /* For an inner match since no match was found, simply empty all
+           the columns that are to be written (only keeping the
+           meta-data). */
+      case GAL_MATCH_ARRANGE_INNER:
         for(tmp=cat; tmp!=NULL; tmp=tmp->next)
           {
             tmp->size=0;
             free(tmp->dsize); tmp->dsize=NULL;
             free(tmp->array); tmp->array=NULL;
           }
+        break;
       }
-
 }
 
 
@@ -515,11 +541,9 @@ match_catalog_read_write_all(struct matchparams *p, size_t *permutation,
   if(p->outcols) return cat;
   else if(cat)
     {
-      /* Write the catalog to a file. */
+      /* Write the catalog to a file and clean up. */
       gal_table_write(cat, NULL, NULL, p->cp.tableformat,
                       p->cp.output, extname, 0, 0);
-
-      /* Clean up. */
       gal_list_data_free(cat);
     }
 
@@ -711,6 +735,8 @@ match_catalog_kdtree_build(struct matchparams *p)
   if(!p->cp.quiet)
     fprintf(stdout, "  - Output (k-d tree): %s\n", p->cp.output);
 }
+
+
 
 
 

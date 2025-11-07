@@ -462,6 +462,9 @@ See the end of the file for license conditions.
   - bug #67475: Statistcs fitting output prints 0 when the values are very
     small. Reported by Faezeh Bidjarchian.
 
+  - bug #67684: Match's full-arrangement with outcols produces an empty
+    output when there is no match. Reported by Sepideh Eskandarlou.
+
 
 
 

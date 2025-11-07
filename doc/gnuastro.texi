@@ -32210,10 +32210,11 @@ Try this out for yourself as an exercise to visually understand this important f
 The output of a full match will contain matching and non-matching rows in both catalogs.
 In other words, when there is a match between the two catalogs, it is unambiguous and exclusive (as in the ``Inner'' mode above).
 However, if a row from any of the two inputs does not match, it is still present in the output catalog, but rows that belong to the other input are given blank values for it.
+When there is no matching rows between the two tables, the output will effectively be a concatenation of the two inputs.
 In @url{https://www.w3schools.com/sql/sql_join.asp, SQL jargon} this is known as ``full-outer joining''.
 
-A ``full'' output arrangement is therefore effectively an inner match with the non-matching rows from both catalogs appended to it.
-Therefore, similar to an inner match an aperture is mandatory.
+A ``full'' output arrangement is therefore effectively an inner arrangement, but with the non-matching rows from both catalogs appended to it.
+Therefore, similar to an inner match, an aperture is mandatory.
 
 Let's use the same two example demo inputs of the inner arrangement above, but call the Match program with a @code{--arrange=full} this time:
 
@@ -44282,13 +44283,12 @@ The ordering of the rest of the elements is undefined (depends on the matching f
 The third node is the distances between the respective match (which may be elliptical distance, see discussion of ``aperture'' below).
 
 The functions will not simply return the nearest neighbor as a match.
-This is because the nearest neighbor may be too far to be a meaningful!
-They will check the distance between the nearest neighbor of each point and only return a match if it is within an acceptable N-dimensional distance (or ``aperture'').
+This is because the nearest neighbor may be too far/close to be a meaningful (given the errors in position measurements)!
+They will check the distance between the nearest neighbor of each point and only return a match if it is within an acceptable N-dimensional distance (or ``aperture'') and is unambiguous (see @ref{Unambiguous matching}).
 The matching aperture is defined by the @code{aperture} array that is an input argument to the functions.
 
-If several points of one catalog lie within this aperture of a point in the other catalog, the  nearest is defined as the match.
 In a 2D situation (where the input lists have two nodes), for the most generic case, @code{aperture} must have three elements: the major axis length, axis ratio and position angle (see @ref{Defining an ellipse and ellipsoid}).
-If @code{aperture[1]==1}, the aperture will be a circle of radius @code{aperture[0]} and the third value will not be used.
+Therefore, if @code{aperture[1]==1}, the aperture will be a circle of radius @code{aperture[0]} and the third value will not be used.
 When the aperture is an ellipse, distances between the points are also calculated in the respective elliptical distances (@mymath{r_{el}} in @ref{Defining an ellipse and ellipsoid}).
 
 @strong{Output permutations ignore internal sorting}: the output permutations will correspond to the initial inputs.
