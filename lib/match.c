@@ -1371,7 +1371,7 @@ match_kdtree_worker(void *in_prm)
   int iscovered;
   uint8_t *existA;
   gal_data_t *ccol, *Aexist;
-  gal_list_sizet_t *inrange;
+  gal_list_sizet_t *inrange=NULL;
   double d, po, *point=NULL, least_dist;
   size_t i, j, bi, h_i, ai=GAL_BLANK_SIZE_T;
 
@@ -1431,11 +1431,15 @@ match_kdtree_worker(void *in_prm)
       /* Continue with the match if the point is in-range. */
       if(iscovered)
         {
-          /* If an aperture was defined and it is non-zero, find all the
-             points in the given aperture. Otherwise, return the index of
-             the nearest neighbor in the first catalog to this point in the
-             second catalog. */
-          if(p->aperture && p->aperture[0]>0.0f)
+          /* If an aperture was defined (and it is non-zero) and we are in
+             an inner or full arrangement, find all the points in the given
+             aperture. Otherwise, return the index of the nearest neighbor
+             in the first catalog to this point in the second
+             catalog.  */
+          if(   p->aperture
+             && p->aperture[0]>0.0f
+             && (    p->arrange==GAL_MATCH_ARRANGE_FULL
+                  || p->arrange==GAL_MATCH_ARRANGE_INNER ) )
             {
               inrange=gal_kdtree_range(p->A, p->A_kdtree, p->kdtree_root,
                                        point, p->aperture[0]);
@@ -1517,12 +1521,11 @@ match_kdtree_worker(void *in_prm)
                 }
               break;
 
-            /* For the 'outer' match if there is a 'inrange', it should be
-               freed (it is not relevant). */
+            /* For any of the 'outer' matchs just keep the index and
+               distance of the nearest neighbor. */
             case GAL_MATCH_ARRANGE_OUTER:
             case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
               d=match_distance_find(p, ai, bi);
-              if(inrange) free(inrange);
               p->aoinb[bi]=ai;
               p->aoinbd[bi]=d;
               break;

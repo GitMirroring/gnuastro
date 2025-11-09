@@ -32298,9 +32298,8 @@ $ cat c.txt
 4  4  0.05
 
 $ astmatch c.txt --ccol1=X,Y b.txt --ccol2=X,Y \
-           --aperture=0.5 --outcols=bX,bY,bMAGb,aEXT \
-           --arrange=outer --kdtree=internal \
-           --output=outer.fits
+           --outcols=bX,bY,bMAGb,aEXT --arrange=outer \
+           --kdtree=internal --output=outer.fits
 
 $ asttable outer.fits -Y
 1   1   18.5   0.04

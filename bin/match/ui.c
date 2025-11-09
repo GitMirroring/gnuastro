@@ -701,31 +701,49 @@ ui_set_columns_sanity_check_read_aperture(struct matchparams *p)
 
   /* Read/check the aperture values. */
   if(p->aperture)
-    switch(ccol1n)
-      {
-      case 1:
-        if(p->aperture->size>1)
-          error(EXIT_FAILURE, 0, "%zu values given to '--aperture'. In "
-                "a 1D match, this option can only take one value",
-                p->aperture->size);
-        break;
+    {
+      /* If we are in an outer arrangement, an aperture should not be
+         given! */
+      if(p->arrange==GAL_MATCH_ARRANGE_OUTER)
+        error(EXIT_FAILURE, 0, "no aperture should be given in an "
+              "\"outer\" arrangement. For more information, see the "
+              "\"Arranging match output\" section of the manual "
+              "(e.g., by running the command 'info gnuastro "
+              "arranging')");
 
-      case 2: ui_read_columns_aperture_2d(p); break;
-      case 3: ui_read_columns_aperture_3d(p); break;
-      default:
-        error(EXIT_FAILURE, 0, "%zu dimensional matches are not "
-              "currently supported (maximum is 2 dimensions). The number "
-              "of dimensions is deduced from the number of values given "
-              "to '--ccol1' (or '--coord') and '--ccol2'", ccol1n);
-      }
-  else if ( p->kdtreemode != MATCH_KDTREE_BUILD )
+      /* Read the aperture depending on the number of dimensions. */
+      switch(ccol1n)
+        {
+        case 1:
+          if(p->aperture->size>1)
+            error(EXIT_FAILURE, 0, "%zu values given to '--aperture'. "
+                  "In a 1D match, this option can only take one value",
+                  p->aperture->size);
+          break;
+
+        case 2: ui_read_columns_aperture_2d(p); break;
+        case 3: ui_read_columns_aperture_3d(p); break;
+        default:
+          error(EXIT_FAILURE, 0, "%zu dimensional matches are not "
+                "currently supported (maximum is 2 dimensions). The "
+                "number of dimensions is deduced from the number of "
+                "values given to '--ccol1' (or '--coord') and "
+                "'--ccol2'", ccol1n);
+        }
+    }
+
+  /* No aperture is given; this is only possible in the following
+     modes. Otherwise, we need to abort the program and inform the user to
+     provide an aperture. */
+  else if ( p->kdtreemode != MATCH_KDTREE_BUILD
+            && p->arrange != GAL_MATCH_ARRANGE_OUTER)
     error(EXIT_FAILURE, 0, "no matching aperture specified. Please "
           "use the '--aperture' option to define the acceptable "
           "aperture for matching the coordinates (in the same units "
           "as each dimension). An aperture is not necessary when you "
           "are building a k-d tree or when you want an outer match; "
-          "but this run is not any of those. Please run 'info %s' for "
-          "more on the format of '--aperture'", PROGRAM_EXEC);
+          "but this is not any of those scenarios. Please run 'info "
+          "%s' for more on the format of '--aperture'", PROGRAM_EXEC);
 
   /* Return the number of dimensions. */
   return ccol1n;
