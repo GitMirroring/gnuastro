@@ -36,14 +36,16 @@ See the end of the file for license conditions.
       improving the speed. See example usages within the book.
 
     - luminosity-to-mag:
-    - mag-to-luminosity: Convert apparent magnitude to luminosity and
-      vice-versa. Implemented by Sepideh Eskandarlou.
+    - mag-to-luminosity:
+      Convert apparent magnitude to luminosity and vice-versa. Implemented
+      by Sepideh Eskandarlou.
 
     - madclip-all:
-    - sigclip-all: return all available statistics after clipping outliers
-      (mean, std, median and MAD and number of used datasets).
+    - sigclip-all:
+      Return all available statistics after clipping outliers (mean, std,
+      median and MAD and number of used datasets).
 
-    - sblim-diff: calculate the expected difference in surface brighntess
+    - sblim-diff: calculate the expected difference in surface brightness
       limit (purely based on exposed area (of the telescope) and exposure
       time (assuming the same filter, sky conditions and assuming no
       correlated noise). This can be used for planning projects with
@@ -92,7 +94,7 @@ See the end of the file for license conditions.
     section in the book called "Metameasurements on full input".
 
   --nml-sigma and --nml-area: the multiple of standard deviation and area
-    (in square arcseconds) to use for the noise-based magntiude limit (also
+    (in square arcseconds) to use for the noise-based magnitude limit (also
     called "detection limit" by some authors).
 
   --cnl-with-objects: measure the confusion limit using objects instead of
@@ -174,17 +176,17 @@ See the end of the file for license conditions.
 
   - gal_dimension_image_to_table: function to extract all non-blank
     elements of an image and save them into a table with their pixel
-    coordiantes (first two columns) and pixel value.
+    coordinates (first two columns) and pixel value.
 
   - GAL_FIT_MATRIX_INVALID:
   - GAL_FIT_MATRIX_POLYNOMIAL_1D:
   - GAL_FIT_MATRIX_POLYNOMIAL_2D:
-  - GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV: Macros to identify different types of
-    fitting matrices.
+  - GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV:
+    Macros to identify different types of fitting matrices.
 
   - GAL_FIT_MATRIX_NUMBER_1D:
-  - GAL_FIT_MATRIX_NUMBER_ALL: the number of 1D matrices and total
-    matrices used in fitting.
+  - GAL_FIT_MATRIX_NUMBER_ALL:
+    The number of 1D matrices and total matrices used in fitting.
 
   - gal_kdtree_range: returns the list of points that are within a given
     radius of the given point. Implemented by Barış Güngör.
@@ -194,8 +196,9 @@ See the end of the file for license conditions.
 
   - gal_list_sizetsizetf64_add:
   - gal_list_sizetsizetf64_pop:
-  - gal_list_sizetsizetf64_free: new functions to use a new list type that
-    includes a 'size_t' and a 'double'.
+  - gal_list_sizetsizetf64_free:
+    New functions to use a new list type that includes a 'size_t' and a
+    'double'.
 
   - gal_statistics_minimums_three: return the three smallest values of the
     given dataset.
@@ -209,13 +212,14 @@ See the end of the file for license conditions.
 
   - gal_table_sort: sort the given table by a given column.
 
-  - gal_units_sblim_diff: calculate the difference in surface brighntess
+  - gal_units_sblim_diff: calculate the difference in surface brightness
     limit only assuming a different effective radius of a different
     telescope and/or a different exposure time.
 
   - gal_units_mag_to_luminosity:
-  - gal_units_luminosity_to_mag: Convert the observed magnitude of an
-    object to luminosity and vice-versa.
+  - gal_units_luminosity_to_mag:
+    Convert the observed magnitude of an object to luminosity and
+    vice-versa.
 
   - gal_units_wavelength_flux_density_to_jy: convert given wavelength flux
     density (erg/s/cm^2/A) to Janskys.
@@ -248,15 +252,15 @@ See the end of the file for license conditions.
   - Operators:
 
     - interpolate-minofregion:
-    - interpolate-maxofregion: Now takes three operands (in order of
-      popping): the outer connectivity, the inner connectivity and the
-      image with blank pixels. Until now, it took only the inner
-      connectivity and the outer connectivity was hard-coded to the maximum
-      of the input's dimensions. This was necessary because it can happen
-      that the most permissive outer connectivity may be too loose in some
-      usage scenarios. To get the same output as before in your existing
-      scripts, add a '2' before the operator (for an image) or (3 for a
-      cube).
+    - interpolate-maxofregion:
+      Now take three operands (in order of popping): the outer
+      connectivity, the inner connectivity and the image with blank
+      pixels. Until now, it took only the inner connectivity and the outer
+      connectivity was hard-coded to the maximum of the input's
+      dimensions. This was necessary because it can happen that the most
+      permissive outer connectivity may be too loose in some usage
+      scenarios. To get the same output as before in your existing scripts,
+      add a '2' before the operator (for an image) or (3 for a cube).
 
     - madclip-*: when the MAD is zero (median is repeated; mostly occurs on
       integer inputs), an alternative to the MAD will be used (difference
@@ -299,7 +303,7 @@ See the end of the file for license conditions.
     for all Gnuastro programs to write all their metadata in the 0th
     HDU. The new "MakeCatalog output keywords" section in the book fully
     describes all the output keywords, please check that section for all
-    the new keyword names. The most signifiacnt is the surface brightness
+    the new keyword names. The most significant is the surface brightness
     limit keyword(s), that have now been distributed and renamed to fit the
     new metameasure structure.
 
@@ -311,7 +315,7 @@ See the end of the file for license conditions.
 
   --forcereadstd has been removed in favor of the more general
     '--meta-measure' option. This is because it was only useful for
-    calculating the surface brighntess limit (which is a metameasure).
+    calculating the surface brightness limit (which is a metameasure).
 
 *** Match
 
@@ -449,7 +453,7 @@ See the end of the file for license conditions.
   - bug #67232: Building failure on i686 architectures (32-bit).  Reported
     by Benson Muite and fixed by Giacomo Lorenzetti.
 
-  - bug #67275: Segmentation fault in MakeCagalot during clump catalog
+  - bug #67275: Segmentation fault in MakeCatalog during clump catalog
     generation when input labels not contiguous (for example you are
     feeding a crop of a larger object/clump map).
 
@@ -459,7 +463,7 @@ See the end of the file for license conditions.
   - bug #67364: Match's k-d tree based inner matching depends on order of
     inputs. Fixed by Barış Güngör.
 
-  - bug #67475: Statistcs fitting output prints 0 when the values are very
+  - bug #67475: Statistics fitting output prints 0 when the values are very
     small. Reported by Faezeh Bidjarchian.
 
   - bug #67684: Match's full-arrangement with outcols produces an empty
