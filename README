@@ -76,7 +76,9 @@ categories/chapters.
     over-sampled image.
 
   - Match (astmatch): Given two input catalogs, find the rows that match
-    with each other within a given aperture (may be an ellipse).
+    with each other within a given aperture (may be an ellipse). Various
+    arrangements of the matching output ("JOIN"s in SQL) are also possible
+    and ambiguous matches are separated.
 
   - NoiseChisel (astnoisechisel): Detect and signal in noise. It uses a
     technique to detect very faint and diffuse, irregularly shaped signal
