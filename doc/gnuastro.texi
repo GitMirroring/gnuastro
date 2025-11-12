@@ -44806,6 +44806,7 @@ The respective GSL function is mentioned under each function.
 @deffnx {Global integer} GAL_FIT_POLYNOMIAL
 @deffnx {Global integer} GAL_FIT_POLYNOMIAL_ROBUST
 @deffnx {Global integer} GAL_FIT_POLYNOMIAL_WEIGHTED
+@deffnx {Global integer} GAL_FIT_POLYNOMIAL_TIKHONOV
 @deffnx {Global integer} GAL_FIT_NUMBER
 Identifiers for the various types of fitting functions.
 These can be used by the callers of these functions to select between various fitting types.
@@ -44969,6 +44970,19 @@ See the description there for the details.
 
 The inputs and outputs of this function are almost identical to @code{gal_fit_polynomial}, with the difference that you need to specify the function to reject outliers through the @code{robustid} input argument.
 You can pass any of the @code{GAL_FIT_ROBUST_*} codes defined at the top of this section to this (the names are identical to the names in GSL).
+@end deftypefun
+
+@deftypefun {gal_data_t *} gal_fit_polynomial_tikhonov (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{maxpower}, double @code{*redchisq}, uint8_t @code{matrixid}, double @code{tikhonovlambda})
+@cindex Tikhonov regularization
+@cindex Regularized Polynomial fit
+Perform a 1D (or 2D) regularized polynomial fit, as already described in @code{gal_fit_polynomial}, but using GSL's Tikhonov regularized regression@footnote{@url{https://www.gnu.org/software/gsl/doc/html/lls.html#regularized-regression}}. See the description there for the details.
+
+The inputs and outputs of this function are almost identical to @code{gal_fit_polynomial}, with the difference that you need to specify the regularization parameter @mymath{\lambda} through the @code{tikhonovlambda} input argument.
+
+The current implementation is simpler than what is described in the GSL manual, as it is required to provide the system already in the standard form: @mymath{\chi^2 = \| \tilde{y} - \tilde{X}\tilde{c} \|^2 + \lambda^2 \| \tilde{c} \|^2}, where @mymath{\tilde{y}} is the observation vector stored in @code{*yin}, @mymath{\tilde{X}} is the design matrix built using @code{*xin} (and @code{xin->next}) according to the rules corresponding to @code{matrixid} and @mymath{\tilde{c}} is the output of this function.
+This means that this function does not yet support weights on the @code{*yin} due to time constraints on the developers (it is planned for the future).
+If you are interested to contribute to Gnuastro by adding the weights to this function, please get in touch with us at @code{bug-gnuastro@@gnu.org}.
+
 @end deftypefun
 
 @deftypefun {gal_data_t *} gal_fit_polynomial_1d_estimate (gal_data_t @code{*fit}, gal_data_t @code{*xin})

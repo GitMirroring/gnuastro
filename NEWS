@@ -188,6 +188,9 @@ See the end of the file for license conditions.
   - GAL_FIT_MATRIX_NUMBER_ALL:
     The number of 1D matrices and total matrices used in fitting.
 
+  - gal_fit_polynomial_tikhonov: new function to perform a regularized fit
+    using Tikhonov regression, wrapping over gsl functions.
+
   - gal_kdtree_range: returns the list of points that are within a given
     radius of the given point. Implemented by Barış Güngör.
 

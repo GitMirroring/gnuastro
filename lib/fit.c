@@ -64,6 +64,8 @@ gal_fit_name_to_id(char *name)
     return GAL_FIT_POLYNOMIAL;
   else if( !strcmp(name, "polynomial-robust") )
     return GAL_FIT_POLYNOMIAL_ROBUST;
+  else if( !strcmp(name, "polynomial-tikhonov") )
+    return GAL_FIT_POLYNOMIAL_TIKHONOV;
   else return GAL_FIT_INVALID;
 
   /* If control reaches here, there was a bug! */
@@ -89,6 +91,7 @@ gal_fit_name_from_id(uint8_t fitid)
     case GAL_FIT_POLYNOMIAL:          return "polynomial";
     case GAL_FIT_POLYNOMIAL_WEIGHTED: return "polynomial-weighted";
     case GAL_FIT_POLYNOMIAL_ROBUST:   return "polynomial-robust";
+    case GAL_FIT_POLYNOMIAL_TIKHONOV: return "polynomial-tikhonov";
     case GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED:
       return "linear-no-constant-weighted";
     default: return NULL;
@@ -660,7 +663,8 @@ static void
 fit_polynomial_sanity_check(gal_data_t *xin, gal_data_t *yin,
                             gal_data_t *ywht, uint8_t matrixid,
                             gal_data_t **xdata, gal_data_t **ydata,
-                            gal_data_t **wdata)
+                            gal_data_t **wdata, uint8_t robustid,
+                            double tikhonovlambda)
 {
   /* Check the dimensionality. */
   if(xin->next)
@@ -688,6 +692,22 @@ fit_polynomial_sanity_check(gal_data_t *xin, gal_data_t *yin,
           "matrix, but 'xin' is a list of just one dataset",
           __func__, fit_name_matrix_from_id(matrixid));
 
+  /* Tikhonov regularized regression, as discussed in GSL's manual:
+     https://www.gnu.org/s/gsl/doc/html/lls.html#regularized-regression */
+  if(!isnan(tikhonovlambda) && ywht)
+    error(EXIT_FAILURE, 0, "%s: tikhonov regularized fitting with "
+          "weights is still not implemented. Please use "
+          "'gal_fit_polynomial()' or set 'ywht=NULL'", __func__);
+
+  /* Only one type of fitting is acceptable. */
+  if(!isnan(tikhonovlambda) && robustid!=GAL_FIT_ROBUST_INVALID)
+    error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
+          "'%s' to fix the problem. the 'robustid' value '%d' "
+          "should be null when 'gal_fit_polynomial_tikhonov' "
+          "is invoked, i.e. when 'lambda' is set (lambda=%lf)",
+          __func__, PACKAGE_BUGREPORT, robustid, tikhonovlambda);
+
+
   /* Make sure the types and lengths of each column are correct. */
   *xdata =        fit_sanity_check_col(xin,  xin, __func__);
   *ydata =        fit_sanity_check_col(yin,  xin, __func__);
@@ -701,23 +721,45 @@ fit_polynomial_sanity_check(gal_data_t *xin, gal_data_t *yin,
 
 
 
+static double
+fit_polynomial_base_robust(gsl_matrix *x, gsl_vector *y, gsl_vector *c,
+                           gsl_matrix *cov,
+                           const gsl_multifit_robust_type *rtype)
+{
+  double out=NAN;
+  gsl_multifit_robust_workspace *work_r;
+
+  /* Initialize the worker and do the fit (depending on if a weight
+     image was provided). */
+  work_r=gsl_multifit_robust_alloc(rtype, x->size1, x->size2);
+  gsl_multifit_robust(x, y, c, cov, work_r);
+
+  /* Get the residual sum of squares, free the worker and return. */
+  out=gsl_multifit_robust_statistics(work_r).sse;
+  gsl_multifit_robust_free(work_r);
+  return out;
+}
+
+
+
+
+
 static gal_data_t *
 fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
                     gal_data_t *ywht, size_t maxpower,
                     uint8_t robustid, double *redchisq,
-                    uint8_t matrixid)
+                    uint8_t matrixid, double tikhonovlambda)
 {
   /* Low-level variable. */
   size_t nconst = fit_polynomial_nconst(maxpower, matrixid);
 
   /* Other variables */
   gsl_vector *c=NULL;
+  double rnorm_t, snorm_t;
   double chisq=NAN, sse=NAN;
   gsl_matrix *x=NULL, *cov=NULL;
   size_t covsize[2]={nconst, nconst};
   gsl_multifit_linear_workspace *work_n;
-  gsl_multifit_robust_workspace *work_r;
-  const gsl_multifit_robust_type *rtype=NULL;
   gal_data_t *xdata, *ydata, *wdata, *tmp, *out=NULL;
 
   /* For the 'y' and 'w' GSL vectors, we don't actually need to allocate
@@ -736,49 +778,57 @@ fit_polynomial_base(gal_data_t *xin, gal_data_t *yin,
   /* Fill all the GSL structures after a sanity check of th einput
      columns. */
   fit_polynomial_sanity_check(xin, yin, ywht, matrixid, &xdata,
-                              &ydata, &wdata);
+                              &ydata, &wdata, robustid, tikhonovlambda);
   fit_polynomial_prepare(xdata, ydata, wdata, nconst,
                          &x, &c, &cov, y, w, maxpower, matrixid);
 
-  /* Do the fit (depending on if it is robust or not. */
-  if(robustid==GAL_FIT_ROBUST_INVALID)
+  /* Do the fit depending on the input arguments. */
+  switch(robustid)
     {
-      work_n = gsl_multifit_linear_alloc(xin->size, nconst);
-      if(ywht) gsl_multifit_wlinear(x, w, y, c, cov, &chisq, work_n);
-      else     gsl_multifit_linear( x,    y, c, cov, &sse,   work_n);
-      gsl_multifit_linear_free(work_n);
-    }
-  else
-    {
-      /* Select the robust function type. */
-      switch(robustid)
+    case GAL_FIT_ROBUST_BISQUARE:
+      sse=fit_polynomial_base_robust(x, y, c, cov,
+                                     gsl_multifit_robust_bisquare);
+      break;
+    case GAL_FIT_ROBUST_CAUCHY:
+      sse=fit_polynomial_base_robust(x, y, c, cov,
+                                     gsl_multifit_robust_cauchy);
+      break;
+    case GAL_FIT_ROBUST_FAIR:
+      sse=fit_polynomial_base_robust(x, y, c, cov,
+                                     gsl_multifit_robust_fair);
+      break;
+    case GAL_FIT_ROBUST_HUBER:
+      sse=fit_polynomial_base_robust(x, y, c, cov,
+                                     gsl_multifit_robust_huber);
+      break;
+    case GAL_FIT_ROBUST_OLS:
+      sse=fit_polynomial_base_robust(x, y, c, cov,
+                                     gsl_multifit_robust_ols);
+      break;
+    case GAL_FIT_ROBUST_WELSCH:
+      sse=fit_polynomial_base_robust(x, y, c, cov,
+                                     gsl_multifit_robust_welsch);
+      break;
+    case GAL_FIT_ROBUST_INVALID:
+      if( !isnan(tikhonovlambda) ) /* Tikonov regularization. */
         {
-        case GAL_FIT_ROBUST_BISQUARE: rtype=gsl_multifit_robust_bisquare;
-          break;
-        case GAL_FIT_ROBUST_CAUCHY:   rtype=gsl_multifit_robust_cauchy;
-          break;
-        case GAL_FIT_ROBUST_FAIR:     rtype=gsl_multifit_robust_fair;
-          break;
-        case GAL_FIT_ROBUST_HUBER:    rtype=gsl_multifit_robust_huber;
-          break;
-        case GAL_FIT_ROBUST_OLS:      rtype=gsl_multifit_robust_ols;
-          break;
-        case GAL_FIT_ROBUST_WELSCH:   rtype=gsl_multifit_robust_welsch;
-          break;
-        default:
-          error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
-                "'%s' to fix the problem. the 'robustid' value '%d' "
-                "isn't recognize", __func__, PACKAGE_BUGREPORT, robustid);
+          work_n = gsl_multifit_linear_alloc(xin->size, nconst);
+          gsl_multifit_linear_svd(x, work_n);
+          gsl_multifit_linear_solve(tikhonovlambda, x, y, c,
+                                    &rnorm_t, &snorm_t, work_n);
         }
-
-      /* Initialize the worker and do the fit (depending on if a weight
-         image was provided). */
-      work_r=gsl_multifit_robust_alloc(rtype, x->size1, x->size2);
-      gsl_multifit_robust(x, y, c, cov, work_r);
-
-      /* Get the residual sum of squares and free the worker. */
-      sse=gsl_multifit_robust_statistics(work_r).sse;
-      gsl_multifit_robust_free(work_r);
+      else /* Linear fit. */
+        {
+          work_n = gsl_multifit_linear_alloc(xin->size, nconst);
+          if(ywht) gsl_multifit_wlinear(x, w, y, c, cov, &chisq, work_n);
+          else     gsl_multifit_linear( x,    y, c, cov, &sse,   work_n);
+          gsl_multifit_linear_free(work_n);
+        }
+      break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "fix the problem. the 'robustid' value '%d' isn't recognize",
+            __func__, PACKAGE_BUGREPORT, robustid);
     }
 
   /* For a check:
@@ -830,7 +880,7 @@ gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
 {
   return fit_polynomial_base(xin, yin, ywht, maxpower,
                              GAL_FIT_ROBUST_INVALID,
-                             redchisq, matrixid);
+                             redchisq, matrixid, NAN);
 }
 
 
@@ -839,13 +889,27 @@ gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
 
 gal_data_t *
 gal_fit_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
-                             size_t maxpower, uint8_t robustid,
-                             double *redchisq, uint8_t matrixid)
+                          size_t maxpower, uint8_t robustid,
+                          double *redchisq, uint8_t matrixid)
 {
   /* Robust fitting doesn't use weights (the functions are effectively the
      weight). */
+  return fit_polynomial_base(xin, yin, NULL, maxpower, robustid,
+                             redchisq, matrixid, NAN);
+}
+
+
+
+
+
+gal_data_t *
+gal_fit_polynomial_tikhonov(gal_data_t *xin, gal_data_t *yin,
+                            size_t maxpower, double *redchisq,
+                            uint8_t matrixid, double tikhonovlambda)
+{
   return fit_polynomial_base(xin, yin, NULL, maxpower,
-                             robustid, redchisq, matrixid);
+                             GAL_FIT_ROBUST_INVALID,
+                             redchisq, matrixid, tikhonovlambda);
 }
 
 
