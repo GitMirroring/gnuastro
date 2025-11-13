@@ -1371,8 +1371,8 @@ match_kdtree_worker(void *in_prm)
   int iscovered;
   uint8_t *existA;
   gal_data_t *ccol, *Aexist;
-  gal_list_sizet_t *inrange=NULL;
-  double d, po, *point=NULL, least_dist;
+  gal_list_sizetf64_t *inrange=NULL;
+  double d, po, *point=NULL, least_dist, ad;
   size_t i, j, bi, h_i, ai=GAL_BLANK_SIZE_T;
 
   /* Allocate space for all the matching points (based on the number of
@@ -1445,12 +1445,12 @@ match_kdtree_worker(void *in_prm)
                                        point, p->aperture[0]);
               if(inrange==NULL) continue; /* Nothing matched. */
               else if(inrange->next==NULL) /* Only one match. */
-                ai=gal_list_sizet_pop(&inrange);
+                gal_list_sizetf64_pop(&inrange, &ai, &ad);
             }
           else
             ai=gal_kdtree_nearest_neighbor(p->A, p->A_kdtree,
-                                            p->kdtree_root, point,
-                                            &least_dist, p->nosamenode);
+                                           p->kdtree_root, point,
+                                           &least_dist, p->nosamenode);
 
           /* For a check:
           int checkpoint = CHECKPOINT;
@@ -1473,7 +1473,7 @@ match_kdtree_worker(void *in_prm)
               if(inrange)
                 while(inrange) /* Go over all the 'ai's with similar */
                   {            /* distances: we need them.           */
-                    ai=gal_list_sizet_pop(&inrange);
+                    gal_list_sizetf64_pop(&inrange, &ai, &ad);
                     d=match_distance_find(p, ai, bi);
                     if(d <= p->aperture[0])
                       {

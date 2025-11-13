@@ -59,7 +59,7 @@ gal_kdtree_nearest_neighbor(gal_data_t *coords_raw, gal_data_t *kdtree,
                             size_t root, double *point,
                             double *least_dist, uint8_t nosamenode);
 
-gal_list_sizet_t *
+gal_list_sizetf64_t *
 gal_kdtree_range(gal_data_t *coords_raw, gal_data_t *kdtree,
                  size_t root, double *point, double radius);
 

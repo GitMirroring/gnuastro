@@ -74,7 +74,7 @@ struct kdtree_params
 
   /* Range search. */
   double rsq;               /* Radius for region search */
-  gal_list_sizet_t *inrange;/* List of points for range searching.      */
+  gal_list_sizetf64_t *inrange;/* List of points for range searching.   */
 };
 
 
@@ -658,7 +658,7 @@ kdtree_range(struct kdtree_params *p, uint32_t nodecurr,
 
   /* If this node is within the radius, add it to results. */
   if(distsq <= rsq)
-    gal_list_sizet_add(&p->inrange, nodecurr);
+    gal_list_sizetf64_add(&p->inrange, nodecurr, sqrt(distsq));
 
   /* Calculate the distance along the splitting dimension. */
   dx = point[axis] - coordinates[nodecurr];
@@ -681,7 +681,7 @@ kdtree_range(struct kdtree_params *p, uint32_t nodecurr,
 /* High-level function to find all points within a given radius from a
    target point in a k-d tree. It will return a a 'gal_data_t' containing
    the indices of all points within the specified radius. */
-gal_list_sizet_t *
+gal_list_sizetf64_t *
 gal_kdtree_range(gal_data_t *coords_raw, gal_data_t *kdtree,
                  size_t root, double *point, double radius)
 {

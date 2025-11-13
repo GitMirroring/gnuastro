@@ -40480,12 +40480,12 @@ typedef struct gal_list_sizetf64_t
 @} gal_list_sizetf64_t;
 @end example
 
-@deftypefun void gal_list_sizetf64_add (gal_list_sizetf64_t @code{**list}, size_t @code{index}, float @code{value})
+@deftypefun void gal_list_sizetf64_add (gal_list_sizetf64_t @code{**list}, size_t @code{index}, double @code{value})
 Allocate space for a new node in @code{list}, to store the @code{index} and @code{value} into it.
 As a simply-linked list, the added node will be placed at the top of the list.
 @end deftypefun
 
-@deftypefun size_t gal_list_sizetf64_pop (gal_list_sizetf64_t @code{**list}, size_t @code{*index}, float @code{*value})
+@deftypefun void gal_list_sizetf64_pop (gal_list_sizetf64_t @code{**list}, size_t @code{*index}, double @code{*value})
 Pop a node from the top of @code{list}, return the node's index and value in the respective places that @code{index} and @code{value} point to.
 This function will also free the allocated space for the popped node and after this function, @code{list} will point to the next node (which has a larger @code{tosort} element).
 @end deftypefun
@@ -40513,12 +40513,12 @@ typedef struct gal_list_sizetsizetf64_t
 @} gal_list_sizetsizetf64_t;
 @end example
 
-@deftypefun void gal_list_sizetsizetf64_add (gal_list_sizetsizetf64_t @code{**list}, size_t @code{i}, size_t @code{i}, float @code{v})
+@deftypefun void gal_list_sizetsizetf64_add (gal_list_sizetsizetf64_t @code{**list}, size_t @code{i}, size_t @code{i}, double @code{v})
 Allocate space for a new node in @code{list}, to store the @code{i}, @code{j} and @code{v} into it.
 As a simply-linked list, the added node will be placed at the top of the list.
 @end deftypefun
 
-@deftypefun size_t gal_list_sizetsizetf64_pop (gal_list_sizetsizetf64_t @code{**list}, size_t @code{*i}, size_t @code{*j}, float @code{*v})
+@deftypefun void gal_list_sizetsizetf64_pop (gal_list_sizetsizetf64_t @code{**list}, size_t @code{*i}, size_t @code{*j}, double @code{*v})
 Pop a node from the top of @code{list}, return the node's index and value in the respective places that @code{i}, @code{j} and @code{v} point to.
 This function will also free the allocated space for the popped node and after this function, @code{list} will point to the next node (which has a larger @code{tosort} element).
 @end deftypefun
@@ -44187,11 +44187,12 @@ main (void)
 @end example
 @end deftypefun
 
-@deftypefun {gal_list_sizet_t *} gal_kdtree_range (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{radius})
+@deftypefun {gal_list_sizetf64_t *} gal_kdtree_range (gal_data_t @code{*coords_raw}, gal_data_t @code{*kdtree}, size_t @code{root}, double @code{*point}, double @code{radius})
 
-Return the list of all input indexs that are within the given @code{radius} of the desired point.
-The rest of the input arguments are like the @code{gal_kdtree_nearest_neighbor}.
-For more on the usage of @code{size_t} lists, see @ref{List of size_t}.
+Return the list of all input points that are within the given @code{radius} of the desired point.
+Each element of the list stores the index and the distance to the desired point.
+See @ref{List of size_t and double} for more on this type of list.
+The rest input arguments are like the similarly named arguments of @code{gal_kdtree_nearest_neighbor}.
 @end deftypefun
 
 
