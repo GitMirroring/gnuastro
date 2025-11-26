@@ -147,11 +147,13 @@ all the commits needed for this release have been completed.
    (https://doi.org/10.5281/zenodo.3483064), and click on the "Get a DOI
    now!" button at the start of the "Basic information" section. Using
    this, you need to update the information for the "Gnuastro book" section
-   of the string in 'gal_options_print_citation':
+   of the string in 'gal_options_print_citation' (of 'lib/options.c'):
      - year: set the year that you are making the release.
+     - title: Copy the DOI from Zenodo here.
      - doi: Copy the DOI from Zenodo here.
    Later (when the new Gnuastro version is released) you can complete the
-   Zenodo submission (there is an item at the end of this list).
+   Zenodo submission by uploading the files (there is an item at the end of
+   this list so you do not forget).
 
 
  - Commit all these changes:

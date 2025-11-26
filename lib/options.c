@@ -272,7 +272,6 @@ gal_options_print_citation(struct argp_option *option, char *arg,
                            char *filename, size_t lineno, void *pa)
 {
   struct gal_options_common_params *cp=(struct gal_options_common_params *)pa;
-  char *gnuastro_acknowledgement;
   char *gnuastro_bibtex=
     "Main Gnuastro paper\n"
     "-------------------\n"
@@ -306,11 +305,15 @@ gal_options_print_citation(struct argp_option *option, char *arg,
     "  }\n\n\n"
     "Gnuastro book\n"
     "-------------\n"
-    "If you want to cite any part of the book (in any of the programs), "
-    "please use the BibTeX entry below:\n\n"
+    "To cite any part of the book (for example programs that do not "
+    "have a dedicated paper, or other relevant parts in your work), "
+    "please use the BibTeX entry below. For an example on citing certain "
+    "parts of the Gnuastro book, see https://arxiv.org/abs/2510.12940 "
+    "(just note that they cited Gnuastro 0.23 and that the version and "
+    "DOI that you are using, and is printed below, are different)\n\n"
     "  @BOOK{gnuastrobook,\n"
     "     author = {{Akhlaghi}, Mohammad},\n"
-    "      title = {GNU Astronomy Utilities (version "PACKAGE_VERSION")},\n"
+    "      title = {GNU Astronomy Utilities (version "PACKAGE_VERSION"), https://doi.org/10.5281/zenodo.12738457},\n"
     "       year = 2024,\n"
     "  publisher = {Free Software Foundation},\n"
     "        doi = {10.5281/zenodo.12738457}\n"
@@ -318,42 +321,25 @@ gal_options_print_citation(struct argp_option *option, char *arg,
 
 
   /* Print the statements. */
-  printf("\nThank you for using %s (%s) %s.\n\n", cp->program_name,
+  printf("\nThank you for citing %s (%s) %s.\n\n", cp->program_name,
          PACKAGE_NAME, PACKAGE_VERSION);
-  printf("Citations and acknowledgement are vital for the continued "
-         "work on Gnuastro.\n\n"
-         "Please cite the following record(s) and add the acknowledgement "
-         "statement below in your work to support us. Please note that "
-         "different Gnuastro programs may have different corresponding "
-         "papers. Hence, please check all the programs you used. Don't "
-         "forget to also include the version as shown above for "
-         "reproducibility.\n\n"
+  printf("Citations are vital for the continued work on Gnuastro. "
+         "Please cite the following record(s) in your publications to "
+         "support us in getting future grants for continued maintenance "
+         "and improvements in Gnuastro. Note that some Gnuastro programs "
+         "have dedicated records to cite. For the full list of "
+         "citable Gnuastro resources see "
+         "https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew "
+         "but you should not cite those that you have not used! "
+         "Simply run all your used programs with this '--cite' option "
+         "to find the ones that should be cited (after the main Gnuastro "
+         "paper and Gnuastro book). Just do not forget to also include "
+         "the version as shown above for reproducibility.\n\n"
          "%s\n\n", gnuastro_bibtex);
 
 
   /* Only print the citation for the program if one exists. */
   if(cp->program_bibtex[0]!='\0') printf("%s\n\n", cp->program_bibtex);
-
-
-  /* Notice for acknowledgements. */
-  if( asprintf(&gnuastro_acknowledgement,
-               "Acknowledgement\n"
-               "---------------\n"
-               "This work was partly done using GNU Astronomy Utilities "
-               "(Gnuastro, ascl.net/1801.009) version %s. Work on "
-               "Gnuastro has been funded by the Japanese Ministry of "
-               "Education, Culture, Sports, Science, and Technology "
-               "(MEXT) scholarship and its Grant-in-Aid for Scientific "
-               "Research (21244012, 24253003), the European Research "
-               "Council (ERC) advanced grant 339659-MUSICOS, the "
-               "Spanish Ministry of Economy and Competitiveness "
-               "(MINECO, grant number AYA2016-76219-P) and the "
-               "NextGenerationEU grant through the Recovery and "
-               "Resilience Facility project ICTS-MRR-2021-03-CEFCA.",
-               PACKAGE_VERSION)<0 )
-    error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
-  printf("%s\n", gnuastro_acknowledgement);
-  free(gnuastro_acknowledgement);
 
 
   /* Print a thank you message. */
@@ -368,7 +354,6 @@ gal_options_print_citation(struct argp_option *option, char *arg,
          "                                                   //\\__/\n"
          "                                                  //\n"
          "                   (http://www.chris.com/ascii/) |/\n");
-
 
 
   /* Exit the program. */

@@ -304,7 +304,7 @@ General program usage tutorial
 * FITS images in a publication::  How to display FITS images in a PDF.
 * Marking objects for publication::  How to mark some objects over the image in a PDF.
 * Writing scripts to automate the steps::  Scripts will greatly help in re-doing things fast.
-* Citing and acknowledging Gnuastro::  How to cite and acknowledge Gnuastro in your papers.
+* Citing Gnuastro::  How to cite and acknowledge Gnuastro in your papers.
 
 Detecting large extended targets
 
@@ -1850,29 +1850,35 @@ Therefore when typing (recommended) or copy-pasting (not recommended) the comman
 @section Acknowledgments
 
 Gnuastro would not have been possible without scholarships and grants from several funding institutions.
-We thus ask that if you used Gnuastro in any of your papers/reports, please add the proper citation and acknowledge the funding agencies/projects.
-For details of which papers to cite (may be different for different programs) and get the acknowledgment statement to include in your paper, please run the relevant programs with the common @option{--cite} option like the example commands below (for more on @option{--cite}, please see @ref{Operating mode options}).
-The full list of Gnuastro's papers related to various features of Gnuastro are in @url{https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew, Gnuastro's ADS library}.
+To acknowledge/cite Gnuastro in your publications, see @ref{Citing Gnuastro}.
+Here, you will find Gnuastro's own acknowledgments to all the grants, institutions and of course poeple who helped make Gnuastro what it is today.
 
-@example
-$ astnoisechisel --cite
-$ astmkcatalog --cite
-@end example
-
-Here, we will acknowledge all the institutions (and their grants) along with the people who helped make Gnuastro possible.
-The full list of Gnuastro authors is available at the start of this book and the @file{AUTHORS} file in the source code (both are generated automatically from the version controlled history).
-The plain text file @file{THANKS}, which is also distributed along with the source code, contains the list of people and institutions who played an indirect role in Gnuastro (not committed any code in the Gnuastro version controlled history).
+The full list of Gnuastro authors is available at the start of this book (on the third page of its PDF) and the @file{AUTHORS} file in the source code (both are generated automatically from the version controlled history).
+The plain text file @file{THANKS}, which is also distributed along with the source code, contains the list of people and institutions who played an indirect role in Gnuastro (not committed any code in the Gnuastro version controlled history), their names have also been listed at the end of this section.
 
 The Japanese Ministry of Education, Culture, Sports, Science, and Technology (MEXT) scholarship for Mohammad Akhlaghi's Masters and PhD degree in Tohoku University Astronomical Institute had an instrumental role in the long term learning and planning that made the idea of Gnuastro possible.
-The very critical view points of Professor Takashi Ichikawa (Mohammad's adviser) were also instrumental in the initial ideas and creation of Gnuastro.
-Afterwards, the European Research Council (ERC) advanced grant 339659-MUSICOS (Principal investigator: Roland Bacon) was vital in the growth and expansion of Gnuastro.
+The very critical view points of Professor Takashi Ichikawa (Mohammad's PhD thesis directory) were also instrumental in the initial ideas and creation of Gnuastro.
+
+Afterwards, the European Research Council (ERC) advanced grant 339659-MUSICOS (Principal investigator, or PI: Roland Bacon) was vital in the growth and expansion of Gnuastro.
 Working with Roland at the Centre de Recherche Astrophysique de Lyon (CRAL), enabled a thorough re-write of the core functionality of all libraries and programs, turning Gnuastro into the large collection of generic programs and libraries it is today.
 At the Instituto de Astrofisica de Canarias (IAC, and in particular in collaboration with Johan Knapen and Ignacio Trujillo), Gnuastro matured and its user base significantly grew.
-Work on improving Gnuastro is now continuing primarily in the Centro de Estudios de F@'isica del Cosmos de Arag@'on (CEFCA), located in Teruel, Spain.
+
+Since 2021, work on Gnuastro is continuing primarily in the Centro de Estudios de F@'isica del Cosmos de Arag@'on (CEFCA), located in Teruel, Spain.
+Mohammad is a staff researcher at CEFCA and the PI (or collaborator) of grants directly or in-directly (higher-level projects that use Gnuastro) related to the development of Gnuastro.
+As of this release, the main grant organizations have been:
+@table @asis
+@item Arag@'on government
+Fondo de Inversiones de Teruel (FITE, or Teruel investment fund).
+@item Agencia Estatal de Investigación (AEI, or Spanish state research agency)
+In particular Grants PID2021-124918NA-C43 (PI: Mohammad from 2022-09 for three years as part of J-PAS@footnote{@url{https://j-pas.org}} and J-PLUS@footnote{@url{https://j-plus.es}}), PID2022-138896NA-C54 (PI: Helena Dom@'inguez Sánchez as part of the ARRAKIHS@footnote{@url{https://arrakihs-mission.eu}} from 2023-09 for three years) and PID2024-162229NB-I00 (PI: Mohammad from 2025 for four years; for Gnuastro, Maneage@footnote{Maneage (a portmanteau from ``Managing data lineage'') is also maintained by Mohammad and is a higher-level framework for calling atomic Gnuastro operations in a large pipeline; see @url{https://maneage.org}} to be used in J-PAS, ARRAKIHS and Euclid@footnote{@url{https://www.esa.int/Science_Exploration/Space_Science/Euclid}}) which are all funded by MICIU/AEI/10.13039/501100011033 and ``ERDF A way of making Europe'', by ``ERDF/EU''.
+@item Google Summer of Code (GSoC)
+We applied for GSoC in the following years and all have been successful in all: 2020, 2021, 2022, 2023, 2024.
+Special thanks goes to the GNU (for 2020) and OpenAstronomy@footnote{@url{https://openastronomy.org}} (rest of the years) GSoC organizations (which need to sponsor software projects).
+@end table
 
 @c To the developers: please keep this in the same order as the THANKS file
 @c (alphabetical, except for the names in the paragraph above).
-In general, we would like to gratefully thank the following people for their useful and constructive comments and suggestions (in alphabetical order by family name):
+As mentioned above, we would like to sincerely thank the following people for their useful and constructive comments, suggestions and reported bugs that were implemented by the authors in the code (in alphabetical order by family name):
 Valentina Abril-melgarejo,
 Marjan Akbari,
 Carlos Allende Prieto,
@@ -2001,22 +2007,6 @@ Sara Yousefi Taemeh,
 Johannes Zabl.
 The GNU French Translation Team is also managing the French version of the top Gnuastro web page which we highly appreciate.
 Finally, we should thank all the (sometimes anonymous) people in various online forums who patiently answered all our small (but important) technical questions.
-
-All work on Gnuastro has been voluntary, but the authors are most grateful to the following institutions (in chronological order) for hosting/supporting us in our research.
-Where necessary, these institutions have disclaimed any ownership of the parts of Gnuastro that were developed there, thus insuring the freedom of Gnuastro for the future (see @ref{Copyright assignment}).
-We highly appreciate their support for free software, and thus free science, and therefore a free society.
-
-@quotation
-Tohoku University Astronomical Institute, Sendai, Japan.@*
-University of Salento, Lecce, Italy.@*
-Centre de Recherche Astrophysique de Lyon (CRAL), Lyon, France.@*
-Instituto de Astrofisica de Canarias (IAC), Tenerife, Spain.@*
-Centro de Estudios de F@'isica del Cosmos de Arag@'on (CEFCA), Teruel, Spain.@*
-Google Summer of Code 2020, 2021, 2022, 2023, 2024
-@end quotation
-
-
-
 
 
 
@@ -2151,7 +2141,7 @@ This will help simulate future situations when you are processing your own datas
 * FITS images in a publication::  How to display FITS images in a PDF.
 * Marking objects for publication::  How to mark some objects over the image in a PDF.
 * Writing scripts to automate the steps::  Scripts will greatly help in re-doing things fast.
-* Citing and acknowledging Gnuastro::  How to cite and acknowledge Gnuastro in your papers.
+* Citing Gnuastro::  How to cite and acknowledge Gnuastro in your papers.
 @end menu
 
 @node Calling Gnuastro's programs, Accessing documentation, General program usage tutorial, General program usage tutorial
@@ -4777,7 +4767,7 @@ The print size is just a meta-data entry, and will not affect the file's volume 
 You can do this with the @option{--widthincm} option.
 Try adding this option and giving it very different values like @code{5} or @code{30}.
 
-@node Writing scripts to automate the steps, Citing and acknowledging Gnuastro, Marking objects for publication, General program usage tutorial
+@node Writing scripts to automate the steps, Citing Gnuastro, Marking objects for publication, General program usage tutorial
 @subsection Writing scripts to automate the steps
 
 In the previous sub-sections, we went through a series of steps like downloading the necessary datasets (in @ref{Setup and data download}), detecting the objects in the image, and finally selecting a particular subset of them to inspect visually (in @ref{Reddest clumps cutouts and parallelization}).
@@ -5127,20 +5117,22 @@ if ! [ -f $f160w_flat ]; then
 fi
 @end example
 
-@node Citing and acknowledging Gnuastro,  , Writing scripts to automate the steps, General program usage tutorial
-@subsection Citing and acknowledging Gnuastro
-In conclusion, we hope this extended tutorial has been a good starting point to help in your exciting research.
-If this book or any of the programs in Gnuastro have been useful for your research, please cite the respective papers, and acknowledge the funding agencies that made all of this possible.
-Without citations, we will not be able to secure future funding to continue working on Gnuastro or improving it, so please take software citation seriously (for all the scientific software you use, not just Gnuastro).
+@node Citing Gnuastro,  , Writing scripts to automate the steps, General program usage tutorial
+@subsection Citing Gnuastro
+After your exciting project is done and you are ready to publish/present your paper, poster or slides you should cite all the software that you have used.
+Armed with citations, the developers of the research software that you have used will be able to secure future funding to continue working on those software and improving them for you and the community.
+So please take a few minutes to visit the software's webpage and find what resources the authors have listed for you to cite.
 
-To help you in this, all Gnuastro programs have a @option{--cite} option to facilitate the citation and acknowledgment.
-Just note that it may be necessary to cite additional papers for different programs, so please try it out on all the programs that you used, for example:
+In Gnuastro, we have tried to make things as simple as possible for you: all Gnuastro programs have a @option{--cite} option that describes the relevant resources to cite along with BibTeX entries that you can simply copy-paste into your publication.
 
 @example
 $ astmkcatalog --cite
 $ astnoisechisel --cite
 @end example
 
+@noindent
+Just note that it may be necessary to cite certain papers for different programs, so please read the output carefully and cite the relevant resources.
+For the full library of Gnuastro's citable resources, see @url{https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew} and to see Gnuastro's own acknowledgments (institutes, grants and people who made Gnuastro possible), see @ref{Acknowledgments}.
 
 
 
