@@ -170,17 +170,12 @@ The members of the following teams also provided great help and support.
         https://savannah.gnu.org/projects/www-fr
 
 
-Institutions
-------------
+Grants
+------
 
-Host institutions of Gnuastro's developers.
-
-    Tohoku University Astronomical Institute, Sendai, Japan.
-    University of Salento, Lecce, Italy.
-    Centre de Recherche Astrophysique de Lyon (CRAL), Lyon, France.
-    Instituto de Astrofisica de Canarias (IAC), Tenerife, Spain.
-    Google Summer of Code(GSoC).
-    Centro de Estudios de Física del Cosmos de Aragón (CEFCA), Teruel, Spain.
+See the "Acknowledgments" section of the Gnuastro book (in
+'doc/gnuastro.texi' for the full list of grants with explanations on their
+length and role.
 
 
 Copyright

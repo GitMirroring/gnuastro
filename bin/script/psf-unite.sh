@@ -184,9 +184,12 @@ If you want to cite any part of the book (in any of the programs), please use th
   }
 
 
-Paper describing the creation of an extended PSF
-------------------------------------------------
-@ARTICLE{gnuastro-psf,
+Papers describing the creation of an extended PSF
+-------------------------------------------------
+
+Gnuastro's PSF scripts have been written based on the experience and methods that were found in the first paper below (when these scripts did not exist yet) and more formally introduced as part of the second paper below. So if you use any of these scripts, please cite the following two papers.
+
+@ARTICLE{gnuastro-psf-1,
        author = {{Infante-Sainz}, Ra{\'u}l and {Trujillo}, Ignacio and {Rom{\'a}n}, Javier},
         title = "{The Sloan Digital Sky Survey extended point spread functions}",
       journal = {MNRAS},
@@ -203,11 +206,23 @@ archivePrefix = {arXiv},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 
-
-Acknowledgement
----------------
-This work was partly done using GNU Astronomy Utilities (Gnuastro, ascl.net/1801.009) version $version. Work on Gnuastro has been funded by the Japanese Ministry of Education, Culture, Sports, Science, and Technology (MEXT) scholarship and its Grant-in-Aid for Scientific Research (21244012, 24253003), the European Research Council (ERC) advanced grant 339659-MUSICOS, the Spanish Ministry of Economy and Competitiveness (MINECO, grant number AYA2016-76219-P) and the NextGenerationEU grant through the Recovery and Resilience Facility project ICTS-MRR-2021-03-CEFCA.
-                                               ,
+@ARTICLE{gnuastro-psf-2,
+       author = {{Eskandarlou}, Sepideh and {Akhlaghi}, Mohammad and {Knapen}, Johan H. and {L{\'o}pez-Sanjuan}, Carlos and {Infante-Sainz}, Ra{\'u}l and {Dom{\'\i}nguez S{\'a}nchez}, Helena and {Sharbaf}, Zahra and {V{\'a}zquez Rami{\'o}}, H{\'e}ctor and {Fern{\'a}ndez Ontiveros}, Juan Antonio and {I{\~n}iguez Garc{\'\i}a}, C{\'e}sar and {Civera Lorenzo}, Tamara and {Jos{\'e} Muniesa Gallardo}, David and {Coelho}, Paula R.~T. and {Ederoclite}, Alessandro and {Varela}, Jesus and {Jim{\'e}nez-Esteban}, Fran and {Cenarro}, A. Javier and {Mar{\'\i}n-Franch}, Antonio and {Dupke}, Renato A. and {Moles}, Mariano and {Hern{\'a}ndez-Monteagudo}, Carlos and {Rahna P.}, T. and {Crist{\'o}bal-Hornillos}, David and {Alcaniz}, Jailson and {Sodr{\'e}}, Jr., Laerte and {Angulo}, Raul E.},
+        title = "{J-PLUS: Turning Off the Bright Stars}",
+      journal = {arXiv e-prints},
+     keywords = {Instrumentation and Methods for Astrophysics, Astrophysics of Galaxies},
+         year = 2025,
+        month = oct,
+          eid = {arXiv:2510.12940},
+        pages = {arXiv:2510.12940},
+          doi = {10.1051/0004-6361/202556547},
+archivePrefix = {arXiv},
+       eprint = {2510.12940},
+ primaryClass = {astro-ph.IM},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2025arXiv251012940E},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+                                              ,
                                               {|'--.
                                              {{\    \ $empty
       Many thanks from all                   |/\`'--./=.

@@ -332,14 +332,15 @@ gal_options_print_citation(struct argp_option *option, char *arg,
          "https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew "
          "but you should not cite those that you have not used! "
          "Simply run all your used programs with this '--cite' option "
-         "to find the ones that should be cited (after the main Gnuastro "
-         "paper and Gnuastro book). Just do not forget to also include "
-         "the version as shown above for reproducibility.\n\n"
-         "%s\n\n", gnuastro_bibtex);
+         "to find the ones that should be cited (at the bottom of this "
+         "outpuer; after the main Gnuastro paper and the Gnuastro "
+         "book). Just do not forget to also include the version as "
+         "shown above for reproducibility.\n\n"
+         "%s\n", gnuastro_bibtex);
 
 
   /* Only print the citation for the program if one exists. */
-  if(cp->program_bibtex[0]!='\0') printf("%s\n\n", cp->program_bibtex);
+  if(cp->program_bibtex[0]!='\0') printf("%s\n", cp->program_bibtex);
 
 
   /* Print a thank you message. */

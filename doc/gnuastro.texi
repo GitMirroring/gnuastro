@@ -257,7 +257,7 @@ Introduction
 * Suggest new feature::         How to suggest a new feature.
 * Announcements::               How to stay up to date with Gnuastro.
 * Conventions::                 Conventions used in this book.
-* Acknowledgments::             People who helped in the production.
+* Acknowledgments and short history::
 
 Version numbering
 
@@ -304,7 +304,7 @@ General program usage tutorial
 * FITS images in a publication::  How to display FITS images in a PDF.
 * Marking objects for publication::  How to mark some objects over the image in a PDF.
 * Writing scripts to automate the steps::  Scripts will greatly help in re-doing things fast.
-* Citing Gnuastro::  How to cite and acknowledge Gnuastro in your papers.
+* Citing Gnuastro::             How to cite and acknowledge Gnuastro in your papers.
 
 Detecting large extended targets
 
@@ -1028,7 +1028,7 @@ As discussed in @ref{Science and its tools} this is a founding principle of the 
 * Suggest new feature::         How to suggest a new feature.
 * Announcements::               How to stay up to date with Gnuastro.
 * Conventions::                 Conventions used in this book.
-* Acknowledgments::             People who helped in the production.
+* Acknowledgments and short history::
 @end menu
 
 @node Quick start, Gnuastro programs list, Introduction, Introduction
@@ -1193,7 +1193,7 @@ See Akhlaghi @url{https://arxiv.org/abs/2310.15006,2023}, or the dedicated tutor
 @item astscript-radial-profile
 (See @ref{Generate radial profile}) Calculate the 1D radial profile or 2D polar plot of an object within an image.
 The object can be at any location in the image, using various measures (median, sigma-clipped mean, etc.), and the radial distance can also be measured on any general ellipse.
-See Infante-Sainz et al. @url{https://arxiv.org/abs/2401.05303,2024} and/or Eskandarlou and Akhlaghi @url{https://arxiv.org/abs/2406.14619,2024}.
+See Infante-Sainz et al. @url{https://arxiv.org/abs/2401.05303,2024} for a general description and Eskandarlou @& Akhlaghi @url{https://arxiv.org/abs/2406.14619,2024} for the radial profile component.
 
 @item astscript-color-faint-gray
 (see @ref{Color images with gray faint regions}) Given three images for the Red-Green-Blue (RGB) channels, this script will use the bright pixels for color and will show the faint/diffuse regions in grayscale.
@@ -1815,7 +1815,7 @@ Previous announcements are available on @url{http://lists.gnu.org/archive/html/i
 
 
 
-@node Conventions, Acknowledgments, Announcements, Introduction
+@node Conventions, Acknowledgments and short history, Announcements, Introduction
 @section Conventions
 In this book we have the following conventions:
 
@@ -1846,39 +1846,56 @@ Single quotes are sometimes necessary in combination with commands like @code{aw
 Therefore when typing (recommended) or copy-pasting (not recommended) the commands that have a @code{'}, please correct it to the single-quote (or apostrophe) character, otherwise the command will fail.
 
 
-@node Acknowledgments,  , Conventions, Introduction
-@section Acknowledgments
+@node Acknowledgments and short history,  , Conventions, Introduction
+@section Acknowledgments and short history
 
 Gnuastro would not have been possible without scholarships and grants from several funding institutions.
 To acknowledge/cite Gnuastro in your publications, see @ref{Citing Gnuastro}.
 Here, you will find Gnuastro's own acknowledgments to all the grants, institutions and of course poeple who helped make Gnuastro what it is today.
 
-The full list of Gnuastro authors is available at the start of this book (on the third page of its PDF) and the @file{AUTHORS} file in the source code (both are generated automatically from the version controlled history).
-The plain text file @file{THANKS}, which is also distributed along with the source code, contains the list of people and institutions who played an indirect role in Gnuastro (not committed any code in the Gnuastro version controlled history), their names have also been listed at the end of this section.
+The Japanese Ministry of Education, Culture, Sports, Science, and Technology (MEXT) scholarships for Mohammad Akhlaghi's Masters (2010 to 2012) and PhD (2012 to 2015) degrees in Tohoku University Astronomical Institute had an instrumental role in the long term learning and planning that made the idea of Gnuastro possible.
+The very critical view points of Professor Takashi Ichikawa (Mohammad's PhD thesis directory) were also instrumental in the initial ideas and foundational philosophy/design of Gnuastro.
 
-The Japanese Ministry of Education, Culture, Sports, Science, and Technology (MEXT) scholarship for Mohammad Akhlaghi's Masters and PhD degree in Tohoku University Astronomical Institute had an instrumental role in the long term learning and planning that made the idea of Gnuastro possible.
-The very critical view points of Professor Takashi Ichikawa (Mohammad's PhD thesis directory) were also instrumental in the initial ideas and creation of Gnuastro.
+Afterwards, the European Research Council (ERC) advanced grant 339659-MUSICOS (Principal investigator, or PI: Roland Bacon) was vital in the growth and expansion of Gnuastro since it supported Mohammad's first postdoc position from 2016 to 2018.
+Working with Roland at the Centre de Recherche Astrophysique de Lyon (CRAL, Saint-Genis-Laval, France), enabled a thorough re-write of the core functionality of all libraries and programs (to generalize them for usage on the wonderful MUSE 3D cubes).
+This maturation phase made it possible for Gnuastro to grow into the large collection of generic programs and libraries it is today.
+Important contributions on the low-level design of Gnuastro also came from David Valls-Gabaud (of Paris Observatory) in this period.
 
-Afterwards, the European Research Council (ERC) advanced grant 339659-MUSICOS (Principal investigator, or PI: Roland Bacon) was vital in the growth and expansion of Gnuastro.
-Working with Roland at the Centre de Recherche Astrophysique de Lyon (CRAL), enabled a thorough re-write of the core functionality of all libraries and programs, turning Gnuastro into the large collection of generic programs and libraries it is today.
-At the Instituto de Astrofisica de Canarias (IAC, and in particular in collaboration with Johan Knapen and Ignacio Trujillo), Gnuastro matured and its user base significantly grew.
+In late 2018, Mohammad moved to the Instituto de Astrofisica de Canarias (IAC, Tenerife, Spain) to work with Johan Knapen and Ignacio Trujillo as part of IAC's project P/300724, financed by the SMSI, through the Canary Islands Department of Economy, Knowledge and Employment.
+With the support and help of Ignacio and Johan, Gnuastro's user base significantly grew in this phase.
+The useful feedback from the many new users resulted in new/improved functionality/features in all the programs.
 
-Since 2021, work on Gnuastro is continuing primarily in the Centro de Estudios de F@'isica del Cosmos de Arag@'on (CEFCA), located in Teruel, Spain.
+Since the summer of 2021, work on Gnuastro is continuing primarily in the Centro de Estudios de F@'isica del Cosmos de Arag@'on (CEFCA), located in Teruel, Spain.
 Mohammad is a staff researcher at CEFCA and the PI (or collaborator) of grants directly or in-directly (higher-level projects that use Gnuastro) related to the development of Gnuastro.
-As of this release, the main grant organizations have been:
+
+As of this release, the main grant organizations (and their grants) that have supported Gnuastro (from 2020 with Mohammad as the PI or collaborator) have been:
 @table @asis
-@item Arag@'on government
-Fondo de Inversiones de Teruel (FITE, or Teruel investment fund).
+@item Spanish and Arag@'on governments
+In particular the Fondo de Inversiones de Teruel (FITE, or Teruel investment fund) which is a shared funding between the national and Aragonese governments.
+But also the dedicated Aragonese government research group 16_23R funding to CEFCA.
+
 @item Agencia Estatal de Investigación (AEI, or Spanish state research agency)
-In particular Grants PID2021-124918NA-C43 (PI: Mohammad from 2022-09 for three years as part of J-PAS@footnote{@url{https://j-pas.org}} and J-PLUS@footnote{@url{https://j-plus.es}}), PID2022-138896NA-C54 (PI: Helena Dom@'inguez Sánchez as part of the ARRAKIHS@footnote{@url{https://arrakihs-mission.eu}} from 2023-09 for three years) and PID2024-162229NB-I00 (PI: Mohammad from 2025 for four years; for Gnuastro, Maneage@footnote{Maneage (a portmanteau from ``Managing data lineage'') is also maintained by Mohammad and is a higher-level framework for calling atomic Gnuastro operations in a large pipeline; see @url{https://maneage.org}} to be used in J-PAS, ARRAKIHS and Euclid@footnote{@url{https://www.esa.int/Science_Exploration/Space_Science/Euclid}}) which are all funded by MICIU/AEI/10.13039/501100011033 and ``ERDF A way of making Europe'', by ``ERDF/EU''.
+In particular Grants PID2021-124918NA-C43 (PI: Mohammad from 2022-09 for three years as part of J-PAS@footnote{@url{https://j-pas.org}} and J-PLUS@footnote{@url{https://j-plus.es}}), PID2022-138896NA-C54 (PI: Helena Dominguez Sánchez as part of ARRAKIHS@footnote{@url{https://arrakihs-mission.eu}} from 2023-09 for three years) and PID2024-162229NB-I00 (PI: Mohammad from 2025 for four years; for Gnuastro, Maneage@footnote{Maneage (a portmanteau from ``Managing data lineage'') is also maintained by Mohammad and is a higher-level framework for calling atomic Gnuastro operations in a large pipeline; see @url{https://maneage.org}} to be used in J-PAS, ARRAKIHS and Euclid@footnote{@url{https://www.esa.int/Science_Exploration/Space_Science/Euclid}}) which are all funded by MICIU/AEI/10.13039/501100011033 and ``ERDF A way of making Europe'', by ``ERDF/EU''.
+
 @item Google Summer of Code (GSoC)
-We applied for GSoC in the following years and all have been successful in all: 2020, 2021, 2022, 2023, 2024.
-Special thanks goes to the GNU (for 2020) and OpenAstronomy@footnote{@url{https://openastronomy.org}} (rest of the years) GSoC organizations (which need to sponsor software projects).
+We applied for GSoC in the following years and all have been successful so far: 2020, 2021, 2022, 2023, 2024.
+Special thanks goes to the GNU (for 2020) and OpenAstronomy@footnote{@url{https://openastronomy.org}} (rest of the years) GSoC organizations also for enabling this.
 @end table
+
+Rafael Guzmán (the PI of ARRAKIHS), Santiago Serrano and Pascale Jablonka (leads of the ARRAKIHS science and instrumentation segments in 2023) deserve a special mention regarding the two ARRAKIHS-related grants above.
+Their trust and support for Gnuastro directly lead to selecting Mohammad as the responsible of the ARRAKIHS data reduction pipeline (known as the ARRAKIHS Harvester): it is fully written with Gnuastro and Maneage.
+Thanks to all the direct support from the ARRAKIHS, J-PAS and J-PLUS, they are now the primary@footnote{Being the primary driver does not imply ignoring general user support or bug fixes found by others.
+As always, we will address bug reports or simple feature addition requests with the highest priority.
+The ``primary driver'' just refers to long-term strategic decisions.} driver for Gnuastro's development helping us reach the vision @ref{GNU Astronomy Utilities 1.0}).
+But since Gnuastro and Maneage are free and open source software all the low-level added components and bugs fixed for those, can benefit the whole community.
+We welcome collaborations with any other mission/survey (to focus on their particular needs) if they can provide a dedicated personnel to help in those developments.
+
+The full list of Gnuastro authors is available at the start of this book (on the third page of its PDF) and the @file{AUTHORS} file in the source code (both are generated automatically from the version controlled history).
+The plain text file @file{THANKS} (also distributed along with the source code), contains the list of people who contributed indirectly role to Gnuastro: not committing any code in the Gnuastro version controlled history, but providing useful and constructive comments, suggestions and reported bugs.
+Such contributions have also been critical for Gnuastro's current state, so we would also like to gratefully acknowledge their role here also (in alphabetical order by family name):
 
 @c To the developers: please keep this in the same order as the THANKS file
 @c (alphabetical, except for the names in the paragraph above).
-As mentioned above, we would like to sincerely thank the following people for their useful and constructive comments, suggestions and reported bugs that were implemented by the authors in the code (in alphabetical order by family name):
 Valentina Abril-melgarejo,
 Marjan Akbari,
 Carlos Allende Prieto,
@@ -2141,7 +2158,7 @@ This will help simulate future situations when you are processing your own datas
 * FITS images in a publication::  How to display FITS images in a PDF.
 * Marking objects for publication::  How to mark some objects over the image in a PDF.
 * Writing scripts to automate the steps::  Scripts will greatly help in re-doing things fast.
-* Citing Gnuastro::  How to cite and acknowledge Gnuastro in your papers.
+* Citing Gnuastro::             How to cite and acknowledge Gnuastro in your papers.
 @end menu
 
 @node Calling Gnuastro's programs, Accessing documentation, General program usage tutorial, General program usage tutorial
@@ -5124,15 +5141,19 @@ Armed with citations, the developers of the research software that you have used
 So please take a few minutes to visit the software's webpage and find what resources the authors have listed for you to cite.
 
 In Gnuastro, we have tried to make things as simple as possible for you: all Gnuastro programs have a @option{--cite} option that describes the relevant resources to cite along with BibTeX entries that you can simply copy-paste into your publication.
+For example try the commands below (and read the outputs carefully):
 
 @example
+$ asttable --cite
 $ astmkcatalog --cite
 $ astnoisechisel --cite
 @end example
 
 @noindent
-Just note that it may be necessary to cite certain papers for different programs, so please read the output carefully and cite the relevant resources.
-For the full library of Gnuastro's citable resources, see @url{https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew} and to see Gnuastro's own acknowledgments (institutes, grants and people who made Gnuastro possible), see @ref{Acknowledgments}.
+You will see that while the first two entries are the same in all, the last one differs between MakeCatalog and NoiseChisel while Table only has two entries.
+This is because MakeCatalog and NoiseChisel have dedicated papers that should be cited along with the main one (for all Gnuastro users), but we haven't had time to write a dedicated paper for Table.
+So please read the output of all the programs you have used carefully and cite the relevant resources in your publications.
+For the full library of Gnuastro's citable resources, see @url{https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew} and to see Gnuastro's own acknowledgments (institutes, grants and people who made Gnuastro possible), see @ref{Acknowledgments and short history}.
 
 
 
@@ -6197,8 +6218,10 @@ See @ref{Segmentation and making a catalog} and @ref{Segment} for more on using 
 @section Building the extended PSF
 
 Deriving the extended PSF of an image is very important in many aspects of the analysis of the objects within it.
-Gnuastro has a set of installed scripts, designed to simplify the process following the recipe of Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020}; for more, see @ref{PSF construction and subtraction}.
-An overview of the process is given in @ref{Overview of the PSF scripts}.
+Gnuastro has a set of installed scripts, designed to simplify the process following the recipes that were initially introduced in Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020} and further improved in Eskandarlou et al. @url{https://arxiv.org/abs/2510.12940,2025} with more visualizations to help follow the process as they are implemented now in Gnuastro.
+
+This tutorial is for those who are not yet familiar with the process and would like to start from scratch on a pre-defined dataset and lots of extra information on how to interpret the result.
+For more advanced users (who have already read this), the full documentation of each of the scripts is available in @ref{PSF construction and subtraction} and an overview of the process is given in @ref{Overview of the PSF scripts}.
 
 @menu
 * Preparing input for extended PSF::  Which stars should be used?
@@ -14296,7 +14319,7 @@ If the steps are done very fast (depending on the properties of your input) disa
 Print all necessary information to cite and acknowledge Gnuastro in your published papers.
 With this option, the programs will print the Bib@TeX{} entry to include in your paper for Gnuastro in general, and the particular program's paper (if that program comes with a separate paper).
 It will also print the necessary acknowledgment statement to add in the respective section of your paper and it will abort.
-For a more complete explanation, please see @ref{Acknowledgments}.
+For a more complete explanation, please see @ref{Acknowledgments and short history}.
 
 Citations and acknowledgments are vital for the continued work on Gnuastro.
 Gnuastro started, and is continued, based on separate research projects.
@@ -36390,7 +36413,7 @@ Therefore, it is necessary to obtain an empirical (non-parametric) and extended 
 In this section we describe a set of installed scrips in Gnuastro that will let you construct the non-parametric PSF using point-like sources.
 They allow you to derive the PSF from the same astronomical images that the science is derived from (without assuming any analytical function).
 
-The scripts are based on the concepts described in Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020}.
+The scripts are based on the concepts described in Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020} and further elaborated in Eskandarlou et al. @url{https://arxiv.org/abs/2510.12940,2025}, see the flow-charts and figures of the latter in particular for a visual companion to many of the steps below.
 But to be complete, we first give a summary of the logic and overview of their combined usage in @ref{Overview of the PSF scripts}.
 Furthermore, before going into the technical details of each script, we encourage you to go through the tutorial that is devoted to this at @ref{Building the extended PSF}.
 The tutorial uses a real dataset and includes all the logic and reasoning behind every step of the usage in every installed script.
@@ -36408,7 +36431,7 @@ The tutorial uses a real dataset and includes all the logic and reasoning behind
 @subsection Overview of the PSF scripts
 
 To obtain an extended and non-parametric PSF, several steps are necessary and we will go through them here.
-The fundamental ideas of the following methodology are thoroughly described in Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020}.
+The fundamental ideas of the following methodology are thoroughly described in Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020} and Eskandarlou et al. @url{https://arxiv.org/abs/2510.12940,2025}.
 A full tutorial is also available in @ref{Building the extended PSF}.
 The tutorial will go through the full process on a pre-selected dataset, but will describe the logic behind every step in away that can easily be modified/generalized to other datasets.
 
@@ -36446,7 +36469,7 @@ However, these stars will be saturated in the most inner part, and immediately o
 Consequently, fainter stars are necessary for the inner regions.
 
 Therefore, you need to repeat the steps above for certain stars (in a certain magnitude range) to obtain the PSF in certain radial ranges.
-For example, in Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020}, the final PSF was constructed from three regions (and thus, using stars from three ranges in magnitude).
+For example, in Infante-Sainz et al. @url{https://arxiv.org/abs/1911.01430,2020} and Eskandarlou et al. @url{https://arxiv.org/abs/2510.12940,2025} the final PSF was constructed from three regions (and thus, using stars from three ranges in magnitude).
 In other cases, we even needed four groups of stars!
 But in the example dataset from the tutorial, only two groups are necessary (see @ref{Building the extended PSF}).
 
@@ -48570,7 +48593,7 @@ So if you have already assigned the copyright of your work on another GNU softwa
 The FSF has staff working on these legal issues and the maintainer will get you in touch with them to do the paperwork.
 The maintainer will just be informed in the end so your contributions can be merged within the Gnuastro source code.
 
-Gnuastro will gratefully acknowledge (see @ref{Acknowledgments}) all the people who have assigned their copyright to the FSF and have thus helped to guarantee the freedom and reliability of Gnuastro.
+Gnuastro will gratefully acknowledge (see @ref{Acknowledgments and short history}) all the people who have assigned their copyright to the FSF and have thus helped to guarantee the freedom and reliability of Gnuastro.
 The Free Software Foundation will also acknowledge your copyright contributions in the Free Software Supporter: @url{https://www.fsf.org/free-software-supporter} which will circulate to a very large community (225,910 people in July 2021).
 See the archives for some examples and subscribe to receive interesting updates.
 The very active code contributors (or developers) will also be recognized as project members on the Gnuastro project web page (see @ref{Gnuastro project webpage}) and can be given a @code{gnu.org} email address.
