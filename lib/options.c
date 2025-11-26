@@ -313,10 +313,10 @@ gal_options_print_citation(struct argp_option *option, char *arg,
     "DOI that you are using, and is printed below, are different)\n\n"
     "  @BOOK{gnuastrobook,\n"
     "     author = {{Akhlaghi}, Mohammad},\n"
-    "      title = {GNU Astronomy Utilities (version "PACKAGE_VERSION"), https://doi.org/10.5281/zenodo.12738457},\n"
-    "       year = 2024,\n"
+    "      title = {GNU Astronomy Utilities (version "PACKAGE_VERSION"), https://doi.org/10.5281/zenodo.17726900},\n"
+    "       year = 2025,\n"
     "  publisher = {Free Software Foundation},\n"
-    "        doi = {10.5281/zenodo.12738457}\n"
+    "        doi = {10.5281/zenodo.17726900}\n"
     "  }\n";
 
 

@@ -1584,7 +1584,7 @@ gal_txt_stdin_read(long timeout_microsec)
 {
   char *line;
   gal_list_str_t *out=NULL;
-  size_t lineno=0, linelen=10;/* 'getline' will increase 'linelen'. */
+  size_t linelen=10;/* 'getline' will increase 'linelen'. */
 
   /* Only continue if standard input has any contents. */
   if( txt_stdin_has_contents(timeout_microsec) )
@@ -1605,8 +1605,8 @@ gal_txt_stdin_read(long timeout_microsec)
       while( getline(&line, &linelen, stdin) != -1 )
         {
           /* To help in reporting (when necessary), keep a count of how
-             many lines we have. */
-          ++lineno;
+             many lines we have (just define the variable above).
+          ++lineno; */
 
           /* Add the line to the output list. */
           gal_list_str_add(&out, line, 1);

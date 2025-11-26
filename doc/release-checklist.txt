@@ -64,8 +64,10 @@ all the commits needed for this release have been completed.
    builds on all the architectures there.
 
    - Build and upload the Gnuastro tarball with tar.xz since Conda does not
-     recognize 'tar.lz'! Then upload it to a URL that Conda can download
-     from:
+     recognize 'tar.lz'! [[TODO: add the feature to make tar.gz in the
+     'developer-build' script because Conda is now complaining that 'xz' is
+     being deprecated.]] Then upload it to a URL that Conda can download
+     from.
 
        $ ./developer-build -z xz -p SERVER:LOCATION
 
@@ -84,7 +86,7 @@ all the commits needed for this release have been completed.
      changes ('git pull'). If you have have already added your fork as a
      remote, then ignore that step.
 
-       $ git@github.com:conda-forge/gnuastro-feedstock.git
+       $ git clone git@github.com:conda-forge/gnuastro-feedstock.git
        $ cd gnuastro-feedstock
        $ git remote add fork YOUR-FORK-GIT-LOCATION
        $ git checkout main
@@ -100,7 +102,9 @@ all the commits needed for this release have been completed.
        $ git push fork XXXX-dev
 
    - Once the push is complete, do the pull request (from the link that is
-     printed on the command-line). Afterwards, Github will automatically
+     printed on the command-line). In the text put a big note that this is
+     only for a pre-release test (to warn anyone receiving announcements
+     that they should not merge it). Afterwards, Github will automatically
      start a build on all available Conda architectures that Gnuastro has
      been configured for. This will usually take about half an hour!
 
@@ -144,13 +148,15 @@ all the commits needed for this release have been completed.
 
 
  - [STABLE] Click on the "New version" button of Gnuastro's page on Zenodo
-   (https://doi.org/10.5281/zenodo.3483064), and click on the "Get a DOI
-   now!" button at the start of the "Basic information" section. Using
-   this, you need to update the information for the "Gnuastro book" section
-   of the string in 'gal_options_print_citation' (of 'lib/options.c'):
-     - year: set the year that you are making the release.
-     - title: Copy the DOI from Zenodo here.
-     - doi: Copy the DOI from Zenodo here.
+   (https://doi.org/10.5281/zenodo.3483064), upload a temporary file (one
+   upload is necessary) and click on the "Get a DOI now!" button at the
+   start of the "Basic information" section and finally set the publication
+   date. Using this, you need to update the information for the "Gnuastro
+   book" section of the string in 'gal_options_print_citation' (of
+   'lib/options.c'):
+       - year: set the year that you are making the release.
+       - title: Copy the DOI from Zenodo here.
+       - doi: Copy the DOI from Zenodo here.
    Later (when the new Gnuastro version is released) you can complete the
    Zenodo submission by uploading the files (there is an item at the end of
    this list so you do not forget).
@@ -162,9 +168,8 @@ all the commits needed for this release have been completed.
      $ git commit
 
 
- - Update the version and build Gnuastro, all done with the '-p' option of
-   './developer-build'. But we'll give it a 'pure-junk' directory so it
-   doesn't actually upload the build.
+ - Make sure everything works from scratch. We'll give the '-p' (publish)
+   option a 'pure-junk' directory so it doesn't actually upload the build.
 
      $ ./developer-build -p pure-junk
 

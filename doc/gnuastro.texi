@@ -151,17 +151,17 @@ A copy of the license is included in the section entitled ``GNU Free Documentati
 @subtitle
 @subtitle
 @end iftex
-@subtitle @strong{Important note:}
-@subtitle This is an @strong{under-development} Gnuastro release (bleeding-edge!).
-@subtitle It is not yet officially released.
-@subtitle The source tarball corresponding to this version is (temporarily) available at this URL:
-@subtitle @url{http://akhlaghi.org/src/gnuastro-@value{VERSION}.tar.lz}
-@subtitle (the tarball link above will not be available after the next official release)
-@subtitle The most recent under-development source and its corresponding book are available at:
-@subtitle @url{http://akhlaghi.org/gnuastro.pdf}
-@subtitle @url{http://akhlaghi.org/gnuastro-latest.tar.lz}
-@subtitle To stay up to date with Gnuastro's official releases, please subscribe to this mailing list:
-@subtitle @url{https://lists.gnu.org/mailman/listinfo/info-gnuastro}
+@c @subtitle @strong{Important note:}
+@c @subtitle This is an @strong{under-development} Gnuastro release (bleeding-edge!).
+@c @subtitle It is not yet officially released.
+@c @subtitle The source tarball corresponding to this version is (temporarily) available at this URL:
+@c @subtitle @url{http://akhlaghi.org/src/gnuastro-@value{VERSION}.tar.lz}
+@c @subtitle (the tarball link above will not be available after the next official release)
+@c @subtitle The most recent under-development source and its corresponding book are available at:
+@c @subtitle @url{http://akhlaghi.org/gnuastro.pdf}
+@c @subtitle @url{http://akhlaghi.org/gnuastro-latest.tar.lz}
+@c @subtitle To stay up to date with Gnuastro's official releases, please subscribe to this mailing list:
+@c @subtitle @url{https://lists.gnu.org/mailman/listinfo/info-gnuastro}
 @author Mohammad Akhlaghi
 
 @page
@@ -1851,7 +1851,7 @@ Therefore when typing (recommended) or copy-pasting (not recommended) the comman
 
 Gnuastro would not have been possible without scholarships and grants from several funding institutions.
 To acknowledge/cite Gnuastro in your publications, see @ref{Citing Gnuastro}.
-Here, you will find Gnuastro's own acknowledgments to all the grants, institutions and of course poeple who helped make Gnuastro what it is today.
+Here, you will find Gnuastro's own acknowledgments to all the grants, institutions and of course people who helped make Gnuastro what it is today.
 
 The Japanese Ministry of Education, Culture, Sports, Science, and Technology (MEXT) scholarships for Mohammad Akhlaghi's Masters (2010 to 2012) and PhD (2012 to 2015) degrees in Tohoku University Astronomical Institute had an instrumental role in the long term learning and planning that made the idea of Gnuastro possible.
 The very critical view points of Professor Takashi Ichikawa (Mohammad's PhD thesis directory) were also instrumental in the initial ideas and foundational philosophy/design of Gnuastro.
@@ -1859,7 +1859,7 @@ The very critical view points of Professor Takashi Ichikawa (Mohammad's PhD thes
 Afterwards, the European Research Council (ERC) advanced grant 339659-MUSICOS (Principal investigator, or PI: Roland Bacon) was vital in the growth and expansion of Gnuastro since it supported Mohammad's first postdoc position from 2016 to 2018.
 Working with Roland at the Centre de Recherche Astrophysique de Lyon (CRAL, Saint-Genis-Laval, France), enabled a thorough re-write of the core functionality of all libraries and programs (to generalize them for usage on the wonderful MUSE 3D cubes).
 This maturation phase made it possible for Gnuastro to grow into the large collection of generic programs and libraries it is today.
-Important contributions on the low-level design of Gnuastro also came from David Valls-Gabaud (of Paris Observatory) in this period.
+In this period, David Valls-Gabaud (of Paris Observatory) was also instrumental to Gnuastro through sponsoring it in several EU-wide meetings helping to inform the community of this new approach.
 
 In late 2018, Mohammad moved to the Instituto de Astrofisica de Canarias (IAC, Tenerife, Spain) to work with Johan Knapen and Ignacio Trujillo as part of IAC's project P/300724, financed by the SMSI, through the Canary Islands Department of Economy, Knowledge and Employment.
 With the support and help of Ignacio and Johan, Gnuastro's user base significantly grew in this phase.
@@ -1882,12 +1882,14 @@ We applied for GSoC in the following years and all have been successful so far: 
 Special thanks goes to the GNU (for 2020) and OpenAstronomy@footnote{@url{https://openastronomy.org}} (rest of the years) GSoC organizations also for enabling this.
 @end table
 
-Rafael Guzmán (the PI of ARRAKIHS), Santiago Serrano and Pascale Jablonka (leads of the ARRAKIHS science and instrumentation segments in 2023) deserve a special mention regarding the two ARRAKIHS-related grants above.
-Their trust and support for Gnuastro directly lead to selecting Mohammad as the responsible of the ARRAKIHS data reduction pipeline (known as the ARRAKIHS Harvester): it is fully written with Gnuastro and Maneage.
-Thanks to all the direct support from the ARRAKIHS, J-PAS and J-PLUS, they are now the primary@footnote{Being the primary driver does not imply ignoring general user support or bug fixes found by others.
-As always, we will address bug reports or simple feature addition requests with the highest priority.
-The ``primary driver'' just refers to long-term strategic decisions.} driver for Gnuastro's development helping us reach the vision @ref{GNU Astronomy Utilities 1.0}).
-But since Gnuastro and Maneage are free and open source software all the low-level added components and bugs fixed for those, can benefit the whole community.
+Rafael Guzm@'an (the PI of ARRAKIHS) and its high-level management deserve a special mention regarding the two ARRAKIHS-related grants above.
+Their trust and support for Gnuastro directly lead to Gnuastro becoming to core tool for the ARRAKIHS data reduction pipeline (known as the ARRAKIHS Harvester): it is fully written with Gnuastro and Maneage.
+Thanks to all the direct support from the ARRAKIHS, J-PAS and J-PLUS, they are now the primary driver for Gnuastro's development helping us reach the vision @ref{GNU Astronomy Utilities 1.0}).
+Being the primary driver does not imply ignoring general user support or bug fixes found by others.
+As always, we will address bug reports or simple feature addition requests with high priority; it just refers to long-term strategic decisions.
+
+However, Gnuastro is free and open source software (see @ref{Your rights}) and every contributor has assigned the copyright of all their contributions to the Free software foundation to ensure its freedom in the future (see @ref{Copyright assignment}).
+Therefore, all the added components and bugs fixed for the driving projects, can benefit the whole community.
 We welcome collaborations with any other mission/survey (to focus on their particular needs) if they can provide a dedicated personnel to help in those developments.
 
 The full list of Gnuastro authors is available at the start of this book (on the third page of its PDF) and the @file{AUTHORS} file in the source code (both are generated automatically from the version controlled history).
@@ -1913,6 +1915,7 @@ Adrian Bunk,
 Rosa Calvi,
 Mark Calabretta,
 Juan Castillo Ramírez,
+Alejandro Camazón Pinilla,
 Nushkia Chamba,
 Sergio Chueca Urzay,
 Tamara Civera Lorenzo,
@@ -1937,6 +1940,7 @@ Giulia Golini,
 Craig Gordon,
 Martin Guerrero Roncel,
 Madusha Gunawardhana,
+Rafael G@'uzman,
 Bruno Haible,
 Stephen Hamer,
 Siyang He,
@@ -1965,6 +1969,7 @@ Alejandro Lumbreras Calle,
 Sebasti@'an Luna Valero,
 Alberto Madrigal,
 Guillaume Mahler,
+Carlos Marrero de La Rosa,
 Juan Miro,
 Alireza Molaeinezhad,
 Javier Moldon,
@@ -1973,6 +1978,7 @@ Francesco Montanari,
 Raphael Morales,
 Carlos Morales Socorro,
 Sylvain Mottet,
+Benson Muite,
 Dmitrii Oparin,
 Fran@,{c}ois Ochsenbein,
 Bertrand Pain,
@@ -1995,6 +2001,7 @@ Alejandro Serrano Borlaff,
 Zahra Sharbaf,
 David Shupe,
 Leigh Smith,
+Elizabeth Sola,
 Jenny Sorce,
 Manuel S@'anchez-Benavente,
 Lee Spitler,
@@ -2005,9 +2012,10 @@ Alfred M. Szmidt,
 Michel Tallon,
 Juan C. Tello,
 Vincenzo Testa,
+Peter Teuben,
 @'Eric Thi@'ebaut,
 Ignacio Trujillo,
-Peter Teuben,
+Hok Kan (Ronald) Tsang,
 Mathias Urbano,
 David Valls-Gabaud,
 Jes@'us Varela,
@@ -5200,7 +5208,7 @@ Due to its more peculiar low surface brightness structure/features, we will focu
 To get the image, you can use the @url{https://skyserver.sdss.org/dr18/SearchTools/IQS, Imaging search} tool of SDSS.
 As long as it is covered by the SDSS, you can find an image containing your desired target either by providing a standard name (if it has one), or its coordinates.
 To access the dataset we will use here, under ``position constraints'' section, select ``cone''.
-Fill the declination (47.194444) and right ascention (202.467917) of NGC5195 in the respective box and click on ``Submit''.
+Fill the declination (47.194444) and right ascension (202.467917) of NGC5195 in the respective box and click on ``Submit''.
 
 @cartouche
 @noindent
@@ -5214,7 +5222,7 @@ You can see the list of available filters by clicking on the ``Get Wget'' file b
 For this demonstration, we will use the r-band filter image.
 
 The original version of this tutorial was written for the previous (DR12) version of SDSS's interface.
-Fortuantely while their web interface has changed, the data sets from DR12 have not been deleted/removed.
+Fortunately while their web interface has changed, the data sets from DR12 have not been deleted/removed.
 To ensure reproducibility, let's use the same data set that this tutorial was initially written.
 You can do that by running the following command to download it with GNU Wget@footnote{To make the command easier to view on screen or in a page, we have defined the top URL of the image as the @code{topurl} shell variable.
 You can just replace the value of this variable with @code{$topurl} in the @command{wget} command.}.
@@ -5783,44 +5791,38 @@ Whereas the standard deviation of the masked image is calculated based on the fi
 Therefore, it can be easily biased by signal or artifacts in the image and besides being easier to measure, @code{MEDSTD} is also more statistically robust.
 @end cartouche
 
-Fortunately, MakeCatalog will use this keyword and will report the dataset's @mymath{n\sigma} surface brightness limit as keywords in the output (not as measurement columns, since it is related to the noise, not labeled signal) as described below.
+Fortunately, MakeCatalog will use this keyword and will report the dataset's @mymath{n\sigma} surface brightness limit over a certain area as keywords in the output.
+However, as we saw above, these types of measurements are generic to the whole image, not to any specific object.
+In other words, they are measurements that are used to evaluate other measurements.
+Therefore, in MakeCatalog, we call these ``meta-measures'' which are more completely described in @ref{Metameasurements on full input}.
+In summary, to activate these types of measurements, you need to use the @option{--meta-measures} option:
 
 @example
 $ astmkcatalog r_detected.fits -hDETECTIONS --output=sbl.fits \
-               --forcereadstd --ids
+               --ids --meta-measures
 @end example
 
 @noindent
-Before looking into the measured surface brightness limits, let's review some important points about this call to MakeCatalog first:
-@itemize
-@item
+Before looking into the measured surface brightness limits, let's review an important point about this call to MakeCatalog:
 We are only concerned with the noise (not the signal), so we do not ask for any further measurements, because they can un-necessarily slow it down.
 However, MakeCatalog requires at least one column, so we will only ask for the @option{--ids} column (which does not need any measurement!).
 The output catalog will therefore have a single row and a single column, with 1 as its value@footnote{Recall that NoiseChisel's output is a binary image: 0-valued pixels are noise and 1-valued pixel are signal.
 NoiseChisel does not identify sub-structure over the signal, this is the job of Segment, see @ref{Extract clumps and objects}.}.
-@item
-If we do not ask for any noise-related column (for example, the signal-to-noise ratio column with @option{--sn}, among other noise-related columns), MakeCatalog is not going to read the noise standard deviation image (again, to speed up its operation when it is redundant).
-We are thus using the @option{--forcereadstd} option (short for ``force read standard deviation image'') here so it is ready for the surface brightness limit measurements that are written as keywords.
-@end itemize
 
-With the command below you can see all the keywords that were measured with the table.
-Notice the group of keywords that are under the ``Surface brightness limit (SBL)'' title.
+Since all the meta-measurements get written in the first (0th) HDU, with the command below you can see all the keywords that were measured with the table.
+Notice the group of keywords that are under the ``Noise-based metameasures'' title.
 
 @example
-$ astfits sbl.fits -h1
+$ astfits sbl.fits -h0
 @end example
 
-@noindent
-Since all the keywords of interest here start with @code{SBL}, we can get a more cleaner view with this command.
+Above the noise-based meta-measure group, you see another group of keywords under the title ``Input pixel grid and value properties''.
+Notice how the @code{MMSTD} has the same value as NoiseChisel's @code{MEDSTD} above: this is used directly for both the measured surface brightness limit and the noise-based magnitude limit.
+Using @code{MMSTD}, MakeCatalog has determined the @mymath{n\sigma} surface brightness limiting magnitude in these header keywords.
 
-@example
-$ astfits sbl.fits -h1 | grep ^SBL
-@end example
-
-Notice how the @code{SBLSTD} has the same value as NoiseChisel's @code{MEDSTD} above.
-Using @code{SBLSTD}, MakeCatalog has determined the @mymath{n\sigma} surface brightness limiting magnitude in these header keywords.
-The multiple of @mymath{\sigma}, or @mymath{n}, is the value of the @code{SBLNSIG} keyword which you can change with the @option{--sbl-sigma}.
-The surface brightness limiting magnitude within a pixel (@code{SBLNSIG}) and within a pixel-agnostic area of @code{SBLAREA} arcsec@mymath{^2} are stored in @code{SBL}.
+The multiple of @mymath{\sigma}, or @mymath{n}, and area used are parameters that you should set at run-time as command-line options.
+Therefore you should look for those under the ``Option values'' group of keywords.  is the value of the @code{SBL-SIGMA} keyword which you can change with @option{--sbl-sigma}.
+The surface brightness limiting magnitude within a pixel (@code{SBL-SIGMA}) and within a shape-agnostic area of @code{SBL-AREA} arcsec@mymath{^2} are stored in @code{SBL}.
 
 @cindex SDSS
 @cindex Nanomaggy
@@ -5831,20 +5833,20 @@ SDSS image pixel values are calibrated in units of ``nanomaggy'' which are defin
 So with the first command below we give the zero point value and with the second we can see the surface brightness limiting magnitudes with the correct values (around 25 and 26)
 
 @example
-$ astmkcatalog r_detected.fits -hDETECTIONS --zeropoint=22.5 \
-               --output=sbl.fits --forcereadstd --ids
-$ astfits sbl.fits -h1 | grep ^SBL
+$ astmkcatalog r_detected.fits -hDETECTIONS --output=sbl.fits \
+               --ids --meta-measures --zeropoint=22.5
+$ astfits sbl.fits -h0 | grep SBL
 @end example
 
-As you see from @code{SBLNSIG} and @code{SBLAREA}, the default multiple of sigma is 1 and the default area is 1 arcsec@mymath{^2}.
-Usually higher values are used for these two parameters.
-Following the manual example we did above, you can ask for the multiple of sigma to be 3 and the area to be 25 arcsec@mymath{^2}:
+As you see from @code{SBL-SIGMA} and @code{SBL-AREA}, the default multiple of sigma is 3 and the default area is 100 arcsec@mymath{^2} (which is commonly used in the literature).
+But as mentioned above, you can easily change those in every run.
+In the manual example above, we assumed the multiple of sigma to be 3 and the area to be 25 arcsec@mymath{^2}, so we just need to modify the area:
 
 @example
-$ astmkcatalog r_detected.fits -hDETECTIONS --zeropoint=22.5 \
-               --output=sbl.fits --sbl-area=25 --sbl-sigma=3 \
-               --forcereadstd --ids
-$ astfits sbl.fits -h1 | awk '/^SBL /@{print $3@}'
+$ astmkcatalog r_detected.fits -hDETECTIONS --output=sbl.fits \
+               --ids --meta-measures --zeropoint=22.5 --sbl-area=25
+
+$ astfits sbl.fits -h0 | awk '$1=="SBL" @{print $3@}'
 26.02296
 @end example
 
@@ -5853,7 +5855,7 @@ But it is much more easier to have MakeCatalog do this measurement, because thes
 
 @cartouche
 @noindent
-@strong{Custom STD for MakeCatalog's Surface brightness limit:} You can manually change/set the value of the @code{MEDSTD} keyword in your input STD image with @ref{Fits}:
+@strong{Custom STD for MakeCatalog's Surface brightness limit:} You can manually change/set the value of the @code{MEDSTD} keyword in your the input standard deviation HDU with @ref{Fits}:
 
 @example
 $ std=$(aststatistics masked.fits --sigclip-std)
@@ -5861,7 +5863,9 @@ $ astfits noisechisel.fits -hSKY_STD --update=MEDSTD,$std
 @end example
 
 With this change, MakeCatalog will use your custom standard deviation for the surface brightness limit.
-This is necessary in scenarios where your image has multiple depths and during your masking, you also mask the shallow regions (as well as the detections of course).
+This can be necessary in scenarios where your image has multiple depths and NoiseChisel is given the full image (including the shallow parts).
+In such cases, the shallow parts can bias the measured surface brightness to brighter values.
+But generally, in such cases, it is recommended to set the shallow parts before running NoiseChisel, not to manually edit the header keywords.
 @end cartouche
 
 We have successfully measured the image's @mymath{3\sigma} surface brightness limiting magnitude over 25 arcsec@mymath{^2}.
@@ -5891,7 +5895,7 @@ echo "1 100 100 5 $r_pixel 0 0 1 1 1" \
 ## Do the upper-limit measurement, ignoring all NoiseChisel's
 ## detections as a mask for the upper-limit measurements.
 astmkcatalog lab.fits -h1 --zeropoint=$zeropoint -osbl.fits \
-             --sbl-area=25 --sbl-sigma=3 --forcereadstd \
+             --sbl-area=25 --sbl-sigma=3 --meta-measures \
              --valuesfile=r_detected.fits --valueshdu=INPUT-NO-SKY \
              --upmaskfile=r_detected.fits --upmaskhdu=DETECTIONS \
              --upnsigma=3 --checkuplim=1 --upnum=1000 \
@@ -5899,8 +5903,8 @@ astmkcatalog lab.fits -h1 --zeropoint=$zeropoint -osbl.fits \
 @end example
 
 The @file{sbl.fits} catalog now contains the upper-limit surface brightness for a circle with an area of 25 arcsec@mymath{^2}.
-You can check the value with the command below, but the great thing is that now you have both of the surface brightness limiting magnitude in the headers discussed above, and the upper-limit surface brightness within the table.
-You can also add more profiles with different shapes and sizes if necessary.
+You can check the value with the command below, but the great thing is that now you have both of the measured surface brightness limit in the headers (discussed above), and the upper-limit surface brightness within the table.
+You can also add more profiles with different shapes and sizes if necessary (just make sure they do not overlap: their position is irrelevant!).
 Of course, you can also use @option{--upperlimit-sb} in your actual science objects and clumps to get an object-specific or clump-specific value.
 
 @example
@@ -5916,16 +5920,16 @@ In fact, if you run the MakeCatalog command again and look at the measured upper
 Please try exactly the same MakeCatalog command above a few times to see how it changes.
 
 This is because of the @emph{random} factor in the upper-limit measurements: every time you run it, different random points will be checked, resulting in a slightly different distribution.
-You can decrease the random scatter by increasing the number of random checks (for example, setting @option{--upnum=100000}, compared to 1000 in the command above).
+You can increase the random scatter by increasing the number of random checks (for example, setting @option{--upnum=100000}, compared to 1000 in the command above).
 But this will be slower and the results will not be exactly reproducible.
 The only way to ensure you get an identical result later is to fix the random number generator function and seed like the command below@footnote{You can use any integer for the seed. One recommendation is to run MakeCatalog without @option{--envseed} once and use the randomly generated seed that is printed on the terminal.}.
-This is a very important point regarding any statistical process involving random numbers, please see @ref{Generating random numbers}.
+This is a very important point for the reproducibility of any statistical process involving random numbers, please see @ref{Generating random numbers}.
 
 @example
 export GSL_RNG_TYPE=ranlxs1
 export GSL_RNG_SEED=1616493518
 astmkcatalog lab.fits -h1 --zeropoint=$zeropoint -osbl.fits \
-             --sbl-area=25 --sbl-sigma=3 --forcereadstd \
+             --sbl-area=25 --sbl-sigma=3 --meta-measures \
              --valuesfile=r_detected.fits --valueshdu=INPUT-NO-SKY \
              --upmaskfile=r_detected.fits --upmaskhdu=DETECTIONS \
              --upnsigma=3 --checkuplim=1 --upnum=1000 \
@@ -5934,20 +5938,20 @@ astmkcatalog lab.fits -h1 --zeropoint=$zeropoint -osbl.fits \
 
 But where do all the random apertures of the upper-limit measurement fall on the image?
 It is good to actually inspect their location to get a better understanding for the process and also detect possible bugs/biases.
-When MakeCatalog is run with the @option{--checkuplim} option, it will print all the random locations and their measured brightness as a table in a file with the suffix @file{_upcheck.fits}.
+When MakeCatalog is run with the @option{--checkuplim} option, it will save all the random locations and their measured brightness as an extra table HDU in the output (called @code{CHECK-UPPERLIMIT}).
 With the first command below you can use Gnuastro's @command{asttable} and @command{astscript-ds9-region} to convert the successful aperture locations into a DS9 region file, and with the second can load the region file into the detections and sky-subtracted image to visually see where they are.
 
 @example
 ## Create a DS9 region file from the check table (activated
 ## with '--checkuplim')
-asttable sbl_upcheck.fits --noblank=RANDOM_SUM \
-         | astscript-ds9-region -c1,2 --mode=img \
-                                --radius=$r_pixel
+$ asttable sbl.fits -hCHECK-UPPERLIMIT --noblank=RANDOM_SUM \
+           | astscript-ds9-region -c1,2 --mode=img \
+                                  --radius=$r_pixel \
+                                  --output=apers.reg
 
 ## Have a look at the regions in relation with NoiseChisel's
 ## detections.
-ds9 r_detected.fits[INPUT-NO-SKY] -regions load ds9.reg
-ds9 r_detected.fits[DETECTIONS]   -regions load ds9.reg
+$ astscript-fits-view r_detected.fits --ds9region=apers.reg
 @end example
 
 In this example, we were looking at a single-exposure image that has no correlated noise.
@@ -6812,7 +6816,7 @@ Did you notice the @option{--wcsfile=none} option above?
 With it, the coadded image no longer has any WCS information.
 This is natural, because the coadded image does not correspond to any specific region of the sky any more.
 Also note the @code{--writeall} option: it is necessary because @code{sigclip-mean} will return two datasets: the actual coadded image and an image showing how many images were ultimately used for each pixel.
-Because of this, the output has two HDUs, containing both these images respectiely.
+Because of this, the output has two HDUs, containing both these images respectively.
 This is a good check to help improve/debug your results.
 
 Let's compare this coadded PSF with the images of the individual stars that were used to create it.
@@ -8681,7 +8685,7 @@ CTYPE2  = 'DEC--TAN'
 CTYPE3  = 'WAVE-LOG'
 @end example
 
-In the same section, the FITS standard describes how the ``world coordinate'' (wavelengh in this case) can be calculated in such cases.
+In the same section, the FITS standard describes how the ``world coordinate'' (wavelength in this case) can be calculated in such cases.
 The column arithmetic command to add the wavelength to each slice's measurement looks is shown below (just for the first object in the catalog; replace @option{--head=1} as you wish).
 For the @code{d}, @code{lr} and @code{sr} shell variables that are used in this command, see @ref{Extracting a single spectrum and plotting it}.
 
@@ -12150,7 +12154,7 @@ So the @file{./boostrap} script will run @LaTeX{} to build the figures.
 The best way to install @LaTeX{} and all the necessary packages is through @url{https://www.tug.org/texlive/, @TeX{} live} which is a package manager for @TeX{} related tools that is independent of any operating system.
 It is thus preferred to the @TeX{} Live versions distributed by your operating system.
 
-To install @TeX{} Live, first download its installer, unpack it, enter the unpacked directoy (which includes the date it was generated!),
+To install @TeX{} Live, first download its installer, unpack it, enter the unpacked directory (which includes the date it was generated!),
 
 @example
 $ baseurl=http://mirrors.rit.edu/CTAN/systems/texlive/tlnet
@@ -12165,7 +12169,7 @@ There are two important parts which you need to edit:
 
 @table @asis
 @item Basic scheme
-Befault the full package repository will be downloaded and installed (around 9 Gigabytes!) which can take @emph{very} long to download and to update later.
+By default the full package repository will be downloaded and installed (around 9 Gigabytes!) which can take @emph{very} long to download and to update later.
 However, most packages are not needed by everyone!
 So it is easier, faster and better to install only the ``Basic scheme'' (consisting of only the most basic @TeX{} and @LaTeX{} packages, which is almost 300 Megabytes).
 To do this, from the top interactive installer environment press the following keys:
@@ -12179,7 +12183,7 @@ To do this, from the top interactive installer environment press the following k
 @end enumerate
 
 @item Installation path
-By default, TeXLiv will try to install in a system-wide location which will require root permissions.
+By default, TeXLive will try to install in a system-wide location which will require root permissions.
 A better solution is to install TeXLive in your user-accessible directories to avoid the need to become root when installing packages or updating.
 This also helps in using servers where you do not have root access at all. To install it in another directory take the following steps from the main menu:
 @enumerate
@@ -12198,7 +12202,7 @@ $ mkdir $HOME/.local; mkdir $HOME/.local/texlive
 $ cd $HOME/.local/texlive
 $ pwd
 @end example
-Copy the result of the last command above, come back to the terminal with the TeXlive interactive installation and paste the directory there.
+Copy the result of the last command above, come back to the terminal with the TeXLive interactive installation and paste the directory there.
 Afterwards, you can close the temporary directory.
 @item
 `@key{R}' to return to the main menu.
@@ -17468,7 +17472,7 @@ $ astcrop ah_f160w.fits --center=53.1616278,-27.7802446 --mode=wcs \
 
 To better show the low surface brightness (LSB) outskirts, we will warp the image, then convert the pixel units to surface brightness with the commands below with Gnuastro's Arithmetic program.
 An important point to remember here is that the magnitudes (and thus the surface brightness) come from a logarithm; therefore if a pixel is negative, its log will be NaN (Not-a-Number).
-Therefore after @code{counts-to-sb}, we convert all the NaN pixels with the faintest (highest) surface brighntess limit possible in this image: 30 mag/arcsec@mymath{^2} (which we define as a variable because it is also necessary later).
+Therefore after @code{counts-to-sb}, we convert all the NaN pixels with the faintest (highest) surface brightness limit possible in this image: 30 mag/arcsec@mymath{^2} (which we define as a variable because it is also necessary later).
 In case you don't know your image's surface brightness limit, see @ref{FITS images in a publication}.
 For more, see the surface brightness topic of @ref{Brightness flux magnitude}, and for a more complete tutorial, see @ref{FITS images in a publication}.
 
@@ -17499,7 +17503,7 @@ $ astconvertt build/sb.fits --colormap=$colormap --borderwidth=0 \
 @end example
 
 Please open @file{build/sb.pdf} and have a look.
-Try changing the surface brighntess variables above or the colormap to make it more pleasing to your eye (you will need such experimentation when you later do this on your own images).
+Try changing the surface brightness variables above or the colormap to make it more pleasing to your eye (you will need such experimentation when you later do this on your own images).
 We now have the printable PDF representation of the image, but as discussed above, it is not enough for a paper.
 We will add 1) a thick line showing the size of 20 kpc (kilo parsecs) at the redshift of the central galaxy to help the readers of our report create a mental image of its physical size, 2) coordinates on the edge so the reader can easily identify the location on the sky and observed size, and 3) a color bar, showing the colormap of the surface brightness level for readers to be able to interpret the pixel values.
 
@@ -22059,7 +22063,7 @@ $ astarithmetic 20 24.8 mag-to-counts --quiet
 
 @item mag-to-luminosity
 @cindex Luminosity to Apparent Magnitude
-@cindex Apparent Mangitude to Luminosity
+@cindex Apparent Magnitude to Luminosity
 Convert the given apparent magnitude to luminosity (in units of the luminosity of a reference object).
 It takes the following three operands (in the order written on the command-line; see example below):
 
@@ -22080,7 +22084,7 @@ For example the Sun's absolute magnitude in the SDSS u, g, r, i and z filters (w
 @cindex K-Correction
 Difference of apparent (@mymath{m}) and absolute (@mymath{M}) magnitudes: @mymath{m-M}.
 At small distances or when the input is bolometric (across all wavelengths), the distance modulus can be used for this.
-See @option{--distancemodulus} in @ref{CosmicCalculator basic cosmology calculations} for more details and why @option{--absmagconv} is preferred to the distance modulus in the absense of SED-based methods.
+See @option{--distancemodulus} in @ref{CosmicCalculator basic cosmology calculations} for more details and why @option{--absmagconv} is preferred to the distance modulus in the absence of SED-based methods.
 @end enumerate
 
 For example, let's assume the apparent AB magnitude of a galaxy (after correcting Galactic extinction) is 20 in the SDSS g filter, and that its redshift is 0.01 and we need its luminosity (in units of solar luminosity) in the same filter.
@@ -22092,7 +22096,7 @@ $ astarithmetic 20 5.11 $conv mag-to-luminosity
 @end example
 
 @item luminosity-to-mag
-Convert luminostiy (in units of solar luminosity) to apparent magnitude using the distance modulus.
+Convert luminosity (in units of solar luminosity) to apparent magnitude using the distance modulus.
 This is the inverse of @option{mag-to-luminosity}, see its description for the details and usage example.
 
 @item counts-to-sb
@@ -22237,11 +22241,11 @@ For details and usage examples, see the description of @code{jy-to-wavelength-fl
 
 @item sblim-diff
 Calculate the difference in surface brightness limit after using a different exposed radius (of a different telescope) or a different exposure time.
-The filter used, the multiple of sigma and the extrapolated area of the derived surface brightness limit will be the same as your reference surface brighntess limit.
+The filter used, the multiple of sigma and the extrapolated area of the derived surface brightness limit will be the same as your reference surface brightness limit.
 For more on the surface brightness limit, the exposed radius, the extrapolated area and the equation behind this operator, see @ref{Surface brightness limit of image}.
 
 For example, we know that in the rSDSS filter, the SDSS survey reaches a @mymath{3\sigma} surface brightness limit of 26.5 mag/arcsec@mymath{^2} over 100 arcsec@mymath{^2}.
-Let's use this to find the expected surface brighntess limit of the LSST survey in the same filter (after its observations have been completed).
+Let's use this to find the expected surface brightness limit of the LSST survey in the same filter (after its observations have been completed).
 To do this, we need to know the exposed radius and exposure time of SDSS and LSST to feed into the command below:
 @itemize
 @item
@@ -22266,7 +22270,7 @@ $ astarithmetic 3.37 1.13 / 4800 60 / sblim-diff 26.5 + -q \
 30.065241
 @end example
 
-Therefore, juduging purely based on exposed area and time (too idealistic!), the LSST will reach a @mymath{3\sigma} surface brighntess limit of 30.07 over 100 arcsec@mymath{^2}.
+Therefore, judging purely based on exposed area and time (too idealistic!), the LSST will reach a @mymath{3\sigma} surface brightness limit of 30.07 over 100 arcsec@mymath{^2}.
 
 A simple note for the second command: this trick is only useful for operators like this that are sure to produce numbers that are larger than @mymath{10^{-2}}.
 You will loose precision for values smaller than that and using the default scientific notation is best.
@@ -22395,8 +22399,8 @@ $ astarithmetic image.fits medianvalue -q
 Calculate the area (number of pixels) that have a unique label and replace that label's pixels with its area.
 The output will be an unsigned 32-bit integer (see @ref{Numeric data types}).
 
-The input labled image should have an integer type smaller than a signed 32-bit integer (so unsigned 32-bit or 64-bit integers are not acceptable).
-For exapmle the output of @code{connected-components} (see @ref{Mathematical morphology operators}), or Gnuastro's @ref{Segment} program.
+The input labeled image should have an integer type smaller than a signed 32-bit integer (so unsigned 32-bit or 64-bit integers are not acceptable).
+For example the output of @code{connected-components} (see @ref{Mathematical morphology operators}), or Gnuastro's @ref{Segment} program.
 This operator can be useful when you want to separate the different labels by their area.
 For example let's assume you want to remove all labels that are smaller than 3 pixels.
 With the command below you can do that and generate new labels (starting from one).
@@ -22656,9 +22660,9 @@ $ astarithmetic a.fits b.fits c.fits -g1 --writeall \
                 --output=out.fits
 @end example
 
-Different combinations of the various statistics are commonly necessary for differnet purposes.
-The rason we haven't specified an option for each combination is because that would dramatically increase the operator-count and would confuse the developers and users.
-On the other hand, the process of maskfilling or even just clipping is much more computationally expensive on large datasets than these measurements combined.
+Different combinations of the various statistics are commonly necessary for different purposes.
+The reason we haven't specified an option for each combination is because that would dramatically increase the operator-count and would confuse the developers and users.
+On the other hand, the process of mask-filling or even just clipping is much more computationally expensive on large datasets than these measurements combined.
 We therefore recommend the process above to extract the statistics you want.
 @end table
 
@@ -25828,7 +25832,7 @@ This will cause the wings of the final kernel to be flatter than they would idea
 
 There is a complete tutorial in Gnuastro on how to build the (extended) PSF: @ref{Building the extended PSF}.
 Since the very extended PSF wings can be subtracted before matching (as described in that tutorial), for PSF-matching, you may not need the full extended PSF.
-It it is good to validate how large the PSF to match should be, based on the size of the sources you want to study: if it is a large nearby galaxy, you need a larger PSF, but if it is high redshift galxies, only the inner part of the tutorial above is enough.
+It it is good to validate how large the PSF to match should be, based on the size of the sources you want to study: if it is a large nearby galaxy, you need a larger PSF, but if it is high redshift galaxies, only the inner part of the tutorial above is enough.
 
 @item -c
 @itemx --minsharpspec
@@ -27009,7 +27013,7 @@ Statistics accepts both 1-dimensional and 2-dimensional inputs which we'll descr
 @subsubsection One dimensional polynomial fitting
 
 In @ref{Least squares fitting} an introduction was given for fitting in Gnuastro.
-Here, we'll go through a hands-on review of 1D fiting.
+Here, we'll go through a hands-on review of 1D fitting.
 For example, with the command below, we'll build a fake measurement table (including noise) from the polynomial @mymath{y=1.23-4.56x+7.89x^2}.
 To understand how this equation translates to the command below (part before @code{set-y}), see @ref{Reverse polish notation} and @ref{Column arithmetic}.
 We will set the X axis to have values from 0.1 to 2, with steps of 0.01 and let's assume a random Gaussian noise to each @mymath{y} measurement: @mymath{\sigma_y=0.1y}.
@@ -27254,7 +27258,7 @@ In this case, because all the fitting parameters are written as FITS keywords, b
 
 In @ref{Least squares fitting} an introduction was given for fitting in Gnuastro and one-dimensional fitting was reviewed in @ref{One dimensional polynomial fitting} (which should be read before this in a first read).
 For a 2D polynomial fit, two independent variables are needed.
-The two independent variables cna be given either as an image or as table columns.
+The two independent variables can be given either as an image or as table columns.
 We'll start with an image here, and end with using table columns.
 
 Let's use the Arithmetic program to generate an image from the following 2D polynomial: @mymath{Y=5+10X_2+X_1X_2}.
@@ -27302,7 +27306,7 @@ Covariance matrix:
 @noindent
 Except for the functional form of the the 2D fit and the number of constants, all the outputs are similar to what was introduced in @ref{One dimensional polynomial fitting}.
 In this context, the extremely small values (@mymath{\sim10^{-14}}) are just floating point errors and can be considered equal to zero.
-We therefore see that the three constants that we ahd originally set and nicely determined.
+We therefore see that the three constants that we had originally set and nicely determined.
 But we are rarely lucky enough to have a value for the full plane like above.
 Let's simulate such a situation by adding a noisy dataset (@code{n}, with each pixel having a random value from a Gaussian distribution with @mymath{\sigma=100}).
 In the command below, we'll use that noisy dataset to randomly remove (set to NaN/blank) all pixels that have a value below 50 in it.
@@ -27327,7 +27331,7 @@ You can try decreasing the number of useful (non-NaN) pixels (by increasing the 
 @noindent
 @strong{@option{--fitestimate} not yet implemented in 2D}: as of this version, this option is not yet implemented in 2D.
 We will try to implement it as soon as time allows.
-Until then, the 2D image for a polynomial can be created in formalisim like above: where the @code{X1} and @code{X2} of every pixel are extracted and the constants are multiplied to each term of the polynomial.
+Until then, the 2D image for a polynomial can be created in formalism like above: where the @code{X1} and @code{X2} of every pixel are extracted and the constants are multiplied to each term of the polynomial.
 @end cartouche
 
 As mentioned at the start of this section, you can also feed your input data as table columns.
@@ -29942,7 +29946,7 @@ To take into account the different spectral coverage of filters and detectors, w
 
 @cindex Bolometric luminosity
 As in other objects in nature, astronomical objects do not emit or reflect the same flux at all wavelengths.
-On the other hand, our detector techologies are different for different wavelength ranges.
+On the other hand, our detector technologies are different for different wavelength ranges.
 Therefore, even if we wanted to, there is no way to measure the ``total'' (at all wavelengths; also known as ``bolometric'') luminosity of an object with a single tool.
 To be able to analyze objects with different spectral features (compare measurements of the same object taken in different spectral regimes), it is therefore important to account for the wavelength (or frequency) range of the photons that we measured through the spectral flux density.
 
@@ -29968,7 +29972,7 @@ Other fields of astronomy (for example X-ray or radio) were discovered in the la
 @cindex Flux to magnitude conversion
 @cindex Astronomical Magnitude system
 The observed spectral flux density of astronomical objects span over a very large range: the Sun (as the brightest object) is roughly @mymath{10^{24}} times brighter than the fainter galaxies we can currently detect in our deepest images.
-Therefore the scale that was originally used from the ancient times to measure the incoming light (used by Hipparchus of Nicaea; 190-120 BC) can be parametrized as a logarithmic function of the spectral flux density.
+Therefore the scale that was originally used from the ancient times to measure the incoming light (used by Hipparchus of Nicaea; 190-120 BC) can be parameterized as a logarithmic function of the spectral flux density.
 
 @cindex Hipparchus of Nicaea
 But the logarithm can only be usable with a value which is always positive and has no units.
@@ -30009,16 +30013,16 @@ In other words, the increase in spectral flux density that produces an increment
 
 The word ``increment'' above is used intentionally: because ADUs are discrete and measured as integers.
 In other words, an increase in spectral flux density that is below @mymath{F_r} will not be measured by the device.
-The reference magnitde (@mymath{m_r}) that corresponds to @mymath{F_r} is known as the @emph{Zero point} magnitude of that detector + filter + atmosphere (for on-ground observations).
+The reference magnitude (@mymath{m_r}) that corresponds to @mymath{F_r} is known as the @emph{Zero point} magnitude of that detector + filter + atmosphere (for on-ground observations).
 
 @cindex ISM (inter-stellar medium)
 @cindex Inter-stellar medium (ISM)
 Therefore, the increase in spectral flux density (from an astrophysical source) that produces an increment in ADUs depends on all hardware and observational parameters that the image was taken in.
-These include the quantum efficiency of the dector, the detector's coating, the filter transmission curve, the transmission of the optical path and the atmospheric absorption (for ground-based images; for example observations at different altitudes from the horizon where the thickness of the atmosphere is different).
+These include the quantum efficiency of the detector, the detector's coating, the filter transmission curve, the transmission of the optical path and the atmospheric absorption (for ground-based images; for example observations at different altitudes from the horizon where the thickness of the atmosphere is different).
 
-The rest of the absoptions (for example due to the interstellar medium, or ISM) are not considered in the zero point definition because for most purposes, they are not related to our observing conditions, but position on the sky.
+The rest of the absorptions (for example due to the interstellar medium, or ISM) are not considered in the zero point definition because for most purposes, they are not related to our observing conditions, but position on the sky.
 In other words, while ISM absorption should be taken into account when measuring the luminosity of the source for example, ISM absorption is not in the zero point.
-If we can later observe the universe from outside the MilkyWay, the ISM absorption should also be included (it would become like the atmosphere).
+If we can later observe the universe from outside the Milky Way, the ISM absorption should also be included (it would become like the atmosphere).
 But the farthest we have got so far for scientific observations beyond the Solar system is the L2 orbit of Earth (for instruments like Euclid, Gaia or JWST).
 
 The zero point therefore allows us to summarize all these ``observational'' (non-astrophysical) factors into a single number and compare different observations from different instruments at different observing conditions (which are critical to do science).
@@ -30108,7 +30112,7 @@ See @ref{FITS images in a publication} for a fully working tutorial on how to do
 Convolution is also a process of finding the weighted mean of pixel values.
 During these processes, many arithmetic operations are done on the original pixel values, for example, addition or multiplication.
 However, @mymath{log_{10}(a+b)\ne log_{10}(a)+log_{10}(b)}.
-Therefore if you generate color, magnitude or surface brightness images (where pixels are in units of mangnitudes), do not apply any such operations on them!
+Therefore if you generate color, magnitude or surface brightness images (where pixels are in units of magnitudes), do not apply any such operations on them!
 If you need to warp or convolve the image, do it @emph{before} the conversion to magnitude-based units.
 @end cartouche
 
@@ -30184,7 +30188,7 @@ Every time we make a different simulated image from the same distribution, the m
 Run the commands above one more time (this time calling the output @file{2.fits}) and check for your self (actually open the two FITS images and check visually, don't just rely on the statistics).
 
 Now that you have a good feeling of the change, let's automate this and scale it up for some nice statistics.
-With the commands below, you will build 500 images like above and measure their mean and standard deviation and save each measurment into a file (@file{mean-stds.txt}.
+With the commands below, you will build 500 images like above and measure their mean and standard deviation and save each measurement into a file (@file{mean-stds.txt}.
 In the first command we are deleting it to make sure we write into an empty file within the first run of the loop.
 With the third command, let's view the top 10 rows:
 
@@ -30548,7 +30552,7 @@ This column is internally used to measure the signal-to-noise (@option{--sn}).
 For objects this is calculated by adding the sky variance (second power of the sky standard deviation image) of each pixel in the label, with the value of the pixel if the value is not negative (error only increases).
 This is done to account for brighter pixels which have higher noise in the Poisson distribution (its side effect is that the error will always be slightly over-estimated due to the positive values close to the noise).
 A correction may be applied if the sky standard deviation is negative; see Section 3.3 of Akhlaghi & Ichikawa @url{https://arxiv.org/abs/1505.01664, 2015}.
-For clumps, the variance of the rivers (which are subtracted from the value of pixels in calclulating the sum) are also added to generate the final standard deviation.
+For clumps, the variance of the rivers (which are subtracted from the value of pixels in calculating the sum) are also added to generate the final standard deviation.
 
 The returned value will be NaN when the label covers only NaN pixels in the values image, or a pixel is NaN in the @option{--instd} image, but non-NaN in the values image.
 The latter situation usually happens when there is a bug in the previous steps of your analysis.
@@ -31223,7 +31227,7 @@ Hence, quantifying the detection and measurement limitations with a particular d
 Due to their importance, we have already touched upon some of these in two tutorials on real data: see @ref{Measuring the dataset limits} and @ref{Image surface brightness limit}.
 
 The sections below describe each of the metameasurements that MakeCatalog will calculate and report when given the @option{--meta-measures} option.
-Here, we just focus on the concept behind each measurement and its derviation.
+Here, we just focus on the concept behind each measurement and its derivation.
 The actual keywords that are written for each is described in @ref{MakeCatalog output keywords}.
 
 @menu
@@ -31299,7 +31303,7 @@ It therefore implicitly assumes that the noise is the same in all of the pixels.
 But this only happens in individual exposures: reduced data will have correlated noise because they are a coadd of many individual exposures that have been warped (thus mixing the pixel values).
 A more accurate measure which will provide a realistic value for every labeled region is known as the @emph{upper-limit magnitude}, which is discussed in the next section (@ref{Upper limit surface brightness of image}).
 
-Within Gnuastro, measuring the surface brighntess limit of the image is very easy: the outputs of NoiseChisel include the Sky standard deviation (@mymath{\sigma}) on every group of pixels (a tile) that were calculated from the undetected pixels in each tile, see @ref{Tessellation} and @ref{NoiseChisel output}.
+Within Gnuastro, measuring the surface brightness limit of the image is very easy: the outputs of NoiseChisel include the Sky standard deviation (@mymath{\sigma}) on every group of pixels (a tile) that were calculated from the undetected pixels in each tile, see @ref{Tessellation} and @ref{NoiseChisel output}.
 The @mymath{\sigma_p} used above is recorded in the @code{MEDSTD} keyword of the @code{SKY_STD} extension of NoiseChisel's output.
 Therefore, the first thing you need to do is to run NoiseChisel on the image.
 
@@ -31359,7 +31363,7 @@ Since this depends on a per-pixel measurement of @mymath{\sigma_p}, it does not 
 For more on this, see @ref{Surface brightness limit of image}.
 @end itemize
 
-Given the caveats above, it may be strage to see that the noise based magnitude limit is still reported in many reports (it is sometimes called simply as ``magnitude limit'' or even ``detection limit'').
+Given the caveats above, it may be strange to see that the noise based magnitude limit is still reported in many reports (it is sometimes called simply as ``magnitude limit'' or even ``detection limit'').
 So let's review the history of this metameasure for a better understanding of its usage.
 When computers started to enter astronomical data analysis (1970s) their processing powers were very low (compared to today!).
 Also, images were taken on photographic plates and digitized/scanned later (not too clean noise).
@@ -31367,8 +31371,8 @@ Therefore, they needed to apply high thresholds (@mymath{+2\sigma_p}), find grou
 Therefore, this limit was also known as ``detection limit''.
 
 Because this lost flux was a problem, authors like Petrosian @url{https://ui.adsabs.harvard.edu/abs/1976ApJ...209L...1P,1976} or Kron @url{https://ui.adsabs.harvard.edu/abs/1980ApJS...43..305K} suggested ways of finding the object's ``total'' flux (accounting for the flux below the threshold also).
-But with new paradigms to detection coming in the current century (for example Gnuastro's @ref{NoiseChisel}), the ``detection limit'' name will cause confusion and mis-interpretation.
-Therefore in Gnuastro we call this limit the ``noise-based magnitude limit'' and include it only for legacy/historical reasons (it is just an extrapolatoin).
+But with new paradigms to detection coming in the current century (for example Gnuastro's @ref{NoiseChisel}), the ``detection limit'' name will cause confusion and misinterpretation.
+Therefore in Gnuastro we call this limit the ``noise-based magnitude limit'' and include it only for legacy/historical reasons (it is just an extrapolation).
 
 The reason for the ``noise-based'' prefix is that the equation above is purely based on the noise (does not depend on the actual signal!).
 However, different objects have different profiles: some are sharp/concentrated (like stars or elliptical galaxies), others are diffuse (like ultra diffuse galaxies) and others are clumpy (like a globular cluster) and etc.
@@ -31393,7 +31397,7 @@ In wide field imaging, it is also important to account for the projection effect
 
 Therefore, unlike the previously discussed automatic meta-measurements like @ref{Surface brightness limit of image} and @ref{Noise based magnitude limit of image} the confusion limit depends on the pointing on sky.
 This is because those are defined purely based on the noise of the image, but the confusion limit comes from the resolved signal's distribution in the image.
-But as we go very deep in extra-galactic fields (high galactic latitudes: away from the disk of the milky wayw) the density of sources as you go deeper should become mostly uniform (assuming a relatively uniform background galaxy population).
+But as we go very deep in extra-galactic fields (high galactic latitudes: away from the disk of the milky way) the density of sources as you go deeper should become mostly uniform (assuming a relatively uniform background galaxy population).
 
 The confusion limit is found by finding the nearest resolved source to each source (Segment's clumps by default, see @ref{Segment}).
 Technically (when calculating the distance between the clump and its nearest neighbor), it is also important to account for the spherical nature of RA and Dec and to use spherical distance measures (see description of @code{gal_wcs_angular_distance_deg} in @ref{World Coordinate System}).
@@ -31409,7 +31413,7 @@ This is because the confusion limit depends on detection and segmentation which 
 When MakeCatalog is called with @option{--meta-measurements} and @option{--clumpscat}, it will measure the confusion limit and store it in the @code{CNL} output keyword (see @ref{MakeCatalog output keywords}).
 Further information (five percentiles) about the distribution of distances to the nearest neighbor are provided in the @code{CNLP*}.
 The percentile information is necessary because the distribution to the nearest label is by nature a very non-symmetric distribution (skewed to the positive).
-As a result, it cannot be simply parametrized as in the other metameasures here.
+As a result, it cannot be simply parameterized as in the other metameasures here.
 
 Therefore as described in  , MakeCatalog doesn't just return the median (at quantile of 0.5 or percentile of 50), but several other quantiles.
 Ultimately, you can see each clump's nearest neighbor as well as the spherical distance to its nearest clump by activating the @option{--cnl-check} option (see @ref{MakeCatalog output HDUs}).
@@ -31431,7 +31435,7 @@ In this section these types of metameasures are introduced.
 @node Expected surface brightness limit, Upper limit surface brightness of image, Manual metameasurements, Manual metameasurements
 @subsubsection Expected surface brightness limit
 
-The Surface brighntess limit was defined in @ref{Surface brightness limit of image}.
+The Surface brightness limit was defined in @ref{Surface brightness limit of image}.
 As we saw there, it is ultimately a theoretical extrapolation of one pixel's noise level.
 Therefore, we can use a reference image's surface brightness limit (@mymath{SB_r}) to derive an expected surface brightness limit of another image (on another telescope with another exposure time, but with @emph{the same} filter; let's call it @mymath{SB_i}).
 Assuming no correlated noise (which is only valid on a single exposure!), the @mymath{\sigma_p} described above is purely due to the Poisson noise of the background signal (for example Zodiacal light, light pollution or etc).
@@ -31444,10 +31448,10 @@ Plugging this into two instances of the equation above, allows us to derive @mym
 @cindex Vera C. Rubin Observatory
 @cindex Observatory: Vera C. Rubin
 @cindex Rubin (Vera C.) Observatory
-Since almost all mirrors are circular, we can simplify the relation above by replacing the exposed surface with the exposed radius (accounting for the non-exposed area in most reflective telescopes due to the secondary mirror) as shown in the quation below.
+Since almost all mirrors are circular, we can simplify the relation above by replacing the exposed surface with the exposed radius (accounting for the non-exposed area in most reflective telescopes due to the secondary mirror) as shown in the equation below.
 Note that we didn't simply say ``radius'' (and the equation does not have @mymath{r}), but ``exposed radius'' (@mymath{r_e} in the equation).
 This is a very important factor to have in mind.
-For example in the Vera C. Rubin Observatory (that will be conducting the LSST survey) the primary mirror has a diameter of 8.4 meters, however, the inner cicular area of radius 5 meters is not used (due to the second and third mirrors)@footnote{@url{https://commons.wikimedia.org/wiki/File:LSSToptics.jpg}}.
+For example in the Vera C. Rubin Observatory (that will be conducting the LSST survey) the primary mirror has a diameter of 8.4 meters, however, the inner circular area of radius 5 meters is not used (due to the second and third mirrors)@footnote{@url{https://commons.wikimedia.org/wiki/File:LSSToptics.jpg}}.
 Therefore, the useful surface of the Vera C. Rubin telescope is @mymath{\pi(8.4^2-5.0^2)=\pi45.56=\pi6.75^2}, giving it an exposed radius of @mymath{r_e=6.75m} (for an easy implementation of this equation in Gnuastro, see the @code{sblim-diff} operator of @ref{Unit conversion operators}).
 
 @dispmath{SB_i = SB_r + 2.5\log_{10}\left( {r_{ei} \over r_{er}}{n_i \over n_r} \sqrt{{t_i \over t_r}{A_i \over A_r}} \right)}
@@ -31478,7 +31482,7 @@ Calculate the sum of pixel values in each randomly placed footprint.
 Calculate the sigma-clipped standard deviation of the resulting distribution (of sum of pixel values in the randomly placed apertures).
 Therefore, each footprint's measurement is independent of the other.
 @item
-Calculate the surface brightness of that standrad deviation (after multiplying it with your desired multiple of sigma).
+Calculate the surface brightness of that standard deviation (after multiplying it with your desired multiple of sigma).
 For the definition of surface brightness, see @ref{Brightness flux magnitude}.
 @end enumerate
 
@@ -31766,12 +31770,6 @@ The value/file given to @option{--instd} (and @option{--stdhdu} has the Sky vari
 The value/file given to @option{--instd} is not just due to the sky (noise), but also contains the contribution of the signal to each pixel's standard deviation or variance.
 If this option is given, the pixel values will be ignored when measuring the @option{--*-error} columns.
 
-@item --forcereadstd
-Read the input STD image even if it is not required by any of the requested columns.
-This is because some of the output catalog's metadata may need it, for example, to calculate the dataset's surface brightness limit (see @ref{Metameasurements on full input}, configured with @option{--sbl-area} and @option{--sbl-sigma} in @ref{MakeCatalog output keywords}).
-
-Furthermore, if the input STD image does not have the @code{MEDSTD} keyword (that is meant to contain the representative standard deviation of the full image), with this option, the median will be calculated and used for the surface brightness limit.
-
 @item -z FLT
 @itemx --zeropoint=FLT
 The zero point magnitude for the input image, see @ref{Brightness flux magnitude}.
@@ -31916,7 +31914,7 @@ For more on these positional columns, see @ref{Position measurements in pixels}.
 @node MakeCatalog output HDUs, MakeCatalog output keywords, Upper-limit settings, Invoking astmkcatalog
 @subsubsection MakeCatalog output HDUs
 After it has completed all the requested measurements (see @ref{MakeCatalog measurements on each label}), MakeCatalog writes them in table(s) that are stored into a FITS file.
-This is necessary because the number of output tables and the metadata that MakeCatalogs provides can be numerous.
+This is necessary because the number of output tables and the metadata that MakeCatalog provides can be numerous.
 If any of the output tables are necessary in another format (for example plain-text), you can use Gnuastro's Table program (with executable name @code{asttable}, see @ref{Table}).
 
 This section focuses on the HDUs of the output, for the keywords, see @ref{MakeCatalog output keywords}.
@@ -31971,7 +31969,7 @@ Add an extra HDU to the output of MakeCatalog that contains the positions of eve
 @node MakeCatalog output keywords,  , MakeCatalog output HDUs, Invoking astmkcatalog
 @subsubsection MakeCatalog output keywords
 
-The columns and rows that include the various measurements for the variuos labels of the input in its HDUs were described separately in @ref{MakeCatalog output HDUs}.
+The columns and rows that include the various measurements for the various labels of the input in its HDUs were described separately in @ref{MakeCatalog output HDUs}.
 But those raw numbers are not the only thing that MakeCatalog writes in its output!
 MakeCatalog will also write metadata (header keywords) in the 0th (first) HDU of the output FITS file which add a lot of value and help to interpret the raw numbers.
 The only keywords in the other HDUs are the column names, units and comments; generic metadata are written in the 0th HDU.
@@ -32046,29 +32044,29 @@ Name of the random number generator used for finding the random positions; see @
 
 @item UPRNGSEE
 Seed used for the random number generator.
-This will be differnet on every run, unless @option{--envseed} is called.
+This will be different on every run, unless @option{--envseed} is called.
 For more details, see @ref{Generating random numbers}
 
 @item UPSCMLTP
-@mymath{\sigma}-clipping paramter: multiple of sigma.
+@mymath{\sigma}-clipping parameter: multiple of sigma.
 Clipping is necessary to reject strong outliers that can affect the statistics.
 This is the first value given to the @option{--upsigmaclip} option of @ref{Upper-limit settings}.
 
 @item UPSCTOL
-@mymath{\sigma}-clipping paramter: tolerance level.
+@mymath{\sigma}-clipping parameter: tolerance level.
 Clipping is necessary to reject strong outliers that can affect the statistics.
 This is the second value given to the @option{--upsigmaclip} option of @ref{Upper-limit settings}.
 @end table
 
 @item Noise-based metameasures
-The following metamesurement are calculated purely based on the measured noise level.
+The following metameasurement are calculated purely based on the measured noise level.
 But they are not written by default, if you want them run with @option{--meta-measure}.
 
 @table @code
 @item SBL
-Measured surface brighntess limit (in units of mag/arcsec@mymath{^2}); as described in @ref{Surface brightness limit of image}.
+Measured surface brightness limit (in units of mag/arcsec@mymath{^2}); as described in @ref{Surface brightness limit of image}.
 @item NML
-Measured surface brighntess limit (in units of mag/arcsec@mymath{^2}); as described in @ref{Noise based magnitude limit of image}.
+Measured surface brightness limit (in units of mag/arcsec@mymath{^2}); as described in @ref{Noise based magnitude limit of image}.
 @end table
 
 @item Confusion limit
@@ -32100,21 +32098,17 @@ The following MakeCatalog options are specifically related to the various keywor
 
 @table @option
 @item --sbl-sigma=FLT
-Value to multiply with the median standard deviation (from a @command{MEDSTD} keyword in the Sky standard deviation image) for estimating the surface brightness limit.
-Note that the surface brightness limit is only reported when a standard deviation image is read, in other words a column using it is requested (for example, @option{--sn}) or @option{--forcereadstd} is called.
-
-This value is a per-pixel value, not per object/clump and is not found over an area or aperture, like the common @mymath{5\sigma} values that are commonly reported as a measure of depth or the upper-limit measurements (see @ref{Metameasurements on full input}).
+Value to multiply with the median standard deviation (from a @command{MEDSTD} keyword, if it is present in the Sky standard deviation image) for the measured surface brightness limit.
+Note that the surface brightness limit is only reported when metameasurements are requested with @option{--meta-measures}.
+See @ref{Metameasurements on full input} for more on the basics of various metameasurements and @ref{Image surface brightness limit} on a practical usage example.
 
 @item --sbl-area=FLT
-Area (in arc-seconds squared) to convert the per-pixel estimation of @option{--sbl-sigma} in the comments section of the output tables.
-Note that the surface brightness limit is only reported when a standard deviation image is read, in other words a column using it is requested (for example, @option{--sn}) or @option{--forcereadstd} is called.
-
-Note that this is just a unit conversion using the World Coordinate System (WCS) information in the input's header.
-It does not actually do any measurements on this area.
-For random measurements on any area, please use the upper-limit columns of MakeCatalog (see the discussion on upper-limit measurements in @ref{Metameasurements on full input}).
+Shape-agnostic area (in arc-seconds squared) to use for the measured surface brightness limit.
+Note that the surface brightness limit is only reported when meta-measurements are requested with @option{--meta-measures}.
+See @ref{Metameasurements on full input} for more on the basics of various metameasurements and @ref{Image surface brightness limit} on a practical usage example.
 
 @item --cnl-with-objects
-Use the object positions instead of clumps for measuing the distance to the nearest label.
+Use the object positions instead of clumps for measuring the distance to the nearest label.
 This is only useful if you have generated your labels image with something other than Gnuastro's @ref{Segment}, and that program doesn't have the capacity to identify individual peaks and extended signal at the same time.
 Therefore, in case you have generated the input labels with Segment, we do not recommend using this option.
 @end table
@@ -32168,7 +32162,7 @@ The various arrangements (that should be given to the @option{--arrange} option)
 
 @table @code
 @item inner
-The output of an inner match will contain umambiguously/exclusively matched rows in both catalogs within a given aperture.
+The output of an inner match will contain unambiguously/exclusively matched rows in both catalogs within a given aperture.
 In other words, the number of rows in the output will be fewer (or equal) to the input with fewest rows, @emph{and} that no two rows of any input can be repeated.
 Another way to say this is that the order of the inputs does not matter for the final number of matched rows in an inner match.
 An important aspect of an inner match is the necessity of an aperture to define the maximum/largest acceptable distance to have a match.
@@ -32181,9 +32175,9 @@ First, let's look at the contents of the two tables we want to match:
 
 @example
 $ cat a.txt
-# Column 1: X    [pix,  f32]   X axis position
-# Column 2: Y    [pix,  f32]   Y axis position
-# Column 3: MAGa [unit, f32] Electrong counts
+# Column 1: X    [pix,  f32] X axis position
+# Column 2: Y    [pix,  f32] Y axis position
+# Column 3: MAGa [unit, f32] Electron counts
 1.2   1.2   18.2
 3.2   3.2   20.8
 8.2   8.2   15.2
@@ -34506,8 +34500,8 @@ A @emph{simplified} correction (assuming a flat SED) to the distance modulus is 
 @cindex ISM (inter-stellar medium)
 @cindex Inter-stellar medium (ISM)
 Intermediate absorption (from the source to your telescope) can happen in multiple stages.
-For example, the Earth is located inside the MilkyWay which has an interstellar medium (ISM) that will absorb some of the flux coming from extra-galactic sources behind them.
-After measuring the magnitude of your source, it is therefore important to find the MilkyWay extinction in the direction of your source and add it to your source's flux.
+For example, the Earth is located inside the Milky Way which has an interstellar medium (ISM) that will absorb some of the flux coming from extra-galactic sources behind them.
+After measuring the magnitude of your source, it is therefore important to find the Milky Way extinction in the direction of your source and add it to your source's flux.
 Inside Gnuastro, the Query program gives you direct access to the NED Extinction Calculator as described in @ref{Available databases}.
 @end itemize
 
@@ -35639,9 +35633,9 @@ The fundamental concepts behind the zero point are described in @ref{Brightness 
 We will therefore not go deeper into the basics here and stick to the practical aspects of it.
 
 The purpose of Gnuastro’s @command{astscript-zeropoint} script is to obtain the zero point of an image using a reference image, or a reference catalog.
-The reference image must have a known zero point, and the reference should contain known positions and magnitudes of stars; both should ofcourse also contain some spatial overlap (on the sky) with the input image.
+The reference image must have a known zero point, and the reference should contain known positions and magnitudes of stars; both should of course also contain some spatial overlap (on the sky) with the input image.
 The reference data (catalog or image) serve as the anchor point to which your input image will be calibrated (a zero point will be found for it).
-By comparing the instrumental magnitudes of the stars with their catalogued (standard) magnitudes, the differences can be calculated and used to determine the zero point.
+By comparing the instrumental magnitudes of the stars with their cataloged (standard) magnitudes, the differences can be calculated and used to determine the zero point.
 For example, when using a reference image, the script will take the following steps:
 
 @enumerate
@@ -40480,7 +40474,7 @@ Free every node in @code{list}.
 @node List of size_t and double, List of two size_ts and a double, List of double, Linked lists
 @subsubsection List of @code{size_t} and @code{double}
 
-The list structure below is useful when you need to keep floating point values and indexs (most common usage of @code{size_t} in Gnuastro) together within a higher-level program.
+The list structure below is useful when you need to keep floating point values and indices (most common usage of @code{size_t} in Gnuastro) together within a higher-level program.
 
 @deftp {Type (C @code{struct})} gal_list_sizetf64_t
 Each node in this singly-linked list contains a @code{size_t} value and a floating point value with a type of double-precision floating point.
@@ -40516,7 +40510,7 @@ Each node in this singly-linked list contains a @code{size_t} value and a floati
 @node List of two size_ts and a double, List of void, List of size_t and double, Linked lists
 @subsubsection List of two @code{size_t}s and a @code{double}
 
-When it is necessary to keep two indexs and a double value, the structure and respective functions below can be used.
+When it is necessary to keep two indices and a double value, the structure and respective functions below can be used.
 
 @example
 typedef struct gal_list_sizetsizetf64_t
@@ -43214,10 +43208,10 @@ We have defined this argument because functions like @code{gal_binary_connected_
 
 The three last arguments are related to cases when the label values in the image can be non-contiguous.
 For example when you have cropped a region within a larger labeled image.
-In such cases, if you want an empty tile for a non-existant label (a value between 1 and the maximum label, but with no associated pixels), activate @code{inbetweenints} (by giving it a non-zero value).
+In such cases, if you want an empty tile for a non-existent label (a value between 1 and the maximum label, but with no associated pixels), activate @code{inbetweenints} (by giving it a non-zero value).
 
 When @code{inbetweenints==0} and the labels do not start from one or are not contiguous, a one-to-one relation between the tiles and labels does not exist.
-In this case, the @code{lab_fromto_tile} argumet will be set by this function to allow easy mapping between the labels and tiles (its usage is described below).
+In this case, the @code{lab_fromto_tile} argument will be set by this function to allow easy mapping between the labels and tiles (its usage is described below).
 In other words, when @code{inbetweenints=0} you need to check if @code{lab_fromto_tile} is @code{NULL} or not and implement future steps based on that.
 
 When the returned @code{lab_fromto_tile} is not @code{NULL}, it will be a 2-node list of @code{gal_data_t}s (both are one dimensional).
@@ -44326,7 +44320,7 @@ The invalid keyword is useful when you need to initialize values (and later make
 
 Use a basic sort-based match to find the matching points of two input coordinates.
 See the descriptions above on the format of the inputs and outputs.
-For inner and full arragements, this function will allocate and return a @code{flag} array that has a value of 1 for ambiguous elements of the second input and 0 for good or non-matching elements (see @ref{Unambiguous matching}).
+For inner and full arrangements, this function will allocate and return a @code{flag} array that has a value of 1 for ambiguous elements of the second input and 0 for good or non-matching elements (see @ref{Unambiguous matching}).
 
 The final number of matches is returned in @code{nummatched} and the format of the returned dataset (three columns) is described above.
 To speed up the search, this function will sort the input coordinates by their first column (first axis).
@@ -44346,11 +44340,11 @@ gal_data_t @code{*coord2}, gal_data_t @code{*coord1_kdtree}, size_t @code{kdtree
 Use the k-d tree algorithm for finding matches between two catalogs.
 The @code{arrange}-ment of the match output should be set with one of the @code{GAL_MATCH_ARRANGE_*} macros described above.
 The k-d tree of the first input (@code{coord1_kdtree}), and its root index (@code{kdtree_root}), should be constructed and found before calling this function, to do this, you can use the @code{gal_kdtree_create} of @ref{K-d tree}.
-The desired @code{aperture} array is the same as @code{gal_match_sort_based} and described at the top of this section, but the appreture array can be @code{NULL} for an outer arrangement (it will not be used).
+The desired @code{aperture} array is the same as @code{gal_match_sort_based} and described at the top of this section, but the aperture array can be @code{NULL} for an outer arrangement (it will not be used).
 If @code{coord1_kdtree==NULL}, this function will return a @code{NULL} pointer and write a value of @code{0} in the space that @code{nummatched} points to.
 If @code{nosamenode} is not zero, exact matches are discarded. This is useful for instance when we want to search the nearest neighbor within the same dataset.
 If @code{numthreads} threads is larger than one, the matching will be done in parallel.
-For inner and full arragements, this function will allocate and return a @code{flag} array that has a value of 1 for ambiguous elements of the second input and 0 for good or non-matching elements (see @ref{Unambiguous matching}).
+For inner and full arrangements, this function will allocate and return a @code{flag} array that has a value of 1 for ambiguous elements of the second input and 0 for good or non-matching elements (see @ref{Unambiguous matching}).
 
 The final number of matches is returned in @code{nummatched} and the format of the returned dataset (three columns) is described above.
 If internal allocation is necessary and the space is larger than @code{minmapsize}, the space will be not allocated in the RAM, but in a file, see description of @option{--minmapsize} and @code{--quietmmap} in @ref{Processing options}.
@@ -46022,7 +46016,7 @@ For more on the equation, see @ref{Brightness flux magnitude}.
 Convert the observed magnitude of a source into its luminosity knowing the absolute magnitude of a reference object and the (corrected) distance modulus.
 The reference object is usually taken to be the Sun, see table 3 of Willmer @url{https://arxiv.org/abs/1804.07788,2018} for values in common filters.
 Regarding the distance modulus see the description of @option{--distancemodulus} in @ref{CosmicCalculator basic cosmology calculations}.
-In the absence of SED-based estimages, you can use @code{gal_cosmology_to_absolute_mag} (which is the function behind @option{--absmagconv} described in that section).
+In the absence of SED-based estimates, you can use @code{gal_cosmology_to_absolute_mag} (which is the function behind @option{--absmagconv} described in that section).
 @end deftypefun
 
 @deftypefun double gal_units_luminosity_to_mag (double @code{mag}, double @code{mag_absolute_ref}, double @code{distance_modulus})

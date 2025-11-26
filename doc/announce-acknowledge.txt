@@ -1,22 +1,6 @@
 Alphabetically ordered list to acknowledge in the next release.
 
-Alejandro Camazón Pinilla
-Alejandro Lumbreras-Calle
-Antonio Diaz Diaz
-Benson Muite
-Carlos Marrero de La Rosa
-David Valls-Gabaud
-Elizabeth Sola
-Faezeh Bidjarchian
-Hok Kan (Ronald) Tsang
-Joseph Putko
-Ole Streicher
-Phil Wyett
-Rahna Payyasseri Thanduparackal
-Rafael Guzman
-Raul Infante-Sainz
-Samane Raji
-Sepideh Eskandarlou
+
 
 
 
