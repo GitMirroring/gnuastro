@@ -30033,14 +30033,42 @@ Defining the zero point magnitude as @mymath{m_r=Z} in the magnitude equation, w
 The zero point is found through comparison of measurements with pre-defined standards (in other words, it is a calibration of the pixel values).
 Gnuastro has an installed script with a complete tutorial to estimate the zero point of any image, see @ref{Zero point estimation}.
 
-@cindex AB magnitude
-@cindex Magnitude, AB
-Historically, the reference was defined to be measurements of the star Vega, producing the @emph{vega magnitude} system.
+@cartouche
+@noindent
+@strong{Verify the zero point definition on new databases:} observational factors like the exposure time, the gain, telescope aperture, filter transmission curve and other factors are usually taken into account in the reduction pipeline that produces high-level science products.
+But some reduction pipelines may not account for some of these for special reasons: for example not accounting for the gain or exposure time.
+To avoid annoyingly strange results, when using a new database, verify (in the documentation of the database) that the zero points they provide directly converts pixel values to Janskys (if they use the AB magnitude system), or not.
+@end cartouche
+
+Based on the point above (on data providers including or removing certain factors from the zero point they report), let's look at one example where the given zero point has not accounted for the exposure time.
+In other words, when the given zero point is for a fixed exposure time: @mymath{Z_E}), but the pixel values (@mymath{p}) have been corrected for the exposure time.
+One solution would be to first multiply the pixels by the exposure time, use that zero point to get your desired measurement and delete the temporary file.
+But a more optimal way (in terms of storage, execution and clean code) would be to correct the zero point.
+
+Let's take @mymath{t} to show time in units of seconds and @mymath{p_E} to be the pixel value that would be measured after the fixed exposure time (in other words @mymath{p_E=p\times t}).
+We then have the following:
+
+@dispmath{m = -2.5\log_{10}(p_E) + Z_E = -2.5\log_{10}(p\times t) + Z_E}
+
+From the properties of logarithms, we can then derive the correct zero point (@mymath{Z}) to use directly (without touching the original pixels):
+
+@dispmath{m = -2.5\log_{10}(p) + Z \quad\rm{where}\quad Z = Z_E - 2.5\log_{10}(t)}
+
+@item Magnitude systems
+@cindex Magnitude systems
+@cindex Systems of magnitudes
+@cindex Vega magnitudes
+@cindex Magnitude, Vega
+Historically, the reference value for the zero point was defined to be measurements of the star Vega.
+When the flux is calibrated against Vega, it is known as the @emph{vega magnitude} system.
 In this system, the star Vega had a magnitude of zero (similar to the catalog of Hipparchus of Nicaea).
 However, this caused many problems because Vega itself has its unique spectral features which are not in other stars and it is a variable star when measured precisely.
+Therefore, the following alternative ``magnitude systems'' were defined and the Vega system is becoming less popular.
 
 @table @asis
 @item AB magnitude
+@cindex AB magnitude
+@cindex Magnitude, AB
 The AB magnitude system is based on the frequency flux density (@mymath{F_\nu} with units of @mymath{erg/s/cm^2/Hz}) and is defined such that a star with a flat spectra around @mymath{5480Å} will have a similar magnitude in the AB and Vega-based systems:
 
 @dispmath{m_{AB} = -2.5\log_{10}(F_\nu) - 48.60}
@@ -30058,12 +30086,14 @@ $ astarithmetic sdss.fits 22.5 counts-to-jy
 @end example
 
 @item ST magnitude
-The ST magnitude system is based on the wavelength flux density (@mymath{F_\lambda} with units of @mymath{erg/s/cm^2/Å}) such that@footnote{https://hst-docs.stsci.edu/wfc3dhb/chapter-9-wfc3-data-analysis/9-1-photometry} an object with @mymath{F_\lambda=3.63\times10^{-9}erg/s/cm^2/Å} has an ST magnitude (@mymath{m_{ST}}) of zero.
+@cindex ST magnitude
+@cindex Magnitude, ST
+The ST magnitude system is based on the wavelength flux density (@mymath{F_\lambda} with units of @mymath{erg/s/cm^2/Å}) such that@footnote{@url{https://hst-docs.stsci.edu/wfc3dhb/chapter-9-wfc3-data-analysis/9-1-photometry}} an object with @mymath{F_\lambda=3.63\times10^{-9}erg/s/cm^2/Å} has an ST magnitude (@mymath{m_{ST}}) of zero.
 In other words:
 
 @dispmath{m_{ST} = -2.5\log_{10}(F_\lambda) - 21.10}
 
-The ST magnitude, or ``Space Telescope'' magnitude was defined for NASA's Space Telescope and is the main unit in their data products.
+The ST magnitude, or ``Space Telescope'' magnitude was defined for NASA's missions and is the main unit in their data products.
 It is not common in other projects/instruments.
 @end table
 
@@ -30073,27 +30103,9 @@ It is not common in other projects/instruments.
 To convert between the AB and ST magnitudes, you need the filter's ``pivot'' wavelength (also known as ``reference'' wavelength@footnote{The Spanish Virtual Observatory (SVO) @url{https://svo2.cab.inta-csic.es/theory/fps/,filter profile service} uses the term ``reference'' wavelength for the ``pivot'' wavelength.}).
 It was defined such that it would be independent of using wavelength or frequency units in the spectral flux density; see Tokunaga and Vacca @url{https://ui.adsabs.harvard.edu/abs/2005PASP..117..421T,2005}.
 
-To convert from AB to ST magnitudes you can use the Gnuastro's Arithmetic operators @code{mag-to-jy} and @code{jy-to-wavelength-flux-density} (with the pivot wavelength) to get the @mymath{F_\lambda} and plug into the ST equation above.
-Converting from ST to AB magnitudes will be the inverse, for more, see equations @ref{Unit conversion operators}).
-
-@cartouche
-@noindent
-@strong{Verify the zero point definition on new databases:} observational factors like the exposure time, the gain, telescope aperture, filter transmission curve and other factors are usually taken into account in the reduction pipeline that produces high-level science products.
-But some reduction pipelines may not account for some of these for special reasons: for example not accounting for the gain or exposure time.
-To avoid annoyingly strange results, when using a new database, verify (in the documentation of the database) that the zero points they provide directly converts pixel values to Janskys (if they use the AB magnitude system), or not.
-@end cartouche
-
-Let's look at one example where the given zero point has not accounted for the exposure time (in other words it is only for a fixed exposure time: @mymath{Z_E}), but the pixel values (@mymath{p}) have been corrected for the exposure time.
-One solution would be to first multiply the pixels by the exposure time, use that zero point to get your desired measurement and delete the temporary file.
-But a more optimal way (in terms of storage, execution and clean code) would be to correct the zero point.
-Let's take @mymath{t} to show time in units of seconds and @mymath{p_E} to be the pixel value that would be measured after the fixed exposure time (in other words @mymath{p_E=p\times t}).
-We then have the following:
-
-@dispmath{m = -2.5\log_{10}(p_E) + Z_E = -2.5\log_{10}(p\times t) + Z_E}
-
-From the properties of logarithms, we can then derive the correct zero point (@mymath{Z}) to use directly (without touching the original pixels):
-
-@dispmath{m = -2.5\log_{10}(p) + Z \quad\rm{where}\quad Z = Z_E - 2.5\log_{10}(t)}
+To convert from AB to ST magnitudes you can use the operators @code{mag-to-jy} and @code{jy-to-wavelength-flux-density} (which needs the pivot wavelength) to get the @mymath{F_\lambda} corresponding to a certain @mymath{m_{AB}} and plug into the ST equation above.
+Converting from ST to AB magnitudes will be the inverse.
+For more on these operators see @ref{Unit conversion operators}).
 
 @item Surface brightness
 @cindex Steradian
