@@ -35605,7 +35605,12 @@ The nature of the coordinates will be determined by the @option{--ds9mode} optio
 @item -r=STR[,STR[,STR]]
 @itemx --ds9region=STR[,STR[,STR]]
 Name of DS9 region file(s) to load within the DS9 window once it opens.
-Any number of region files can be loaded with a single call to this command (separated by comas).
+Any number of region files can be loaded with a single call to this command: the list of regions can be comma-separated (for example @code{--ds9region=a.reg,b-1.reg}) or SPACE-separated (for example @code{--ds9region="a.reg b-1.reg"}).
+A byproduct of the space-separated list is that you can use the shell's globbing/wildcard features for example: @code{--ds9region="b-*.reg"} or @code{--ds9region="a.reg b-*.reg"}).
+
+Note that your region file names should not include a SPACE or a comma.
+Also, that when using the SPACE-separator format, it is necessary to use double quotations otherwise except for the first one, the rest will be parsed as separate arguments (that DS9 can't open because it expects only FITS images as arguments).
+For more on options and arguments, see @ref{Arguments and options}.
 
 @item -O img/wcs
 @itemx --ds9mode=img/wcs

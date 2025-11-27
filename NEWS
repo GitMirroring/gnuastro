@@ -6,6 +6,15 @@ See the end of the file for license conditions.
 * Noteworthy changes in release X.XX (library XX.X.X) (YYYY-MM-DD)
 ** New publications
 ** New features
+
+*** astscript-fits-view
+
+  --ds9region: also supports a space-separated list of regions and
+    therefore now supports globbing/wildcards. For example, if you want to
+    load all the region files that match the '-*.reg' pattern, instead of
+    listing them one by one, you can simply load them all with:
+    --ds9region="galaxy-*.reg". This was implemented by Giacomo Lorenzetti.
+
 ** Removed features
 ** Changed features
 ** Bugs fixed

@@ -363,7 +363,7 @@ ds9scaleopt="-scale $ds9scale"
 
 #Set the DS9 region(s) to load.
 if [ ! x"$ds9region" = x ]; then
-  ds9region="-region "$(echo $ds9region | sed 's/,/ -region /g')
+  ds9region="-region "$(echo $ds9region | sed 's/[, ]/ -region /g')
 fi
 
 
