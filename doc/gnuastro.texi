@@ -1854,7 +1854,7 @@ To acknowledge/cite Gnuastro in your publications, see @ref{Citing Gnuastro}.
 Here, you will find Gnuastro's own acknowledgments to all the grants, institutions and of course people who helped make Gnuastro what it is today.
 
 The Japanese Ministry of Education, Culture, Sports, Science, and Technology (MEXT) scholarships for Mohammad Akhlaghi's Masters (2010 to 2012) and PhD (2012 to 2015) degrees in Tohoku University Astronomical Institute had an instrumental role in the long term learning and planning that made the idea of Gnuastro possible.
-The very critical view points of Professor Takashi Ichikawa (Mohammad's PhD thesis directory) were also instrumental in the initial ideas and foundational philosophy/design of Gnuastro.
+The very critical view points of Professor Takashi Ichikawa (Mohammad's PhD thesis director) were also instrumental in the initial ideas and foundational philosophy/design of Gnuastro.
 
 Afterwards, the European Research Council (ERC) advanced grant 339659-MUSICOS (Principal investigator, or PI: Roland Bacon) was vital in the growth and expansion of Gnuastro since it supported Mohammad's first postdoc position from 2016 to 2018.
 Working with Roland at the Centre de Recherche Astrophysique de Lyon (CRAL, Saint-Genis-Laval, France), enabled a thorough re-write of the core functionality of all libraries and programs (to generalize them for usage on the wonderful MUSE 3D cubes).
@@ -22200,7 +22200,7 @@ Convert Janskys to AB magnitude, see @ref{Brightness flux magnitude}.
 @cindex Jansky (Jy)
 @cindex Wavelength flux density
 @cindex Flux density (wavelength)
-Convert Janskys to wavelength flux density (in units of @mymath{erg/cm^2/s/\AA}) at a certain wavelength (given in units of Angstroms).
+Convert Janskys to wavelength flux density (in units of @mymath{erg/cm^2/s/Å}) at a certain wavelength (given in units of Angstroms).
 Recall that Jansky is also a unit of spectral flux density, but it is in units of frequency (@mymath{erg/cm^2/s/Hz}).
 
 For example at the wavelength of 5556, Vega's frequency flux density is 3500 Janskys.
@@ -22211,7 +22211,7 @@ $ astarithmetic 3.5e3 5556 jy-to-wavelength-flux-density
 @end example
 
 If your input values are in units of counts or magnitudes, you can use the @code{mag-to-jy} or @code{count-to-jy} operators that are described above.
-For example, if you want the wavelength flux density of a source with magnitude 21 in the J-PAS J0660 filter (centered at approximately @mymath{6600\AA}), you can use this command:
+For example, if you want the wavelength flux density of a source with magnitude 21 in the J-PAS J0660 filter (centered at approximately @mymath{6600Å}), you can use this command:
 
 @example
 $ astarithmetic 21 mag-to-jy 6600 \
@@ -22220,23 +22220,23 @@ $ astarithmetic 21 mag-to-jy 6600 \
 
 The conversion is done based on this derivation: the speed of light (@mymath{c}) can be written as:
 
-@dispmath{c=2.99792458\times10^8 m/s = 2.99792458\times10^{18} \AA Hz}
+@dispmath{c=2.99792458\times10^8 m/s = 2.99792458\times10^{18} Å Hz}
 
 The speed of light connects the wavelength (@mymath{\lambda}) and frequency (@mymath{\nu}) of photons: @mymath{c=\nu\lambda}.
 Therefore, @mymath{\nu=c/\lambda} and taking the derivative: @mymath{d\nu=(c/\lambda^2)d\lambda} or @mymath{d\nu/d\lambda=c/\lambda^2}. Inserting physical values and units:
 
-@dispmath{d\nu/d\lambda = \frac{2.99792458\times10^{18} \AA Hz}{\lambda^2\AA^2} = \frac{2.99792458\times10^{18}}{\lambda^2} Hz/A}
+@dispmath{d\nu/d\lambda = \frac{2.99792458\times10^{18} Å Hz}{\lambda^2Å^2} = \frac{2.99792458\times10^{18}}{\lambda^2} Hz/Å}
 
 Recall that to convert a function of @mymath{\nu} into a function of @mymath{\lambda}, where @mymath{\nu} and @mymath{\lambda} are also related to each other, we have the following equation: @mymath{f(\lambda) = \frac{d\nu}{d\lambda} f(\nu)}.
 Here, @mymath{f(\nu)} is the value in Janskys (@mymath{J\times10^{-23}erg/s/cm^2/Hz}; see @ref{Brightness flux magnitude}).
 Replacing @mymath{d\nu/d\lambda} from above we get:
 
-@dispmath{F_\lambda=\frac{2.99792458\times10^8}{\lambda^2}Hz/A \times J\times10^{-23}erg/s/cm^2/Hz}
+@dispmath{F_\lambda=\frac{2.99792458\times10^8}{\lambda^2}Hz/Å \times J\times10^{-23}erg/s/cm^2/Hz}
 
-@dispmath{F_\lambda=J\times\frac{2.99792458\times10^{-5}}{\lambda^2} erg/s/cm^2/\AA}
+@dispmath{F_\lambda=J\times\frac{2.99792458\times10^{-5}}{\lambda^2} erg/s/cm^2/Å}
 
 @item wavelength-flux-density-to-jy
-Convert wavelength flux density (in units of @mymath{erg/cm^2/s/\AA}) to Janskys at a certain wavelength (given in units of Angstroms).
+Convert wavelength flux density (in units of @mymath{erg/cm^2/s/Å}) to Janskys at a certain wavelength (given in units of Angstroms).
 For details and usage examples, see the description of @code{jy-to-wavelength-flux-density} (the inverse of this function).
 
 @item sblim-diff
@@ -29937,18 +29937,18 @@ To be able to compare with data from different telescopes (with different collec
 Because we are using the cgs units, the collecting area is reported in @mymath{cm^2}.
 Knowing the flux (@mymath{f}) and distance to the object (@mymath{r}), we can derive its @emph{luminosity}: @mymath{L=4{\pi}r^2f}.
 
-@item Spectral flux density (@mymath{erg/s/cm^2/Hz} or @mymath{erg/s/cm^2/\AA})
+@item Spectral flux density (@mymath{erg/s/cm^2/Hz} or @mymath{erg/s/cm^2/Å})
+
+@cindex Bolometric luminosity
 @cindex Spectral Flux Density
 @cindex Frequency Flux Density
 @cindex Wavelength Flux Density
 @cindex Flux density (spectral)
-To take into account the different spectral coverage of filters and detectors, we define the @emph{spectral flux density}, which is defined in either of these units (based on context): @mymath{erg/s/cm^2/Hz} (frequency-based) @mymath{erg/s/cm^2/\AA} (wavelength-based).
-
-@cindex Bolometric luminosity
-As in other objects in nature, astronomical objects do not emit or reflect the same flux at all wavelengths.
+As in other objects in nature, astronomical objects do not emit or reflect the same flux at all wavelengths: otherwise everything would be grayscale!
 On the other hand, our detector technologies are different for different wavelength ranges.
 Therefore, even if we wanted to, there is no way to measure the ``total'' (at all wavelengths; also known as ``bolometric'') luminosity of an object with a single tool.
-To be able to analyze objects with different spectral features (compare measurements of the same object taken in different spectral regimes), it is therefore important to account for the wavelength (or frequency) range of the photons that we measured through the spectral flux density.
+To be able to analyze objects with different spectral features (compare measurements of the same object taken in different spectral regimes), it is therefore important to account for the wavelength (or frequency) range of the photons that we measured through the @emph{spectral flux density}.
+The spectral flux density is defined in either of these units (based on context): @mymath{erg/s/cm^2/Hz} (frequency-based) @mymath{erg/s/cm^2/Å} (wavelength-based).
 
 @table @asis
 @item Jansky (@mymath{10^{-23}erg/s/cm^2/Hz})
@@ -30041,7 +30041,7 @@ However, this caused many problems because Vega itself has its unique spectral f
 
 Therefore, based on previous efforts, in 1983 Oke & Gunn @url{https://ui.adsabs.harvard.edu/abs/1983ApJ...266..713O,proposed} the AB (absolute) magnitude system from accurate spectroscopy of Vega.
 To avoid confusion with the ``absolute magnitude'' of a source (at a fixed distance), this magnitude system is always written as AB magnitude.
-The AB magnitude zero point (when the input is frequency flux density; @mymath{F_\nu} with units of @mymath{erg/s/cm^2/Hz}) was defined such that a star with a flat spectra around @mymath{5480\AA} have a similar magnitude in the AB and Vega-based systems:
+The AB magnitude zero point (when the input is frequency flux density; @mymath{F_\nu} with units of @mymath{erg/s/cm^2/Hz}) was defined such that a star with a flat spectra around @mymath{5480Å} have a similar magnitude in the AB and Vega-based systems:
 
 @dispmath{m_{AB} = -2.5\log_{10}(F_\nu) + 48.60}
 
