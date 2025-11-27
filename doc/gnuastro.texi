@@ -30039,26 +30039,48 @@ Historically, the reference was defined to be measurements of the star Vega, pro
 In this system, the star Vega had a magnitude of zero (similar to the catalog of Hipparchus of Nicaea).
 However, this caused many problems because Vega itself has its unique spectral features which are not in other stars and it is a variable star when measured precisely.
 
-Therefore, based on previous efforts, in 1983 Oke & Gunn @url{https://ui.adsabs.harvard.edu/abs/1983ApJ...266..713O,proposed} the AB (absolute) magnitude system from accurate spectroscopy of Vega.
-To avoid confusion with the ``absolute magnitude'' of a source (at a fixed distance), this magnitude system is always written as AB magnitude.
-The AB magnitude zero point (when the input is frequency flux density; @mymath{F_\nu} with units of @mymath{erg/s/cm^2/Hz}) was defined such that a star with a flat spectra around @mymath{5480Å} have a similar magnitude in the AB and Vega-based systems:
+@table @asis
+@item AB magnitude
+The AB magnitude system is based on the frequency flux density (@mymath{F_\nu} with units of @mymath{erg/s/cm^2/Hz}) and is defined such that a star with a flat spectra around @mymath{5480Å} will have a similar magnitude in the AB and Vega-based systems:
 
-@dispmath{m_{AB} = -2.5\log_{10}(F_\nu) + 48.60}
+@dispmath{m_{AB} = -2.5\log_{10}(F_\nu) - 48.60}
 
-Reversing this equation and using Janskys, an object with a magnitude of zero (@mymath{m_{AB}=0}) has a spectral flux density of @mymath{3631Jy}.
+Reversing this equation and using Janskys, an object with a magnitude of zero (@mymath{m_{AB}=0}) has a spectral flux density of @mymath{3631Jy} or @mymath{3.631\times10^{-20}erg/s/cm^2/Hz}.
 Once the AB magnitude zero point of an image is found, you can directly convert any measurement on it from instrument ADUs to Janskys.
+
+The AB magnitude system was defined by Oke & Gunn @url{https://ui.adsabs.harvard.edu/abs/1983ApJ...266..713O,1983} from accurate spectroscopy of Vega.
+To avoid confusion with the ``absolute magnitude'' of a source (at a fixed distance), this magnitude system is always written as AB magnitude.
+
 In Gnuastro, the Arithmetic program has an operator called @code{counts-to-jy} which will do this though a given AB Magnitude-based zero point like below (SDSS data have a fixed zero point of 22.5 in the AB magnitude system):
 
 @example
 $ astarithmetic sdss.fits 22.5 counts-to-jy
 @end example
 
+@item ST magnitude
+The ST magnitude system is based on the wavelength flux density (@mymath{F_\lambda} with units of @mymath{erg/s/cm^2/Å}) such that@footnote{https://hst-docs.stsci.edu/wfc3dhb/chapter-9-wfc3-data-analysis/9-1-photometry} an object with @mymath{F_\lambda=3.63\times10^{-9}erg/s/cm^2/Å} has an ST magnitude (@mymath{m_{ST}}) of zero.
+In other words:
+
+@dispmath{m_{ST} = -2.5\log_{10}(F_\lambda) - 21.10}
+
+The ST magnitude, or ``Space Telescope'' magnitude was defined for NASA's Space Telescope and is the main unit in their data products.
+It is not common in other projects/instruments.
+@end table
+
+@cindex Pivot wavelength of filter
+@cindex Convert AB to ST magnitudes
+@cindex Reference (pivot) wavelength of filter
+To convert between the AB and ST magnitudes, you need the filter's ``pivot'' wavelength (also known as ``reference'' wavelength@footnote{The Spanish Virtual Observatory (SVO) @url{https://svo2.cab.inta-csic.es/theory/fps/,filter profile service} uses the term ``reference'' wavelength for the ``pivot'' wavelength.}).
+It was defined such that it would be independent of using wavelength or frequency units in the spectral flux density; see Tokunaga and Vacca @url{https://ui.adsabs.harvard.edu/abs/2005PASP..117..421T,2005}.
+
+To convert from AB to ST magnitudes you can use the Gnuastro's Arithmetic operators @code{mag-to-jy} and @code{jy-to-wavelength-flux-density} (with the pivot wavelength) to get the @mymath{F_\lambda} and plug into the ST equation above.
+Converting from ST to AB magnitudes will be the inverse, for more, see equations @ref{Unit conversion operators}).
+
 @cartouche
 @noindent
 @strong{Verify the zero point definition on new databases:} observational factors like the exposure time, the gain, telescope aperture, filter transmission curve and other factors are usually taken into account in the reduction pipeline that produces high-level science products.
 But some reduction pipelines may not account for some of these for special reasons: for example not accounting for the gain or exposure time.
-To avoid annoyingly strange results, when using a new database, verify (in the documentation of the database) that the zero points they provide directly converts pixel values to Janskys (is an AB magnitude zero point), or not.
-If they not, you need to apply corrections your self.
+To avoid annoyingly strange results, when using a new database, verify (in the documentation of the database) that the zero points they provide directly converts pixel values to Janskys (if they use the AB magnitude system), or not.
 @end cartouche
 
 Let's look at one example where the given zero point has not accounted for the exposure time (in other words it is only for a fixed exposure time: @mymath{Z_E}), but the pixel values (@mymath{p}) have been corrected for the exposure time.
