@@ -174,7 +174,14 @@ all the commits needed for this release have been completed.
      $ ./developer-build -p pure-junk
 
 
- - [STABLE] Make sure the tarball doesn't have any problems:
+ - [STABLE] Make sure the tarball doesn't have any problems. NOTE: as of
+   2025-11-26, the distcheck failed because of no permissions to copy the
+   'AUTHORS' file. But I didn't have time to debug it (it is probably a bug
+   in Automake), so the tarball was taken to a test directory and the full
+   build and install (in a test directory) was tested, since I had also
+   tested on the three architectures of Conda, I took this as a sign of a
+   bug outside of Gnuastro. If the problem is fixed later, remove this
+   notice or if you have time, try to debug it.
 
      $ cd build
      $ make distcheck -j12
@@ -260,6 +267,11 @@ all the commits needed for this release have been completed.
      ready. You just have to add a starting and ending similar to previous
      announcements in a text editor. In the 'XXXX', put 'stable' or 'alpha'
      and in YYYY, put 'ftp' for a stable, and 'alpha' for an alpha release.
+
+     TIP: If it complains with "Can't locate Digest/SHA3.pm", you need
+     to install it in your Perl environment with: 'su', then 'cpan'
+     (which will ask for an automatic installation which is
+     fine). Then run 'install Digest::SHA3' and finally 'exit'.
 
      $ cd TOP-SOURCE-DIR
      $ /path/to/gnulib/build-aux/announce-gen --release-type=XXXX          \
