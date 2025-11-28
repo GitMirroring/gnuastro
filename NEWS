@@ -15,6 +15,10 @@ See the end of the file for license conditions.
     listing them one by one, you can simply load them all with:
     --ds9region="galaxy-*.reg". This was implemented by Giacomo Lorenzetti.
 
+*** Library
+
+  - gal_list_sizetf64_number: return the number of nodes in the list.
+
 ** Removed features
 ** Changed features
 ** Bugs fixed

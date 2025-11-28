@@ -1037,6 +1037,20 @@ gal_list_sizetf64_pop(gal_list_sizetf64_t **list, size_t *i, double *v)
 
 
 
+size_t
+gal_list_sizetf64_number(gal_list_sizetf64_t *list)
+{
+  size_t num=0;
+  gal_list_sizetf64_t *tmp;
+  for(tmp=list;tmp!=NULL;tmp=tmp->next)
+    ++num;
+  return num;
+}
+
+
+
+
+
 void
 gal_list_sizetf64_free(gal_list_sizetf64_t **list)
 {

@@ -258,6 +258,9 @@ gal_list_sizetf64_add(gal_list_sizetf64_t **list, size_t i, double v);
 void
 gal_list_sizetf64_pop(gal_list_sizetf64_t **list, size_t *i, double *v);
 
+size_t
+gal_list_sizetf64_number(gal_list_sizetf64_t *list);
+
 void
 gal_list_sizetf64_free(gal_list_sizetf64_t **list);
 
@@ -266,7 +269,7 @@ gal_list_sizetf64_free(gal_list_sizetf64_t **list);
 
 
 /****************************************************************
- *****************     size_t & double       ********************
+ ****************   Two size_ts & a double   ********************
  ****************************************************************/
 typedef struct gal_list_sizetsizetf64_t
 {

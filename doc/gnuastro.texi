@@ -40538,6 +40538,10 @@ Pop a node from the top of @code{list}, return the node's index and value in the
 This function will also free the allocated space for the popped node and after this function, @code{list} will point to the next node (which has a larger @code{tosort} element).
 @end deftypefun
 
+@deftypefun void gal_list_sizetf64_number (gal_list_sizetf64_t @code{*list})
+Return the number of nodes in @code{list}.
+@end deftypefun
+
 @deftypefun void gal_list_sizetf64_free (gal_list_sizetf64_t @code{**list})
 Free any element within the input list.
 @end deftypefun
