@@ -133,9 +133,19 @@ static void
 color_from_mono_core_sls(struct converttparams *p, float *f, float min,
                          float max, float *r, float *g, float *b)
 {
-  switch( p->colormap->status==COLOR_SLS
-          ? (int)((*f-min)/(max-min)*200)
-          : 200 - (int)((*f-min)/(max-min)*200) )
+  /* Set the maximum integer for the switch: for 'sls-no-white', we do not
+     want the full range, but only until the red color reaches the maximum
+     fraction (at integer 180). */
+  int maxint = ( (    p->colormap->status==COLOR_SLS_NO_WHITE
+                   || p->colormap->status==COLOR_SLS_INVERSE_NO_WHITE )
+                 ? 180 : 200 );
+
+  /* Find the RGB color for this flux (depending on if it should be
+     inverted or not). */
+  switch( (    p->colormap->status==COLOR_SLS
+            || p->colormap->status==COLOR_SLS_NO_WHITE )
+          ? (int)((*f-min)/(max-min)*maxint)
+          : maxint - (int)((*f-min)/(max-min)*maxint) )
     {
     case 0:   *r=0.000000; *g=0.000000; *b=0.000000; break;
     case 1:   *r=0.043442; *g=0.000000; *b=0.052883; break;
@@ -615,8 +625,8 @@ color_from_mono_core_viridis(float *f, float min, float max, float *r,
 
 
 static void
-color_from_mono_colorbar(struct converttparams *p, FILE *cmapfp, float min,
-                         float max, float p1, float p2)
+color_from_mono_colorbar(struct converttparams *p, FILE *cmapfp,
+                         float min, float max, float p1, float p2)
 {
   float c;
   char *name;
@@ -625,11 +635,13 @@ color_from_mono_colorbar(struct converttparams *p, FILE *cmapfp, float min,
   /* Set the name of the colormap. */
   switch(p->colormap->status)
     {
-    case COLOR_HSV:          name="hsv";        break;
-    case COLOR_VIRIDIS:      name="viridis";    break;
-    case COLOR_GRAY:         name="gray";       break;
-    case COLOR_SLS:          name="sls";        break;
-    case COLOR_SLS_INVERSE:  name="slsinverse"; break;
+    case COLOR_HSV:                  name="hsv";               break;
+    case COLOR_VIRIDIS:              name="viridis";           break;
+    case COLOR_SLS:                  name="sls";               break;
+    case COLOR_SLS_INVERSE:          name="slsinverse";        break;
+    case COLOR_SLS_NO_WHITE:         name="slsnowhite";        break;
+    case COLOR_SLS_INVERSE_NO_WHITE: name="slsinversenowhite"; break;
+    /* Gray has its own dedicated pgfplots colormap, so it is not here. */
     default:
       error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to fix "
             "the problem. The value of p->colormap->status (%d) is not "
@@ -652,6 +664,8 @@ color_from_mono_colorbar(struct converttparams *p, FILE *cmapfp, float min,
         case COLOR_GRAY:
         case COLOR_SLS:
         case COLOR_SLS_INVERSE:
+        case COLOR_SLS_NO_WHITE:
+        case COLOR_SLS_INVERSE_NO_WHITE:
           color_from_mono_core_sls(p, &c, min, max, &r, &g, &b);
           break;
         }
@@ -853,7 +867,6 @@ color_from_mono_viridis(struct converttparams *p, FILE *cmapfp)
   /* If we need a colormap. */
   if(cmapfp) color_from_mono_colorbar(p, cmapfp, min, max, NAN, NAN);
 
-
   /* Convert the type to unsigned char. */
   R=gal_data_copy_to_new_type_free(R, GAL_TYPE_UINT8);
   G=gal_data_copy_to_new_type_free(G, GAL_TYPE_UINT8);
@@ -894,7 +907,9 @@ color_map_prepare(struct converttparams *p)
     case COLOR_HSV:          color_from_mono_hsv(p, cmapfp); break;
     case COLOR_VIRIDIS:      color_from_mono_viridis(p, cmapfp); break;
     case COLOR_SLS:
-    case COLOR_SLS_INVERSE:  color_from_mono_sls(p, cmapfp); break;
+    case COLOR_SLS_INVERSE:
+    case COLOR_SLS_NO_WHITE:
+    case COLOR_SLS_INVERSE_NO_WHITE: color_from_mono_sls(p, cmapfp); break;
 
     /* Gray uses the generic multi-channel approach, so it is easier to
        print the colormap here. */

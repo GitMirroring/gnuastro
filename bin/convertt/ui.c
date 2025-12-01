@@ -248,6 +248,10 @@ ui_colormap_sanity_check(struct converttparams *p)
                                          { ccode=COLOR_GRAY; nparams=0; }
   else if( !strcmp(strarr[0], "sls-inverse"))
     { ccode=COLOR_SLS_INVERSE; nparams=0; }
+  else if( !strcmp(strarr[0], "sls-no-white"))
+    { ccode=COLOR_SLS_NO_WHITE; nparams=0; }
+  else if( !strcmp(strarr[0], "sls-inverse-no-white"))
+    { ccode=COLOR_SLS_INVERSE_NO_WHITE; nparams=0; }
   else
     error(EXIT_FAILURE, 0, "'%s' not recognized as a colormap given "
           "to '--colormap'", strarr[0]);

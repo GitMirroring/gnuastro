@@ -7,6 +7,21 @@ See the end of the file for license conditions.
 ** New publications
 ** New features
 
+*** ConvertType
+
+  - sls-no-white:
+  - sls-inverse-no-white:
+    New colormaps (values to the '--colormap' option) that are based on the
+    SLS colormap of DS9. The difference with SLS is that these color maps
+    do not end in the white color, but with deep red (last SLS color before
+    white). While the SLS color map has many advantages (with its high
+    contrast colors), one issue with it is that its maximum value is white
+    (which is also the default color to display NaNs). Because the default
+    background of printable papers is white, we want the NaNs to display as
+    white, but not the maximum values. Hence why these modified SLS
+    colormaps have been added for Gnuastro users. This was suggested by
+    Sepideh Eskandarlou.
+
 *** astscript-fits-view
 
   --ds9region: also supports a space-separated list of regions and
