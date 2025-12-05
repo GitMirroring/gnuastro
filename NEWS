@@ -38,6 +38,10 @@ See the end of the file for license conditions.
 ** Changed features
 ** Bugs fixed
 
+  - bug #67776: astfits crashes if asked to convert distortion of an image
+    to SIP, when the image has an odd number of pixels. Found and fixed by
+    Giacomo Lorenzetti.
+
 
 
 

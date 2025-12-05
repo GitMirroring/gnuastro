@@ -1322,7 +1322,7 @@ wcsdistortion_fitreverse(double *u, double *v, size_t a_order, size_t b_order,
       printf("X[%ld][%ld] = %.8lf\n", i, j, gsl_matrix_get(X_ap, j, i));
   */
 
-  /* Free the memory allocations. */
+  /* Free the simple allocations. */
   gsl_multifit_linear_free(work_bp);
   gsl_multifit_linear_free(work_ap);
   gsl_matrix_free(cov_bp);
@@ -1333,13 +1333,16 @@ wcsdistortion_fitreverse(double *u, double *v, size_t a_order, size_t b_order,
   gsl_vector_free(y_ap);
   gsl_matrix_free(X_bp);
   gsl_matrix_free(X_ap);
-  free(vdiff);
-  free(udiff);
   free(vprime);
   free(uprime);
+  free(vdiff);
+  free(udiff);
 
-  for(i=0; i<ap_order; ++i) { free(vpdict[i]); free(updict[i]); }
-  for(i=0; i<a_order; ++i) { free(vdict[i]); free(udict[i]); }
+  /* Free the array-in-array allocations. */
+  for(i=0; i<=wcsdistortion_max(ap_order, bp_order); ++i)
+    { free(vpdict[i]); free(updict[i]); }
+  for(i=0; i<=wcsdistortion_max(a_order, b_order); ++i)
+    { free(vdict[i]); free(udict[i]); }
   free(vpdict);
   free(updict);
   free(vdict);
@@ -1365,7 +1368,7 @@ wcsdistortion_get_revkeyvalues(struct wcsprm *wcs, size_t *fitsize,
   double crpix1=wcs->crpix[0], crpix2=wcs->crpix[1];
 
   /* Initialise the 2d matrices. */
-  tsize=(naxis1/4)*(naxis2/4);
+  tsize=(naxis1/4+1)*(naxis2/4+1);
   for(i=0;i<5;++i) for(j=0;j<5;++j) {a_coeff[i][j]=0; b_coeff[i][j]=0;}
 
   /* Allocate the size of u,v arrays. */
