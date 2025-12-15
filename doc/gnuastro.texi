@@ -24107,39 +24107,45 @@ For examples to define the ``box'' (a rectangular region) that surrounds an elli
 @item rotate-coord
 Rotate the given point (horizontal and vertical coordinates given in 5th and 4th popped operands) around a center/reference point (coordinates given in the 3rd and 2nd popped operands) by a given angle (first popped operand).
 
-For example, if you want to trace the outer edge of a circle centered on (1.23,45.6) with a radius of 0.78, you can use this operator like below.
-The logic is that we assume a single point that is located on 0.78 units after the center on the horizontal axis (the point's vertical axis position is the same as the center).
-We then rotate this point in each row by one degree to build the circle's circumference.
+For example, let's get the set of points on the circumference of a circle that is centered on (1.23,4.56) with a radius of 0.78.
+Just like placing a drawing compass on the paper, you need two points: the reference coordiante is the place you put the compass's sharp pin (that you will later rotate the compass around) and the place that the pencil/pen is put on paper will be your starting/given point.
+The starting point can be at any azimuthal angle, so let's choose the simplest one (at an angle of 0, or 0.78 units after the reference point on the horizontal axis).
+In other words, the starting point's vertical axis position is the same as the center.
+With the command below, we will rotate this compass around the reference point, starting (first row) with the given point (on angle zero) and parse the circumference with steps of one degree.
 
 @verbatim
+$ r=0.78
 $ cx=1.23
 $ cy=45.6
-$ rad=0.78
+$ sx=$(echo $cx $r | awk '{print $1+$2}')
 $ seq 0 360 \
-      | awk '{print '$rad'+'$cx', '$cy', $1}' \
-      | asttable -c'arith $1 $2 '$cx' '$cy' $3 rotate-coord' \
-                 --output=circle.fits
+$     | "$utility" -c'arith '$sx' '$cy' '$cx' '$cy' $1 rotate-coord' \
+                     --output=circle.fits
 
 ##  Within TOPCAT, after opening "Plane Plot", within "Axes" select
 ## "Aspect lock" so the steps in both axis is the same.
 $ astscript-fits-view circle.fits
 @end verbatim
 
-If you want the points to create a circle on the celestial sphere, you can use the @code{eq-j2000-from-flat} operator after this one (see @ref{Column arithmetic}):
+If you want the points to create a circle on the celestial sphere, you should use the @code{eq-j2000-from-flat} operator after this one (see @ref{Column arithmetic}):
 
 @verbatim
 $ seq 0 360 \
-      | awk '{print '$rad'+'$cx', '$cy', $1}' \
-      | asttable -c'arith $1 $2 '$cx' '$cy' $3 rotate-coord \
+      | awk '{print '$r'+'$cx', '$cy', $1}' \
+      | asttable -c'arith '$sx' '$cy' '$cx' '$cy' $1 rotate-coord \
                           '$cx' '$cy' TAN eq-j2000-from-flat' \
-                          --output=circle-on-sky.fits
+                 --colmetadata=1,RA,deg,"Right Ascension" \
+                 --colmetadata=2,DEC,deg,"Declination" \
+                 --output=circle-on-sky.fits
+$ astscript-fits-view circle.fits
 @end verbatim
 
-When you open TOPCAT, if you open the ``Plane Plot'', you will see an ellipse.
-However, if you open ``Sky Plot'' (from the ``Graphics'' menu), and select the first and second columns respectively, you will see a circle.
+When you open TOPCAT, if you open the ``Plane Plot'' with ``aspect lock'' (as described above), you will see an ellipse this time, not a circle!
+However, if you open ``Sky Plot'' (from the ``Graphics'' menu), you will see a beautiful circle.
 
-The center coordinates and angle can be fixed for all the rows (as in the example above) or be different for every row.
-Recall that if you want these to change on every row, you should give the column name (or number followed by @code{$}) for these operands instead of the constant number above.
+In the example above, only one of the input columns was variable (that more than one value: the rotation angle), the rest were constant.
+But this function is generic and can accept multi-element inputs (table columns or arrays in general) for any of the inputs.
+The only constraint is that the multi-element input operands (those that are not a constant) should have the same number of elements.
 
 @item box-around-ellipse
 Return the width (along horizontal) and height (along vertical) of a box that encompasses an ellipse with the same center point.

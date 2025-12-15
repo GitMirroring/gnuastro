@@ -36,6 +36,14 @@ See the end of the file for license conditions.
 
 ** Removed features
 ** Changed features
+
+  - Operators:
+
+    - rotate-coord: any of the input operands can now be a constant. Until
+      now, this was not possible. The example in the book (drawing the
+      circumference of a circle on a flat plane or on the sky) has also
+      been updated.
+
 ** Bugs fixed
 
   - bug #67776: astfits crashes if asked to convert distortion of an image

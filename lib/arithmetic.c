@@ -3559,41 +3559,45 @@ arithmetic_box(gal_data_t *d1, gal_data_t *d2, gal_data_t *d3,
 
 
 
+static void
+arithmetic_rotate_size_err(gal_data_t *in, size_t *osize, char *num,
+                           const char *func)
+{
+  /* Work necessary only when input has more than one element*/
+  if(in->size>1)
+    {
+      if(*osize>1 && in->size!=*osize)
+        error(EXIT_FAILURE, 0, "%s: the %s argument has %zu elements "
+              "which is not consistent with previous arguments (that "
+              "had either 1 or %zu elements)", func, num, in->size,
+              *osize);
+      else *osize=in->size;
+    }
+}
+
+
+
+
+
 static gal_data_t *
 arithmetic_rotate(int operator, int flags, gal_data_t *d1, gal_data_t *d2,
                   gal_data_t *d3, gal_data_t *d4, gal_data_t *d5)
 {
-  size_t i;
+  size_t i, osize=1;
   gal_data_t *out=NULL;
-  double x, y, rx, ry, rot, onerot;
+  double x, y, rx, ry, *o1a, *o2a, rot, onerot;
   double     *d1a=NULL, *d2a=NULL, *d3a=NULL, *d4a=NULL, *d5a=NULL;
   gal_data_t *d1d=NULL, *d2d=NULL, *d3d=NULL, *d4d=NULL, *d5d=NULL;
 
-  /* Basic sanity check. */
-  if(d1->size != d2->size)
-    error(EXIT_FAILURE, 0, "%s: the input coordinate operands (5th and "
-          "4th popped operands) to this function don't have the same "
-          "number of elements", __func__);
-  if(d3->size != d4->size)
-    error(EXIT_FAILURE, 0, "%s: the reference coordinate operands (3rd "
-          "and 2nd popped operands) to this function don't have the same "
-          "number of elements", __func__);
-  if(d3->size>1
-     && (d3->size != d1->size || d4->size!= d1->size) )
-    error(EXIT_FAILURE, 0, "%s: the reference coordinate operands (3rd "
-          "and 2th popped operands) have %zu elements, while the input "
-          "coordinate operands (5th and 4th operands) have %zu elements! "
-          "The reference coordinates should either have a single element "
-          "(to be used for all inputs) or have the same number of "
-          "elements as input elements", __func__, d3->size, d1->size);
-  if(d5->size>1 && d5->size!=d1->size)
-    error(EXIT_FAILURE, 0, "%s: the rotation angle operand (1st popped "
-          "operand) has %zu elements, while the input coordinate operands "
-          "(5th and 4th operands) have %zu elements! The rotation angle "
-          "should either have a single element (to be used for all inputs) "
-          "or have the same number of elements as input elements",
-          __func__, d5->size, d1->size);
-
+  /* Find the size of the output while doing a sanity check on the length
+     of the arrays. It is important the 'osize' be initialized to zero
+     before these functions: 'osize' will only be modified if any of the
+     input arguments have more than one element. */
+  arithmetic_rotate_size_err(d1, &osize, "first",  __func__);
+  arithmetic_rotate_size_err(d2, &osize, "second", __func__);
+  arithmetic_rotate_size_err(d3, &osize, "third",  __func__);
+  arithmetic_rotate_size_err(d4, &osize, "fourth", __func__);
+  arithmetic_rotate_size_err(d5, &osize, "fifth",  __func__);
 
   /* The datasets may be empty. In this case the output should also be
      empty (we can have tables and images with 0 rows or pixels!). */
@@ -3612,6 +3616,20 @@ arithmetic_rotate(int operator, int flags, gal_data_t *d1, gal_data_t *d2,
       if(d1->dsize) for(i=0;i<d1->ndim;++i) d1->dsize[i]=0;
       d1->size=0; return d1;
     }
+
+  /* Allocate the output and set the array pointers. We are not re-using
+     any of the input arrays (although possible) because the arrays can
+     have one or N elements and trying to extract the necessary input
+     arrays to use as output can make the code complicated and prone to
+     bugs. */
+  gal_list_data_add_alloc(&out, NULL, GAL_TYPE_FLOAT64, 1, &osize,
+                          NULL, 0, d1->minmapsize, d1->quietmmap,
+                          NULL, NULL, NULL);
+  gal_list_data_add_alloc(&out, NULL, GAL_TYPE_FLOAT64, 1, &osize,
+                          NULL, 0, d1->minmapsize, d1->quietmmap,
+                          NULL, NULL, NULL);
+  o1a=out->next->array;  /* IMPORTANT: since the lists are parsed */
+  o2a=out->array;        /* from the top, the order is reveresed. */
 
  /* Convert the inputs into double. Note that if the user doesn't want to
     free the inputs, we should make a copy of 'a_data' and 'b_data' because
@@ -3639,11 +3657,11 @@ arithmetic_rotate(int operator, int flags, gal_data_t *d1, gal_data_t *d2,
 
   /* Do the operation. We will do it in the same space  */
   onerot = d5d->size==1 ? (d5a[0] * M_PI/180.0f) : NAN;
-  for(i=0; i<d1d->size; ++i)
+  for(i=0; i<osize; ++i)
     {
       /* To simplify the readability. */
-      x   =                           d1a[i];
-      y   =                           d2a[i];
+      x   = d1d->size==1 ? d1a[0] :   d1a[i];
+      y   = d2d->size==1 ? d2a[0] :   d2a[i];
       rx  = d3d->size==1 ? d3a[0] :   d3a[i];
       ry  = d4d->size==1 ? d4a[0] :   d4a[i];
       rot = d5d->size==1 ? onerot : ( d5a[i] * M_PI/180.0f );
@@ -3654,19 +3672,15 @@ arithmetic_rotate(int operator, int flags, gal_data_t *d1, gal_data_t *d2,
          afterwards). */
       x = x-rx;
       y = y-ry;
-      d1a[i] = x*cos(rot) - y*sin(rot) + rx;
-      d2a[i] = x*sin(rot) + y*cos(rot) + ry;
+      o1a[i] = x*cos(rot) - y*sin(rot) + rx;
+      o2a[i] = x*sin(rot) + y*cos(rot) + ry;
     }
-
-  /* Set the output. */
-  out=d2d;
-  out->next=d1d;
 
   /* Clean up. */
   if(flags & GAL_ARITHMETIC_FLAG_FREE)
     {
-      if(d1d!=d1)                         gal_data_free(d1);
-      if(d2d!=d2)                         gal_data_free(d2);
+      if(d1d!=d1) { gal_data_free(d1d); } gal_data_free(d1);
+      if(d2d!=d2) { gal_data_free(d2d); } gal_data_free(d2);
       if(d3d!=d3) { gal_data_free(d3d); } gal_data_free(d3);
       if(d4d!=d4) { gal_data_free(d4d); } gal_data_free(d4);
       if(d5d!=d5) { gal_data_free(d5d); } gal_data_free(d5);
