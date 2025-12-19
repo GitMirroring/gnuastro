@@ -1,4 +1,5 @@
-# Makefile to do the number-crunching of the 'pointing-simulate.sh' script.
+# Makefile to do the number-crunching of the 'pointing-simulate.sh'
+# script.
 #
 # Original author:
 #     Mohammad Akhlaghi <mohammad@akhlaghi.org>
@@ -51,11 +52,11 @@ hook-warp-before-check=$(subst \",,$(word 1,$(hook-warp-before)))
 exposures=$(foreach d,$(dithers),$(tmpdir)/exp-$(d).fits)
 $(exposures): $(tmpdir)/exp-%.fits: $(img) | $(tmpdir)
 
-#	Copy the input into a temporary one and edit its keywords to adjust
-#	to this pointings position.
+#	Copy the input into a temporary one and edit its keywords to
+#	adjust to this pointings position.
 #	  - 'TARGET' is defined for hooks (who don't see Make's '$@').
-#	  - After each hook, we need to make sure the necessary file for the
-#	    next step has been created.
+#	  - After each hook, we need to make sure the necessary file
+#	    for the next step has been created.
 	@TARGET=$@; \
 	copy=$(subst .fits,-copy.fits,$@); \
 	WARPED=$(subst .fits,-warped.fits,$@); \

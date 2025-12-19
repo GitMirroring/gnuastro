@@ -391,8 +391,13 @@ if [ x"$tmpdir" = x ]; then
     tmpdir=dither-tmp-$namecnodir-$nameinodir-$namecenter-$namewidth
 fi
 if [ -d $tmpdir ]; then
-    rm -f $tmpdir/*             # For debuging, you can comment this line
-    #echo NOT CLEANING TMPDIR   # and uncomment the 'echo' line under it.
+    # We need '-r' because the hooks can create sub-directories under the
+    # temporary directory and we need '-f' in case it is empty (for example
+    # due to an early crash). For debuging, you can comment the 'rm' line
+    # and uncomment the 'echo' line under it (to remind you for later
+    # reverting).
+    rm -rf $tmpdir/*
+    #echo NOT CLEANING TMPDIR
 else
     mkdir $tmpdir
 fi

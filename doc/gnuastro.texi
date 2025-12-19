@@ -36183,7 +36183,7 @@ For more on hooks, see the description of @code{--hook-warp-before}, @ref{Pointi
 @table @code
 @item $WARPED
 Input: name of file containing the warped exposure in the output pixel grid.
-@item $TOWARP
+@item $TARGET
 Output: name of the expected output of your hook.
 If it is not created by your script, the script will complain and abort.
 This file will be coadded from the same file for all exposures into the final output.
