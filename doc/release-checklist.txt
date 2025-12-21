@@ -151,15 +151,21 @@ all the commits needed for this release have been completed.
    (https://doi.org/10.5281/zenodo.3483064), upload a temporary file (one
    upload is necessary) and click on the "Get a DOI now!" button at the
    start of the "Basic information" section and finally set the publication
-   date. Using this, you need to update the information for the "Gnuastro
-   book" section of the string in 'gal_options_print_citation' (of
-   'lib/options.c'):
+   date. Using this, you need to update the following parts of the source
+   code:
+   - lib/options.c: under the "Gnuastro book" section of the string in
+     'gal_options_print_citation':
        - year: set the year that you are making the release.
        - title: Copy the DOI from Zenodo here.
        - doi: Copy the DOI from Zenodo here.
-   Later (when the new Gnuastro version is released) you can complete the
-   Zenodo submission by uploading the files (there is an item at the end of
-   this list so you do not forget).
+   - doc/gnuastro.texi:
+       - In the '@copying' box (at the top, just under the title),
+         uncomment everything under the copyright quotation.
+       - In the second '@subtitle' under the main '@title', uncomment the
+         ending of the line (with the DOI).
+   Later (when the new Gnuastro version is released) complete the Zenodo
+   submission by uploading the files (there is an item at the end of this
+   list so you do not forget).
 
 
  - Commit all these changes:

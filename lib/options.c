@@ -329,7 +329,7 @@ gal_options_print_citation(struct argp_option *option, char *arg,
          "and improvements in Gnuastro. Note that some Gnuastro programs "
          "have dedicated records to cite. For the full list of "
          "citable Gnuastro resources see "
-         "https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew "
+         "https://scixplorer.org/search?q=docs(library%2F0QdYMuVCQdmygEh0Vs_4Ew) "
          "but you should not cite those that you have not used! "
          "Simply run all your used programs with this '--cite' option "
          "to find the ones that should be cited (at the bottom of this "

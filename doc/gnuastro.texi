@@ -45,6 +45,12 @@ Copyright @copyright{} 2015-2025 Free Software Foundation, Inc.
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU Free Documentation License, Version 1.3 or any later version published by the Free Software Foundation; with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
 A copy of the license is included in the section entitled ``GNU Free Documentation License''.
 @end quotation
+
+See the next page for the full list of contributors and @ref{Acknowledgments and short history} for the various grants, institutes and people that have made Gnuastro possible.
+
+@c Cite this book in academic literature with the DOI of the title page.
+To see the publications to cite run the programs you have used with @option{--cite} (be sure to include the version of Gnuastro in your publication).
+Full list of Gnuastro's citable publications: @url{https://scixplorer.org/search?q=docs(library%2F0QdYMuVCQdmygEh0Vs_4Ew)}
 @end copying
 
 @c To include in the info directory.
@@ -141,8 +147,8 @@ A copy of the license is included in the section entitled ``GNU Free Documentati
 @c Print title information:
 @titlepage
 @title GNU Astronomy Utilities
-@subtitle Astronomical data manipulation and analysis programs and libraries
-@subtitle for version @value{VERSION}, @value{UPDATED}
+@subtitle Astronomical data manipulation and analysis programs and libraries,
+@subtitle version @value{VERSION} (@value{UPDATED}) @c@code{DOI:@url{https://doi.org/10.5281/zenodo.17726900,,10.5281/zenodo.17726900}}
 @iftex
 @subtitle
 @subtitle
@@ -163,7 +169,6 @@ A copy of the license is included in the section entitled ``GNU Free Documentati
 @subtitle To stay up to date with Gnuastro's official releases, please subscribe to this mailing list:
 @subtitle @url{https://lists.gnu.org/mailman/listinfo/info-gnuastro}
 @author Mohammad Akhlaghi
-
 @page
 @vskip 0pt plus 1filll
 @insertcopying
@@ -5161,7 +5166,7 @@ $ astnoisechisel --cite
 You will see that while the first two entries are the same in all, the last one differs between MakeCatalog and NoiseChisel while Table only has two entries.
 This is because MakeCatalog and NoiseChisel have dedicated papers that should be cited along with the main one (for all Gnuastro users), but we haven't had time to write a dedicated paper for Table.
 So please read the output of all the programs you have used carefully and cite the relevant resources in your publications.
-For the full library of Gnuastro's citable resources, see @url{https://ui.adsabs.harvard.edu/public-libraries/0QdYMuVCQdmygEh0Vs_4Ew} and to see Gnuastro's own acknowledgments (institutes, grants and people who made Gnuastro possible), see @ref{Acknowledgments and short history}.
+For the full library of Gnuastro's citable resources, see @url{https://scixplorer.org/search?q=docs(library%2F0QdYMuVCQdmygEh0Vs_4Ew)} and to see Gnuastro's own acknowledgments (institutes, grants and people who made Gnuastro possible), see @ref{Acknowledgments and short history}.
 
 
 
