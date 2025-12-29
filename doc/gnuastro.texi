@@ -11900,7 +11900,7 @@ For more on @code{LD_LIBRARY_PATH}, see @ref{Installation directory}.
 @cindex WCS
 @cindex WCSLIB
 @cindex World Coordinate System
-@url{http://www.atnf.csiro.au/people/mcalabre/WCS/, WCSLIB} is written and maintained by one of the authors of the World Coordinate System (WCS) definition in the @url{http://fits.gsfc.nasa.gov/fits_standard.html, FITS standard}@footnote{Greisen E.W., Calabretta M.R. (2002) Representation of world coordinates in FITS.
+@url{https://www.atnf.csiro.au/computing/software/wcs, WCSLIB} is written and maintained by one of the authors of the World Coordinate System (WCS) definition in the @url{http://fits.gsfc.nasa.gov/fits_standard.html, FITS standard}@footnote{Greisen E.W., Calabretta M.R. (2002) Representation of world coordinates in FITS.
 Astronomy and Astrophysics, 395, 1061-1075.}, Mark Calabretta.
 It might be already built and ready in your distribution's package management system.
 However, here the installation from source is explained, for the advantages of installation from source please see @ref{Mandatory dependencies}.
