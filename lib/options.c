@@ -4,7 +4,7 @@ Function to parse options and configuration file values.
 Original author:
      Mohammad Akhlaghi <mohammad@akhlaghi.org>
 Contributing author(s):
-Copyright (C) 2017-2025 Free Software Foundation, Inc.
+Copyright (C) 2017-2026 Free Software Foundation, Inc.
 
 Gnuastro is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -306,7 +306,7 @@ gal_options_print_citation(struct argp_option *option, char *arg,
     "Gnuastro book\n"
     "-------------\n"
     "To cite any part of the book (for example programs that do not "
-    "have a dedicated paper, or other relevant parts in your work), "
+    "have a dedicated paper, or other relevant parts) in your work, "
     "please use the BibTeX entry below. For an example on citing certain "
     "parts of the Gnuastro book, see https://arxiv.org/abs/2510.12940 "
     "(just note that they cited Gnuastro 0.23 and that the version and "

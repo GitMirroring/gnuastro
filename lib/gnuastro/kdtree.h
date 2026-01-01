@@ -7,7 +7,7 @@ Original author:
 Contributing author(s):
      Mohammad Akhlaghi <mohammad@akhlaghi.org>
      Barış Güngör <barisgungor1010@gmail.com>
-Copyright (C) 2020-2025 Free Software Foundation, Inc.
+Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
 Gnuastro is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
