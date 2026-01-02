@@ -98,6 +98,7 @@ enum gal_fit_matrix_types
   /* Two-dimensional matrices. */
   GAL_FIT_MATRIX_POLYNOMIAL_2D,
   GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV,
+  GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV_NO_RADIAL,
 
   /* To enable counting total number of matrices (will be extra by one
      because it also counts 'GAL_FIT_MATRIX_NUMBER_1D'. Since this is just

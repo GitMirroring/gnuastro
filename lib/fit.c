@@ -164,10 +164,12 @@ fit_name_matrix_from_id(uint8_t matrixid)
 {
   switch(matrixid)
     {
-    case GAL_FIT_MATRIX_POLYNOMIAL_1D:     return "polynomial-1d";
-    case GAL_FIT_MATRIX_POLYNOMIAL_2D:     return "polynomial-2d";
+    case GAL_FIT_MATRIX_POLYNOMIAL_1D: return "polynomial-1d";
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D: return "polynomial-2d";
     case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV: return "polynomial-2d-tpv";
-    default:                               return NULL;
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV_NO_RADIAL:
+      return "polynomial-2d-tpv-no-radial";
+    default: return NULL;
     }
 
   /* If control reaches here, there was a bug! */
@@ -490,8 +492,18 @@ fit_polynomial_nconst(uint8_t maxpower, uint8_t matrixid)
       nconst=(maxpower+1)*(maxpower+2)/2;
       break;
     case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV:
-      /* TPV has odd radial terms. */
+      /* TPV has odd radial terms. The radial terms involve a mixture of
+         the two dimensions, so when a robust fit is requested, solving
+         using a big 'block diagonal' matrix is better than 2 small
+         independent matrices. */
       nconst=(maxpower+1)*(maxpower+2)/2 + (maxpower/2 + 1);
+      nconst*=2;
+      break;
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV_NO_RADIAL:
+      /* TPV without radial terms is equivalent to a 2D polynomial in a
+         block diagonal matrix. */
+      nconst=(maxpower+1)*(maxpower+2)/2;
+      nconst*=2;
       break;
     default:
       error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
@@ -543,59 +555,108 @@ fit_polynomial_1d_matrix_fill(gal_data_t *xin, int nconst, gsl_matrix **x)
 
 
 
+/* Compute the powers of the elements that then are combined to build the
+   polynomial */
+static void
+fit_polynomial_2d_row_init(double *r_pow, double *xi1_pow, double *xi2_pow,
+                           double xi1, double xi2, size_t maxpower,
+                           uint8_t radial)
+{
+  size_t deg;
+  double rsq = radial ? (xi1*xi1 + xi2*xi2) : NAN;
+
+  /* Fill the first radial term. */
+  if(radial) r_pow[1]=sqrt(rsq);
+
+  /* Go over all the degrees. */
+  for(deg=0; deg<=maxpower; deg++)
+    {
+      xi1_pow[deg] = deg>0 ? xi1*xi1_pow[deg-1] : 1.0;
+      xi2_pow[deg] = deg>0 ? xi2*xi2_pow[deg-1] : 1.0;
+
+      /* If a TPV polynomial with radial terms is requested, add odd powers
+         of the radial term. See
+         https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html */
+      if(radial && deg>1 && deg%2) r_pow[deg] = r_pow[deg-2] * rsq;
+    }
+}
+
+
+
+
+
+/* Compute and store the values of a row. The first argument is the
+   starting position: this is useful for instance when the matrix is block
+   diagonal, and hence the rows starts with several zeroes */
+static void
+fit_polynomial_2d_row_fill(double *row, double *r_pow,
+                           double *xi1_pow, double *xi2_pow,
+                           size_t maxpower, uint8_t radial)
+{
+  size_t j, k=0, deg;
+
+  /* Column k is a combination of powers of the input values.  This will
+     make it a polynomial. */
+  for(deg=0; deg<=maxpower; deg++)
+    {
+      /* Use the previously computed powers to fill the matrix */
+      for(j=deg+1; j-->0;)
+        {
+          /* For a check on the powers of the dimensions.
+          if(i==0) printf("%s: %zu, %zu\n", __func__, j, deg-j);
+          //*/
+
+          row[k++] = xi1_pow[j] * xi2_pow[deg-j];
+        }
+
+      /* If a tpv polynomial is requested, add odd powers of the radial
+         term. See https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html */
+      if(radial && deg%2) row[k++] = r_pow[deg];
+    }
+}
+
+
+
+
+
 static void
 fit_polynomial_2d_matrix_fill(gal_data_t *xin, int nconst,
-                              gsl_matrix **x, size_t maxpower, uint8_t tpv)
+                              gsl_matrix **x, size_t maxpower,
+                              uint8_t tpv, uint8_t radial)
 {
-  size_t i, j, k, deg;
-  double r=NAN, r_pow=NAN;
+  size_t i;
   gal_data_t *xin1=xin, *xin2=xin->next;
-  double *xo, *xi1, *xi2, *xi1_pow, *xi2_pow;
+  double *xo, *xi1, *xi2, *r_pow, *xi1_pow, *xi2_pow, *firstelem;
 
   /* Allocate the necessary arrays. */
+  r_pow=gal_pointer_allocate(GAL_TYPE_FLOAT64, maxpower+1, 1,
+                             __func__, "r_pow");
   xi1_pow=gal_pointer_allocate(GAL_TYPE_FLOAT64, maxpower+1, 1,
                                __func__, "xi1_pow");
   xi2_pow=gal_pointer_allocate(GAL_TYPE_FLOAT64, maxpower+1, 1,
                                __func__, "xi2_pow");
 
-  /* Fill in the matrix. */
+  /* Initialize the array pointers and fill them. */
   xo=(*x)->data;
   xi1=xin1->array;
   xi2=xin2->array;
-  for(i=0;i<xin1->size;++i)
+  for(i=0;i<xin1->size;i++)
     {
-      /* Restart from first column */
-      k=0;
+      /* Initialize and fill the matrix. */
+      fit_polynomial_2d_row_init(r_pow, xi1_pow, xi2_pow,
+                                 xi1[i], xi2[i], maxpower, radial);
+      firstelem=xo+i*nconst;
+      fit_polynomial_2d_row_fill(firstelem, r_pow, xi1_pow, xi2_pow,
+                                 maxpower, radial);
 
-      /* Compute the radius */
-      if(tpv) r_pow=r=sqrt( xi1[i]*xi1[i] + xi2[i]*xi2[i] );
-
-      /* Column k is a combination of powers of the input values.
-         This will make it a polynomial. */
-      for(deg=0; deg<=maxpower; deg++)
+      if(tpv)
         {
-          /* Store the precomputed powers of xi1 and xi2 */
-          xi1_pow[deg] = deg>0 ? xi1[i]*xi1_pow[deg-1] : 1.0;
-          xi2_pow[deg] = deg>0 ? xi2[i]*xi2_pow[deg-1] : 1.0;
+          /*Put the second coordinate in the second half of the matrix */
+          firstelem = xo + (xin1->size+i)*nconst + nconst/2;
 
-          /* Use the previously computed powers to fill the matrix */
-          for(j=deg+1; j-->0;)
-            {
-              /* For a check on the powers of the dimensions.
-              if(i==0) printf("%s: %zu, %zu\n", __func__, j, deg-j);
-              //*/
-
-              xo[ i*nconst + k++ ] = xi1_pow[j] * xi2_pow[deg-j];
-            }
-
-          /* If a tpv polynomial is requested, add odd powers of
-             the radial term. See
-             https://fits.gsfc.nasa.gov/registry/tpvwcs/tpv.html */
-          if(tpv && deg%2)
-            {
-              xo[ i*nconst + k++ ] = r_pow;
-              r_pow*=(r*r);
-            }
+          /* xi1 and xi2 are flipped! */
+          fit_polynomial_2d_row_fill(firstelem, r_pow, xi2_pow, xi1_pow,
+                                     maxpower, radial);
         }
     }
 
@@ -630,7 +691,7 @@ fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
      allocation and we can't use the same allocated space of the inputs. */
   *c   = gsl_vector_alloc(nconst);
   *cov = gsl_matrix_alloc(nconst, nconst);
-  *x   = gsl_matrix_alloc(xin->size, nconst);
+  *x   = gsl_matrix_calloc(yin->size, nconst);
 
   /* Fill the design matrix */
   switch(matrixid)
@@ -639,10 +700,13 @@ fit_polynomial_prepare(gal_data_t *xin,  gal_data_t *yin,
       fit_polynomial_1d_matrix_fill(xin, nconst, x);
       break;
     case GAL_FIT_MATRIX_POLYNOMIAL_2D:
-      fit_polynomial_2d_matrix_fill(xin, nconst, x, maxpower, 0);
+      fit_polynomial_2d_matrix_fill(xin, nconst, x, maxpower, 0, 0);
       break;
     case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV:
-      fit_polynomial_2d_matrix_fill(xin, nconst, x, maxpower, 1);
+      fit_polynomial_2d_matrix_fill(xin, nconst, x, maxpower, 1, 1);
+      break;
+    case GAL_FIT_MATRIX_POLYNOMIAL_2D_TPV_NO_RADIAL:
+      fit_polynomial_2d_matrix_fill(xin, nconst, x, maxpower, 1, 0);
       break;
     default:
       error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
@@ -710,8 +774,8 @@ fit_polynomial_sanity_check(gal_data_t *xin, gal_data_t *yin,
 
   /* Make sure the types and lengths of each column are correct. */
   *xdata =        fit_sanity_check_col(xin,  xin, __func__);
-  *ydata =        fit_sanity_check_col(yin,  xin, __func__);
-  *wdata = ywht ? fit_sanity_check_col(ywht, xin, __func__) : NULL;
+  *ydata =        fit_sanity_check_col(yin,  yin, __func__);
+  *wdata = ywht ? fit_sanity_check_col(ywht, yin, __func__) : NULL;
   (*xdata)->next = ( xin->next
                    ? fit_sanity_check_col(xin->next, xin, __func__)
                    : NULL );
