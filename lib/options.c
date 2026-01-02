@@ -313,10 +313,15 @@ gal_options_print_citation(struct argp_option *option, char *arg,
     "please use the BibTeX entry below. For an example on citing certain "
     "parts of the Gnuastro book, see https://arxiv.org/abs/2510.12940 "
     "(just note that they cited Gnuastro 0.23 and that the version and "
-    "DOI that you are using, and is printed below, are different)\n\n"
+    "DOI that you are using, and is printed below, are different). In "
+    "case you are using a development version of Gnuastro (with a "
+    "version format of 'A.B.C-xxxxx'), be sure to check that the part "
+    "of the book you are citing has not changed since the official "
+    "version below (version format of 'A.B'; for more on Gnuastro's "
+    "version string, run 'info gnuastro version'):\n\n"
     "  @BOOK{gnuastrobook,\n"
     "     author = {{Akhlaghi}, Mohammad},\n"
-    "      title = {GNU Astronomy Utilities (version "PACKAGE_VERSION"), https://doi.org/10.5281/zenodo.17726900},\n"
+    "      title = {GNU Astronomy Utilities (version 0.24), https://doi.org/10.5281/zenodo.17726900},\n"
     "       year = 2025,\n"
     "  publisher = {Free Software Foundation},\n"
     "        doi = {10.5281/zenodo.17726900}\n"
@@ -330,15 +335,14 @@ gal_options_print_citation(struct argp_option *option, char *arg,
          "Please cite the following record(s) in your publications to "
          "support us in getting future grants for continued maintenance "
          "and improvements in Gnuastro. Note that some Gnuastro programs "
-         "have dedicated records to cite. For the full list of "
-         "citable Gnuastro resources see %s "
-         "but you should not cite those that you have not used! "
-         "Simply run all your used programs with this '--cite' option "
-         "to find the ones that should be cited (at the bottom of this "
-         "outpuer; after the main Gnuastro paper and the Gnuastro "
-         "book). Just do not forget to also include the version as "
-         "shown above for reproducibility.\n\n"
-         "%s\n", gnuastro_scix, gnuastro_bibtex);
+         "have dedicated records to cite. For the full list of citable "
+         "Gnuastro resources see %s but you should not cite those that "
+         "you have not used! Simply run all your used programs with this "
+         "'--cite' option to find the ones that should be cited (at the "
+         "bottom of this outpuer; after the main Gnuastro paper and the "
+         "Gnuastro book). Just do not forget to also include the version "
+         "as shown above for reproducibility.\n\n%s\n", gnuastro_scix,
+         gnuastro_bibtex);
 
 
   /* Only print the citation for the program if one exists. */

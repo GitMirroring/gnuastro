@@ -156,7 +156,7 @@ all the commits needed for this release have been completed.
    - lib/options.c: under the "Gnuastro book" section of the string in
      'gal_options_print_citation':
        - year: set the year that you are making the release.
-       - title: Copy the DOI from Zenodo here.
+       - title: Update the major version and the DOI (from Zenodo).
        - doi: Copy the DOI from Zenodo here.
    - doc/gnuastro.texi:
        - In the '@copying' box (at the top, just under the title),
