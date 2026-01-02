@@ -272,6 +272,9 @@ gal_options_print_citation(struct argp_option *option, char *arg,
                            char *filename, size_t lineno, void *pa)
 {
   struct gal_options_common_params *cp=(struct gal_options_common_params *)pa;
+
+  char *gnuastro_scix=
+    "https://scixplorer.org/search?q=docs(library%2F0QdYMuVCQdmygEh0Vs_4Ew)";
   char *gnuastro_bibtex=
     "Main Gnuastro paper\n"
     "-------------------\n"
@@ -328,15 +331,14 @@ gal_options_print_citation(struct argp_option *option, char *arg,
          "support us in getting future grants for continued maintenance "
          "and improvements in Gnuastro. Note that some Gnuastro programs "
          "have dedicated records to cite. For the full list of "
-         "citable Gnuastro resources see "
-         "https://scixplorer.org/search?q=docs(library%2F0QdYMuVCQdmygEh0Vs_4Ew) "
+         "citable Gnuastro resources see %s "
          "but you should not cite those that you have not used! "
          "Simply run all your used programs with this '--cite' option "
          "to find the ones that should be cited (at the bottom of this "
          "outpuer; after the main Gnuastro paper and the Gnuastro "
          "book). Just do not forget to also include the version as "
          "shown above for reproducibility.\n\n"
-         "%s\n", gnuastro_bibtex);
+         "%s\n", gnuastro_scix, gnuastro_bibtex);
 
 
   /* Only print the citation for the program if one exists. */
