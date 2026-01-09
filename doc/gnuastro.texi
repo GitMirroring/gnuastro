@@ -17002,6 +17002,7 @@ Supergalactic coordinates.
 @cindex SIP WCS distortion
 @cindex TPV WCS distortion
 If the argument has a WCS distortion, the output (file given with the @option{--output} option) will have the distortion given to this option (for example, @code{SIP}, @code{TPV}).
+In the specific case of a @code{SIP} distortion, the reverse coefficients are optional in the FITS standard and can be disabled in the output with @code{SIP-no-reverse} (which is faster).
 The output will be a new file (with a copy of the image, and the new WCS), so if it already exists, the file will be delete (unless you use the @code{--dontdelete} option, see @ref{Input output options}).
 
 With this option, the Fits program will read the minimal set of keywords from the input HDU and the HDU data.

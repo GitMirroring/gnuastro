@@ -50,8 +50,8 @@ __BEGIN_C_DECLS  /* From C++ preparations */
 
 /* This library's functions. */
 struct wcsprm *
-gal_wcsdistortion_tpv_to_sip(struct wcsprm *inwcs,
-                             size_t *fitsize);
+gal_wcsdistortion_tpv_to_sip(struct wcsprm *inwcs, size_t *fitsize,
+                             uint8_t with_reverse);
 
 struct wcsprm *
 gal_wcsdistortion_sip_to_tpv(struct wcsprm *inwcs);

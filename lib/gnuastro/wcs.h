@@ -61,19 +61,20 @@ __BEGIN_C_DECLS  /* From C++ preparations */
 /* Macros to identify the type of distortion for conversions. */
 enum gal_wcs_distortions
 {
-  GAL_WCS_DISTORTION_INVALID,         /* Invalid (=0 by C standard).    */
+  GAL_WCS_DISTORTION_INVALID,         /* Invalid (=0 by C standard). */
 
-  GAL_WCS_DISTORTION_TPD,             /* The TPD polynomial distortion. */
-  GAL_WCS_DISTORTION_SIP,             /* The SIP polynomial distortion. */
-  GAL_WCS_DISTORTION_TPV,             /* The TPV polynomial distortion. */
-  GAL_WCS_DISTORTION_DSS,             /* The DSS polynomial distortion. */
-  GAL_WCS_DISTORTION_WAT,             /* The WAT polynomial distortion. */
+  GAL_WCS_DISTORTION_TPD,             /* TPD polynomial distortion.  */
+  GAL_WCS_DISTORTION_SIP,             /* SIP polynomial distortion.  */
+  GAL_WCS_DISTORTION_SIP_NO_REVERSE,  /* SIP without reverse coeffs. */
+  GAL_WCS_DISTORTION_TPV,             /* TPV polynomial distortion.  */
+  GAL_WCS_DISTORTION_DSS,             /* DSS polynomial distortion.  */
+  GAL_WCS_DISTORTION_WAT,             /* WAT polynomial distortion.  */
 };
 
 /* Macros to identify coordinate system for convesions. */
 enum gal_wcs_coordsys
 {
-  GAL_WCS_COORDSYS_INVALID,           /* Invalid (=0 by C standard).    */
+  GAL_WCS_COORDSYS_INVALID,           /* Invalid (=0 by C standard). */
 
   GAL_WCS_COORDSYS_EQB1950,           /* Equatorial B1950 */
   GAL_WCS_COORDSYS_EQJ2000,           /* Equatorial J2000 */

@@ -70,6 +70,8 @@ gal_wcs_distortion_name_to_id(char *distortion)
   else if( !strcmp(distortion,"TPV") ) return GAL_WCS_DISTORTION_TPV;
   else if( !strcmp(distortion,"DSS") ) return GAL_WCS_DISTORTION_DSS;
   else if( !strcmp(distortion,"WAT") ) return GAL_WCS_DISTORTION_WAT;
+  else if( !strcmp(distortion,"SIP-no-reverse") )
+    return GAL_WCS_DISTORTION_SIP_NO_REVERSE;
   else
     error(EXIT_FAILURE, 0, "WCS distortion name '%s' not recognized, "
           "currently recognized names are 'TPD', 'SIP', 'TPV', 'DSS' and "
@@ -97,6 +99,7 @@ gal_wcs_distortion_name_from_id(int distortion)
     case GAL_WCS_DISTORTION_TPV: return "TPV";
     case GAL_WCS_DISTORTION_DSS: return "DSS";
     case GAL_WCS_DISTORTION_WAT: return "WAT";
+    case GAL_WCS_DISTORTION_SIP_NO_REVERSE: return "SIP_NO_REVERSE";
     default:
       error(EXIT_FAILURE, 0, "WCS distortion id '%d' isn't recognized",
             distortion);
@@ -1657,10 +1660,12 @@ gal_wcs_distortion_convert(struct wcsprm *inwcs, int outdisptype,
         switch(outdisptype)
           {
           case GAL_WCS_DISTORTION_SIP:
+          case GAL_WCS_DISTORTION_SIP_NO_REVERSE:
             if(fitsize==NULL)
               error(EXIT_FAILURE, 0, "%s: the size array is necessary "
                     "for this conversion", __func__);
-            outwcs=gal_wcsdistortion_tpv_to_sip(inwcs, fitsize);
+            outwcs=gal_wcsdistortion_tpv_to_sip(inwcs, fitsize,
+                           outdisptype==GAL_WCS_DISTORTION_SIP);
             break;
           default:
             error(EXIT_FAILURE, 0, "%s: conversion from %s to %s is not "

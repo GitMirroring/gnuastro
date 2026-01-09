@@ -1430,7 +1430,7 @@ wcsdistortion_get_revkeyvalues(struct wcsprm *wcs, size_t *fitsize,
 static char *
 wcsdistortion_add_sipkeywords(struct wcsprm *wcs, size_t *fitsize,
                               double tpvu[8][8], double tpvv[8][8],
-                              int add_reverse, int *nkeys)
+                              uint8_t with_reverse, int *nkeys)
 {
   double val=0;
   uint8_t i, j, k=0;
@@ -1554,7 +1554,7 @@ wcsdistortion_add_sipkeywords(struct wcsprm *wcs, size_t *fitsize,
           b_order, "");
 
   /* If reverse coefficients are required. */
-  if( add_reverse )
+  if(with_reverse)
     {
       ap_order=a_order;
       bp_order=b_order;
@@ -1891,8 +1891,8 @@ wcsdistortion_set_internalstruct(struct wcsprm *wcs, char *fullheader,
      struct wcsprm *outwcs - The transformed wcs parameters in the
                              sip distortion type. */
 struct wcsprm *
-gal_wcsdistortion_tpv_to_sip(struct wcsprm *inwcs,
-                             size_t *fitsize)
+gal_wcsdistortion_tpv_to_sip(struct wcsprm *inwcs, size_t *fitsize,
+                             uint8_t with_reverse)
 {
   int ctrl=0;                /* Don't report why a keyword wasn't used. */
   int nreject=0;             /* Number of keywords rejected for syntax. */
@@ -1915,7 +1915,7 @@ gal_wcsdistortion_tpv_to_sip(struct wcsprm *inwcs,
 
   /* Add the sip keywords. */
   fullheader=wcsdistortion_add_sipkeywords(inwcs, fitsize, tpvu, tpvv,
-                                           1, &nkeys);
+                                           with_reverse, &nkeys);
 
   /* WCSlib function to parse the FITS headers. */
   status=wcspih(fullheader, nkeys, relax, ctrl, &nreject, &nwcs, &outwcs);

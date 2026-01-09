@@ -30,6 +30,12 @@ See the end of the file for license conditions.
     listing them one by one, you can simply load them all with:
     --ds9region="galaxy-*.reg". This was implemented by Giacomo Lorenzetti.
 
+*** astfits
+
+  --wcsdistortion: new 'SIP-no-reverse' distortion (to avoid the
+    computation of the optional reverse SIP coefficients). This will
+    improve the speed and also helps in debugging (when necessary).
+
 *** Library
 
   - gal_list_sizetf64_number: return the number of nodes in the list.
@@ -43,6 +49,11 @@ See the end of the file for license conditions.
       now, this was not possible. The example in the book (drawing the
       circumference of a circle on a flat plane or on the sky) has also
       been updated.
+
+*** Library
+
+  - wcs.h: 'GAL_WCS_DISTORTION_SIP_NO_REVERSE' new distortion (see
+    '--wcsdistortion' under 'astfits' above).
 
 ** Bugs fixed
 
