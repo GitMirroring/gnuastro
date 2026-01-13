@@ -403,6 +403,21 @@ AS_IF([test "x$LIBCURL" = x], [],
              [LDADD="$LIBCURL   $LDADD"],
              [LDADD="$LTLIBCURL $LDADD"]) ])
 
+# Pre-CFITSIO check: the package managers of some distributions (like
+# Fedora) install CFITSIO headers in the non-standard directory
+# '/usr/include/cfitsio'. To avoid confusing such users (who see that they
+# have installed CFITSIO, but Gnuastro can't find it), before checking for
+# CFITSIO, we will add this directory to include paths if it
+# exists. However, hard-coded directories are bad for cross compilation and
+# may create conflicts with libraries that were specifically supplied for
+# the cross compilation. In other words, we don't want the build-machine's
+# CFITSIO to interfere with the cross compilation process in such
+# distributions.
+AS_IF([test "x$cross_compiling" = "xno"], [
+       AS_IF([test -d /usr/include/cfitsio],
+             [CPPFLAGS="$CPPFLAGS -I/usr/include/cfitsio"])
+      ]
+)
 
 AC_LIB_HAVE_LINKFLAGS([cfitsio], [], [
 #include <fitsio.h>
