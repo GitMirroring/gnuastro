@@ -22236,10 +22236,19 @@ This is the inverse operation of the @code{counts-to-jy}, see there for usage ex
 @item zeropoint-change
 @cindex Zero point change
 Change the zero point of the input dataset to a new zero point (output will always be 64-bit floating point).
-For example, with the command below, we are changing the zero point of an image from 26.892 to 27.0:
+For example, let's assume that you have measured the zero point of an image (with @ref{Zero point estimation}) to be 24.567.
+To simplify future steps in your pipeline (for example to also deal with other images that have slightly different zero points) you want to change the zero points of all the exposures to a fixed value of 27.0.
+You can do this with the following command (immediately after measuring the image's zero point):
 
 @example
-$ astarithmetic image.fits 26.892 27.0 zeropoint-change
+$ astarithmetic img.fits 24.567 27.0 zeropoint-change
+@end example
+
+For noisy inputs (for example observed data from telescopes), the 64-bit floating point precision is un-necessary (and just consumes double the storage without any meaningful information compared to 32-bit floating points).
+In such cases, you can convert the output to 32-bit floating point like below (see @ref{Numerical type conversion operators}):
+
+@example
+$ astarithmetic img.fits 24.567 27.0 zeropoint-change float32
 @end example
 
 Note that the input or output zero points can also be an image (with the same size as the input image).
