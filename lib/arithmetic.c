@@ -49,6 +49,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/binary.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/threads.h>
+#include <gnuastro/gradient.h>
 #include <gnuastro/dimension.h>
 #include <gnuastro/statistics.h>
 #include <gnuastro/arithmetic.h>
@@ -913,6 +914,42 @@ arithmetic_from_statistics(int operator, int flags, gal_data_t *input)
     }
 
   /* If the input is to be freed, then do so and return the output. */
+  if( flags & GAL_ARITHMETIC_FLAG_FREE ) gal_data_free(input);
+  return out;
+}
+
+
+
+
+
+/* Call the gradient functions based on the operator. */
+static gal_data_t *
+arithmetic_gradient(int operator, int flags, gal_data_t *input)
+{
+  gal_data_t *out=NULL;
+
+  /* Call the respective function in the proper way (based on the called
+     operator). */
+  switch(operator)
+    {
+    case GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE:
+      out=gal_gradient_magnitude(input, 0); break;
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION:
+      out=gal_gradient_direction(input, 0); break;
+    case GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE_ALLNGB:
+      out=gal_gradient_magnitude(input, 1); break;
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_ALLNGB:
+      out=gal_gradient_direction(input, 1); break;
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE:
+      out=gal_gradient_direction_magnitude(input, 0); break;
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE_ALLNGB:
+      out=gal_gradient_direction_magnitude(input, 1); break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: operator code %d not recognized",
+            __func__, operator);
+    }
+
+  /* Clean up and return. */
   if( flags & GAL_ARITHMETIC_FLAG_FREE ) gal_data_free(input);
   return out;
 }
@@ -4177,6 +4214,20 @@ gal_arithmetic_set_operator(char *string, size_t *num_operands)
     { op=GAL_ARITHMETIC_OP_ACOSH;             *num_operands=1; }
   else if( !strcmp(string, "atanh"))
     { op=GAL_ARITHMETIC_OP_ATANH;             *num_operands=1; }
+  else if( !strcmp(string, "gradient-magnitude"))
+    { op=GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE;*num_operands=1; }
+  else if( !strcmp(string, "gradient-direction"))
+    { op=GAL_ARITHMETIC_OP_GRADIENT_DIRECTION;*num_operands=1; }
+  else if( !strcmp(string, "gradient-magnitude-allngb"))
+    { op=GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE_ALLNGB;*num_operands=1; }
+  else if( !strcmp(string, "gradient-direction-allngb"))
+    { op=GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_ALLNGB;*num_operands=1; }
+  else if( !strcmp(string, "gradient-direction-magnitude"))
+    { op=GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE;
+      *num_operands=1; }
+  else if( !strcmp(string, "gradient-direction-magnitude-allngb"))
+    { op=GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE_ALLNGB;
+      *num_operands=1; }
 
   /* Units conversion functions. */
   else if (!strcmp(string, "ra-to-degree"))
@@ -4579,6 +4630,17 @@ gal_arithmetic_operator_string(int operator)
     case GAL_ARITHMETIC_OP_ATANH:           return "atanh";
     case GAL_ARITHMETIC_OP_ATAN2:           return "atan2";
 
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION: return "gradient-direction";
+    case GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE: return "gradient-magnitude";
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_ALLNGB:
+      return "gradient-direction-allngb";
+    case GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE_ALLNGB:
+      return "gradient-magnitude-allngb";
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE:
+      return "gradient-direction-magnitude";
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE_ALLNGB:
+      return "gradient-direction-magnitude-allngb";
+
     case GAL_ARITHMETIC_OP_RA_TO_DEGREE:    return "ra-to-degree";
     case GAL_ARITHMETIC_OP_DEC_TO_DEGREE:   return "dec-to-degree";
     case GAL_ARITHMETIC_OP_DEGREE_TO_RA:    return "degree-to-ra";
@@ -4847,12 +4909,23 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_AU_TO_LY:
     case GAL_ARITHMETIC_OP_MAG_TO_JY:
     case GAL_ARITHMETIC_OP_JY_TO_MAG:
-    case GAL_ARITHMETIC_OP_RA_TO_DEGREE:
-    case GAL_ARITHMETIC_OP_DEC_TO_DEGREE:
     case GAL_ARITHMETIC_OP_DEGREE_TO_RA:
+    case GAL_ARITHMETIC_OP_RA_TO_DEGREE:
     case GAL_ARITHMETIC_OP_DEGREE_TO_DEC:
+    case GAL_ARITHMETIC_OP_DEC_TO_DEGREE:
       d1 = va_arg(va, gal_data_t *);
       out=arithmetic_function_unary(operator, flags, d1);
+      break;
+
+    /* Unary operators  */
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION:
+    case GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE:
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_ALLNGB:
+    case GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE_ALLNGB:
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE:
+    case GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE_ALLNGB:
+      d1 = va_arg(va, gal_data_t *);
+      out=arithmetic_gradient(operator, flags, d1);
       break;
 
     /* Binary unit conversion. */

@@ -132,6 +132,12 @@ enum gal_arithmetic_operators
   GAL_ARITHMETIC_OP_ASINH,        /* Inverse hyperbolic sine. */
   GAL_ARITHMETIC_OP_ACOSH,        /* Inverse hyperbolic cosine. */
   GAL_ARITHMETIC_OP_ATANH,        /* Inverse hyperbolic tangent. */
+  GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE, /* Grad.Mag. of 4-connected. */
+  GAL_ARITHMETIC_OP_GRADIENT_DIRECTION, /* Grad.Dir. of 4-connected. */
+  GAL_ARITHMETIC_OP_GRADIENT_MAGNITUDE_ALLNGB, /* Grad.Mag of 8-con. */
+  GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_ALLNGB, /* Grad.Dir of 8-con. */
+  GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE, /* Grad. of 4-connect. */
+  GAL_ARITHMETIC_OP_GRADIENT_DIRECTION_MAGNITUDE_ALLNGB, /*...8-connect. */
 
   GAL_ARITHMETIC_OP_E,            /* The base of natural logirithm. */
   GAL_ARITHMETIC_OP_PI,           /* Circle circumference by diameter. */

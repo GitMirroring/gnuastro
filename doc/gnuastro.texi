@@ -578,6 +578,7 @@ Arithmetic operators
 * Coadding operators::          Coadding or combining multiple datasets into one.
 * Filtering operators::         Smoothing a dataset through mixing pixel with neighbors.
 * Pooling operators::           Reducing size through statistics of pixels in window.
+* Gradient operators::          Measure the gradient magnitude and direction.
 * Interpolation operators::     Giving blank pixels a value.
 * Dimensionality changing operators::  Collapse or expand a dataset.
 * Conditional operators::       Select certain pixels within the dataset.
@@ -893,6 +894,7 @@ Gnuastro library
 * Labeled datasets::            Working with Segmented/labeled datasets.
 * Convolution functions::       Library functions to do convolution.
 * Pooling functions::           Reduce size of input by statistical methods.
+* Gradient measurements::       Measuring nearby pixel variations.
 * Interpolation::               Interpolate (over blank values possibly).
 * Warp library::                Warp pixel grid to a new one.
 * Color functions::             Definitions and operations related to colors.
@@ -21733,6 +21735,7 @@ Reading NaN as a floating point number in Gnuastro is not case-sensitive.
 * Coadding operators::          Coadding or combining multiple datasets into one.
 * Filtering operators::         Smoothing a dataset through mixing pixel with neighbors.
 * Pooling operators::           Reducing size through statistics of pixels in window.
+* Gradient operators::          Measure the gradient magnitude and direction.
 * Interpolation operators::     Giving blank pixels a value.
 * Dimensionality changing operators::  Collapse or expand a dataset.
 * Conditional operators::       Select certain pixels within the dataset.
@@ -22852,7 +22855,7 @@ $ astarithmetic 4 0.01 5 5 image.fits filter-madclip-mean
 Apply a MAD-clipped STD/MAD/median filtering onto the input dataset; see the description of @code{filter-madclip-mean} for more.
 @end table
 
-@node Pooling operators, Interpolation operators, Filtering operators, Arithmetic operators
+@node Pooling operators, Gradient operators, Filtering operators, Arithmetic operators
 @subsubsection Pooling operators
 
 @cindex Pooling
@@ -22982,7 +22985,96 @@ In general, the mean is mathematically easier to interpret and more susceptible 
 This is therefore better for low signal-to-ratio (noisy) features and extended features (where you don't want a single high or low valued pixel to affect the output).
 @end table
 
-@node Interpolation operators, Dimensionality changing operators, Pooling operators, Arithmetic operators
+
+@node Gradient operators, Interpolation operators, Pooling operators, Arithmetic operators
+@subsubsection Gradient operators
+
+@cindex Gradient over a pixel; operators
+The gradient operators use the pixel values of neighboring pixels to measure various aspects of the variation of flux over it.
+To simplify the description of each operator, we adopt the following naming convention for all the neighboring pixels:
+
+@example
+     tl (top-left)      t (top)        tr (top-right)
+     l  (left)          m (main)       r  (right)
+     bl (bottom-left)   b (bottom)     br (bottom-right)
+@end example
+
+There are two ways that we define the neighbors: default (without any suffix in the opreator name: where only the 4 strongest connected neighbors are used) and using all 8 neighbors.
+They are explained in more detail below.
+Let's take @code{d1} as the change of values along the first (horizontal) axis (as in the FITS standard) and @code{d2} as the change of values along the second (vertical) axis.
+
+@table @asis
+
+@item Default
+
+In the default mode, only the 4 most strongly connected neighboring pixels are used.
+In particular, @code{d1=r-l} and @code{d2=t-b}.
+
+@item All neighbors
+Use all 8 neighboring pixels such that @code{d1=(r+br)/2-(l+tl)/2} and @code{d2=(t+tr)/2-(b+bl/2)/2}.
+In other words, we take the mean of two pixels in this mode for calculating the difference, while ensuing that a neighboring pixel is only used once.
+@end table
+
+@noindent
+In the default mode, if a single neighbor is NaN/blank then the gradient (direction or magnitude) will also be NaN.
+However, in the all-neighbors mode, when one of the pixels is NaN/blank only the value of the other will be used.
+For example, if the value of the @code{r} pixel is NaN, then @code{d1=br-(l+tl)/2}.
+
+The default mode is more precise when the signal-to-noise ratio is high, while the all-neighbors output is more suitable in noisy situations.
+Please compare them for your input data to decide which one suites your data/problem better.
+
+@table @command
+
+@item  gradient-direction
+@itemx gradient-direction-allngb
+Return the direction of the variation of pixel values arount each pixel.
+The output will have the same size as the input, with a type of @code{float64} (see @ref{Numeric data types}) and in units of degrees (ranging from 0 to 360 degrees).
+The directions in the default and all-neighbors modes will be shifted compared to each other because of the way we use all the neighbors (as described above).
+An example usage is shown below.
+
+@example
+$ astarithmetic image.fits gradient-direction
+@end example
+
+This function uses the @code{atan2} function of the C library (that is also used in a similarly named Arithmetic operator described in @ref{Trigonometric and hyperbolic operators}).
+
+@item  gradient-magnitude
+@itemx gradient-magnitude-allngb
+Return the magnitude of the gradient around each pixel with @code{sqrt(d1^2+d2^2)}.
+The output will have the same size as the input, with a type of @code{float64} (see @ref{Numeric data types}) and the units will be the same as the input image.
+An example usage is shown below.
+
+@example
+$ astarithmetic image.fits gradient-magnitude-allngb
+@end example
+
+@item  gradient-direction-magnitude
+@itemx gradient-direction-magnitude-allngb
+Return both the direction and magnitude of the gradient (each described separately above) in a single parsing of the input operand.
+In other words, after finishing, this operand puts two operands on the top of of the operands stack.
+
+This operator is very useful if you need both the direction and magnitude of the gradent: its running time will be half the time of calculating each separately.
+This is because the majority of the execution time of the gradient operands is the neighbor-finding component (that is shared between the two).
+
+If you are not doing anything else on the stack of operands and you want to write the outputs to a FITS file, be sure to use the @code{--writeall} option like below (otherwise, Arithmetic will complain about having too many operands).
+
+@example
+$ astarithmetic image.fits gradient-direction-magnitude \
+                --writeall --output=gradient.fits
+@end example
+
+The output @file{gradient.fits} file will have two image HDUs: the first will be the direction and the second will be the magnitude of the gradient on each pixel
+If you want to use the outputs in later steps, you can use the @code{set-} operator to help in readability (see @ref{Operand storage in memory or a file}).
+For example like below:
+
+@example
+$ astarithmetic image.fits gradient-direction-magnitude \
+                set-d set-m ...
+@end example
+
+@end table
+
+@node Interpolation operators, Dimensionality changing operators, Gradient operators, Arithmetic operators
 @subsubsection Interpolation operators
 
 Interpolation is the process of removing blank pixels from a dataset (by giving them a value based on the non-blank neighbors).
@@ -38464,6 +38556,7 @@ If you use the Info version of this manual (see @ref{Info}), you do not have to 
 * Labeled datasets::            Working with Segmented/labeled datasets.
 * Convolution functions::       Library functions to do convolution.
 * Pooling functions::           Reduce size of input by statistical methods.
+* Gradient measurements::       Measuring nearby pixel variations.
 * Interpolation::               Interpolate (over blank values possibly).
 * Warp library::                Warp pixel grid to a new one.
 * Color functions::             Definitions and operations related to colors.
@@ -45558,7 +45651,7 @@ Hence, it is much faster.
 When @code{conv_on_blank} is non-zero, this function will also attempt convolution over the blank pixels (and therefore give values to the blank pixels that are near non-blank pixels).
 @end deftypefun
 
-@node Pooling functions, Interpolation, Convolution functions, Gnuastro library
+@node Pooling functions, Gradient measurements, Convolution functions, Gnuastro library
 @subsection Pooling functions (@file{pool.h})
 
 Pooling is the process of reducing the complexity of the input image (its size and variation of pixel values).
@@ -45591,7 +45684,33 @@ Return the median-pool of @code{input}, assuming a pool size of @code{psize} pix
 The number of threads to use can be set with @code{numthreads}.
 @end deftypefun
 
-@node Interpolation, Warp library, Pooling functions, Gnuastro library
+@node Gradient measurements, Interpolation, Pooling functions, Gnuastro library
+@subsection Gradient measurements (@file{gradient.h})
+
+@cindex Gradient over a pixel; functions
+The gradients functions below will measure the pixel value variations around each pixel.
+For a full introduction to them and how they are defined in Gnuastro see the @ref{Gradient operators} section.
+As of this writing, these functions are only available on 2D images.
+
+@deftypefun {gal_data_t *} gal_gradient_direction (gal_data_t @code{*input}, uint8_t @code{allngb})
+Return the direction of the gradient (in degrees, from 0 to 360).
+When @code{allngb} is not zero, this function will use all 8 neighbors of each pixel (in a 2D image).
+For more, see the all-neighbors mode of @ref{Gradient operators}.
+@end deftypefun
+
+@deftypefun {gal_data_t *} gal_gradient_magnitude (gal_data_t @code{*input}, uint8_t @code{allngb})
+Return the magnitude of the gradient around each pixel.
+When @code{allngb} is not zero, this function will use all 8 neighbors of each pixel (in a 2D image).
+For more, see the all-neighbors mode of @ref{Gradient operators}.
+@end deftypefun
+
+@deftypefun {gal_data_t *} gal_gradient_direction_magnitude (gal_data_t @code{*input}, uint8_t @code{allngb})
+Calculate the direction and magnitude of the gradient around each pixel in a single parsing of the input data.
+This is much faster than calling the dedicated functions separately.
+The returned dataset will be a linked list of datasets (see @ref{List of gal_data_t}) with two nodes: the top node will have the direction and the bottom node will have the magnitude of the gradient.
+@end deftypefun
+
+@node Interpolation, Warp library, Gradient measurements, Gnuastro library
 @subsection Interpolation (@file{interpolate.h})
 
 @cindex Sky line

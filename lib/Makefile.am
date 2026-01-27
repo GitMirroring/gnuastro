@@ -119,6 +119,7 @@ libgnuastro_la_SOURCES = \
   fit.c \
   fits.c \
   git.c \
+  gradient.c \
   interpolate.c \
   jpeg.c \
   kdtree.c \
@@ -173,6 +174,7 @@ pkginclude_HEADERS = gnuastro/config.h \
   $(headersdir)/fit.h \
   $(headersdir)/fits.h \
   $(headersdir)/git.h \
+  $(headersdir)/gradient.h \
   $(headersdir)/interpolate.h \
   $(headersdir)/jpeg.h \
   $(headersdir)/kdtree.h \

@@ -7,6 +7,22 @@ See the end of the file for license conditions.
 ** New publications
 ** New features
 
+*** Arithmetic
+
+  - New Operators: similar operators are grouped; groups are sorted
+    alphabetically by first operator in the group
+
+    - gradient-direction:
+    - gradient-magnitude:
+    - gradient-direction-allngbs:
+    - gradient-magnitude-allngbs:
+    - gradient-direction-magnitude:
+    - gradient-direction-magnitude-allngbs:
+      For each pixel measure the difference of values on neighboring pixels
+      to calculate the gradient of their underlying structure. The
+      '-allngbs' suffix shows the usage of all 8 neighbors; see the
+      documentation for more.
+
 *** ConvertType
 
   - sls-no-white:
@@ -38,6 +54,12 @@ See the end of the file for license conditions.
 
 *** Library
 
+  - gal_gradient_direction: measure the gradient direction around each
+    pixel of the input image.
+  - gal_gradient_magnitude: measure the gradient magnitude around each
+    pixel of the input image.
+  - gal_gradient_direction_magnitude: meausre both the direction and
+    magnitude of the gradient in a single parsing of the input.
   - gal_list_sizetf64_number: return the number of nodes in the list.
 
 ** Removed features
