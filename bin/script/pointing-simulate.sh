@@ -391,13 +391,13 @@ if [ x"$tmpdir" = x ]; then
     tmpdir=dither-tmp-$namecnodir-$nameinodir-$namecenter-$namewidth
 fi
 if [ -d $tmpdir ]; then
-    # We need '-r' because the hooks can create sub-directories under the
+    # In case '--keeptmp' is called, then don't delete its contents. We
+    # need '-r' because the hooks can create sub-directories under the
     # temporary directory and we need '-f' in case it is empty (for example
     # due to an early crash). For debuging, you can comment the 'rm' line
     # and uncomment the 'echo' line under it (to remind you for later
     # reverting).
-    rm -rf $tmpdir/*
-    #echo NOT CLEANING TMPDIR
+    if [ "$keeptmp" = 0 ]; then rm -rf $tmpdir/*; fi
 else
     mkdir $tmpdir
 fi
@@ -483,15 +483,6 @@ make -f $mksrc tmpdir=$tmpdir --jobs=$numthreads
 #
 # If user does not specify to keep the build file with the option of
 # --keeptmp', then the directory will be removed.
-if [ x"$keeptmp" = x ]; then
-   rm -r $tmpdir
-fi
-
-
-
-
-
-# Delete the temporary directory if necessary
 if [ "$keeptmp" = 0 ]; then
    rm -rf $tmpdir
 fi

@@ -36298,7 +36298,10 @@ This file will be coadded from the same file for all exposures into the final ou
 @item --coadd-operator="STR"
 The operator to use for coadding the warped individual exposures into the final output of this script, see @ref{Coadding operators} for the full list of operators.
 Any occurance of @code{LIST} and @code{NUMBER} within the given string will be replaced by the list and total number of warped images (ready to be coadded) and passed to the Arithmetic program (with no other arguments).
-This allows maximal flexibility for using many operators in any desired order.
+But the value given to this option is not just for operands and operators, you can also use it to pass options to Arithmetic.
+For example you can also include the @option{--writeall} option.
+
+This design allows maximal flexibility for using many operators in any desired order.
 The default value of this option is @code{LIST NUMBER sum}; because the default usage of this script is to see how many exposures go into each pixel of the final coadd.
 
 @item --mksrc=STR
