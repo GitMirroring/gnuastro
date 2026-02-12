@@ -49,7 +49,7 @@ A copy of the license is included in the section entitled ``GNU Free Documentati
 See the next page for the full list of contributors and @ref{Acknowledgments and short history} for the various grants, institutes and people that have made Gnuastro possible.
 
 @c Cite this book in academic literature with the DOI of the title page.
-To see the publications to cite run the programs you have used with @option{--cite} (be sure to include the version of Gnuastro in your publication).
+For the publications to cite, run the programs you have used with @option{--cite} (be sure to include the version of Gnuastro in your publication).
 Full list of Gnuastro's citable publications: @url{https://scixplorer.org/search?q=docs(library%2F0QdYMuVCQdmygEh0Vs_4Ew)}
 @end copying
 
@@ -262,7 +262,7 @@ Introduction
 * Suggest new feature::         How to suggest a new feature.
 * Announcements::               How to stay up to date with Gnuastro.
 * Conventions::                 Conventions used in this book.
-* Acknowledgments and short history::
+* Acknowledgments and short history::  What made Gnuastro possible.
 
 Version numbering
 
@@ -1035,7 +1035,7 @@ As discussed in @ref{Science and its tools} this is a founding principle of the 
 * Suggest new feature::         How to suggest a new feature.
 * Announcements::               How to stay up to date with Gnuastro.
 * Conventions::                 Conventions used in this book.
-* Acknowledgments and short history::
+* Acknowledgments and short history::  What made Gnuastro possible.
 @end menu
 
 @node Quick start, Gnuastro programs list, Introduction, Introduction
@@ -10474,8 +10474,8 @@ Note that this is just for demonstration, so you should not include this in your
 $ center_ra=192.721250
 $ center_dec=41.120556
 $ astscript-pointing-simulate build/pointing.txt --img=input/ref.fits \
-           --center=$center_ra,$center_dec \
-           --width=2 --coadd-operator="3 0.2 sigclip-mean swap free" \
+           --center=$center_ra,$center_dec --width=2 \
+           --coadd-operator="LIST NUMBER 3 0.2 sigclip-mean swap free" \
            --output=build/coadd-noised.fits \
            --hook-warp-after='astarithmetic $WARPED set-i \
                                           i i 0 uint8 eq nan where \
@@ -10493,12 +10493,11 @@ The most noteworthy differences of the command above with those of the previous 
 We are using a different output name, so we can compare the output of the new command with the previous one.
 
 @item --coadd-operator
-This should be one of the Arithmetic program's @ref{Coadding operators}.
-By default the value is @code{sum}; because by default, each pixel of each exposure is given a value of 1.
-When coadding is defined through the summation operator, we can obtain the exposure map that you have already seen above.
-
+This can be any of the Arithmetic program's @ref{Coadding operators} and is called by using the @code{LIST} and @code{NUMBER}.
+The first expands to the list of warped images (ready to be coadded) and the second to their number.
 But in this run, we are adding noise to each input exposure (through the hook that is described below) and coadding them (as we would coadd actual science images).
 Since the purpose differs here, we are using this option to change the operator.
+For more on this option, see @ref{Invoking astscript-pointing-simulate}.
 
 @item --hook-warp-after
 @cindex Hook (programming)
@@ -36297,10 +36296,10 @@ This file will be coadded from the same file for all exposures into the final ou
 @end table
 
 @item --coadd-operator="STR"
-The operator to use for coadding the warped individual exposures into the final output of this script.
-For the full list, see @ref{Coadding operators}.
-By default it is the @code{sum} operator (to produce an output exposure map).
-For an example usage, see the tutorial in @ref{Pointing pattern design}.
+The operator to use for coadding the warped individual exposures into the final output of this script, see @ref{Coadding operators} for the full list of operators.
+Any occurance of @code{LIST} and @code{NUMBER} within the given string will be replaced by the list and total number of warped images (ready to be coadded) and passed to the Arithmetic program (with no other arguments).
+This allows maximal flexibility for using many operators in any desired order.
+The default value of this option is @code{LIST NUMBER sum}; because the default usage of this script is to see how many exposures go into each pixel of the final coadd.
 
 @item --mksrc=STR
 Use a non-standard Makefile for the Makefile to call.

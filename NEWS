@@ -72,6 +72,18 @@ See the end of the file for license conditions.
       circumference of a circle on a flat plane or on the sky) has also
       been updated.
 
+
+*** astscript-pointing-simulate
+
+  --coadd-operator: now allows full customization through the 'LIST' and
+    'NUMBER' place-holders. Until now (without these place-holders), it was
+    only possible to give one coadding operator (limiting the usage to only
+    simple operations). With these place holders, you can mix many
+    operators for any situation that you are testing. If you had been using
+    this operator, be sure to update the values given by properly including
+    these place-holders in the given string. See the documentation for
+    more.
+
 *** Library
 
   - wcs.h: 'GAL_WCS_DISTORTION_SIP_NO_REVERSE' new distortion (see

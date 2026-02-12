@@ -43,9 +43,9 @@ numthreads=0
 version=@VERSION@
 hook_warp_after=""
 hook_warp_before=""
-coadd_operator="sum"
 scriptname=@SCRIPT_NAME@
 ctype="RA---TAN,DEC--TAN"
+coadd_operator="LIST NUMBER sum"
 output=pointing-simulate.fits
 installdir=@PREFIX@/share/gnuastro
 

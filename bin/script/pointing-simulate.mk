@@ -97,5 +97,7 @@ $(exposures): $(tmpdir)/exp-%.fits: $(img) | $(tmpdir)
 
 # Build the coadd
 $(output): $(exposures)
-	astarithmetic $(exposures) $(words $(exposures)) \
-	               $(coadd-operator) -g1 --output=$@ $(quiet)
+	astarithmetic -g1 --output=$@ $(quiet) \
+	              $(subst LIST,$(exposures), \
+	                $(subst NUMBER,$(words $(exposures)), \
+	                  $(coadd-operator) ) )
