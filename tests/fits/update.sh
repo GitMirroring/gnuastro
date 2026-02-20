@@ -24,7 +24,7 @@
 # basic checks to see if the executable is made or if the defaults
 # file exists (basicchecks.sh is in the source tree).
 prog=fits
-img=fitstest.fits
+img=fits-write.fits
 execname=../bin/$prog/ast$prog
 
 
@@ -54,5 +54,6 @@ if [ ! -f $img      ]; then echo "$img does not exist.";   exit 77; fi
 # 'check_with_program' can be something like Valgrind or an empty
 # string. Such programs will execute the command if present and help in
 # debugging when the developer doesn't have access to the user's system.
-$check_with_program $execname $img --update=ABSJUNK,8.231,"An updated value.",s \
-                              --update=ABSJNK2,1232,"Another updated value",kg
+$check_with_program $execname $img \
+                    --update=ABSJUNK,8.231,"An updated value.",s \
+                    --update=ABSJNK2,1232,"Another updated value",kg

@@ -73,6 +73,20 @@ See the end of the file for license conditions.
       been updated.
 
 
+*** Fits
+
+  - Options that need to write files will have custom suffixes for the
+    output file name when no '--output' is given. The suffix will be
+    different for each function (not a generic suffix for any
+    operation). The suffix table is listed below, where the '%' is the
+    input's base-name. For example if the input is 'img.fits', the '%'
+    would be 'in'.
+     --copy:            %-copy.fits
+     --cut:             %-cut.fits
+     --wcsdistortion:   %-STR.fits ('STR' is value given to this option).
+     --wcscoordsys:     %-STR.fits ('STR' is value given to this option).
+     --pixelareaonwcs:  %-pixarea.fits
+
 *** astscript-pointing-simulate
 
   --coadd-operator: now allows full customization through the 'LIST' and
@@ -94,6 +108,8 @@ See the end of the file for license conditions.
   - bug #67776: astfits crashes if asked to convert distortion of an image
     to SIP, when the image has an odd number of pixels. Found and fixed by
     Giacomo Lorenzetti.
+
+  - bug #68074: Fits program tests writability even when not necessary.
 
 
 

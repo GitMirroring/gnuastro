@@ -583,18 +583,15 @@ ui_check_options_and_arguments(struct fitsparams *p)
               "files are given", gal_list_str_number(p->input));
     }
 
-  /* Having checked the name of the inputs, we can work on the output
-     name. But only when we are in HDU-mode; which can create new output
-     files. */
-  if(p->mode==FITS_MODE_HDU)
-    {
-      if(p->cp.output)
-        gal_checkset_writable_remove(p->cp.output, p->input->v, 1,
-                                     p->cp.dontdelete);
-      else
-        p->cp.output=gal_checkset_automatic_output(&p->cp, p->input->v,
-                                                   "_ext.fits");
-    }
+  /* Comment for end of this function (without code!): no need to check the
+     writability or previous existence of a potential output file. This
+     will done in each operation that actually needs to write using the
+     'ui_set_output_name' function of this file. It is important to not do
+     any checks on the output here (generically, on every run) because the
+     user may run the Fits program in a directory without write permissions
+     and we do not want to abort the program unless it is absolutely
+     necessary. Keeping track of the functions that need writing based on
+     run-time options here would add too much overhead/complexity. */
 }
 
 
@@ -619,6 +616,36 @@ ui_check_options_and_arguments(struct fitsparams *p)
 /**************************************************************/
 /*****************       Preparations      ********************/
 /**************************************************************/
+
+/* Set the output name if it is not given. IMPORANT NOTE: this function
+   should not be called within 'ui.c' because many Fits program operations
+   can be done without root permissions. After the job of this function is
+   finished, you should free its returned string. See example usages of
+   this function in the other parts of the program. */
+char *
+ui_set_output_name(struct fitsparams *p, char *suffix)
+{
+  char *suf, *out;
+
+  /* Set the output name and do prepartions. */
+  if(p->cp.output) out=p->cp.output;
+  else
+    {
+      if(asprintf(&suf, "-%s.fits", suffix)<0)
+        error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
+      out=gal_checkset_automatic_output(&p->cp, p->input->v, suf);
+      free(suf);
+    }
+  gal_checkset_writable_remove(out, p->input->v, 0, p->cp.dontdelete);
+
+  /* Return the output name. */
+  return out;
+}
+
+
+
+
+
 /* The '--update' and '--write' options take multiple values for each
    keyword, so here, we tokenize them and put them into a
    'gal_fits_list_key_t' list. */

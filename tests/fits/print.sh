@@ -24,7 +24,7 @@
 # basic checks to see if the executable is made or if the defaults
 # file exists (basicchecks.sh is in the source tree).
 prog=fits
-img=fitstest.fits
+img=mkprofcat1.fits
 execname=../bin/$prog/ast$prog
 
 

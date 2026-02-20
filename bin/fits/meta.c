@@ -39,6 +39,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include "main.h"
 
+#include "ui.h"
 #include "meta.h"
 
 
@@ -56,15 +57,6 @@ meta_initialize(struct fitsparams *p, gal_warp_wcsalign_t *wa)
   /* High-level variables. */
   char *hdu=cp->hdu;
   char *inputname=p->input->v;
-  char *suffix="_pixarea.fits";
-
-  /* Set automatic output filename if nothing is given. */
-  if(!cp->output)
-    cp->output=gal_checkset_automatic_output(cp, inputname, suffix);
-
-  /* Check if we're allowed to delete the output image. If not, fail FAST
-     before any CPU-intensive process. */
-  gal_checkset_writable_remove(cp->output, inputname, 0, cp->dontdelete);
 
   /* Read the input image and its WCS, must free it when done. */
   input=gal_array_read_one_ch_to_type(inputname, hdu, NULL,
@@ -90,9 +82,6 @@ meta_initialize(struct fitsparams *p, gal_warp_wcsalign_t *wa)
       printf(" Using %zu CPU thread%s\n", p->cp.numthreads,
              p->cp.numthreads==1 ? "." : "s.");
       printf(" Input: %s (hdu: %s)\n", inputname, hdu);
-      printf(" Output: %s (size: %zux%zu, type: %s)\n", cp->output,
-             input->dsize[0], input->dsize[1],
-             gal_type_name(p->cp.type, 1));
     }
 }
 
@@ -106,6 +95,7 @@ meta_write_to_file(struct fitsparams *p, gal_warp_wcsalign_t *wa)
 {
   gal_data_t *output=wa->output;
   gal_fits_list_key_t *headers=NULL;
+  char *out=ui_set_output_name(p, "pixarea");
 
   /* Add configuration headers. */
   gal_fits_key_list_add_end(&headers, GAL_TYPE_STRING, "input", 0,
@@ -123,12 +113,19 @@ meta_write_to_file(struct fitsparams *p, gal_warp_wcsalign_t *wa)
   /* Convert to type and write to file. */
   if(p->cp.type!=output->type)
     output=gal_data_copy_to_new_type_free(output, p->cp.type);
-  gal_fits_img_write(output, p->cp.output, headers, 1);
+  gal_fits_img_write(output, out, headers, 1);
+
+  /* Inform the user. */
+  if(!p->cp.quiet)
+    printf(" Output: %s (size: %zux%zu, type: %s)\n", out,
+           wa->input->dsize[0], wa->input->dsize[1],
+           gal_type_name(output->type, 1));
 
   /* Clean up. */
   wa->output=NULL; /* Must be here to prevent double freeing. */
   gal_data_free(output);
   gal_data_free(wa->input);
+  if(out!=p->cp.output) free(out);
 }
 
 

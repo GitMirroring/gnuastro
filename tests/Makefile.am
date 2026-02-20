@@ -148,11 +148,11 @@ if COND_FITS
                      fits/update.sh \
                      fits/delete.sh \
                      fits/copyhdu.sh
-  fits/print.sh: fits/write.sh.log
   fits/update.sh: fits/write.sh.log
-  fits/delete.sh: fits/write.sh.log
+  fits/print.sh: mkprof/mosaic1.sh.log
   fits/write.sh: mkprof/mosaic1.sh.log
-  fits/copyhdu.sh: fits/write.sh.log mkprof/mosaic2.sh.log
+  fits/delete.sh: mkprof/mosaic1.sh.log
+  fits/copyhdu.sh: mkprof/mosaic1.sh.log
 endif
 if COND_MATCH
   MAYBE_MATCH_TESTS = match/sort-based.sh \

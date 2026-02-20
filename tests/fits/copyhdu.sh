@@ -24,8 +24,7 @@
 # basic checks to see if the executable is made or if the defaults
 # file exists (basicchecks.sh is in the source tree).
 prog=fits
-img1=fitstest.fits
-img2=mkprofcat2.fits
+img=mkprofcat1.fits
 execname=../bin/$prog/ast$prog
 
 
@@ -43,8 +42,7 @@ execname=../bin/$prog/ast$prog
 #   - The input data was not made (for example the test that created the
 #     data file failed).
 if [ ! -f $execname ]; then echo "$execname not created."; exit 77; fi
-if [ ! -f $img1     ]; then echo "$img1 does not exist.";  exit 77; fi
-if [ ! -f $img2     ]; then echo "$img2 does not exist.";  exit 77; fi
+if [ ! -f $img      ]; then echo "$img1 does not exist.";  exit 77; fi
 
 
 
@@ -56,4 +54,10 @@ if [ ! -f $img2     ]; then echo "$img2 does not exist.";  exit 77; fi
 # 'check_with_program' can be something like Valgrind or an empty
 # string. Such programs will execute the command if present and help in
 # debugging when the developer doesn't have access to the user's system.
-$check_with_program $execname $img2 --copy="Mock profiles" --output=$img1
+tmpi=fits-copyhdu-in.fits
+tmpo=fits-copyhdu-out.fits
+cp $img $tmpi
+cp $img $tmpo
+$check_with_program $execname $tmpi --copy="Mock profiles" \
+                    --output=$tmpo
+rm $tmpi $tmpo

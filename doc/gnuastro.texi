@@ -16336,6 +16336,10 @@ The options particular to Fits can be divided into three groups:
 3) those related to creating meta-images where each pixel shows values for a specific property of the image (see @ref{Pixel information images}).
 These three classes of options cannot be called together in one run: you can either work on the extensions, meta-data keywords in any instance of Fits, or create meta-images where each pixel shows a particular information about the image itself.
 
+Some options will need to create an output file.
+If no output file name is given, then automatic output will be used to set an output name by adding a suffix to the input name (see @ref{Automatic output}).
+The suffix will be different for each option (and mentioned here).
+
 @menu
 * HDU information and manipulation::  Learn about the HDUs and move them.
 * Keyword inspection and manipulation::  Manipulate metadata keywords in a HDU.
@@ -16474,21 +16478,17 @@ These options may be called multiple times in one run.
 If so, the extensions will be copied from the input FITS file to the output FITS file in the given order (on the command-line and also in configuration files, see @ref{Configuration file precedence}).
 If the separate classes are called together in one run of Fits, then first @option{--copy} is run (on all specified HDUs), followed by @option{--cut} (again on all specified HDUs), and then @option{--remove} (on all specified HDUs).
 
-The @option{--copy} and @option{--cut} options need an output FITS file (specified with the @option{--output} option).
-If the output file exists, then the specified HDU will be copied following the last extension of the output file (the existing HDUs in it will be untouched).
-Thus, after Fits finishes, the copied HDU will be the last HDU of the output file.
-If no output file name is given, then automatic output will be used to store the HDUs given to this option (see @ref{Automatic output}).
-
 @table @option
 
 @item -C STR
 @itemx --copy=STR
-Copy the specified extension into the output file, see explanations above.
+Copy the specified extension/HDU into the output file (after the last HDU).
+If no @option{--output} is given, the default output name will have a @file{-copy.fits} suffix (see @ref{Invoking astfits}).
 
 @item -k STR
 @itemx --cut=STR
-Cut (copy to output, remove from input) the specified extension into the
-output file, see explanations above.
+Cut (copy to output, remove from input) the specified extension into the output file (after its last HDU).
+If no @option{--output} is given, the default output name will have a @file{-cut.fits} suffix (see @ref{Invoking astfits}).
 
 @item -R STR
 @itemx --remove=STR
@@ -16958,7 +16958,8 @@ The advantage of working with the Unix epoch time is that you do not have to wor
 @cindex Coordinate system: Ecliptic
 @cindex Coordinate system: Equatorial
 @cindex Coordinate system: Supergalactic
-Convert the coordinate system of the image's world coordinate system (WCS) to the given coordinate system (@code{STR}) and write it into the file given to @option{--output} (or an automatically named file if no @option{--output} has been given).
+Convert the coordinate system of the image's world coordinate system (WCS) to the given coordinate system (@code{STR}) and write it into the file given to @option{--output}.
+If no @option{--output} is given, the default output name will have a @file{-STR.fits} suffix (@code{STR} is value you have given to this option); see @ref{Invoking astfits}.
 
 For example, with the command below, @file{img-eq.fits} will have an identical dataset (pixel values) as @file{image.fits}.
 However, the WCS coordinate system of @file{img-eq.fits} will be the equatorial coordinate system in the Julian calendar epoch 2000 (which is the most common epoch used today).
@@ -17003,14 +17004,13 @@ Supergalactic coordinates.
 @cindex SIP WCS distortion
 @cindex TPV WCS distortion
 If the argument has a WCS distortion, the output (file given with the @option{--output} option) will have the distortion given to this option (for example, @code{SIP}, @code{TPV}).
+If no @option{--output} is given, the default output name will have a @file{-STR.fits} suffix (@code{STR} is value you have given to this option); see @ref{Invoking astfits}.
+
 In the specific case of a @code{SIP} distortion, the reverse coefficients are optional in the FITS standard and can be disabled in the output with @code{SIP-no-reverse} (which is faster).
 The output will be a new file (with a copy of the image, and the new WCS), so if it already exists, the file will be delete (unless you use the @code{--dontdelete} option, see @ref{Input output options}).
 
 With this option, the Fits program will read the minimal set of keywords from the input HDU and the HDU data.
 It will then write them into the file given to the @option{--output} option but with a newly created set of WCS-related keywords corresponding to the desired distortion standard.
-
-If no @option{--output} file is specified, an automatically generated output name will be used which is composed of the input's name but with the @file{-DDD.fits} suffix, see @ref{Automatic output}.
-Where @file{DDD} is the value given to this option (desired output distortion).
 
 Note that all possible conversions between all standards are not yet supported.
 If the requested conversion is not supported, an informative error message will be printed.
@@ -17039,6 +17039,7 @@ After all, nothing beats visual inspection with tools you are familiar with.
 @item --pixelareaonwcs
 Create a meta-image where each pixel's value shows its area in the WCS units (usually degrees squared).
 The output is therefore the same size as the input.
+If no @option{--output} is given, the default output name will have a @file{-pixarea.fits} suffix (see @ref{Invoking astfits}).
 
 @cindex Pixel mixing
 @cindex Area resampling

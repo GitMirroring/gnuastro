@@ -40,6 +40,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include "main.h"
 
+#include "ui.h"
 #include "fits.h"
 #include "meta.h"
 #include "keywords.h"
@@ -835,11 +836,14 @@ fits_open_to_write_no_blank(char *filename)
 static void
 fits_hdu_copy(struct fitsparams *p, int cut1_copy0, int *r)
 {
-  char *hdu;
+  char *out, *hdu;
   int status=0, hdutype;
-  fitsfile *in, *out=NULL;
+  fitsfile *iptr, *optr=NULL;
   char *hopt = cut1_copy0 ? "--cut" : "--copy";
   gal_list_str_t *list = cut1_copy0 ? p->cut : p->copy;
+
+  /* Set the output name if it is not given. */
+  out=ui_set_output_name(p, cut1_copy0 ? "cut" : "copy");
 
   /* Copy all the given extensions. */
   while(list)
@@ -848,36 +852,37 @@ fits_hdu_copy(struct fitsparams *p, int cut1_copy0, int *r)
       hdu=gal_list_str_pop(&list);
 
       /* Open the FITS file at the specified HDU. */
-      in=gal_fits_hdu_open(p->input->v, hdu,
-                           cut1_copy0 ? READWRITE : READONLY, 1, hopt);
+      iptr=gal_fits_hdu_open(p->input->v, hdu,
+                             cut1_copy0 ? READWRITE : READONLY,
+                             1, hopt);
 
       /* If the output isn't opened yet, open it. */
-      if(out==NULL)
-        out = ( ( gal_fits_hdu_format(p->input->v, hdu, hopt)==IMAGE_HDU
+      if(optr==NULL)
+        optr = ( ( gal_fits_hdu_format(p->input->v, hdu, hopt)==IMAGE_HDU
                   && p->primaryimghdu )
-                ? fits_open_to_write_no_blank(p->cp.output)
-                : gal_fits_open_to_write(p->cp.output) );
-
+                ? fits_open_to_write_no_blank(out)
+                : gal_fits_open_to_write(out) );
 
       /* Copy to the extension. */
-      if( fits_copy_hdu(in, out, 0, &status) )
+      if( fits_copy_hdu(iptr, optr, 0, &status) )
         *r=fits_has_error(p, FITS_ACTION_COPY, hdu, status);
       status=0;
 
       /* If this is a 'cut' operation, then remove the extension. */
       if(cut1_copy0)
         {
-          if( fits_delete_hdu(in, &hdutype, &status) )
+          if( fits_delete_hdu(iptr, &hdutype, &status) )
             *r=fits_has_error(p, FITS_ACTION_REMOVE, hdu, status);
           status=0;
         }
 
       /* Close the input file. */
-      fits_close_file(in, &status);
+      fits_close_file(iptr, &status);
     }
 
   /* Close the output file. */
-  if(out) fits_close_file(out, &status);
+  if(optr) fits_close_file(optr, &status);
+  if(out!=p->cp.output) free(out);
 }
 
 

@@ -54,8 +54,11 @@ if [ ! -f $img      ]; then echo "$img does not exist.";   exit 77; fi
 # 'check_with_program' can be something like Valgrind or an empty
 # string. Such programs will execute the command if present and help in
 # debugging when the developer doesn't have access to the user's system.
-cp $img fitstest.fits
-$check_with_program $execname fitstest.fits                                    \
-                              --write=ABSJUNK,10.92,"A Fits keyword Test.",m/s \
-                              --date                                           \
-                              --write=ABSJNK2,2343fdsa,"Another absolute junk test!"
+tmp=fits-write.fits
+cp $img $tmp
+$check_with_program $execname $tmp \
+               --write=ABSJUNK,10.92,"A Fits keyword Test.",m/s \
+               --date \
+               --write=ABSJNK2,2343fdsa,"Another absolute junk test!"
+
+# Output is not deleted because we need it in the '--update' test.

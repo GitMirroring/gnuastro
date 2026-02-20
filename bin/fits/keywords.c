@@ -37,6 +37,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include "main.h"
 
+#include "ui.h"
 #include "fits.h"
 
 
@@ -510,7 +511,8 @@ keywords_copykeys(struct fitsparams *p, char *inkeys, size_t numinkeys)
   fitsfile *fptr;
   int updatechecksum=0, checksumexists=0;
 
-  /* Open the output HDU. */
+  /* Open the output HDU (in 'ui.c' we have already made sure that an
+     output name is given). */
   fptr=gal_fits_hdu_open(p->cp.output, p->outhdu, READWRITE, 1,
                          "--outhdu");
 
@@ -582,8 +584,8 @@ static void
 keywords_wcs_convert(struct fitsparams *p)
 {
   int nwcs;
+  char *out;
   size_t ndim, *insize;
-  char *suffix, *output;
   gal_data_t *data=NULL;
   struct wcsprm *inwcs, *outwcs=NULL;
   size_t *dsize, defaultsize[2]={2000,2000};
@@ -642,24 +644,15 @@ keywords_wcs_convert(struct fitsparams *p)
           "the problem. The requested mode for this function is not "
           "recognized", __func__, PACKAGE_BUGREPORT);
 
-  /* Set the output filename. */
-  if(p->cp.output)
-    output=p->cp.output;
-  else
-    {
-      if(asprintf(&suffix, "-%s.fits",
-                  p->wcsdistortion ? p->wcsdistortion : p->wcscoordsys)<0)
-        error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
-      output=gal_checkset_automatic_output(&p->cp, p->input->v, suffix);
-    }
-  gal_checkset_writable_remove(output, p->input->v, 0, p->cp.dontdelete);
-
   /* Write the output file. */
+  out=ui_set_output_name(p, ( p->wcsdistortion
+                              ? p->wcsdistortion
+                              : p->wcscoordsys) );
   if(data)
     {
       /* Add the output WCS to the dataset and write it. */
       data->wcs=outwcs;
-      gal_fits_img_write(data, output, NULL, 0);
+      gal_fits_img_write(data, out, NULL, 0);
 
       /* Clean up, but remove the pointer first (so it doesn't free it
          here). */
@@ -667,12 +660,12 @@ keywords_wcs_convert(struct fitsparams *p)
       gal_data_free(data);
     }
   else
-    gal_wcs_write(outwcs, output, p->wcsdistortion, NULL, PROGRAM_NAME, 0);
+    gal_wcs_write(outwcs, out, p->wcsdistortion, NULL, PROGRAM_NAME, 0);
 
   /* Clean up. */
   wcsfree(inwcs);
   wcsfree(outwcs);
-  if(output!=p->cp.output) free(output);
+  if(out!=p->cp.output) free(out);
 }
 
 
@@ -989,7 +982,7 @@ keywords_value(struct fitsparams *p)
       gal_data_array_free(keysll, nkeys, 1);
     }
 
-  /* Write the values. */
+  /* Write the values (no problem if no output name given). */
   gal_checkset_writable_remove(p->cp.output, p->input->v, 0,
                                p->cp.dontdelete);
   gal_table_write(out, NULL, NULL, p->cp.tableformat,
