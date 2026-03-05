@@ -95,7 +95,7 @@ meta_write_to_file(struct fitsparams *p, gal_warp_wcsalign_t *wa)
 {
   gal_data_t *output=wa->output;
   gal_fits_list_key_t *headers=NULL;
-  char *out=ui_set_output_name(p, "pixarea");
+  char *out=ui_set_output_name(p, "pixarea", 0);
 
   /* Add configuration headers. */
   gal_fits_key_list_add_end(&headers, GAL_TYPE_STRING, "input", 0,

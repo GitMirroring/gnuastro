@@ -647,7 +647,7 @@ keywords_wcs_convert(struct fitsparams *p)
   /* Write the output file. */
   out=ui_set_output_name(p, ( p->wcsdistortion
                               ? p->wcsdistortion
-                              : p->wcscoordsys) );
+                              : p->wcscoordsys ), 0);
   if(data)
     {
       /* Add the output WCS to the dataset and write it. */
@@ -982,9 +982,10 @@ keywords_value(struct fitsparams *p)
       gal_data_array_free(keysll, nkeys, 1);
     }
 
-  /* Write the values (no problem if no output name given). */
-  gal_checkset_writable_remove(p->cp.output, p->input->v, 0,
-                               p->cp.dontdelete);
+  /* Write the values. In this context, when no output name given we want
+     to print the table into the standard output, so we should only check
+     for writability when an output is given. */
+  if(p->cp.output) ui_set_output_name(p, NULL, 0);
   gal_table_write(out, NULL, NULL, p->cp.tableformat,
                   p->cp.output, "KEY-VALUES", p->colinfoinstdout, 0);
 

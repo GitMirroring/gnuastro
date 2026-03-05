@@ -623,20 +623,29 @@ ui_check_options_and_arguments(struct fitsparams *p)
    finished, you should free its returned string. See example usages of
    this function in the other parts of the program. */
 char *
-ui_set_output_name(struct fitsparams *p, char *suffix)
+ui_set_output_name(struct fitsparams *p, char *suffix, int keep)
 {
   char *suf, *out;
 
-  /* Set the output name and do prepartions. */
+  /* Set the output name. */
   if(p->cp.output) out=p->cp.output;
   else
     {
-      if(asprintf(&suf, "-%s.fits", suffix)<0)
-        error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
-      out=gal_checkset_automatic_output(&p->cp, p->input->v, suf);
-      free(suf);
+      if(suffix)
+        {
+          if(asprintf(&suf, "-%s.fits", suffix)<0)
+            error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
+          out=gal_checkset_automatic_output(&p->cp, p->input->v, suf);
+          free(suf);
+        }
+      else
+        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at "
+              "'%s' to fix the problem. The 'suffix' string is NULL",
+              __func__, PACKAGE_BUGREPORT);
     }
-  gal_checkset_writable_remove(out, p->input->v, 0, p->cp.dontdelete);
+
+  /* Make sure it is writable and remove it if necessary. */
+  gal_checkset_writable_remove(out, p->input->v, keep, p->cp.dontdelete);
 
   /* Return the output name. */
   return out;

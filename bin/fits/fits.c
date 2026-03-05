@@ -843,7 +843,7 @@ fits_hdu_copy(struct fitsparams *p, int cut1_copy0, int *r)
   gal_list_str_t *list = cut1_copy0 ? p->cut : p->copy;
 
   /* Set the output name if it is not given. */
-  out=ui_set_output_name(p, cut1_copy0 ? "cut" : "copy");
+  out=ui_set_output_name(p, cut1_copy0 ? "cut" : "copy", 1);
 
   /* Copy all the given extensions. */
   while(list)

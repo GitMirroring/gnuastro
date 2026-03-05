@@ -56,10 +56,10 @@ axisratio=1
 zeropoint=""
 sigmaclip=""
 measuretmp=""
-oversample=""
 positionangle=0
 zeroisnotblank=""
 version=@VERSION@
+oversample=1.000000
 undersample=1.000000
 scriptname=@SCRIPT_NAME@
 
@@ -128,8 +128,8 @@ $scriptname options:
   -k, --keeptmp            Keep temporal/auxiliar files.
   -m, --measure=STR        Measurement operator (mean, sigclip-mean, etc.).
   -P, --precision=INT      Number of digits after decimal point for radius.
-  -v, --oversample=INT     Oversample for higher resolution radial profile.
-  -u, --undersample=INT    Undersample for lower resolution radial profile.
+  -v, --oversample=FLT     Oversample for higher resolution radial profile.
+  -u, --undersample=FLT    Undersample for lower resolution radial profile.
 
  Operating mode:
   -?, --help               Print this help list.
@@ -494,14 +494,25 @@ if [ x"$azimuth" = x ] && [ x$polar = x1 ]; then
     azimuth="0,360"
 fi
 
-# If the user call the '--undersample' and '--oversample' option. On the
-# other hand, they use '--polar' option with these options
-if [ x$polar = x1 ] && [ x"$undersample" != x ] ; then
-    echo "$scriptname: the polar plot does not yet support --undersample; please get in touch with us at 'bug-gnuastro@gnu.org' for its possible addition"; exit 1
-fi
+# If undersampling or oversampling is equal to 1, then they are not
+# actually necessary! To simplify the next steps remove their
+# values. We need to AWK for the checks because these options can take
+# floating point values.
+osisone=$(echo $oversample  | awk '{print $1==1.0}')
+usisone=$(echo $undersample | awk '{print $1==1.0}')
+if [ x"$osisone" = x1 ]; then oversample="";  fi
+if [ x"$usisone" = x1 ]; then undersample=""; fi
 
-if [ x$polar = x1 ] && [ x"$oversample" != x ] ; then
-    echo "$scriptname: the polar plot does not yet support --oversample; please get in touch with us at 'bug-gnuastro@gnu.org' for its possible addition"; exit 1
+# The Polar plot feature does not yet support under/over-sampling.
+if [ x$polar = x1 ]; then
+    if [ x"$undersample" != x ] ; then
+        echo "$scriptname: the polar plot does not yet support --undersample; please get in touch with us at 'bug-gnuastro@gnu.org' for its possible addition";
+        exit 1
+    fi
+    if [ x"$oversample" != x ] ; then
+        echo "$scriptname: the polar plot does not yet support --oversample; please get in touch with us at 'bug-gnuastro@gnu.org' for its possible addition";
+        exit 1
+    fi
 fi
 
 
@@ -693,13 +704,13 @@ else
     # will be on the edge of the original pixel. To make sure that the
     # central oversampled pixel is in the center of the original pixel, we
     # need to shift by half the oversampling factor (as an integer).
-    os=$oversample # To shorten the next two commands!.
+    os=$oversample # To shorten the next set of commands.
     xcenter=$(echo $xcenter | awk '{print '$os'*$1-int('$os'/2)}')
     ycenter=$(echo $ycenter | awk '{print '$os'*$1-int('$os'/2)}')
-    rmax=$(echo    $rmax    | awk '{print '$oversample'*$1}')
-    astwarp $crop --scale=$oversample,$oversample -o$values
+    rmax=$(echo    $rmax    | awk '{print '$os'*$1}')
+    astwarp $crop --scale=$os,$os -o$values
     if [ x"$instd" != x    -a    -f "$instd" ]; then
-        astwarp $cropstd --scale=$oversample,$oversample -o$valuesstd
+        astwarp $cropstd --scale=$os,$os -o$valuesstd
     fi
 fi
 
@@ -912,8 +923,7 @@ fi
 # undersampling.
 aperturesbase=apertures.fits
 apertures=$tmpdir/$aperturesbase
-undersample_precision=$(printf "%.6f\n" $undersample)
-if [ x"$undersample_precision" != x"1.000000" ]; then
+if [ x"$undersample" != x ]; then
 
     # Divide by the undersampling factor (multiplied by the precision
     # factor: multiple of 10).

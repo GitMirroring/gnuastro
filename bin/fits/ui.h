@@ -104,7 +104,7 @@ ui_read_check_inputs_setup(int argc, char *argv[],
                            struct fitsparams *p);
 
 char *
-ui_set_output_name(struct fitsparams *p, char *suffix);
+ui_set_output_name(struct fitsparams *p, char *suffix, int keep);
 
 void
 ui_free_report(struct fitsparams *p);

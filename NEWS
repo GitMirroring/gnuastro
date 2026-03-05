@@ -111,6 +111,9 @@ See the end of the file for license conditions.
 
   - bug #68074: Fits program tests writability even when not necessary.
 
+  - bug #68120: astscript-radial-profile aborts when trying to make polar
+    plots. Reported by Faezeh Bidjarchian.
+
 
 
 
