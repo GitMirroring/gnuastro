@@ -16714,8 +16714,7 @@ Update a keyword, its value, its comments and its units in the format described 
 If there are multiple instances of the keyword in the header, they will be changed from top to bottom (with multiple @option{--update} options).
 
 @noindent
-The format of the values to this option can best be specified with an
-example:
+The format of the values to this option can best be specified with an example:
 
 @example
 --update=KEYWORD,value,"comments for this keyword",unit
@@ -16737,6 +16736,38 @@ To leave a given token empty, follow the preceding comma (@key{,}) immediately w
 If any space character is present around the commas, it will be considered part of the respective token.
 So if more than one token has space characters within it, the safest method to specify a value to this option is to put double quotation marks around each individual token that needs it.
 Note that without double quotation marks, space characters will be seen as option separators and can lead to undefined behavior.
+
+If the keyword name, value or comment have a comma, you need to comment it with a backslash (`@key{\}').
+Otherwise, the comma will be interpreted as a delimiter/separator.
+For example see the command below with a comma in the value and description.
+
+@example
+$ astfits a.fits --write=NAME,"2\,3","Demo\, with coma.",ABC
+@end example
+
+When a comma is not a delimiter, remember that like the example above (where the comma is within double-quotation marks with the rest of the respective element) the preceding backslash must be quoted.
+Otherwise, the shell will remove the backslash before giving the command to Gnuastro and Gnuastro will never see it: interpreting the comma as a delimiter.
+
+While a comma is technically possible in all the components of a keyword, it is discouraged for the name and value:
+
+@table @asis
+@item Name
+Even if the name is short, a @code{HIERARCH} prefix will be inserted.
+Also, you will need to comment the name for other operations (for example @option{--keyvalue="TE\,ST"}).
+More generally (from the human perspective), a name is a single element/entity while a comma is used for multiple entities.
+@item Value
+A comma is usually a delimiter, so if you feel it is necessary in the value, it is most probably because you want to have multiple values in one key.
+But this is not two practical: it will cause many problems downstream: when you want to use that value with a coma.
+The better solution is to instert multiple keywords.
+For example, the command above can be done like below (with two keywords).
+
+@example
+$ astfits a.fits \
+          --write=NAME1,2,"Demo\, with coma.",ABC \
+          --write=NAME2,3,"Demo\, with coma.",ABC
+@end example
+
+@end table
 
 @item -w STR
 @itemx --write=STR

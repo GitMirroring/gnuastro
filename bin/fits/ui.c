@@ -666,7 +666,7 @@ ui_fill_fits_headerll(gal_list_str_t *input, gal_fits_list_key_t **output,
   void *fvalue;
   double d, *dp;
   gal_list_str_t *tmp;
-  char *c, *cf, *start, *tailptr;
+  char *c, *cc, *cf, *start, *tailptr;
   int i=0, type, vfree, needsvalue;
   char *original, *keyname, *value, *comment, *unit;
 
@@ -692,32 +692,56 @@ ui_fill_fits_headerll(gal_list_str_t *input, gal_fits_list_key_t **output,
         {
           switch(*c)
             {
+            /* End of element (',') or string ('\0'). */
             case ',': case '\0':
-              *c='\0';
-              if(start!=c)
-                switch(i)
-                  {
-                  case 0:
-                    keyname=start;
-                    break;
-                  case 1:
-                    value=start;
-                    break;
-                  case 2:
-                    comment=start;
-                    break;
-                  case 3:
-                    unit=start;
-                    break;
-                  default:
-                    error(EXIT_FAILURE, 0, "%s: only three commas should "
-                          "be given in the write or update keyword "
-                          "options. The general expected format is:\n"
-                          "    KEYWORD,value,\"a comment string\",unit\n",
-                          original);
-                  }
-              ++i;
-              start=c+1;
+
+              /* The comma is a valid delimiter: it is not commented with a
+                 '\' before it. Since we need to access the previous
+                 character, we need to make sure that we are not on the
+                 starting character (to avoid unauthorized memory
+                 access). */
+              if(c == tmp->v || *(c-1)!='\\')
+                {
+                  *c='\0';
+                  if(start!=c)
+                    switch(i)
+                      {
+                      case 0:
+                        keyname=start;
+                        break;
+                      case 1:
+                        value=start;
+                        break;
+                      case 2:
+                        comment=start;
+                        break;
+                      case 3:
+                        unit=start;
+                        break;
+                      default:
+                        error(EXIT_FAILURE, 0, "'%s': only three commas "
+                              "should be given in the write or update "
+                              "keyword options. The expected format is:\n"
+                              "    --%s=KEYWORD,value,\"a comment "
+                              "string\",unit\n"
+                              "In case you have a comment that should not "
+                              "be interpreted as a delimiter/separator, "
+                              "put a '\\' before it. See the description "
+                              "of the '--update' option in the Gnuastro "
+                              "book for more on using comments in the "
+                              "separate components", original, option_name);
+                      }
+                  ++i;
+                  start=c+1;
+                }
+
+              /* The comma is not a valid delimiter. */
+              else if (c != tmp->v && *(c-1)=='\\')
+                {
+                  for (cc=c; cc<cf; ++cc)
+                      *(cc-1)=*cc;
+                  --c;
+                }
               break;
 
             default:
@@ -744,13 +768,12 @@ ui_fill_fits_headerll(gal_list_str_t *input, gal_fits_list_key_t **output,
               "    --%s=KEYWORD,value,\"a comment string\",unit\n\n"
               "Any space characters around the the comma (,) characters "
               "will be seen as part of the respective token.\n\n"
-              "Note that there are some exceptions (where no value is need)"
+              "Note that there are some exceptions (where no value is need) "
               "please see the manual for more ('$ info astfits')",
               option_name, original, option_name);
       /*
       printf("\n\n-%s-\n-%s-\n-%s-\n-%s-\n", keyname, value, comment, unit);
       */
-
 
       /* Find the type of the value: */
       if(value)
@@ -791,7 +814,6 @@ ui_fill_fits_headerll(gal_list_str_t *input, gal_fits_list_key_t **output,
         {
           fvalue=NULL; type=GAL_TYPE_UINT8; vfree=0;
         }
-
 
       /* Add it to the list of keywords. */
       gal_fits_key_list_add(output, type, keyname, 0, fvalue, vfree,

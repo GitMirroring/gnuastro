@@ -124,6 +124,10 @@ See the end of the file for license conditions.
     the oversampling factor being different from 1.0 or not. Found and
     fixed by Raul Infante-Sainz.
 
+  - bug #68171: Fits program does not write/update a keyword correctly if
+    it contains a comma in any of the name, value or comments. Found and
+    fixed by Giacomo Lorenzetti.
+
 
 
 
