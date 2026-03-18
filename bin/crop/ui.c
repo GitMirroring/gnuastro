@@ -849,8 +849,8 @@ ui_make_log(struct cropparams *p)
   if(p->cp.log==0) return;
 
   /* Column to specify if the central pixels are filled. */
-  if( asprintf(&comment, "Are the central pixels filled? (1: yes, 0: no, "
-               "%u: not checked)", GAL_BLANK_UINT8)<0 )
+  if( asprintf(&comment, "Are the central pixels filled? (1: yes, "
+               "0: no, %u: not checked)", GAL_BLANK_UINT8)<0 )
     error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
   gal_list_data_add_alloc(&p->log, NULL, GAL_TYPE_UINT8, 1, &p->numout,
                           NULL, 1, p->cp.minmapsize, p->cp.quietmmap,
@@ -860,8 +860,8 @@ ui_make_log(struct cropparams *p)
   /* Column for number of datasets used in this crop. */
   gal_list_data_add_alloc(&p->log, NULL, GAL_TYPE_UINT16, 1, &p->numout,
                           NULL, 1, p->cp.minmapsize, p->cp.quietmmap,
-                          "NUM_INPUTS", "count",
-                          "Number of input datasets used to make this crop.");
+                          "NUM_INPUTS", "count", "Number of input "
+                          "datasets used to make this crop.");
 
   /* Filename of crop. */
   gal_list_data_add_alloc(&p->log, NULL, GAL_TYPE_STRING, 1, &p->numout,
@@ -880,17 +880,20 @@ ui_preparations_to_img_mode(struct cropparams *p)
   size_t i;
   int nwcs;
   double *darr, pixwidth, *pixscale;
-  struct wcsprm *wcs=gal_wcs_read(p->inputs->v, p->cp.hdu,
-                                  p->cp.wcslinearmatrix,
-                                  p->hstartwcs, p->hendwcs, &nwcs,
-                                  "--hdu");
+  struct wcsprm *wcs=gal_wcs_read(p->inputs->v,
+                                  p->wcshdu ? p->wcshdu : p->cp.hdu,
+                                  p->cp.wcslinearmatrix, p->hstartwcs,
+                                  p->hendwcs, &nwcs, "--hdu");
 
   /* Make sure a WCS actually exists. */
   if(wcs==NULL)
     error(EXIT_FAILURE, 0, "%s (hdu %s): the WCS structure is not "
-          "recognized or isn't present. Hence the WCS mode cannot be "
-          "used as input coordinates. You can try with pixel coordinates "
-          "using '--mode=img'", p->inputs->v, p->cp.hdu);
+          "recognized or isn't present. Hence the WCS mode cannot "
+          "be used as input coordinates. %sIf your input is pixel "
+          "coordinates (no need for a WCS), set '--mode=img'",
+          p->inputs->v, p->cp.hdu, p->wcshdu?"":"If the WCS is in "
+          "another HDU, please use '--wcshdu' to specify the HDU "
+          "that the WCS should be read from. ");
 
   /* If the coordinates are in galactic mode, inform the user. */
   if( !p->cp.quiet
@@ -909,8 +912,8 @@ ui_preparations_to_img_mode(struct cropparams *p)
          here. */
       if(p->width==NULL)
         error(EXIT_FAILURE, 0, "no crop width specified. When crops are "
-              "defined by their center (with '--center' or '--catalog') a "
-              "width is necessary (using the '--width' option)");
+              "defined by their center (with '--center' or '--catalog') "
+              "a width is necessary (using the '--width' option)");
 
       /* Check if the dataset actually has WCS! */
       if(wcs->naxis<p->width->size)
@@ -1064,11 +1067,21 @@ ui_preparations(struct cropparams *p)
       status=0;
       img=&p->imgs[--input_counter];
       img->name=gal_list_str_pop(&p->inputs);
-      tmpfits=gal_fits_hdu_open_format(img->name, p->cp.hdu, 0, "--hdu");
+
+      /* Read the image and WCS. */
+      tmpfits=gal_fits_hdu_open_format(img->name, p->cp.hdu, 0,
+                                       "--hdu");
       gal_fits_img_info(tmpfits, &p->type, &img->ndim, &img->dsize,
                         NULL, NULL);
-      img->wcs=gal_wcs_read_fitsptr(tmpfits, p->cp.wcslinearmatrix,
-                                    p->hstartwcs, p->hendwcs, &img->nwcs);
+      img->wcs = ( p->wcshdu
+                   ? gal_wcs_read(img->name, p->wcshdu,
+                                  p->cp.wcslinearmatrix, p->hstartwcs,
+                                  p->hendwcs, &img->nwcs, "--wcshdu")
+                   : gal_wcs_read_fitsptr(tmpfits, p->cp.wcslinearmatrix,
+                                          p->hstartwcs, p->hendwcs,
+                                          &img->nwcs) );
+
+      /* If a WCS was present, then write it as a string. */
       if(img->wcs)
         img->wcstxt=gal_wcs_write_wcsstr(img->wcs, &img->nwcskeys);
       else
@@ -1092,9 +1105,9 @@ ui_preparations(struct cropparams *p)
 
           /* Make sure the number of dimensions is supported. */
           if(firstndim>MAXDIM)
-            error(EXIT_FAILURE, 0, "%s: is as %zu dimensional dataset, Crop "
-                  "currently only supports a maximum of %d dimensions",
-                  img->name, firstndim, MAXDIM);
+            error(EXIT_FAILURE, 0, "%s: is as %zu dimensional dataset, "
+                  "Crop currently only supports a maximum of %d "
+                  "dimensions", img->name, firstndim, MAXDIM);
 
           /* Make sure the number of coordinates given for center
              correspond to the dimensionality of the data. */
@@ -1106,12 +1119,13 @@ ui_preparations(struct cropparams *p)
       else
         {
           if(firsttype!=p->type)
-            error(EXIT_FAILURE, 0, "%s: type is '%s' while previous input(s) "
-                  "were '%s' type. All inputs must have the same pixel data "
-                  "type.\n\nYou can use Gnuastro's Arithmetic program to "
-                  "convert '%s' to '%s', please run this command for more "
-                  "information (press 'SPACE' for going down and 'q' to "
-                  "return to the command-line):\n\n"
+            error(EXIT_FAILURE, 0, "%s: type is '%s' while previous "
+                  "input(s) were '%s' type. All inputs must have the "
+                  "same pixel data type.\n\nYou can use Gnuastro's "
+                  "Arithmetic program to convert '%s' to '%s', please "
+                  "run this command for more information (press 'SPACE' "
+                  "for going down and 'q' to return to the "
+                  "command-line):\n\n"
                   "    $ info Arithmetic\n",
                   img->name, gal_type_name(p->type, 1),
                   gal_type_name(firsttype, 1), img->name,
@@ -1119,8 +1133,8 @@ ui_preparations(struct cropparams *p)
           if(firstndim!=img->ndim)
             error(EXIT_FAILURE, 0, "%s: type has %zu dimensions, while "
                   "previous input(s) had %zu dimensions. All inputs must "
-                  "have the same number of dimensions", img->name, img->ndim,
-                  firstndim);
+                  "have the same number of dimensions", img->name,
+                  img->ndim, firstndim);
         }
 
       /* In WCS mode, we need some additional preparations. */
@@ -1254,6 +1268,8 @@ ui_read_check_inputs_setup(int argc, char *argv[], struct cropparams *p)
                    p->numin>1 ? "s" : "")<0 )
         error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
       gal_timing_report(&t1, msg, 1);
+      if(p->wcshdu)
+        printf("  - WCS information read from HDU: %s\n", p->wcshdu);
       if(p->numout>1)
         {
           if( asprintf(&msg, "Will try making %zu crops (from catalog).",

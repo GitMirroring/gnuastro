@@ -46,11 +46,12 @@ enum program_args_groups
 /* Available letters for short options:
 
    d e f g i j k m r u v y
-   B E G H J L Q R W Y
+   B E G H J L Q R Y
 */
 enum option_keys_enum
 {
   /* With short-option version. */
+  UI_KEY_WCSHDU         = 'W',
   UI_KEY_CATALOG        = 'C',
   UI_KEY_NOBLANK        = 'b',
   UI_KEY_SUFFIX         = 'p',

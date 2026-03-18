@@ -46,6 +46,19 @@ struct argp_option program_options[] =
       ui_parse_coordinate_mode
     },
     {
+      "wcshdu",
+      UI_KEY_WCSHDU,
+      "STR/INT",
+      0,
+      "HDU containing WCS (if WCS is not in image HDU).",
+      GAL_OPTIONS_GROUP_INPUT,
+      &p->wcshdu,
+      GAL_TYPE_STRING,
+      GAL_OPTIONS_RANGE_ANY,
+      GAL_OPTIONS_NOT_MANDATORY,
+      GAL_OPTIONS_NOT_SET
+    },
+    {
       "hstartwcs",
       UI_KEY_HSTARTWCS,
       "INT",

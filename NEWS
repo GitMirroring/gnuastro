@@ -38,6 +38,12 @@ See the end of the file for license conditions.
     colormaps have been added for Gnuastro users. This was suggested by
     Sepideh Eskandarlou.
 
+*** Crop
+
+  --wcshdu: the HDU to read the image WCS. This is useful in scenarios
+    where a multi-extension FITS file only has WCS metadata in one HDU (as
+    in JWST images). This feature was suggested by Leindert Boogaard.
+
 *** astscript-fits-view
 
   --ds9region: also supports a space-separated list of regions and

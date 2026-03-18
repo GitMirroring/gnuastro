@@ -20621,9 +20621,7 @@ From its center and side length.
 For example, if you already know the coordinates of an object and want to inspect it in an image or to generate postage stamps of a catalog containing many such coordinates.
 
 @item
-The vertices of the crop region, this can be useful for larger crops over
-many targets, for example, to crop out a uniformly deep, or contiguous,
-region of a large survey.
+The vertices of the crop region, this can be useful for larger crops over many targets, for example, to crop out a uniformly deep, or contiguous, region of a large survey.
 @end enumerate
 
 Irrespective of how the crop region is defined, the coordinates to define the crop can be in Image (pixel) or World Coordinate System (WCS) standards.
@@ -20668,8 +20666,10 @@ Please see the description of this option in @ref{Invoking astcrop} for its synt
 
 @item WCS coordinates
 In WCS mode (@option{--mode=wcs}), the coordinates and width are interpreted using the World Coordinate System (WCS, that must accompany the dataset), not pixel coordinates.
+By default it is assumed that the WCS metadata is in the same HDU as the image (value given to @option{--help}).
+If the WCS is in another HDU, use the @option{--wcshdu}.
 You can optionally use @option{--widthinpix} for the width to be interpreted in pixels (even though the coordinates are in WCS).
-In WCS mode, Crop accepts multiple datasets as input.
+In WCS mode, Crop accepts multiple files as input.
 When the cropped region (defined by its center or vertices) overlaps with multiple of the input images/tiles, the overlapping regions will be taken from the respective input (they will be stitched when necessary for each output crop).
 
 In this mode, the input images do not necessarily have to be the same size, they just need to have the same orientation and pixel resolution.
@@ -20813,7 +20813,8 @@ $ astcrop --mode=wcs --center=12h36m40.08,62d13m5.53 goodsnorth.fits
 $ astcrop --mode=img --center=568.342,2091.719 --width=201 image.fits
 
 ## Crop all HDUs within a FITS file at a certain coordinate, while
-## preserving the names of the HDUs in the output.
+## preserving the names of the HDUs in the output. If the WCS is
+## only in one HDU, use '--wcshdu'.
 $ for hdu in $(astfits input.fits --listimagehdus); do \
     astcrop input.fits --hdu=$hdu --append --output=crop.fits \
             --metaname=$hdu --mode=wcs --center=189.16704,62.218203 \
@@ -20868,6 +20869,11 @@ If you only want regions within a given right ascension, use @option{--polygon} 
 Input image parameters:
 @table @option
 
+@item -W STR/INT
+@itemx --wcshdu=STR/INT
+The HDU that that the WCS should be read from (in the same FITS file) (only relevant when @option{--mode=wcs}.
+This is suitable when there is more than one image HDU in a FITS file, and all the images cover the same region of the sky, but the WCS is only available on one of the HDUs.
+
 @item --hstartwcs=INT
 Specify the first keyword card (line number) to start finding the input image world coordinate system information.
 This is useful when certain header keywords of the input may cause bad conflicts with your crop (see an example described below).
@@ -20912,6 +20918,7 @@ The units of the coordinates are read based on the value to the @option{--mode} 
 @itemx --mode=STR
 Mode to interpret the crop's coordinates (for example with @option{--center}, @option{--catalog} or @option{--polygon}).
 The value must either be @option{img} (to assume image/pixel coordinates) or @option{wcs} (to assume WCS, usually RA/Dec, coordinates), see @ref{Crop modes} for a full description.
+In case the WCS is is not in the same HDU as the image, you can use the @option{--wcshdu}.
 
 @item -w FLT[,FLT[,...]]
 @itemx --width=FLT[,FLT[,...]]

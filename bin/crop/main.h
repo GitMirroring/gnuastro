@@ -81,6 +81,7 @@ struct cropparams
   /* Directly from command-line */
   struct gal_options_common_params cp;  /* Common parameters.             */
   gal_list_str_t       *inputs;  /* All input FITS files.                 */
+  char                 *wcshdu;  /* In case the WCS is in another HDU.    */
   size_t             hstartwcs;  /* Header keyword No. to start read WCS. */
   size_t               hendwcs;  /* Header keyword No. to end read WCS.   */
   int                     mode;  /* Image or WCS mode.                    */
