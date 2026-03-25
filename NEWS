@@ -120,6 +120,10 @@ See the end of the file for license conditions.
   - bug #68120: astscript-radial-profile aborts when trying to make polar
     plots. Reported by Faezeh Bidjarchian.
 
+  - bug #68176: astscript-radial-profile crashs on macOS when checking for
+    the oversampling factor being different from 1.0 or not. Found and
+    fixed by Raul Infante-Sainz.
+
 
 
 

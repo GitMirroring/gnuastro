@@ -498,8 +498,8 @@ fi
 # actually necessary! To simplify the next steps remove their
 # values. We need to AWK for the checks because these options can take
 # floating point values.
-osisone=$(echo $oversample  | awk '{print $1==1.0}')
-usisone=$(echo $undersample | awk '{print $1==1.0}')
+osisone=$(echo $oversample  | awk '{print ($1==1.0)}')
+usisone=$(echo $undersample | awk '{print ($1==1.0)}')
 if [ x"$osisone" = x1 ]; then oversample="";  fi
 if [ x"$usisone" = x1 ]; then undersample=""; fi
 
