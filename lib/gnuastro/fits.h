@@ -203,13 +203,6 @@ gal_fits_key_img_blank(uint8_t type);
 void
 gal_fits_key_clean_str_value(char *string);
 
-char *
-gal_fits_key_date_to_struct_tm(char *fitsdate, struct tm *tp);
-
-size_t
-gal_fits_key_date_to_seconds(char *fitsdate, char **subsecstr,
-                             double *subsec);
-
 void
 gal_fits_key_read_from_ptr(fitsfile *fptr, gal_data_t *keysll,
                            int readcomment, int readunit);

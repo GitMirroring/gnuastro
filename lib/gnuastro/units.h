@@ -150,6 +150,81 @@ gal_units_ly_to_au(double ly);
 double
 gal_units_au_to_ly(double au);
 
+int64_t
+gal_units_date_to_unix_seconds(char *datestr, char **subsecstr,
+                               double *subsec);
+
+char *
+gal_units_unix_seconds_to_date(int64_t unixsec, double subsec,
+                               int subsecdigits);
+
+double
+gal_units_unix_seconds_to_jd(int64_t unixsec, double subsec);
+
+int64_t
+gal_units_jd_to_unix_seconds(double jd, double *subsec);
+
+double
+gal_units_jd_to_rjd(double jd);
+
+int64_t
+gal_units_rjd_to_unix_seconds(double rjd, double *subsec);
+
+double
+gal_units_jd_to_mjd(double jd);
+
+int64_t
+gal_units_mjd_to_unix_seconds(double mjd, double *subsec);
+
+double
+gal_units_jd_to_tjd(double jd);
+
+int64_t
+gal_units_tjd_to_unix_seconds(double tjd, double *subsec);
+
+double
+gal_units_jd_to_djd(double jd);
+
+int64_t
+gal_units_djd_to_unix_seconds(double djd, double *subsec);
+
+double
+gal_units_jd_to_cjd(double jd);
+
+int64_t
+gal_units_cjd_to_unix_seconds(double cjd, double *subsec);
+
+double
+gal_units_jd_to_ccjd(double jd);
+
+int64_t
+gal_units_ccjd_to_unix_seconds(double ccjd, double *subsec);
+
+double
+gal_units_jd_to_mjd2000(double jd);
+
+int64_t
+gal_units_mjd2000_to_unix_seconds(double mjd2000, double *subsec);
+
+double
+gal_units_jd_to_lilian(double jd);
+
+int64_t
+gal_units_lilian_to_unix_seconds(double lilian, double *subsec);
+
+double
+gal_units_jd_to_rata(double jd);
+
+int64_t
+gal_units_rata_to_unix_seconds(double rata, double *subsec);
+
+double
+gal_units_jd_to_mars_sol(double jd);
+
+int64_t
+gal_units_mars_sol_to_unix_seconds(double sol, double *subsec);
+
+
 __END_C_DECLS    /* From C++ preparations */
 
 #endif           /* __GAL_UNITS_H__ */

@@ -119,8 +119,8 @@ enum gal_arithmetic_operators
   GAL_ARITHMETIC_OP_LOG,          /* log()   */
   GAL_ARITHMETIC_OP_LOG10,        /* log10() */
 
-  GAL_ARITHMETIC_OP_SIN,          /* sine (input in deg).    */
-  GAL_ARITHMETIC_OP_COS,          /* cosine (input in deg).  */
+  GAL_ARITHMETIC_OP_SIN,          /* sine (input in deg). */
+  GAL_ARITHMETIC_OP_COS,          /* cosine (input in deg). */
   GAL_ARITHMETIC_OP_TAN,          /* tangent (input in deg). */
   GAL_ARITHMETIC_OP_ASIN,         /* Inverse sine (output in deg). */
   GAL_ARITHMETIC_OP_ACOS,         /* Inverse cosine (output in deg). */
@@ -165,97 +165,138 @@ enum gal_arithmetic_operators
   GAL_ARITHMETIC_OP_JY_TO_COUNTS, /* Janskys to Counts (AB zeropoint). */
   GAL_ARITHMETIC_OP_MAG_TO_JY,    /* Magnitude to Janskys. */
   GAL_ARITHMETIC_OP_JY_TO_MAG,    /* Janskys to Magnitude. */
-  GAL_ARITHMETIC_OP_JY_TO_WAVELENGTH_FLUX_DENSITY, /* Janskys to f_\lambda. */
-  GAL_ARITHMETIC_OP_WAVELENGTH_FLUX_DENSITY_TO_JY, /* f_\lambda to Janskys. */
-  GAL_ARITHMETIC_OP_ZEROPOINT_CHANGE, /* Change the zero point. */
+  GAL_ARITHMETIC_OP_JY_TO_WAVELENGTH_FLUX_DENSITY, /* Janskys to WFD. */
+  GAL_ARITHMETIC_OP_WAVELENGTH_FLUX_DENSITY_TO_JY, /* WFD to Janskys. */
+  GAL_ARITHMETIC_OP_ZEROPOINT_CHANGE,  /* Change the zero point. */
   GAL_ARITHMETIC_OP_COUNTS_TO_NANOMAGGY,/* Counts to SDSS nanomaggies. */
-  GAL_ARITHMETIC_OP_NANOMAGGY_TO_COUNTS,/* SDSS nanomaggies to counts. */
-  GAL_ARITHMETIC_OP_SBLIM_DIFF,   /* Calculate surface bright. on new image. */
-  GAL_ARITHMETIC_OP_AU_TO_PC,     /* Astronomical units (AU) to Parsecs (PC). */
-  GAL_ARITHMETIC_OP_PC_TO_AU,     /* Parsecs (PC) to Astronomical units (AU). */
-  GAL_ARITHMETIC_OP_LY_TO_PC,     /* Astronomical units (AU) to Parsecs (PC). */
-  GAL_ARITHMETIC_OP_PC_TO_LY,     /* Parsecs (PC) to Astronomical units (AU). */
-  GAL_ARITHMETIC_OP_LY_TO_AU,     /* Light-years to Astronomical units (AU). */
-  GAL_ARITHMETIC_OP_AU_TO_LY,     /* Astronomical units (AU) to Light-years. */
+  GAL_ARITHMETIC_OP_NANOMAGGY_TO_COUNTS, /* SDSS nanomaggies to counts. */
+  GAL_ARITHMETIC_OP_SBLIM_DIFF,   /* Surface bright. on new image. */
+  GAL_ARITHMETIC_OP_AU_TO_PC,   /* Astronomical units to Parsecs. */
+  GAL_ARITHMETIC_OP_PC_TO_AU,   /* Parsecs to Astronomical units. */
+  GAL_ARITHMETIC_OP_LY_TO_PC,   /* Light years to Parsecs. */
+  GAL_ARITHMETIC_OP_PC_TO_LY,   /* Parsecs to Light years. */
+  GAL_ARITHMETIC_OP_LY_TO_AU,   /* Light-years to Astronomical units. */
+  GAL_ARITHMETIC_OP_AU_TO_LY,   /* Astronomical units to Light-years. */
 
-  GAL_ARITHMETIC_OP_MINVAL,       /* Minimum value of array.               */
-  GAL_ARITHMETIC_OP_MAXVAL,       /* Maximum value of array.               */
-  GAL_ARITHMETIC_OP_NUMBERVAL,    /* Number of (non-blank) elements.       */
-  GAL_ARITHMETIC_OP_SUMVAL,       /* Sum of (non-blank) elements.          */
-  GAL_ARITHMETIC_OP_MEANVAL,      /* Mean value of array.                  */
-  GAL_ARITHMETIC_OP_STDVAL,       /* Standard deviation value of array.    */
-  GAL_ARITHMETIC_OP_MEDIANVAL,    /* Median value of array.                */
-  GAL_ARITHMETIC_OP_UNIQUE,       /* Only return unique elements.          */
-  GAL_ARITHMETIC_OP_NOBLANK,      /* Only keep non-blank elements.         */
+  GAL_ARITHMETIC_OP_DATETOJD,         /* Date to Julian day (JD). */
+  GAL_ARITHMETIC_OP_DATETOSEC,        /* Date to Unix-seconds. */
+  GAL_ARITHMETIC_OP_DATETORJD,        /* Date to Reduced JD. */
+  GAL_ARITHMETIC_OP_DATETOMJD,        /* Date to Modified JD. */
+  GAL_ARITHMETIC_OP_DATETOTJD,        /* Date to Truncated JD. */
+  GAL_ARITHMETIC_OP_DATETODJD,        /* Date to Dublin JD. */
+  GAL_ARITHMETIC_OP_DATETOCJD,        /* Date to CNES JD. */
+  GAL_ARITHMETIC_OP_DATETOCCJD,       /* Date to CCSDS JD. */
+  GAL_ARITHMETIC_OP_DATETORATA,       /* Date to Rata days. */
+  GAL_ARITHMETIC_OP_DATETOLILIAN,     /* Date to Lilian days. */
+  GAL_ARITHMETIC_OP_DATETOMJD2000,    /* Date to Modified JD2000. */
+  GAL_ARITHMETIC_OP_DATETOMARSSOL,    /* Date to Mars Sol days. */
+  GAL_ARITHMETIC_OP_DATETOMILLISEC,   /* Date to Unix. milli-seconds */
+  GAL_ARITHMETIC_OP_JDTODATE,         /* Unix-seconds to Date str.*/
+  GAL_ARITHMETIC_OP_MJDTODATE,        /* Unix-seconds to Date string. */
+  GAL_ARITHMETIC_OP_SECTODATE,        /* Unix-seconds to Date string. */
+  GAL_ARITHMETIC_OP_MILLISECTODATE,   /* Milli-Unix-sec to Date str. */
+  GAL_ARITHMETIC_OP_SECTOJD,          /* Unix-seconds to JD. */
+  GAL_ARITHMETIC_OP_JDTOSEC,          /* JD to Unix-seconds. */
+  GAL_ARITHMETIC_OP_RJDTOSEC,         /* Reduced JD to Unix time. */
+  GAL_ARITHMETIC_OP_MJDTOSEC,         /* Modified JD (MJD) to Unix time.*/
+  GAL_ARITHMETIC_OP_TJDTOSEC,         /* Truncated JD to Unix time. */
+  GAL_ARITHMETIC_OP_DJDTOSEC,         /* Dublin JD to Unix time. */
+  GAL_ARITHMETIC_OP_CJDTOSEC,         /* CNES JD to Unix time. */
+  GAL_ARITHMETIC_OP_CCJDTOSEC,        /* CCSDS JD to Unix time. */
+  GAL_ARITHMETIC_OP_RATATOSEC,        /* Rata days to Unix time. */
+  GAL_ARITHMETIC_OP_LILIANTOSEC,      /* Lilian days to Unix time. */
+  GAL_ARITHMETIC_OP_MJD2000TOSEC,     /* Modified JD 2000 to Uxtime. */
+  GAL_ARITHMETIC_OP_MARSSOLTOSEC,     /* Mars Sol days to Unix time. */
+  GAL_ARITHMETIC_OP_JDTOMILLISEC,     /* JD to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_RJDTOMILLISEC,    /* Reduced JD to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_MJDTOMILLISEC,    /* Modified JD to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_TJDTOMILLISEC,    /* Truncated JD to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_DJDTOMILLISEC,    /* Dublin JD to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_CJDTOMILLISEC,    /* CNES JD to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_CCJDTOMILLISEC,   /* CCSDS JD to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_RATATOMILLISEC,   /* Rata days to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_LILIANTOMILLISEC, /* Lilian days to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_MJD2000TOMILLISEC,/* MJD2000 to Milli-Unix-sec. */
+  GAL_ARITHMETIC_OP_MARSSOLTOMILLISEC,/* Mars Sol to Milli-Unix-sec. */
+
+  GAL_ARITHMETIC_OP_MINVAL,       /* Minimum value of array. */
+  GAL_ARITHMETIC_OP_MAXVAL,       /* Maximum value of array. */
+  GAL_ARITHMETIC_OP_NUMBERVAL,    /* Number of (non-blank) elements. */
+  GAL_ARITHMETIC_OP_SUMVAL,       /* Sum of (non-blank) elements. */
+  GAL_ARITHMETIC_OP_MEANVAL,      /* Mean value of array. */
+  GAL_ARITHMETIC_OP_STDVAL,       /* Standard deviation value of array. */
+  GAL_ARITHMETIC_OP_MEDIANVAL,    /* Median value of array. */
+  GAL_ARITHMETIC_OP_UNIQUE,       /* Only return unique elements. */
+  GAL_ARITHMETIC_OP_NOBLANK,      /* Only keep non-blank elements. */
 
   GAL_ARITHMETIC_OP_LABEL_AREA,   /* Fill labeles with area of its values. */
-  GAL_ARITHMETIC_OP_LABEL_MINIMUM,/* Fill labeles with min of its values.  */
-  GAL_ARITHMETIC_OP_LABEL_MAXIMUM,/* Fill labeles with max of its values.  */
+  GAL_ARITHMETIC_OP_LABEL_MINIMUM,/* Fill labeles with min of its values. */
+  GAL_ARITHMETIC_OP_LABEL_MAXIMUM,/* Fill labeles with max of its values. */
 
   GAL_ARITHMETIC_OP_MIN,          /* Minimum per pixel of multiple arrays. */
   GAL_ARITHMETIC_OP_MAX,          /* Maximum per pixel of multiple arrays. */
   GAL_ARITHMETIC_OP_NUMBER,       /* Non-blank number of pixels in arrays. */
-  GAL_ARITHMETIC_OP_SUM,          /* Sum per pixel of multiple arrays.     */
-  GAL_ARITHMETIC_OP_MEAN,         /* Mean per pixel of multiple arrays.    */
-  GAL_ARITHMETIC_OP_STD,          /* STD per pixel of multiple arrays.     */
-  GAL_ARITHMETIC_OP_MAD,          /* MAD per pixel of multiple arrays.     */
-  GAL_ARITHMETIC_OP_MEDIAN,       /* Median per pixel of multiple arrays.  */
+  GAL_ARITHMETIC_OP_SUM,          /* Sum per pixel of multiple arrays. */
+  GAL_ARITHMETIC_OP_MEAN,         /* Mean per pixel of multiple arrays. */
+  GAL_ARITHMETIC_OP_STD,          /* STD per pixel of multiple arrays. */
+  GAL_ARITHMETIC_OP_MAD,          /* MAD per pixel of multiple arrays. */
+  GAL_ARITHMETIC_OP_MEDIAN,       /* Median per pixel of multiple arrays. */
   GAL_ARITHMETIC_OP_QUANTILE,     /* Quantile per pixel of multiple arrays.*/
   GAL_ARITHMETIC_OP_SIGCLIP_MEAN, /* Sigma-clipped mean of multiple arrays.*/
   GAL_ARITHMETIC_OP_SIGCLIP_MEDIAN,/* Sigma-clipped median of mult. arrays.*/
   GAL_ARITHMETIC_OP_SIGCLIP_STD,  /* Sigma-clipped STD of multiple arrays. */
   GAL_ARITHMETIC_OP_SIGCLIP_MAD,  /* Sigma-clipped STD of multiple arrays. */
-  GAL_ARITHMETIC_OP_SIGCLIP_MASKFILLED, /* Mask clipped elem. of each in.  */
-  GAL_ARITHMETIC_OP_SIGCLIP_ALL,   /* Sigma-clip all statistics.           */
+  GAL_ARITHMETIC_OP_SIGCLIP_MASKFILLED, /* Mask clipped elem. of each in. */
+  GAL_ARITHMETIC_OP_SIGCLIP_ALL,   /* Sigma-clip all statistics. */
   GAL_ARITHMETIC_OP_MADCLIP_MEAN,  /* MAD-clipped mean of multiple arrays. */
-  GAL_ARITHMETIC_OP_MADCLIP_MEDIAN,/* MAD-clipped median of mult. arrays.  */
-  GAL_ARITHMETIC_OP_MADCLIP_STD,   /* MAD-clipped STD of multiple arrays.  */
-  GAL_ARITHMETIC_OP_MADCLIP_MAD,   /* MAD-clipped STD of multiple arrays.  */
-  GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED, /* Mask clipped elem. of each in.  */
-  GAL_ARITHMETIC_OP_MADCLIP_ALL,   /* Sigma-clip all statistics.           */
+  GAL_ARITHMETIC_OP_MADCLIP_MEDIAN,/* MAD-clipped median of mult. arrays. */
+  GAL_ARITHMETIC_OP_MADCLIP_STD,   /* MAD-clipped STD of multiple arrays. */
+  GAL_ARITHMETIC_OP_MADCLIP_MAD,   /* MAD-clipped STD of multiple arrays. */
+  GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED, /* Mask clipped elem. of each in. */
+  GAL_ARITHMETIC_OP_MADCLIP_ALL,   /* Sigma-clip all statistics. */
 
-  GAL_ARITHMETIC_OP_MKNOISE_SIGMA,/* Fixed-sigma noise to every element.   */
+  GAL_ARITHMETIC_OP_MKNOISE_SIGMA,/* Fixed-sigma noise to every element. */
   GAL_ARITHMETIC_OP_MKNOISE_SIGMA_FROM_MEAN, /* Sigma calculated from mean.*/
-  GAL_ARITHMETIC_OP_MKNOISE_POISSON,/* Poission noise on every element.    */
-  GAL_ARITHMETIC_OP_MKNOISE_UNIFORM,/* Uniform noise on every element.     */
+  GAL_ARITHMETIC_OP_MKNOISE_POISSON,/* Poission noise on every element. */
+  GAL_ARITHMETIC_OP_MKNOISE_UNIFORM,/* Uniform noise on every element. */
   GAL_ARITHMETIC_OP_RANDOM_FROM_HIST,/* Randoms from a histogram (uniform).*/
   GAL_ARITHMETIC_OP_RANDOM_FROM_HIST_RAW,/* Randoms from a histogram (raw).*/
 
-  GAL_ARITHMETIC_OP_STITCH,       /* Stitch multiple datasets together.    */
-  GAL_ARITHMETIC_OP_TO1D,         /* Make they output into a 1D array.     */
-  GAL_ARITHMETIC_OP_TRIM,         /* Trim blank rows or columns in image.  */
+  GAL_ARITHMETIC_OP_STITCH,       /* Stitch multiple datasets together. */
+  GAL_ARITHMETIC_OP_TO1D,         /* Make they output into a 1D array. */
+  GAL_ARITHMETIC_OP_TRIM,         /* Trim blank rows or columns in image. */
 
-  GAL_ARITHMETIC_OP_TO_UINT8,     /* Convert to uint8_t.                   */
-  GAL_ARITHMETIC_OP_TO_INT8,      /* Convert to int8_t.                    */
-  GAL_ARITHMETIC_OP_TO_UINT16,    /* Convert to uint16_t.                  */
-  GAL_ARITHMETIC_OP_TO_INT16,     /* Convert to int16_t.                   */
-  GAL_ARITHMETIC_OP_TO_UINT32,    /* Convert to uint32_t.                  */
-  GAL_ARITHMETIC_OP_TO_INT32,     /* Convert to int32_t.                   */
-  GAL_ARITHMETIC_OP_TO_UINT64,    /* Convert to uint64_t.                  */
-  GAL_ARITHMETIC_OP_TO_INT64,     /* Convert to int64_t.                   */
-  GAL_ARITHMETIC_OP_TO_FLOAT32,   /* Convert to float32.                   */
-  GAL_ARITHMETIC_OP_TO_FLOAT64,   /* Convert to float64.                   */
+  GAL_ARITHMETIC_OP_TO_UINT8,     /* Convert to uint8_t. */
+  GAL_ARITHMETIC_OP_TO_INT8,      /* Convert to int8_t.  */
+  GAL_ARITHMETIC_OP_TO_UINT16,    /* Convert to uint16_t. */
+  GAL_ARITHMETIC_OP_TO_INT16,     /* Convert to int16_t. */
+  GAL_ARITHMETIC_OP_TO_UINT32,    /* Convert to uint32_t. */
+  GAL_ARITHMETIC_OP_TO_INT32,     /* Convert to int32_t. */
+  GAL_ARITHMETIC_OP_TO_UINT64,    /* Convert to uint64_t. */
+  GAL_ARITHMETIC_OP_TO_INT64,     /* Convert to int64_t. */
+  GAL_ARITHMETIC_OP_TO_FLOAT32,   /* Convert to float32. */
+  GAL_ARITHMETIC_OP_TO_FLOAT64,   /* Convert to float64. */
 
-  GAL_ARITHMETIC_OP_ROTATE_COORD, /* Return input coords after rotation.   */
-  GAL_ARITHMETIC_OP_BOX_AROUND_ELLIPSE, /* Width/Height of box over ellipse*/
+  GAL_ARITHMETIC_OP_ROTATE_COORD, /* Return input coords after rotation. */
+  GAL_ARITHMETIC_OP_BOX_AROUND_ELLIPSE, /* Width/Height of box over ellipse. */
   GAL_ARITHMETIC_OP_BOX_VERTICES_ON_SPHERE, /* Vert. from center and width */
 
   /* Meta operators */
-  GAL_ARITHMETIC_OP_SIZE,         /* Size of the dataset along an axis.    */
+  GAL_ARITHMETIC_OP_SIZE,         /* Size of the dataset along an axis. */
   GAL_ARITHMETIC_OP_MAKENEW,      /* Build a new dataset, containing zeros.*/
   GAL_ARITHMETIC_OP_INDEX,        /* New with the index (counting from 0). */
   GAL_ARITHMETIC_OP_COUNTER,      /* New with the index (counting from 0). */
   GAL_ARITHMETIC_OP_INDEXONLY,    /* New with the index (counting from 0). */
   GAL_ARITHMETIC_OP_COUNTERONLY,  /* New with the index (counting from 1). */
-  GAL_ARITHMETIC_OP_SWAP,         /* Swap the top two operands.            */
-  GAL_ARITHMETIC_OP_CONSTANT,     /* Make a row with given constant.       */
+  GAL_ARITHMETIC_OP_SWAP,         /* Swap the top two operands. */
+  GAL_ARITHMETIC_OP_CONSTANT,     /* Make a row with given constant. */
 
   /* Pooling operators. */
-  GAL_ARITHMETIC_OP_POOLMAX,      /* The pool-max of desired pixels.       */
-  GAL_ARITHMETIC_OP_POOLMIN,      /* The pool-min of desired pixels.       */
-  GAL_ARITHMETIC_OP_POOLSUM,      /* The pool-sum of desired pixels.       */
-  GAL_ARITHMETIC_OP_POOLMEAN,     /* The pool-mean of desired pixels.      */
-  GAL_ARITHMETIC_OP_POOLMEDIAN,   /* The pool-median of desired pixels.    */
+  GAL_ARITHMETIC_OP_POOLMAX,      /* The pool-max of desired pixels. */
+  GAL_ARITHMETIC_OP_POOLMIN,      /* The pool-min of desired pixels. */
+  GAL_ARITHMETIC_OP_POOLSUM,      /* The pool-sum of desired pixels. */
+  GAL_ARITHMETIC_OP_POOLMEAN,     /* The pool-mean of desired pixels. */
+  GAL_ARITHMETIC_OP_POOLMEDIAN,   /* The pool-median of desired pixels. */
 
   /* Celestial coordinate conversions (names are clear, no comment). */
   GAL_ARITHMETIC_OP_EQB1950_TO_EQJ2000,

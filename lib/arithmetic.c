@@ -885,6 +885,351 @@ arithmetic_unit_binary(int operator, int flags, gal_data_t *a_in,
 
 
 
+/* Convert the input date string the desired system. */
+static gal_data_t *
+arithmetic_date_str_to(int operator, int flags, gal_data_t *in)
+{
+  size_t i, v;
+  int64_t *iarr;
+  uint8_t otype;
+  gal_data_t *out;
+  double subsec=NAN, *darr;
+  double (*jdfunc)(double )=NULL;
+  char *subsecstr=NULL, **strarr=in->array;
+
+  /* Make sure the input has a 'string' type. */
+  if(in->type!=GAL_TYPE_STRING)
+    error(EXIT_FAILURE, 0, "input to '%s' should have a string type, "
+          "but it is '%s'", gal_arithmetic_operator_string(operator),
+          gal_type_name(in->type, 1));
+
+  /* Set the output type and necessary function. */
+  switch(operator)
+    {
+    case GAL_ARITHMETIC_OP_DATETOJD:       otype=GAL_TYPE_FLOAT64; break;
+    case GAL_ARITHMETIC_OP_DATETOSEC:      otype=GAL_TYPE_INT64;   break;
+    case GAL_ARITHMETIC_OP_DATETOMILLISEC: otype=GAL_TYPE_INT64;   break;
+    case GAL_ARITHMETIC_OP_DATETORJD:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_rjd;
+      break;
+    case GAL_ARITHMETIC_OP_DATETOMJD:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_mjd;
+      break;
+    case GAL_ARITHMETIC_OP_DATETOTJD:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_tjd;
+      break;
+    case GAL_ARITHMETIC_OP_DATETODJD:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_djd;
+      break;
+    case GAL_ARITHMETIC_OP_DATETOCJD:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_cjd;
+      break;
+    case GAL_ARITHMETIC_OP_DATETOCCJD:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_ccjd;
+      break;
+    case GAL_ARITHMETIC_OP_DATETOMJD2000:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_mjd2000;
+      break;
+    case GAL_ARITHMETIC_OP_DATETOLILIAN:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_lilian;
+      break;
+    case GAL_ARITHMETIC_OP_DATETORATA:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_rata;
+      break;
+    case GAL_ARITHMETIC_OP_DATETOMARSSOL:
+      otype=GAL_TYPE_FLOAT64;
+      jdfunc=&gal_units_jd_to_mars_sol;
+      break;
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s "
+            "to fix the problem. The operator code %d isn't "
+            "recognized", __func__, PACKAGE_BUGREPORT, operator);
+    }
+
+  /* Allocate the output dataset. */
+  out=gal_data_alloc(NULL, otype, 1, &in->size, NULL, 1, in->minmapsize,
+                     in->quietmmap, NULL, NULL, NULL);
+
+  /* Convert each input string into number of seconds. Note that it is
+     possible to have an empty dataset, in that case, we shouldn't do
+     anything.*/
+  iarr=out->array; /* Only one of these two will be used in each run, */
+  darr=out->array; /* so the duplication is not a problem */
+  if(out->size>0 && out->array)
+    for(i=0; i<in->size; ++i)
+      {
+        /* Read the number of seconds (and sub-seconds) from the input date
+           string in Unix-time. Afterwards, based on the operator create
+           the output.*/
+        v=gal_units_date_to_unix_seconds(strarr[i], &subsecstr, &subsec);
+        free(subsecstr); /* We do not need it. */
+        switch(operator)
+          {
+          /* Unix time. */
+          case GAL_ARITHMETIC_OP_DATETOSEC:
+          case GAL_ARITHMETIC_OP_DATETOMILLISEC:
+            iarr[i] = ( v==GAL_BLANK_INT64
+                        ? GAL_BLANK_INT64
+                        : ( operator == GAL_ARITHMETIC_OP_DATETOSEC
+                            ? v
+                            : (isnan(subsec)
+                               ? v*1000
+                               : v*1000 + (int64_t)(subsec*1000) ) ) );
+            break;
+
+          /* Julian date and its variations. */
+          case GAL_ARITHMETIC_OP_DATETOJD:
+            darr[i] = gal_units_unix_seconds_to_jd(v, subsec);
+            break;
+          case GAL_ARITHMETIC_OP_DATETORJD:
+          case GAL_ARITHMETIC_OP_DATETOMJD:
+          case GAL_ARITHMETIC_OP_DATETOTJD:
+          case GAL_ARITHMETIC_OP_DATETODJD:
+          case GAL_ARITHMETIC_OP_DATETOCJD:
+          case GAL_ARITHMETIC_OP_DATETOCCJD:
+          case GAL_ARITHMETIC_OP_DATETORATA:
+          case GAL_ARITHMETIC_OP_DATETOLILIAN:
+          case GAL_ARITHMETIC_OP_DATETOMJD2000:
+          case GAL_ARITHMETIC_OP_DATETOMARSSOL:
+            darr[i] = jdfunc( gal_units_unix_seconds_to_jd(v, subsec) );
+            break;
+
+          /* Unrecognized option. */
+          default:
+            error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' "
+                  "to fix it. The identifier '%d' was not recognized as "
+                  "an operator when applying it", __func__,
+                  PACKAGE_BUGREPORT, operator);
+          }
+      }
+  /* Clean up and put the resulting calculation back on the stack. */
+  if( flags & GAL_ARITHMETIC_FLAG_FREE ) gal_data_free(in);
+  return out;
+}
+
+
+
+
+
+/* Generate a string date from the input date format. */
+static gal_data_t *
+arithmetic_date_str_from(int operator, int flags, gal_data_t *in)
+{
+  size_t i;
+  int64_t sec;
+  int ismilli=0;
+  double subsec=NAN;
+  gal_data_t *use, *out;
+  char *tout, ssecstr[6], **sa;
+  int64_t (*usfunc)(double, double *)=NULL;
+
+  /* Sanity check. */
+  if( in->type==GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: the input's type should be string, "
+          "but it is '%s'", __func__, gal_type_name(in->type,1));
+
+  /* Output data set. */
+  out=gal_data_alloc(NULL, GAL_TYPE_STRING, in->ndim, in->dsize, NULL,
+                     1, in->minmapsize, in->quietmmap, "DATE", "UTC",
+                     "Date formatted as ISO 8601 in UTC.");
+
+  /* Set the function for the  */
+
+  /* Do the conversion. */
+  sa=out->array;
+  switch(operator)
+    {
+    /* Unix seconds. */
+    case GAL_ARITHMETIC_OP_MILLISECTODATE: ismilli=1;
+    case GAL_ARITHMETIC_OP_SECTODATE:
+      use=gal_data_copy_to_new_type(in, GAL_TYPE_INT64);
+      for(i=0;i<use->size;++i)
+        {
+          sec=((size_t *)(use->array))[i];
+          if(ismilli) sec/=1000;
+          sa[i]=gal_units_unix_seconds_to_date(sec, 0.0f, 0);
+          if(ismilli)
+            {
+              sprintf(ssecstr, ".%ld", sec%=1000);
+              tout=gal_checkset_malloc_cat(sa[i], ssecstr);
+              free(sa[i]);
+              sa[i]=tout;
+            }
+        }
+      break;
+
+    /* Julian date and its variants. */
+    case GAL_ARITHMETIC_OP_JDTODATE:
+      usfunc=gal_units_jd_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_MJDTODATE:
+      usfunc=gal_units_mjd_to_unix_seconds; break;
+
+    /* Un-recognized. */
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s "
+            "to fix the problem. The operator code %d isn't "
+            "recognized", __func__, PACKAGE_BUGREPORT, operator);
+    }
+
+
+  if(usfunc)
+    {
+      use=gal_data_copy_to_new_type(in, GAL_TYPE_FLOAT64);
+      for(i=0;i<use->size;++i)
+        {
+          sec=usfunc(((double *)(use->array))[i], &subsec);
+          sa[i]=gal_units_unix_seconds_to_date(sec, subsec, 3);
+        }
+    }
+
+  /* Clean up and put the resulting calculation back on the stack. */
+  if( flags & GAL_ARITHMETIC_FLAG_FREE ) gal_data_free(use);
+  return out;
+}
+
+
+
+
+
+/* Convert all the numeric date systems to Julian dates. */
+static gal_data_t *
+arithmetic_date_to_jd(int operator, int flags, gal_data_t *in)
+{
+  size_t i;
+  double *o;
+  gal_data_t *use, *out;
+
+  /* Sanity check. */
+  if( in->type==GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: the input's type should be string, "
+          "but it is '%s'", __func__, gal_type_name(in->type,1));
+
+  /* Output data set. */
+  out=gal_data_alloc(NULL, GAL_TYPE_FLOAT64, in->ndim, in->dsize, NULL,
+                     1, in->minmapsize, in->quietmmap, "DATE", "JD",
+                     "Julian date.");
+
+  /* Do the job. */
+  o=out->array;
+  switch(operator)
+    {
+    case GAL_ARITHMETIC_OP_SECTOJD:
+      use=gal_data_copy_to_new_type(in, GAL_TYPE_SIZE_T);
+      for(i=0;i<use->size;++i)
+        o[i]=gal_units_unix_seconds_to_jd(((size_t *)(use->array))[i],
+                                          0.0);
+      break;
+
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s "
+            "to fix the problem. The operator code %d isn't "
+            "recognized", __func__, PACKAGE_BUGREPORT, operator);
+    }
+
+  /* Clean up and put the resulting calculation back on the stack. */
+  if( flags & GAL_ARITHMETIC_FLAG_FREE && use!=in ) gal_data_free(use);
+  return out;
+}
+
+
+
+
+
+/* Convert all the numeric date systems to Julian dates. */
+static gal_data_t *
+arithmetic_date_to_sec(int operator, int flags, gal_data_t *in)
+{
+  int ismilli=0;
+  size_t i, *o;
+  double subsec;
+  gal_data_t *use, *out;
+  int64_t (*usfunc)(double, double *)=NULL;
+
+  /* Sanity check. */
+  if( in->type==GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: the input's type should be string, "
+          "but it is '%s'", __func__, gal_type_name(in->type,1));
+
+  /* Output data set. */
+  out=gal_data_alloc(NULL, GAL_TYPE_INT64, in->ndim, in->dsize, NULL,
+                     1, in->minmapsize, in->quietmmap, "UNIX-SEC", "sec",
+                     "Unix time.");
+
+  /* Do the job. */
+  o=out->array;
+  switch(operator)
+    {
+    case GAL_ARITHMETIC_OP_JDTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_JDTOSEC:
+      usfunc=gal_units_jd_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_RJDTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_RJDTOSEC:
+      usfunc=gal_units_rjd_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_MJDTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_MJDTOSEC:
+      usfunc=gal_units_mjd_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_TJDTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_TJDTOSEC:
+      usfunc=gal_units_tjd_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_DJDTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_DJDTOSEC:
+      usfunc=gal_units_djd_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_CJDTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_CJDTOSEC:
+      usfunc=gal_units_cjd_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_CCJDTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_CCJDTOSEC:
+      usfunc=gal_units_ccjd_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_RATATOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_RATATOSEC:
+      usfunc=gal_units_rata_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_LILIANTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_LILIANTOSEC:
+      usfunc=gal_units_lilian_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_MJD2000TOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_MJD2000TOSEC:
+      usfunc=gal_units_mjd2000_to_unix_seconds; break;
+    case GAL_ARITHMETIC_OP_MARSSOLTOMILLISEC: ismilli=1;
+    case GAL_ARITHMETIC_OP_MARSSOLTOSEC:
+      usfunc=gal_units_mars_sol_to_unix_seconds; break;
+
+    /* Un-recognized option */
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s "
+            "to fix the problem. The operator code %d isn't "
+            "recognized", __func__, PACKAGE_BUGREPORT, operator);
+    }
+
+  /* If a unix-seconds (us) function was given, then use it to fill up the
+     output. */
+  if(usfunc)
+    {
+      use=gal_data_copy_to_new_type(in, GAL_TYPE_FLOAT64);
+      for(i=0;i<use->size;++i)
+        {
+          o[i]=usfunc(((double *)(use->array))[i], &subsec);
+          if(ismilli) o[i] = o[i]*1000 + (int64_t)(subsec*1000);
+        }
+    }
+
+  /* Clean up and put the resulting calculation back on the stack. */
+  if( flags & GAL_ARITHMETIC_FLAG_FREE && use!=in ) gal_data_free(use);
+  return out;
+}
+
+
+
+
+
 /* Call functions in the 'gnuastro/statistics' library. */
 static gal_data_t *
 arithmetic_from_statistics(int operator, int flags, gal_data_t *input)
@@ -4289,6 +4634,92 @@ gal_arithmetic_set_operator(char *string, size_t *num_operands)
     { op=GAL_ARITHMETIC_OP_WAVELENGTH_FLUX_DENSITY_TO_JY;
       *num_operands=2;  }
 
+  /* Date conversions. */
+  else if( !strcmp(string, "date-to-jd"))
+    { op=GAL_ARITHMETIC_OP_DATETOJD;          *num_operands=1; }
+  else if( !strcmp(string, "date-to-sec"))
+    { op=GAL_ARITHMETIC_OP_DATETOSEC;         *num_operands=1; }
+  else if( !strcmp(string, "date-to-rjd"))
+    { op=GAL_ARITHMETIC_OP_DATETORJD;         *num_operands=1; }
+  else if( !strcmp(string, "date-to-mjd"))
+    { op=GAL_ARITHMETIC_OP_DATETOMJD;         *num_operands=1; }
+  else if( !strcmp(string, "date-to-tjd"))
+    { op=GAL_ARITHMETIC_OP_DATETOTJD;         *num_operands=1; }
+  else if( !strcmp(string, "date-to-djd"))
+    { op=GAL_ARITHMETIC_OP_DATETODJD;         *num_operands=1; }
+  else if( !strcmp(string, "date-to-cjd"))
+    { op=GAL_ARITHMETIC_OP_DATETOCJD;         *num_operands=1; }
+  else if( !strcmp(string, "date-to-ccjd"))
+    { op=GAL_ARITHMETIC_OP_DATETOCCJD;        *num_operands=1; }
+  else if( !strcmp(string, "date-to-rata"))
+    { op=GAL_ARITHMETIC_OP_DATETORATA;        *num_operands=1; }
+  else if( !strcmp(string, "date-to-lilian"))
+    { op=GAL_ARITHMETIC_OP_DATETOLILIAN;      *num_operands=1; }
+  else if( !strcmp(string, "date-to-mjd2000"))
+    { op=GAL_ARITHMETIC_OP_DATETOMJD2000;     *num_operands=1; }
+  else if( !strcmp(string, "date-to-mars-sol"))
+    { op=GAL_ARITHMETIC_OP_DATETOMARSSOL;     *num_operands=1; }
+  else if( !strcmp(string, "date-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_DATETOMILLISEC;    *num_operands=1; }
+  else if( !strcmp(string, "jd-to-date"))
+    { op=GAL_ARITHMETIC_OP_JDTODATE;          *num_operands=1; }
+  else if( !strcmp(string, "mjd-to-date"))
+    { op=GAL_ARITHMETIC_OP_MJDTODATE;          *num_operands=1; }
+  else if( !strcmp(string, "sec-to-date"))
+    { op=GAL_ARITHMETIC_OP_SECTODATE;         *num_operands=1; }
+  else if( !strcmp(string, "millisec-to-date"))
+    { op=GAL_ARITHMETIC_OP_MILLISECTODATE;    *num_operands=1; }
+  else if( !strcmp(string, "sec-to-jd"))
+    { op=GAL_ARITHMETIC_OP_SECTOJD;           *num_operands=1; }
+  else if( !strcmp(string, "jd-to-sec"))
+    { op=GAL_ARITHMETIC_OP_JDTOSEC;           *num_operands=1; }
+  else if( !strcmp(string, "rjd-to-sec"))
+    { op=GAL_ARITHMETIC_OP_RJDTOSEC;          *num_operands=1; }
+  else if( !strcmp(string, "mjd-to-sec"))
+    { op=GAL_ARITHMETIC_OP_MJDTOSEC;          *num_operands=1; }
+  else if( !strcmp(string, "tjd-to-sec"))
+    { op=GAL_ARITHMETIC_OP_TJDTOSEC;          *num_operands=1; }
+  else if( !strcmp(string, "djd-to-sec"))
+    { op=GAL_ARITHMETIC_OP_DJDTOSEC;          *num_operands=1; }
+  else if( !strcmp(string, "cjd-to-sec"))
+    { op=GAL_ARITHMETIC_OP_CJDTOSEC;          *num_operands=1; }
+  else if( !strcmp(string, "ccjd-to-sec"))
+    { op=GAL_ARITHMETIC_OP_CCJDTOSEC;         *num_operands=1; }
+  else if( !strcmp(string, "rata-to-sec"))
+    { op=GAL_ARITHMETIC_OP_RATATOSEC;         *num_operands=1; }
+  else if( !strcmp(string, "lilian-to-sec"))
+    { op=GAL_ARITHMETIC_OP_LILIANTOSEC;       *num_operands=1; }
+  else if( !strcmp(string, "mjd2000-to-sec"))
+    { op=GAL_ARITHMETIC_OP_MJD2000TOSEC;      *num_operands=1; }
+  else if( !strcmp(string, "mars-sol-to-sec"))
+    { op=GAL_ARITHMETIC_OP_MARSSOLTOSEC;      *num_operands=1; }
+  else if( !strcmp(string, "jd-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_JDTOMILLISEC;      *num_operands=1; }
+  else if( !strcmp(string, "rjd-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_RJDTOMILLISEC;     *num_operands=1; }
+  else if( !strcmp(string, "mjd-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_MJDTOMILLISEC;     *num_operands=1; }
+  else if( !strcmp(string, "tjd-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_TJDTOMILLISEC;     *num_operands=1; }
+  else if( !strcmp(string, "djd-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_DJDTOMILLISEC;     *num_operands=1; }
+  else if( !strcmp(string, "cjd-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_CJDTOMILLISEC;     *num_operands=1; }
+  else if( !strcmp(string, "ccjd-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_CCJDTOMILLISEC;    *num_operands=1; }
+  else if( !strcmp(string, "rata-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_RATATOMILLISEC;    *num_operands=1; }
+  else if( !strcmp(string, "lilian-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_LILIANTOMILLISEC;  *num_operands=1; }
+  else if( !strcmp(string, "mjd2000-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_MJD2000TOMILLISEC; *num_operands=1; }
+  else if( !strcmp(string, "mars-sol-to-millisec"))
+    { op=GAL_ARITHMETIC_OP_MARSSOLTOMILLISEC; *num_operands=1; }
+
+
+
+
+
   /* Celestial coordinate conversions. */
   else if (!strcmp(string, "eq-b1950-to-eq-j2000"))
     { op=GAL_ARITHMETIC_OP_EQB1950_TO_EQJ2000;           *num_operands=2; }
@@ -4672,6 +5103,47 @@ gal_arithmetic_operator_string(int operator)
     case GAL_ARITHMETIC_OP_LY_TO_AU:        return "ly-to-au";
     case GAL_ARITHMETIC_OP_AU_TO_LY:        return "au-to-ly";
 
+    case GAL_ARITHMETIC_OP_DATETOJD:        return "date-to-jd";
+    case GAL_ARITHMETIC_OP_DATETOSEC:       return "date-to-sec";
+    case GAL_ARITHMETIC_OP_DATETORJD:       return "date-to-rjd";
+    case GAL_ARITHMETIC_OP_DATETOMJD:       return "date-to-mjd";
+    case GAL_ARITHMETIC_OP_DATETOTJD:       return "date-to-tjd";
+    case GAL_ARITHMETIC_OP_DATETODJD:       return "date-to-djd";
+    case GAL_ARITHMETIC_OP_DATETOCJD:       return "date-to-cjd";
+    case GAL_ARITHMETIC_OP_DATETOCCJD:      return "date-to-ccjd";
+    case GAL_ARITHMETIC_OP_DATETORATA:      return "date-to-rata";
+    case GAL_ARITHMETIC_OP_DATETOLILIAN:    return "date-to-lilian";
+    case GAL_ARITHMETIC_OP_DATETOMJD2000:   return "date-to-MJD2000";
+    case GAL_ARITHMETIC_OP_DATETOMARSSOL:   return "date-to-mars-sol";
+    case GAL_ARITHMETIC_OP_DATETOMILLISEC:  return "date-to-millisec";
+    case GAL_ARITHMETIC_OP_JDTODATE:        return "jd-to-date";
+    case GAL_ARITHMETIC_OP_MJDTODATE:       return "mjd-to-date";
+    case GAL_ARITHMETIC_OP_SECTODATE:       return "sec-to-date";
+    case GAL_ARITHMETIC_OP_MILLISECTODATE:  return "millisec-to-date";
+    case GAL_ARITHMETIC_OP_SECTOJD:         return "sec-to-jd";
+    case GAL_ARITHMETIC_OP_JDTOSEC:         return "jd-to-sec";
+    case GAL_ARITHMETIC_OP_RJDTOSEC:        return "rjd-to-sec";
+    case GAL_ARITHMETIC_OP_MJDTOSEC:        return "mjd-to-sec";
+    case GAL_ARITHMETIC_OP_TJDTOSEC:        return "tjd-to-sec";
+    case GAL_ARITHMETIC_OP_DJDTOSEC:        return "djd-to-sec";
+    case GAL_ARITHMETIC_OP_CJDTOSEC:        return "cjd-to-sec";
+    case GAL_ARITHMETIC_OP_CCJDTOSEC:       return "ccjd-to-sec";
+    case GAL_ARITHMETIC_OP_RATATOSEC:       return "rata-to-sec";
+    case GAL_ARITHMETIC_OP_LILIANTOSEC:     return "lilian-to-sec";
+    case GAL_ARITHMETIC_OP_MJD2000TOSEC:    return "mjd2000-to-sec";
+    case GAL_ARITHMETIC_OP_MARSSOLTOSEC:    return "mars-sol-to-sec";
+    case GAL_ARITHMETIC_OP_JDTOMILLISEC:    return "jd-to-millisec";
+    case GAL_ARITHMETIC_OP_RJDTOMILLISEC:   return "rjd-to-millisec";
+    case GAL_ARITHMETIC_OP_MJDTOMILLISEC:   return "mjd-to-millisec";
+    case GAL_ARITHMETIC_OP_TJDTOMILLISEC:   return "tjd-to-millisec";
+    case GAL_ARITHMETIC_OP_DJDTOMILLISEC:   return "djd-to-millisec";
+    case GAL_ARITHMETIC_OP_CJDTOMILLISEC:   return "cjd-to-millisec";
+    case GAL_ARITHMETIC_OP_CCJDTOMILLISEC:  return "ccjd-to-millisec";
+    case GAL_ARITHMETIC_OP_RATATOMILLISEC:  return "rata-to-millisec";
+    case GAL_ARITHMETIC_OP_LILIANTOMILLISEC: return "lilian-to-millisec";
+    case GAL_ARITHMETIC_OP_MJD2000TOMILLISEC: return "mjd2000-to-millisec";
+    case GAL_ARITHMETIC_OP_MARSSOLTOMILLISEC: return "mars-sol-to-millisec";
+
     case GAL_ARITHMETIC_OP_MINVAL:          return "minvalue";
     case GAL_ARITHMETIC_OP_MAXVAL:          return "maxvalue";
     case GAL_ARITHMETIC_OP_NUMBERVAL:       return "numbervalue";
@@ -4913,8 +5385,62 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_RA_TO_DEGREE:
     case GAL_ARITHMETIC_OP_DEGREE_TO_DEC:
     case GAL_ARITHMETIC_OP_DEC_TO_DEGREE:
-      d1 = va_arg(va, gal_data_t *);
+      d1=va_arg(va, gal_data_t *);
       out=arithmetic_function_unary(operator, flags, d1);
+      break;
+
+    /* Date conversions. */
+    case GAL_ARITHMETIC_OP_DATETOJD:
+    case GAL_ARITHMETIC_OP_DATETORJD:
+    case GAL_ARITHMETIC_OP_DATETOMJD:
+    case GAL_ARITHMETIC_OP_DATETOTJD:
+    case GAL_ARITHMETIC_OP_DATETODJD:
+    case GAL_ARITHMETIC_OP_DATETOCJD:
+    case GAL_ARITHMETIC_OP_DATETOSEC:
+    case GAL_ARITHMETIC_OP_DATETOCCJD:
+    case GAL_ARITHMETIC_OP_DATETORATA:
+    case GAL_ARITHMETIC_OP_DATETOLILIAN:
+    case GAL_ARITHMETIC_OP_DATETOMJD2000:
+    case GAL_ARITHMETIC_OP_DATETOMARSSOL:
+    case GAL_ARITHMETIC_OP_DATETOMILLISEC:
+      d1=va_arg(va, gal_data_t *);
+      out=arithmetic_date_str_to(operator, flags, d1);
+      break;
+    case GAL_ARITHMETIC_OP_JDTODATE:
+    case GAL_ARITHMETIC_OP_MJDTODATE:
+    case GAL_ARITHMETIC_OP_SECTODATE:
+    case GAL_ARITHMETIC_OP_MILLISECTODATE:
+      d1=va_arg(va, gal_data_t *);
+      out=arithmetic_date_str_from(operator, flags, d1);
+      break;
+    case GAL_ARITHMETIC_OP_SECTOJD:
+      d1=va_arg(va, gal_data_t *);
+      out=arithmetic_date_to_jd(operator, flags, d1);
+      break;
+    case GAL_ARITHMETIC_OP_JDTOSEC:
+    case GAL_ARITHMETIC_OP_RJDTOSEC:
+    case GAL_ARITHMETIC_OP_MJDTOSEC:
+    case GAL_ARITHMETIC_OP_TJDTOSEC:
+    case GAL_ARITHMETIC_OP_DJDTOSEC:
+    case GAL_ARITHMETIC_OP_CJDTOSEC:
+    case GAL_ARITHMETIC_OP_CCJDTOSEC:
+    case GAL_ARITHMETIC_OP_RATATOSEC:
+    case GAL_ARITHMETIC_OP_LILIANTOSEC:
+    case GAL_ARITHMETIC_OP_MJD2000TOSEC:
+    case GAL_ARITHMETIC_OP_MARSSOLTOSEC:
+    case GAL_ARITHMETIC_OP_JDTOMILLISEC:
+    case GAL_ARITHMETIC_OP_RJDTOMILLISEC:
+    case GAL_ARITHMETIC_OP_MJDTOMILLISEC:
+    case GAL_ARITHMETIC_OP_TJDTOMILLISEC:
+    case GAL_ARITHMETIC_OP_DJDTOMILLISEC:
+    case GAL_ARITHMETIC_OP_CJDTOMILLISEC:
+    case GAL_ARITHMETIC_OP_CCJDTOMILLISEC:
+    case GAL_ARITHMETIC_OP_RATATOMILLISEC:
+    case GAL_ARITHMETIC_OP_LILIANTOMILLISEC:
+    case GAL_ARITHMETIC_OP_MJD2000TOMILLISEC:
+    case GAL_ARITHMETIC_OP_MARSSOLTOMILLISEC:
+      d1=va_arg(va, gal_data_t *);
+      out=arithmetic_date_to_sec(operator, flags, d1);
       break;
 
     /* Unary operators  */

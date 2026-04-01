@@ -30,6 +30,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/wcs.h>
 #include <gnuastro/type.h>
+#include <gnuastro/units.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/statistics.h>
 
@@ -138,10 +139,7 @@ arithmetic_operator_name(int operator)
       case ARITHMETIC_TABLE_OP_SET: out="set"; break;
       case ARITHMETIC_TABLE_OP_WCSTOIMG: out="wcs-to-img"; break;
       case ARITHMETIC_TABLE_OP_IMGTOWCS: out="img-to-wcs"; break;
-      case ARITHMETIC_TABLE_OP_DATETOSEC: out="date-to-sec"; break;
       case ARITHMETIC_TABLE_OP_DISTANCEFLAT: out="distance-flat"; break;
-      case ARITHMETIC_TABLE_OP_DATETOMILLISEC:
-        out="date-to-millisec"; break;
       case ARITHMETIC_TABLE_OP_DISTANCEONSPHERE:
         out="distance-on-sphere"; break;
       case ARITHMETIC_TABLE_OP_SORTEDTOINTERVAL:
@@ -210,10 +208,6 @@ arithmetic_set_operator(struct tableparams *p, char *string,
         { op=ARITHMETIC_TABLE_OP_EQJ2000TOFLAT; *num_operands=0; }
       else if( !strcmp(string, "eq-j2000-from-flat"))
         { op=ARITHMETIC_TABLE_OP_EQJ2000FROMFLAT; *num_operands=0; }
-      else if( !strcmp(string, "date-to-sec"))
-        { op=ARITHMETIC_TABLE_OP_DATETOSEC; *num_operands=0; }
-      else if( !strcmp(string, "date-to-millisec"))
-        { op=ARITHMETIC_TABLE_OP_DATETOMILLISEC; *num_operands=0; }
       else if( !strcmp(string, "distance-flat"))
         { op=ARITHMETIC_TABLE_OP_DISTANCEFLAT; *num_operands=0; }
       else if( !strcmp(string, "distance-on-sphere"))
@@ -881,84 +875,6 @@ arithmetic_distance(struct tableparams *p, gal_data_t **stack,
 
 
 
-/* Convert the ISO date format to seconds since Unix time. */
-static void
-arithmetic_datetosec(struct tableparams *p, gal_data_t **stack,
-                     int operator)
-{
-  size_t i, v;
-  int64_t *iarr;
-  gal_data_t *out;
-  double subsec=NAN;
-  char *subsecstr=NULL;
-  char *unit=NULL, *name=NULL, *comment=NULL;
-
-  /* Input dataset. */
-  gal_data_t *in=arithmetic_stack_pop(stack, operator, NULL);
-  char **strarr=in->array;
-
-  /* Make sure the input has a 'string' type. */
-  if(in->type!=GAL_TYPE_STRING)
-    error(EXIT_FAILURE, 0, "the operand given to 'date-to-sec' "
-          "should have a string type, but it is '%s'",
-          gal_type_name(in->type, 1));
-
-  /* Output metadata. */
-  switch(operator)
-    {
-    case ARITHMETIC_TABLE_OP_DATETOSEC:
-      unit="sec";
-      name="UNIXSEC";
-      comment="Unix seconds (from 00:00:00 UTC, 1 January 1970)";
-      break;
-    case ARITHMETIC_TABLE_OP_DATETOMILLISEC:
-      unit="msec";
-      name="UNIXMILLISEC";
-      comment="Unix milli-seconds (from 00:00:00 UTC, 1 January 1970)";
-      break;
-    default:
-      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s "
-            "to fix the problem. The operator code %d isn't "
-            "recognized", __func__, PACKAGE_BUGREPORT, operator);
-    }
-
-  /* Allocate the output dataset. */
-  out=gal_data_alloc(NULL, GAL_TYPE_INT64, 1, &in->size, NULL, 1,
-                     p->cp.minmapsize, p->cp.quietmmap, name, unit,
-                     comment);
-
-  /* Convert each input string into number of seconds. Note that it is
-     possible to have an empty dataset, in that case, we shouldn't do
-     anything.*/
-  if(out->size>0 && out->array)
-    {
-      iarr=out->array;
-      for(i=0; i<in->size; ++i)
-        {
-          /* Read the number of seconds and sub-seconds and write into the
-             output. */
-          v=gal_fits_key_date_to_seconds(strarr[i], &subsecstr,
-                                         &subsec);
-          iarr[i] = ( v==GAL_BLANK_SIZE_T
-                      ? GAL_BLANK_INT64
-                      : ( operator == ARITHMETIC_TABLE_OP_DATETOSEC
-                          ? v
-                          : (isnan(subsec)
-                             ? v*1000
-                             : v*1000 + (int64_t)(subsec*1000) ) ) );
-        }
-    }
-
-  /* Clean up and put the resulting calculation back on the stack. */
-  if(in) gal_data_free(in);
-  gal_list_data_add(stack, out);
-}
-
-
-
-
-
-/* Convert the ISO date format to seconds since Unix time. */
 static void
 arithmetic_sortedtointerval(struct tableparams *p, gal_data_t **stack,
                             int operator)
@@ -1142,11 +1058,6 @@ arithmetic_operator_run(struct tableparams *p,
         case ARITHMETIC_TABLE_OP_EQJ2000TOFLAT:
         case ARITHMETIC_TABLE_OP_EQJ2000FROMFLAT:
           arithmetic_curved_flat(p, stack, token->operator);
-          break;
-
-        case ARITHMETIC_TABLE_OP_DATETOSEC:
-        case ARITHMETIC_TABLE_OP_DATETOMILLISEC:
-          arithmetic_datetosec(p, stack, token->operator);
           break;
 
         case ARITHMETIC_TABLE_OP_DISTANCEFLAT:

@@ -24,6 +24,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************/
 #include <config.h>
 
+#include <time.h>
 #include <math.h>
 #include <errno.h>
 #include <error.h>
@@ -33,6 +34,10 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/type.h>
 #include <gnuastro/pointer.h>
+
+#include <gnuastro-internal/checkset.h>
+
+
 
 
 
@@ -669,4 +674,513 @@ double
 gal_units_ly_to_au(double ly)
 {
   return ly * 63241.077f;
+}
+
+
+
+
+
+
+/**********************************************************************/
+/****************           Time conversions          *****************/
+/**********************************************************************/
+
+/* Fill the 'tm' structure (defined in 'time.h') with the values derived
+   from a FITS format date-string and return the (optional) sub-second
+   information as a double.
+
+   The basic FITS string is defined under the 'DATE' keyword in the FITS
+   standard. For the more complete format which includes timezones, see the
+   W3 standard: https://www.w3.org/TR/NOTE-datetime */
+static char *
+gal_units_date_to_struct_tm(char *datestr, struct tm *tp)
+{
+  char *C, *cc, *c=NULL, *cf, *subsec=NULL, *nosubsec=datestr;
+  int hasT=0, hassq=0, usesdash=0, usesslash=0, hasZ=0, hasoffset=0;
+
+  /* Initialize the 'tm' structure to all-zero elements. In particular, The
+     FITS standard times are written in UTC, so, the time zone ('tm_zone'
+     element, which specifies number of seconds to shift for the time zone)
+     has to be zero. The day-light saving flag ('isdst' element) also has
+     to be set to zero. */
+  tp->tm_sec=tp->tm_min=tp->tm_hour=tp->tm_mday=tp->tm_mon=tp->tm_year=0;
+  tp->tm_wday=tp->tm_yday=tp->tm_isdst=tp->tm_gmtoff=0;
+  tp->tm_zone=NULL;
+
+  /* According to the FITS standard the 'T' in the middle of the date and
+     time of day is optional (the time is not mandatory). */
+  cf=(c=datestr)+strlen(datestr);
+  do
+    switch(*c)
+      {
+      case  'T': hasT=1;      break; /* With 'T' HH:MM:SS are defined.    */
+      case  '/': usesslash=1; break; /* Day definition(old): DD/MM/YY.    */
+      case '\'': hassq=1;     break; /* Wholly Wrapped in a single-quote. */
+      case  '+': hasoffset=1; break; /* An offset, see the case for '-'.  */
+      case  'Z': hasZ=1;      break; /* When ends in 'Z', means UTC. See  */
+                                   /* https://www.w3.org/TR/NOTE-datetime */
+
+      /* In case we have sub-seconds in the string, we need to remove it
+         because 'strptime' doesn't recognize sub-second resolution. */
+      case '.':
+
+        /* Allocate space (by copying the remaining full string and adding
+           a '\0' where necessary. */
+        gal_checkset_allocate_copy(c, &subsec);
+        gal_checkset_allocate_copy(datestr, &nosubsec);
+
+        /* Parse the sub-seconds part and end the 'subsec' string when the
+           sub-seconds digits finishs (there may be characters after it. */
+        for(C=subsec+1;*C!='\0';C++) if(!isdigit(*C)) {*C='\0'; break;}
+
+        /* Copy everything after the sub-seconds into the 'nosubsec'
+           string. */
+        cc=nosubsec+(c-datestr);
+        for(C=c+(C-subsec); *C!='\0'; ++C) *cc++=*C;
+        *cc='\0';
+        break;
+
+      /* A dash (hyphen) can be interpreted in two ways
+
+           - Before any possible 'T': if we see a dash, it shows the date
+             in the YYYY-MM-DD format.
+
+           - After a possible 'T': according to the ISO 8601 standard (more
+             general than FITS: https://en.wikipedia.org/wiki/ISO_8601), an
+             offset (timezone), it will be given at the end of the string,
+             starting with a '+HH:MM' or '-HH:MM'. So if we see a hyphen
+             after the 'T', it is actually an offset/negative value.
+              */
+      case '-':
+        if(hasT) /* Already passed the 'T': this is a negative offset. */
+          hasoffset=1;
+        else /* Not passed a 'T' yet: this is the date. */
+          usesdash=1;
+        break;
+      }
+  while(++c<cf);
+
+  /* Sanity checks: */
+  if(usesdash && usesslash)
+    error(EXIT_FAILURE, 0, "'%s' is not readable because the date "
+          "includes a hyphen (dash: '-') and a slash ('/'). When "
+          "a hyphen is used, the date is expected to be in ISO8601 "
+          "format (or YYYY-MM-DD), but when a dash is used it is "
+          "interpreted as DD/MM/YY", datestr);
+  if(hasZ && hasoffset)
+    error(EXIT_FAILURE, 0, "'%s' is not readable because it contains "
+          "both the 'Z' character (implying no HH:MM offset) and "
+          "an offset, it should be either 'YYYY-MM-DDThh:mm:ssZ' (no "
+          "offset) or 'YYYY-MM-DDThh:mm:ss+OH:OM' (with an offset of "
+          "'OH' hours and 'OM' minutes", datestr);
+
+  /* Convert this date into seconds since 1970/01/01, 00:00:00. */
+  c = ( hasoffset
+        ? ( usesdash
+            ? ( hasT
+                ? strptime(nosubsec, hassq?"'%FT%T%z'":"%FT%T%z", tp)
+                : strptime(nosubsec, hassq?"'%F%z'":"%F%z", tp) )
+            : ( hasT
+                ? strptime(nosubsec,
+                           hassq?"'%d/%m/%yT%T%z'":"%d/%m/%yT%T%z", tp)
+                : strptime(nosubsec, hassq?"'%d/%m/%y%z'":"%d/%m/%y%z",
+                           tp) )
+            )
+        : ( usesdash
+            ? ( hasT
+                ? ( hasZ
+                    ? strptime(nosubsec, hassq?"'%FT%TZ'":"%FT%TZ", tp)
+                    : strptime(nosubsec, hassq?"'%FT%T'":"%FT%T", tp) )
+                : strptime(nosubsec, hassq?"'%F'":"%F", tp) )
+            : ( hasT
+                ? ( hasZ
+                    ? strptime(nosubsec,
+                               hassq?"'%d/%m/%yT%TZ'":"%d/%m/%yT%TZ", tp)
+                    : strptime(nosubsec,
+                               hassq?"'%d/%m/%yT%T'":"%d/%m/%yT%T", tp))
+                : strptime(nosubsec, hassq?"'%d/%m/%y'"   :"%d/%m/%y", tp)
+                )
+            )
+        );
+
+  /* The value might have sub-seconds. In that case, 'c' will point to a
+     '.' and we'll have to parse it as double. */
+  if( c==NULL || (*c!='.' && *c!='\0') )
+    error(EXIT_FAILURE, 0, "'%s' isn't in the correct FITS or ISO 8601 "
+          "date format. Please run 'info gnuastro date' for more on "
+          "the expected input date format", datestr);
+
+  /* If the subseconds were removed (and a new string was allocated), free
+     that extra new string. */
+  if(nosubsec!=datestr) free(nosubsec);
+
+  /* Return the subsecond value. */
+  return subsec;
+}
+
+
+
+
+
+/* Convert the FITS standard or ISO 8601 date format (as a string, already
+   read from the keywords) into number of seconds since 1970/01/01,
+   00:00:00. Very useful to avoid calendar issues like number of days in a
+   different months or leap years and etc. The remainder of the format
+   string (sub-seconds) will be put into the two pointer arguments:
+   'subsec' is in double-precision floating point format but it will only
+   get a value when 'subsecstr!=NULL'. */
+int64_t
+gal_units_date_to_unix_seconds(char *datestr, char **subsecstr,
+                               double *subsec)
+{
+  time_t t;
+  char *tmp;
+  struct tm tp;
+  void *subsecptr=subsec;
+  int64_t seconds, gmtoff;
+
+  /* If the string is blank, return a blank value. */
+  if( strcmp(datestr, GAL_BLANK_STRING)==0 )
+    {
+      if(subsec) *subsec=NAN;
+      if(subsecstr) *subsecstr=NULL;
+      return GAL_BLANK_INT64;
+    }
+
+  /* Fill in the 'tp' elements with values read from the string. */
+  tmp=gal_units_date_to_struct_tm(datestr, &tp);
+
+  /* If the user wanted a possible sub-second string/value, then
+     'subsecstr!=NULL'. */
+  if(subsecstr)
+    {
+      /* Set the output pointer. Note that it may be NULL if there was no
+         sub-second string, but that is fine (and desired because the user
+         can use this to check if there was a sub-string or not). */
+      *subsecstr=tmp;
+
+      /* If there was a sub-second string, then also read it as a
+         double-precision floating point. */
+      if(tmp)
+        {
+          if(subsec)
+            if( gal_type_from_string(&subsecptr, tmp, GAL_TYPE_FLOAT64) )
+              error(EXIT_FAILURE, 0, "%s: the sub-second portion of '%s' "
+                    "(or '%s') couldn't be read as a number", __func__,
+                    datestr, tmp);
+        }
+      else { if(subsec) *subsec=NAN; }
+    }
+
+  /* Convert the contents of the 'tm' structure to 'time_t' (a positive
+     integer). Note that by design (as described in its GNU C Library
+     manual), 'timegm' (like 'mktime') will ignore 'tm_gmtoff' (offset from
+     GMT/UTC) and set it to zero. However, this offset is part of the ISO
+     8601 convention (that we accept here), so we need to read it before
+     calling 'timegm' and apply (subtract) it afterwards. */
+  gmtoff=tp.tm_gmtoff;
+  t=timegm(&tp); /* should be after extracting 'gmtoff'.*/
+  seconds = (t == (time_t)(-1)) ? GAL_BLANK_INT64 : t-gmtoff;
+  return seconds;
+}
+
+
+
+
+
+/* Convert Unix-time (possibly with sub-seconds) to a UTC-based date
+   string. */
+char *
+gal_units_unix_seconds_to_date(int64_t unixsec, double subsec,
+                               int subsecdigits)
+{
+  size_t nchr;
+  time_t t=unixsec;
+  struct tm tp, *tpo;
+  char *tmp, *tout, strfmt[5], *out=NULL;
+
+  /* Sanity check. */
+  if(subsec<0.0f)
+    error(EXIT_FAILURE, 0, "%s: the value of the 'subsec' argument "
+          "should be larger or equal to 0.0. However, its value is "
+          "%e", __func__, subsec);
+
+  /* Break-down the Unix-seconds into YYYY-MM-DD and hh:mm:ss
+     components. We are using 'gmtime' to have an output in UTC, and its
+     '_r' variant to enable parallel processing. */
+  tpo=gmtime_r(&t, &tp);
+  if( tpo != &tp )
+    error(EXIT_FAILURE, 0, "%s: the unix-time '%ld' could not "
+          "be broken down into a calendar time", __func__, unixsec);
+
+  /* Allocate the output string and fill it up. Note that the desired
+     output format of 'YYYY-MM-DDThh:mm:ss' has 20 characters (including
+     the string termination character. But for B.C. dates, a '-' will be
+     added on the year and for dates too far into the future, the year can
+     be longer, so to avoid strange outputs, we'll allow 29 characaters in
+     the printable string. */
+  out=gal_pointer_allocate(GAL_TYPE_UINT8, 30, 0, __func__, "out");
+  nchr=strftime(out, 30, "%FT%T", &tp);
+  if( nchr > 29 ) /* Number of chars ('nchr') does not include '/0'. */
+    error(EXIT_FAILURE, 0, "%s: the broken-down time could not "
+          "printed in the desired format for the input Unix-second "
+          "'%ld'", __func__, unixsec);
+
+  /* If a non-zero sub-second string is given, add it to the output. */
+  if(subsecdigits && subsec!=0.0f)
+    {
+      sprintf(strfmt, "%%.%df", subsecdigits);
+      asprintf(&tmp, strfmt, subsec);
+      tout=gal_checkset_malloc_cat(out, tmp+1);
+      free(out);
+      out=tout;
+    }
+
+  /* For a check.
+  printf("%s: %s\n", __func__, out); exit(0);
+  //*/
+
+  /* Return the output string. */
+  return out;
+}
+
+
+
+
+
+/* Unix-seconds (US) to Julian days (JD; epoch: 12:00 January 1, 4713 BC)
+
+       US = (JD - 2440587.5) × 86400
+       JD = US/86400 + 2440587.5
+
+   If there are sub-seconds given, that is also divided by 86400 and added
+   to the JD of the equation above. For more, see
+   https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_unix_seconds_to_jd(int64_t unixsec, double subsec)
+{
+  double jd=((double)unixsec)/86400+2440587.5;
+  return isnan(subsec) ? jd : jd+subsec/86400;
+}
+
+int64_t
+gal_units_jd_to_unix_seconds(double jd, double *subsec)
+{
+  double d=(jd-2440587.5)*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i;
+}
+
+
+
+
+
+/* Unix-seconds to Reduced Julian date. Epoch: 12:00 November 16, 1858. See
+   https://en.wikipedia.org/wiki/Julian_day . The conversion */
+double
+gal_units_jd_to_rjd(double jd)
+{
+  return jd-2400000;
+}
+
+int64_t
+gal_units_rjd_to_unix_seconds(double rjd, double *subsec)
+{
+  double d=rjd*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i - 3506760000;
+}
+
+
+
+
+
+/* Unix-seconds to Modified Julian date. Epoch: 0:00 November 17, 1858. See
+   https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_jd_to_mjd(double jd)
+{
+  return jd-2400000.5;
+}
+
+int64_t
+gal_units_mjd_to_unix_seconds(double mjd, double *subsec)
+{
+  double d=mjd*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i - 3506716800;
+}
+
+
+
+
+
+/* Unix-seconds to Truncated Julian date. Epoch: 0:00 May 24, 1968. See
+   https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_jd_to_tjd(double jd)
+{
+  return jd-2440000.5;
+}
+
+int64_t
+gal_units_tjd_to_unix_seconds(double tjd, double *subsec)
+{
+  double d=tjd*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i - 50716800;
+}
+
+
+
+
+
+/* Unix-seconds to Dublin Julian date. Epoch: 12:00 December 31, 1899. See
+   https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_jd_to_djd(double jd)
+{
+  return jd-2415020;
+}
+
+int64_t
+gal_units_djd_to_unix_seconds(double djd, double *subsec)
+{
+  double d=djd*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i - 2209032000;
+}
+
+
+
+
+
+/* Unix-seconds to CNES Julian date. Epoch: 0:00 January 1, 1950. See
+   https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_jd_to_cjd(double jd)
+{
+  return jd-2433282.5;
+}
+
+int64_t
+gal_units_cjd_to_unix_seconds(double cjd, double *subsec)
+{
+  double d=cjd*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i - 631152000;
+}
+
+
+
+
+
+/* Unix-seconds to CCSDS Julian date. Epoch: 0:00 January 1, 1958. See
+   https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_jd_to_ccjd(double jd)
+{
+  return jd-2436204.5;
+}
+
+int64_t
+gal_units_ccjd_to_unix_seconds(double ccjd, double *subsec)
+{
+  double d=ccjd*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i - 378691200;
+}
+
+
+
+
+
+/* Unix-seconds to Modified Julian date 2000. Epoch: 0:00 January 1,
+   2000. See https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_jd_to_mjd2000(double jd)
+{
+  return jd-2451544.5;
+}
+
+int64_t
+gal_units_mjd2000_to_unix_seconds(double mjd2000, double *subsec)
+{
+  double d=mjd2000*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i + 946684800;
+}
+
+
+
+
+
+/* Unix-seconds to Lilian date. Similar to JD, but with day 1 being October
+   15, 1582 (first day of the Gregorian calendar: days have been properly
+   counted since then): see https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_jd_to_lilian(double jd)
+{
+  return jd-2299159.5;
+}
+
+int64_t
+gal_units_lilian_to_unix_seconds(double lilian, double *subsec)
+{
+  double d=lilian*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i - 12219379200;
+}
+
+
+
+
+
+/* Unix-seconds to Rata Die. Day 1 = January 1, 0001. See
+   https://en.wikipedia.org/wiki/Julian_day */
+double
+gal_units_jd_to_rata(double jd)
+{
+  return jd-1721424.5;
+}
+
+int64_t
+gal_units_rata_to_unix_seconds(double rata, double *subsec)
+{
+  double d=rata*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i - 62135683200;
+}
+
+
+
+
+
+/* Unix-seconds to Mars Sol Date. 12:00 December 29, 1873. See
+   https://en.wikipedia.org/wiki/Timekeeping_on_Mars#Mars_Sol_Date and
+   https://www.giss.nasa.gov/tools/mars24/help/algorithm.html (equation for
+   MST: three constants merged into one). */
+double
+gal_units_jd_to_mars_sol(double jd)
+{
+  return (jd-2.49514695148767e+06)/1.0274912517;
+}
+
+int64_t
+gal_units_mars_sol_to_unix_seconds(double sol, double *subsec)
+{
+  double d=sol*1.0274912517*86400;
+  int64_t i=d;
+  *subsec=d-i;
+  return i + 4713936608;
 }

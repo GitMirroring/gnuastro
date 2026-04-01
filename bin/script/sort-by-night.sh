@@ -277,7 +277,7 @@ list=$(astfits --keyvalue=$key --hdu=$hdu $inputs --colinfoinstdout \
                                    where' \
                           --colmetadata=3,NIGHT,counter,"Observing night." \
                           --colinfoinstdout --stdintimeout=$stdintime \
-               | asttable --sort=UNIXSEC --colinfoinstdout \
+               | asttable --sort=2 --colinfoinstdout \
                           --stdintimeout=$stdintime)
 
 

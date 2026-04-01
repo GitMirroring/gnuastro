@@ -30,6 +30,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/wcs.h>
 #include <gnuastro/fits.h>
+#include <gnuastro/units.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro-internal/timing.h>
 
@@ -556,7 +557,7 @@ keywords_date_to_seconds(struct fitsparams *p, fitsfile *fptr)
     gal_fits_io_error(status, NULL);
 
   /* Return the number of seconds (and subseconds).*/
-  seconds=gal_fits_key_date_to_seconds(fitsdate, &subsecstr, &subsec);
+  seconds=gal_units_date_to_unix_seconds(fitsdate, &subsecstr, &subsec);
   if(seconds==GAL_BLANK_SIZE_T)
     error(EXIT_FAILURE, 0, "the time string couldn't be interpretted");
 

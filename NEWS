@@ -12,6 +12,55 @@ See the end of the file for license conditions.
   - New Operators: similar operators are grouped; groups are sorted
     alphabetically by first operator in the group
 
+    - date-to-jd:          [ Julian date               ]
+    - date-to-sec:         [ Unix seconds              ]
+    - date-to-rjd:         [ Reduced Julian date       ]
+    - date-to-mjd:         [ Modified Julian date      ]
+    - date-to-tjd:         [ Truncated Julian date     ]
+    - date-to-djd:         [ Dublin Julian date        ]
+    - date-to-cjd:         [ CNES Julian date          ]
+    - date-to-ccjd:        [ CCSDS Julian date         ]
+    - date-to-rata:        [ Rata Die                  ]
+    - date-to-lilian:      [ Lilian date               ]
+    - date-to-MJD2000:     [ Modified Julian date 2000 ]
+    - date-to-mars-sol:    [ Mars sol date             ]
+    - date-to-millisec:    [ Unix milliseconds         ]
+    - jd-to-date:
+    - mjd-to-date:
+    - sec-to-date:
+    - millisec-to-date:
+    - sec-to-jd:
+    - jd-to-sec:
+    - rjd-to-sec:
+    - mjd-to-sec:
+    - tjd-to-sec:
+    - djd-to-sec:
+    - cjd-to-sec:
+    - ccjd-to-sec:
+    - rata-to-sec:
+    - lilian-to-sec:
+    - mjd2000-to-sec:
+    - mars-sol-to-sec:
+    - jd-to-millisec:
+    - rjd-to-millisec:
+    - mjd-to-millisec:
+    - tjd-to-millisec:
+    - djd-to-millisec:
+    - cjd-to-millisec:
+    - ccjd-to-millisec:
+    - rata-to-millisec:
+    - lilian-to-millisec:
+    - mjd2000-to-millisec:
+    - mars-sol-to-millisec:
+      Operators for date conversion: those with a 'date-*' and '*-date'
+      will read/write the date in the familiar 'YYYY-MM-DDThh:mm:ss' format
+      (ISO 8601), which is familiar/easy for humans, but hard for
+      operations on dates. Through these operators Gnuastro now provides
+      converters of this string to Julian days (and its variants) and the
+      Unix time (in seconds or milliseconds). A new "Date conversions"
+      sub-section has been added in the book under the "Arithmetic
+      operators" to fully describe their concepts and usage.
+
     - gradient-direction:
     - gradient-magnitude:
     - gradient-direction-allngbs:
@@ -67,8 +116,35 @@ See the end of the file for license conditions.
   - gal_gradient_direction_magnitude: meausre both the direction and
     magnitude of the gradient in a single parsing of the input.
   - gal_list_sizetf64_number: return the number of nodes in the list.
+  - gal_units_jd_to_unix_seconds: Julian dates (JD) to Unix seconds.
+  - gal_units_rjd_to_unix_seconds: Reduced JD to Unix seconds.
+  - gal_units_mjd_to_unix_seconds: Modified JD to Unix seconds.
+  - gal_units_tjd_to_unix_seconds: Truncated JD to Unix seconds.
+  - gal_units_djd_to_unix_seconds: Dublin JD to Unix seconds.
+  - gal_units_cjd_to_unix_seconds: CNES JD to Unix seconds.
+  - gal_units_ccjd_to_unix_seconds: CCSDS JD to Unix seconds.
+  - gal_units_mjd2000_to_unix_seconds: Modified JD 2000 to Unix seconds.
+  - gal_units_lilian_to_unix_seconds: Lilian date to Unix seconds.
+  - gal_units_rata_to_unix_seconds: Rata Die to Unix seconds.
+  - gal_units_mars_sol_to_unix_seconds: Mars Sol date to Unix seconds.
+  - gal_units_jd_to_rjd: JD to reduced JD.
+  - gal_units_jd_to_mjd: JD to modified JD.
+  - gal_units_jd_to_tjd: JD to truncated JD.
+  - gal_units_jd_to_djd: JD to Dublin JD.
+  - gal_units_jd_to_cjd: JD to CNES JD.
+  - gal_units_jd_to_ccjd: JD to CCSDS JD.
+  - gal_units_jd_to_mjd2000: JD to modified JD 2000.
+  - gal_units_jd_to_lilian: JD to Lilian dates.
+  - gal_units_jd_to_rata: JD to Rata Die.
+  - gal_units_jd_to_mars_sol: JD to Mars Sol date.
 
 ** Removed features
+
+*** Library
+
+  - gal_fits_key_date_to_struct_tm: removed due to simplify new
+    implementation as part of 'units.h'.
+
 ** Changed features
 
   - Operators:
@@ -78,6 +154,13 @@ See the end of the file for license conditions.
       circumference of a circle on a flat plane or on the sky) has also
       been updated.
 
+
+*** Book
+
+  - Under Arithmetic operators, the old "Unit conversion operators" section
+    has been broken up into the following three sections to help find a
+    desired unit conversion operator by classifying them: "Flux
+    conversion", "Date conversion" and "Distance conversion".
 
 *** Fits
 
@@ -105,6 +188,9 @@ See the end of the file for license conditions.
     more.
 
 *** Library
+
+  - gal_units_date_to_unix_seconds: new name for
+    'gal_fits_key_date_to_seconds'.
 
   - wcs.h: 'GAL_WCS_DISTORTION_SIP_NO_REVERSE' new distortion (see
     '--wcsdistortion' under 'astfits' above).

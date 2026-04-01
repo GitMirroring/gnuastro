@@ -573,7 +573,9 @@ Arithmetic operators
 * Trigonometric and hyperbolic operators::  sin, cos, atan, asinh, etc.
 * Constants::                   Physical and Mathematical constants.
 * Coordinate conversion operators::  For example equatorial J2000 to Galactic.
-* Unit conversion operators::   Various unit conversions necessary.
+* Flux conversion::             Magntiudes, Janskys, Counts and etc.
+* Date conversion::             Julian dates, Unix time and regular calendar.
+* Distance conversion::         Parsecs, light years and etc.
 * Statistical operators::       Statistics of a single dataset (for example, mean).
 * Coadding operators::          Coadding or combining multiple datasets into one.
 * Filtering operators::         Smoothing a dataset through mixing pixel with neighbors.
@@ -9023,7 +9025,7 @@ $ for f in i r g; do \
 @noindent
 @strong{Accounting for zero points:} An important step that we have not implemented in this section is to unify the zero points of the three filters.
 In the case of SDSS (and some other surveys), the images have already been brought to the same zero point, but that is not generally the case.
-So before subtracting sky (and estimating the standard deviation) you should also unify the zero points of your images (for example through Arithmetic's @code{counts-to-customzp}, @code{counts-to-nanomaggy} or @code{counts-to-jy} described in @ref{Unit conversion operators}).
+So before subtracting sky (and estimating the standard deviation) you should also unify the zero points of your images (for example through Arithmetic's @code{counts-to-customzp}, @code{counts-to-nanomaggy} or @code{counts-to-jy} described in @ref{Flux conversion}).
 If you don't already have the zero point of your images, see the dedicated tutorial to measure it: @ref{Zero point of an image}.
 @end cartouche
 
@@ -19106,39 +19108,6 @@ If it is plain-text, the string column will be written following the standards d
 Convert degrees (a column with a single floating point number) to the Declination, Dec, string (in the format of @code{_d_m_s}).
 See the @option{degree-to-ra} for more on the format of the output.
 
-@item date-to-sec
-@cindex Unix epoch time
-@cindex Time, Unix epoch
-@cindex Epoch, Unix time
-Return the number of seconds from the Unix epoch time (00:00:00 Thursday, January 1st, 1970).
-The input (popped) operand should be a string column in the FITS date format (most generally: @code{YYYY-MM-DDThh:mm:ss.ddd...}).
-
-The returned operand will be named @code{UNIXSEC} (short for Unix-seconds) and will be a 64-bit, signed integer, see @ref{Numeric data types}.
-If the input string has sub-second precision, it will be ignored because floating point numbers cannot accurately store numbers with many significant digits.
-To preserve sub-second precision, please use @code{date-to-millisec}.
-
-For example, in the example below we are using this operator, in combination with the @option{--keyvalue} option of the Fits program, to sort your desired FITS files by observation date (value in the @code{DATE-OBS} keyword in example below):
-
-@example
-$ astfits *.fits --keyvalue=DATE-OBS --colinfoinstdout \
-          | asttable -cFILENAME,'arith DATE-OBS date-to-sec' \
-                     --colinfoinstdout \
-          | asttable --sort=UNIXSEC
-@end example
-
-If you do not need to see the Unix-seconds any more, you can add a @option{-cFILENAME} (short for @option{--column=FILENAME}) at the end.
-For more on @option{--keyvalue}, see @ref{Keyword inspection and manipulation}.
-
-@item date-to-millisec
-Return the number of milli-seconds from the Unix epoch time (00:00:00 Thursday, January 1st, 1970).
-The input (popped) operand should be a string column in the FITS date format (most generally: @code{YYYY-MM-DDThh:mm:ss.ddd...}, where @code{.ddd} is the optional sub-second component).
-
-The returned operand will be named @code{UNIXMILLISEC} (short for Unix milli-seconds) and will be a 64-bit, signed integer, see @ref{Numeric data types}.
-The returned value is not a floating point type because for large numbers, floating point data types loose single-digit precision (which is important here).
-
-Other than the units of the output, this operator behaves similarly to @code{date-to-sec}.
-See the description of that operator for an example.
-
 @item sorted-to-interval
 Given a single column (which must be already sorted and have a numeric data type), return two columns: the first returned column is the minimum and the second returned column is the maximum value of the interval of each row row.
 The maximum of each row is equal to the minimum of the previous row; thus creating a contiguous interval coverage of the input column's range in all rows.
@@ -21768,7 +21737,9 @@ Reading NaN as a floating point number in Gnuastro is not case-sensitive.
 * Trigonometric and hyperbolic operators::  sin, cos, atan, asinh, etc.
 * Constants::                   Physical and Mathematical constants.
 * Coordinate conversion operators::  For example equatorial J2000 to Galactic.
-* Unit conversion operators::   Various unit conversions necessary.
+* Flux conversion::             Magntiudes, Janskys, Counts and etc.
+* Date conversion::             Julian dates, Unix time and regular calendar.
+* Distance conversion::         Parsecs, light years and etc.
 * Statistical operators::       Statistics of a single dataset (for example, mean).
 * Coadding operators::          Coadding or combining multiple datasets into one.
 * Filtering operators::         Smoothing a dataset through mixing pixel with neighbors.
@@ -22050,7 +22021,7 @@ The fine-structure constant (no units).
 See @url{https://en.wikipedia.org/wiki/Fine-structure_constant, Wikipedia}.
 @end table
 
-@node Coordinate conversion operators, Unit conversion operators, Constants, Arithmetic operators
+@node Coordinate conversion operators, Flux conversion, Constants, Arithmetic operators
 @subsubsection Coordinate conversion operators
 
 @cindex Galactic coordinate system
@@ -22147,11 +22118,12 @@ Convert Galactic coordinates into the respective coordinate system within each o
 Convert Supergalactic coordinates into the respective coordinate system within each operator's name.
 @end table
 
-@node Unit conversion operators, Statistical operators, Coordinate conversion operators, Arithmetic operators
-@subsubsection Unit conversion operators
+@node Flux conversion, Date conversion, Coordinate conversion operators, Arithmetic operators
+@subsubsection Flux conversion
 
 It often happens that you have data in one unit (for example, counts on your CCD), but would like to convert it into another (for example, magnitudes, to measure the brightness of a galaxy).
 While the equations for the unit conversions can be easily found on the internet, the operators in this section are designed to simplify the process and let you do it easily and fast without having to remember constants and relations.
+For more on the various definitions of brightness, flux, magnitudes and etc, see @ref{Brightness flux magnitude}.
 
 @table @command
 
@@ -22402,7 +22374,280 @@ Therefore, judging purely based on exposed area and time (too idealistic!), the 
 
 A simple note for the second command: this trick is only useful for operators like this that are sure to produce numbers that are larger than @mymath{10^{-2}}.
 You will loose precision for values smaller than that and using the default scientific notation is best.
+@end table
 
+@node Date conversion, Distance conversion, Flux conversion, Arithmetic operators
+@subsubsection Date conversion
+
+@cindex Julian calendar
+@cindex Gregorian calendar
+@cindex Calendar: Gregorian
+The Gregorian calendar (a modification of the Julian calendar formalized by the Vatican@footnote{For more on the Gregorian calendar and its history, see @url{https://en.wikipedia.org/wiki/Gregorian_calendar}} in the year 1582, and in use by most countries today) carries a lot of historical burden with it.
+For example the length, number or name of months.
+It has therefore needed corrections/additions over the millennia to preserve the historical heritage, while remaining relevant.
+However, this heritage, makes it hard for doing science: for example the number of days between February 15th to March 15th is differnet from year to year (due to leap years) and is not the same as the number of days between August 15th and September 15h.
+
+@cindex Julian day
+@cindex Joseph Scaliger
+@cindex Scaliger, Joseph
+To help in a more objective comparison of different calendars Joseph Scaliger (1540 -- 1609@footnote{Just as an anecdote; 1609 is the year that Galileo (1564 -- 1642 A.D.) demonstrated his newly constructed telescope and observed the moon with it.} A.D.) defined in the Julian day@footnote{For more on the Julian day, see @url{https://en.wikipedia.org/wiki/Julian_day}} in 1583 (just one year after the Gregorian calendar was adopted).
+The Julian day is a simple counter of days (with no concept of months or years), so the example problems mentioned above become non-existant!
+He chose day 1 of this new system to be based on the 28-year and 19-year solar and lunar cycles of the Julian calendar, as well as the 15 year indiction (Roman tax assessment) cycles.
+The previous day that all three of these cycles coincided would be within the year 4713 B.C of our current improved Gregorian calendar (you can check with the command @command{astarithmetic 1 jd-to-date}).
+Scalinger selected 12:00 (noon) of January 1st in that year (according to his Julian calendar, not our current calendar) as the starting moment of the first Julian day.
+
+Another problem that the Julian day fixes is the units of time that are smaller than a day, with their different basis.
+In particular, hours, minutes and seconds that are on the basis of 24, 60 and 60 respectively.
+When treating the Julian day as a floating point, these smaller units simply become decimal fractions of a day.
+For example the Julian day of 2026--04--02 at 17:14:54 is 2461133.218681: the Julian date is a large integer.
+
+All the significant digits of the Julian date can slow down the processing (when it should be executed a lot!).
+But there is a more important issue: that floating point precision has non-linear systematics, which become worse as the number of significant digits increases.
+To decrease these issues, there are variations of the Julian date that shift the starting date based on different needs.
+For example the Modified Julian Date (MJD) starts at 00:00:00 of 1858--11--16, and the same date above translates to 61132.718681 (two digits less than the JD).
+The operators below include all the major variants of the Julian day.
+
+@cindex Unix epoch time
+@cindex Time, Unix epoch
+@cindex Epoch, Unix time
+By the second half of the 20th centry (especially with the advent of computers and very high-speed processing), the Julian date's one-day resolution was starting to make problems.
+To help in the design of their new Unix operating system (first released in November 1971), its creators decided to count seconds, and remove the concept of days from their system!
+They chose the starting date of their system as 00:00:00 of January 1st, 1970 based on their need/convenience and this became known as the Unix time.
+The Unix time is stored as a @emph{signed} 64-bit integer, so it does not have the systematic issues of floating points, and can also accommodate negative values that can be used for dates prior to 1970 (for the range of possible values, see @ref{Numeric data types}).
+
+Given the moden processor and network speeds, even seconds are large intervals (do not have the necessary resolution).
+As a result, there are also systems that count milli-seconds and nano-seconds (both also commonly starting at the Unix time epoch).
+For example day-time telescopes designed for imaging the Sun have exposure times on the scale of milli-seconds and the EXT4 filesystem measures time in counts of nano-seconds.
+
+@cindex FITS date format
+@cindex ISO 8601 (date format)
+@cindex Date format: ISO 8601
+The Arithmetic operators below allow the conversion of human-friendly date strings (using the modern Gregorian calendar) to Julian days (or its variants) or Unix seconds and milliseconds.
+The input date string can be in any of the following formats.
+The formats with @code{YYYY} conform with the FITS standard for dates and ISO 8601.
+
+@example
+YYYY-MM-DD
+YYYY-MM-DDThh:mm:ss           (In UTC, see [1] below)
+YYYY-MM-DDThh:mm:ss.ddd       (Note the 'ddd', see [2] below)
+YYYY-MM-DDThh:mm:ss.dddZ      (Note the 'Z',  see [3] below)
+YYYY-MM-DDThh:mm:ss+OHOM      (Note the 'OH', see [4] below)
+YYYY-MM-DDThh:mm:ss+OH:OM
+DD/MM/YY                      (Note the 'YY', see [5] below)
+DD/MM/YYThh:mm:ss
+DD/MM/YYThh:mm:ss.dd
+DD/MM/YYThh:mm:ss.ddZ
+DD/MM/YYThh:mm:ss+OH:OM
+@end example
+
+@noindent
+Some notes on the formats above are listed below.
+Some of the formats that are not supported by the formal standards (FITS or ISO 8601), you should not worry about them when you are feeding the operators here: those that read a date string will read any of the above, and those that write the date into a string do so within the UTC timezone (to be compatible with FITS).
+@enumerate
+@item
+All the operators that will print human-friendly date strings will print in this format: assuming a UTC time zone.
+@item
+Sub-seconds are acceptable (see the @code{ss.ddd} as a floating point; for example 32.189 where @code{ss} is 32 seconds and @code{ddd} is 0.189 seconds).
+@item
+The optional @code{Z} is interpreted as being in the UTC Timezone; but this not within the FITS standard.
+@item
+You can use this mode to include an offset (or timezone; where the @code{+OH} can also be @code{-OH} for western hemisphere time zones).
+The @code{OH} is the offset hours and the @code{OM} is the offset minutes.
+Note that an offset is not defined in the FITS standrad (where all times are in UTC).
+@item
+Gnuastro also interprets the older format (two characters for year).
+In this case: year values 68 to 99 are interpreted as 1969 to 1999 and values 0 to 68 as the years 2000 to 2068.
+@end enumerate
+
+@noindent
+The date conversion operators are listed below; all the operators only take/pop a single operand.
+Therefore, when no special tips are necessary on their usage, no example is given for them.
+
+@table @command
+@item date-to-jd
+Return the Julian date of the given date (in the format above).
+See the minimal example below which uses the @code{date} program to produce an ISO 8601 formatted string for the time of it was run.
+For more on string columns (that need metadata: the first comman), see  @ref{Gnuastro text table format}.
+
+@example
+$ echo "# Column 1: Date [iso-8601, str25] Date." > date.txt
+$ date --iso-8601=sec >> date.txt
+$ asttable date.txt -c'arith $1 date-to-jd'
+@end example
+
+@item jd-to-date
+Return the calendar date (in the format of @code{YYYY-MM-DDThh:mm:ss} in UTC) of the given Julian date.
+For example, in the command below you can see exact time that the European Space Agency's Euclid mission was launched, but in Julian date.
+Run it to see what date/time it corresponded to.
+
+@example
+$ astarithmetic 2460127.13334 jd-to-date
+@end example
+
+@item date-to-sec
+Return the Unix time (an integer, counting seconds) of the given date sting (in the format above).
+The example below uses this operator, in combination with the @option{--keyvalue} option of the Fits program, to sort your desired FITS files by observation date (value in the @code{DATE-OBS} keyword in example below).
+For more on @option{--keyvalue}, see @ref{Keyword inspection and manipulation}.
+
+@example
+$ astfits *.fits --keyvalue=DATE-OBS --colinfoinstdout \
+          | asttable -cFILENAME,'arith DATE-OBS date-to-sec' \
+                     --colinfoinstdout \
+          | asttable --sort=2
+@end example
+
+If you do not need to see the Unix-seconds any more, you can add a @option{-cFILENAME} (short for @option{--column=FILENAME}) at the end.
+
+@item sec-to-date
+@item millisec-to-date
+Return the calendar date (in the format of @code{YYYY-MM-DDThh:mm:ss} or @code{YYYY-MM-DDThh:mm:ss.ddd}) of the given Unix time (in seconds or milliseconds).
+These are useful for those date systems that do not have a direct @code{*-to-date} operator, but have operators to convert to (milli)seconds.
+For example
+
+@example
+$ astarithmetic 59553.12349 rjd-to-millisec millisec-to-date
+@end example
+
+@item date-to-millisec
+Return the Unix time (an integer, counting milli-seconds) of the given date sting (in the format above).
+The returned value is not a floating point type (in units of seconds) because for large numbers, the floating point data types loose single-digit precision systematically (which is important here).
+This operator behaves similarly to @code{date-to-sec}; see the description of that operator for an example.
+
+@item jd-to-sec
+@item jd-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given Julian date.
+In both cases, the output is a signed 64-bit integer.
+
+@item sec-to-jd
+Return the Julian date of the given Unix time.
+
+@item date-to-mjd
+@item mjd-to-date
+@cindex Modified Julian Date
+@cindex MJD: Modified Julian Date
+Return the modified Julian date (MJD) to/from the given date string: number of days from 00:00 of 1858--11--16.
+It was defined to shorten the number of digits: the Julian date of this starting time is a round integer: 2400000.5.
+The 0.5 (half-day shift) is to start the day at midnight.
+
+The MJD is the only Julian date variant here that has a direct conversion to a date string.
+This is because it is mentioned in the FITS standard along with the Julian date.
+
+@item mjd-to-sec
+@item mjd-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given modified Julian date.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-mjd2000
+@cindex MJD2000 Julian Date
+Return the modified Julian date 2000 (MJD2000) of the given date string: number of days from 00:00 of 2000--01--01.
+This was introduced by the European Space Agency (ESA).
+
+@item mjd2000-to-sec
+@item mjd2000-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given modified Julian date 2000.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-rjd
+@cindex Reduced Julian Date
+@cindex RJD: Reduced Julian Date
+Return the reduced Julian date (RJD) of the given date string: number of days from 12:00 of 1858--11--16.
+Note that the RJD is only half a day different from the MJD (starts on the same hour/minute as the Julian date).
+
+@item rjd-to-sec
+@item rjd-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given reduced Julian date.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-tjd
+@cindex Truncated Julian Date
+@cindex TJD: Truncated Julian Date
+Return the truncated Julian date (TJD) of the given date string: number of days from 00:00 of 1968--05--24.
+It was defined by NASA in 1979 to shorten the digits: the Julian date of this starting time is a round number: 2440000.5.
+By default, the TJD doesn't have fractions of a day, but to be general, Gnuastro also includes the fractional component to preserve the precise input date.
+If you want only the day counter, you can use the @code{uint32} operator:
+
+@example
+$ echo "# Column 1: Date [iso-8601, str25] Date." > date.txt
+$ date --iso-8601=sec >> date.txt
+$ asttable date.txt -c'arith $1 date-to-tjd uint32'
+@end example
+
+@item tjd-to-sec
+@item tjd-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given truncated Julian date.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-djd
+@cindex Dublin Julian Date
+@cindex DJD: Dublin Julian Date
+Return the Dublin Julian date (MJD) of the given date string: number of days from 12:00 of 1899--12--31.
+This was introduced by the IAU in 1955.
+
+@item djd-to-sec
+@item djd-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given Dublin Julian date.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-cjd
+@cindex CNES Julian Date
+Return the CNES Julian date of the given date string: number of days from 00:00 of 1950--01--01.
+This was introduced by the French Space Agency (CNES: Centre national d'études spatiales).
+
+@item cjd-to-sec
+@item cjd-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given CNES Julian date.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-ccjd
+@cindex CCSDS Julian Date
+Return the CCSDS Julian date of the given date string: number of days from 00:00 of 1958--01--01.
+This was introduced by the Consultative Committee for Space Data Systems (CCSDS).
+
+@item ccjd-to-sec
+@item ccjd-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given CCSDS Julian date.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-rata
+@cindex Rata Die
+Return the @url{https://en.wikipedia.org/wiki/Rata_Die,Rata Die} of the given date string: number of days from 00:00 of 0001--01--01 (first day of year 1 A.D.; with Julian date 1721424.5).
+Rata Die usually only counts days (not hours or seconds), similar to the truncated Julian date, for an example of how to get that, see the description of @code{date-to-tjd}.
+
+@item rata-to-sec
+@item rata-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given Rata Die.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-lilian
+@cindex Lilian date
+Return @url{https://en.wikipedia.org/wiki/Lilian_date, Lilian date} of the given date string: number of days from 00:00 of 1582--10--15 (first day of the Gregorian calendar).
+It is named after Aloysius Lilius (1510 -- 1576 A.D.) who proposed the Gregorian calendar.
+The Lilian can only counts days (not hours or seconds), similar to the truncated Julian date, for an example of how to get that, see the description of @code{date-to-tjd}.
+
+@item lilian-to-sec
+@item lilian-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given Lilian date.
+In both cases, the output is a signed 64-bit integer.
+
+@item date-to-mars-sol
+@cindex Mars Sol Date
+Return the @url{https://en.wikipedia.org/wiki/Timekeeping_on_Mars#Mars_Sol_Date, Mars Sol} date of the given date string: number of Mars Sol days from 12:00 of 1873--12--29.
+
+@item mars-sol-to-sec
+@item mars-sol-to-millisec
+Return the Unix time (in seconds or milliseconds) of the given Mars Sol date.
+In both cases, the output is a signed 64-bit integer.
+
+@end table
+
+@node Distance conversion, Statistical operators, Date conversion, Arithmetic operators
+@subsubsection Distance conversion
+
+The operators below enable the conversion of commonly used @emph{linear} distances.
+The reason we focus on the linear aspect of the distances is that for extra-galactic astronomy, usually distances are descirbed in non-linear, and cosmological-model-dependent units.
+For those, we have a dedicated program: @ref{CosmicCalculator}.
+
+@table @command
 @item au-to-pc
 @cindex Parsecs
 @cindex Astronomical Units (AU)
@@ -22454,7 +22699,7 @@ This operator takes a single argument which is interpreted to be the input AUs.
 For the conversion and a similar example, see the description of @code{ly-to-pc}.
 @end table
 
-@node Statistical operators, Coadding operators, Unit conversion operators, Arithmetic operators
+@node Statistical operators, Coadding operators, Distance conversion, Arithmetic operators
 @subsubsection Statistical operators
 
 The operators in this section take a single dataset as input, and will return the desired statistic as a single value.
@@ -30179,7 +30424,7 @@ The spectral flux density is defined in either of these units (based on context)
 A ``Jansky'' is a predefined/nominal level of frequency flux density that is commonly used in radio astronomy.
 The AB magnitude system (see below; used in optical astronomy) is also in frequency-based so there is a simple conversion between the two.
 
-Janskys can be converted to wavelength flux density using the @code{jy-to-wavelength-flux-density} operator of Gnuastro's Arithmetic program, see the derivation under this operator's description in @ref{Unit conversion operators}.
+Janskys can be converted to wavelength flux density using the @code{jy-to-wavelength-flux-density} operator of Gnuastro's Arithmetic program, see the derivation under this operator's description in @ref{Flux conversion}.
 @end table
 @end table
 
@@ -30212,7 +30457,7 @@ For estimating the error in measuring a magnitude, see @ref{Metameasurements on 
 The equation above is ultimately a relative relation.
 To tie it to physical units, astronomers use the concept of a zero point which is discussed in the next item.
 
-See the @option{mag-to-luminosity} operator of Arithmetic in @ref{Unit conversion operators} for more on the conversion of the observed magnitudes (described below) of an object to luminosity.
+See the @option{mag-to-luminosity} operator of Arithmetic in @ref{Flux conversion} for more on the conversion of the observed magnitudes (described below) of an object to luminosity.
 The received brightness of two object with the same luminosity but at different distances is going to be different (the closer one will be brighter).
 Therefore, astronomers have defined the following terminology to help avoid confusing distant-dependent and distance-independent magnitudes.
 
@@ -30328,7 +30573,7 @@ It was defined such that it would be independent of using wavelength or frequenc
 
 To convert from AB to ST magnitudes you can use the operators @code{mag-to-jy} and @code{jy-to-wavelength-flux-density} (which needs the pivot wavelength) to get the @mymath{F_\lambda} corresponding to a certain @mymath{m_{AB}} and plug into the ST equation above.
 Converting from ST to AB magnitudes will be the inverse.
-For more on these operators see @ref{Unit conversion operators}).
+For more on these operators see @ref{Flux conversion}).
 
 @item Surface brightness
 @cindex Steradian
@@ -31709,7 +31954,7 @@ Since almost all mirrors are circular, we can simplify the relation above by rep
 Note that we didn't simply say ``radius'' (and the equation does not have @mymath{r}), but ``exposed radius'' (@mymath{r_e} in the equation).
 This is a very important factor to have in mind.
 For example in the Vera C. Rubin Observatory (that will be conducting the LSST survey) the primary mirror has a diameter of 8.4 meters, however, the inner circular area of radius 5 meters is not used (due to the second and third mirrors)@footnote{@url{https://commons.wikimedia.org/wiki/File:LSSToptics.jpg}}.
-Therefore, the useful surface of the Vera C. Rubin telescope is @mymath{\pi(8.4^2-5.0^2)=\pi45.56=\pi6.75^2}, giving it an exposed radius of @mymath{r_e=6.75m} (for an easy implementation of this equation in Gnuastro, see the @code{sblim-diff} operator of @ref{Unit conversion operators}).
+Therefore, the useful surface of the Vera C. Rubin telescope is @mymath{\pi(8.4^2-5.0^2)=\pi45.56=\pi6.75^2}, giving it an exposed radius of @mymath{r_e=6.75m} (for an easy implementation of this equation in Gnuastro, see the @code{sblim-diff} operator of @ref{Flux conversion}).
 
 @dispmath{SB_i = SB_r + 2.5\log_{10}\left( {r_{ei} \over r_{er}}{n_i \over n_r} \sqrt{{t_i \over t_r}{A_i \over A_r}} \right)}
 
@@ -34735,7 +34980,7 @@ The luminosity distance to object at given redshift in Megaparsecs (Mpc).
 The bolometric (across the full electromagnetic spectrum) distance modulus (@mymath{DM}) at the given redshift assuming no intermediate absorption.
 The distance modulus allows the conversion of observed (@mymath{m}, distance dependent) to absolute (@mymath{M}, independent of distance; or the same distance of 10 parsecs for all objects) magnitudes.
 In other words, @mymath{DM=m-M}, or @mymath{M=m-DM}.
-From the absolute magnitude, we can derive the luminosity of the source; see @code{mag-to-luminosity} in @ref{Unit conversion operators}.
+From the absolute magnitude, we can derive the luminosity of the source; see @code{mag-to-luminosity} in @ref{Flux conversion}.
 
 The two conditions above are very important to remember when using this option:
 @itemize
@@ -41608,38 +41853,6 @@ To use the value during your processing, it is commonly necessary to remove the 
 This function will do this within the allocated space of the string.
 @end deftypefun
 
-@deftypefun {char *} gal_fits_key_date_to_struct_tm (char @code{*fitsdate}, struct tm @code{*tp})
-@cindex Date: FITS format
-Parse @code{fitsdate} as a FITS date format string (most generally: @code{YYYY-MM-DDThh:mm:ss.ddd...}) into the C library's broken-down time structure, or @code{struct tm} (declared in @file{time.h}) and return a pointer to a newly allocated array for the sub-second part of the format (@code{.ddd...}).
-Therefore it needs to be freed afterwards (if it is not @code{NULL})
-When there is no sub-second portion, this pointer will be @code{NULL}.
-
-This is a relatively low-level function, an easier function to use is @code{gal_fits_key_date_to_seconds} which will return the sub-seconds as double precision floating point.
-
-Note that the FITS date format mentioned above is the most complete representation.
-The following two formats are also acceptable: @code{YYYY-MM-DDThh:mm:ss} and @code{YYYY-MM-DD}.
-This option can also interpret the older FITS date format where only two characters are given to the year and the date format is reversed (@code{DD/MM/YYThh:mm:ss.ddd...}).
-In this case (following the GNU C Library), this option will make the following assumption: values 68 to 99 correspond to the years 1969 to 1999, and values 0 to 68 as the years 2000 to 2068.
-@end deftypefun
-
-@deftypefun size_t gal_fits_key_date_to_seconds (char @code{*fitsdate}, char @code{**subsecstr}, double @code{*subsec})
-@cindex Unix epoch time
-@cindex Epoch time, Unix
-Return the Unix epoch time (number of seconds that have passed since 00:00:00 Thursday, January 1st, 1970) corresponding to the FITS date format string @code{fitsdate} (see description of @code{gal_fits_key_date_to_struct_tm} above).
-This function will return @code{GAL_BLANK_SIZE_T} if the broken-down time could not be converted to seconds.
-
-The Unix epoch time is in units of seconds, but the FITS date format allows sub-second accuracy.
-The last two arguments are for the optional sub-second portion.
-If you do not want sub-second information, just set the second argument to @code{NULL}.
-
-If @code{fitsdate} contains sub-second accuracy and @code{subsecstr!=NULL}, then the starting of the sub-second part's string is stored in @code{subsecstr} (malloc'ed), and @code{subsec} will be the corresponding numerical value (between 0 and 1, in double precision floating point).
-So to avoid leaking memory, if a sub-second string is requested, it must be freed after calling this function.
-When a sub-second string does not exist (and it is requested), then a value of @code{NULL} and NaN will be written in @code{*subsecstr} and @code{*subsec} respectively.
-
-This is a very useful function for operations on the FITS date values, for example, sorting FITS files by their dates, or finding the time difference between two FITS files.
-The advantage of working with the Unix epoch time is that you do not have to worry about calendar details (such as the number of days in different months or leap years).
-@end deftypefun
-
 @deftypefun void gal_fits_key_read_from_ptr (fitsfile @code{*fptr}, gal_data_t @code{*keysll}, int @code{readcomment}, int @code{readunit})
 
 Read the list of keyword values from a FITS pointer.
@@ -46399,6 +46612,78 @@ For the conversion equation, see the description of @code{ly-to-pc} operator in 
 Convert the input value (assumed to be in Astronomical Units) to Light-years.
 For the conversion equation, see the description of @code{ly-to-pc} operator in @ref{Arithmetic operators}.
 @end deftypefun
+
+@c @deftypefun {char *} gal_fits_key_date_to_struct_tm (char @code{*fitsdate}, struct tm @code{*tp})
+@c @cindex Date: FITS format
+@c Parse @code{fitsdate} as a FITS date format string (most generally: @code{YYYY-MM-DDThh:mm:ss.ddd...}) into the C library's broken-down time structure, or @code{struct tm} (declared in @file{time.h}) and return a pointer to a newly allocated array for the sub-second part of the format (@code{.ddd...}).
+@c Therefore it needs to be freed afterwards (if it is not @code{NULL})
+@c When there is no sub-second portion, this pointer will be @code{NULL}.
+@c
+@c This is a relatively low-level function, an easier function to use is @code{gal_units_date_to_seconds} which will return the sub-seconds as double precision floating point.
+@c
+@c Note that the FITS date format mentioned above is the most complete representation.
+@c The following two formats are also acceptable: @code{YYYY-MM-DDThh:mm:ss} and @code{YYYY-MM-DD}.
+@c This option can also interpret the older FITS date format where only two characters are given to the year and the date format is reversed (@code{DD/MM/YYThh:mm:ss.ddd...}).
+@c In this case (following the GNU C Library), this option will make the following assumption: values 68 to 99 correspond to the years 1969 to 1999, and values 0 to 68 as the years 2000 to 2068.
+@c @end deftypefun
+
+@deftypefun size_t gal_units_date_to_unix_seconds (char @code{*datestr}, char @code{**subsecstr}, double @code{*subsec})
+@cindex Unix epoch time
+@cindex Epoch time, Unix
+Return the Unix epoch time (number of seconds that have passed since 00:00:00 Thursday, January 1st, 1970) corresponding to the FITS date format string @code{fitsdate} (see description of @code{gal_fits_key_date_to_struct_tm} above).
+This function will return @code{GAL_BLANK_SIZE_T} if the broken-down time could not be converted to seconds.
+
+The Unix epoch time is in units of seconds, but the FITS date format allows sub-second accuracy.
+The last two arguments are for the optional sub-second portion.
+If you do not want sub-second information, just set the second argument to @code{NULL}.
+
+If @code{fitsdate} contains sub-second accuracy and @code{subsecstr!=NULL}, then the starting of the sub-second part's string is stored in @code{subsecstr} (malloc'ed), and @code{subsec} will be the corresponding numerical value (between 0 and 1, in double precision floating point).
+So to avoid leaking memory, if a sub-second string is requested, it must be freed after calling this function.
+When a sub-second string does not exist (and it is requested), then a value of @code{NULL} and NaN will be written in @code{*subsecstr} and @code{*subsec} respectively.
+
+This is a very useful function for operations on the FITS date values, for example, sorting FITS files by their dates, or finding the time difference between two FITS files.
+The advantage of working with the Unix epoch time is that you do not have to worry about calendar details (such as the number of days in different months or leap years).
+@end deftypefun
+
+@deftypefun {char *} gal_units_unix_seconds_to_date (int64_t @code{unixsec}, double @code{subsec}, int @code{subsecdigits})
+Return the standardized date string corresponding to the given Unix seconds.
+Optionally (when @code{subsecdigits>0} and @code{subsec!=0.0f}), it will also add sub-second information in the printed string.
+For the full format, see @ref{Date conversion}.
+@end deftypefun
+
+
+@deftypefun double gal_units_unix_seconds_to_jd(int64_t @code{unixsec}, double @code{subsec})
+Return the Julian date corresponding to the given Unix second, see @ref{Date conversion} for their definitions.
+@end deftypefun
+
+@deftypefun  int64_t gal_units_jd_to_unix_seconds (double jd, double *subsec)
+@deftypefunx int64_t gal_units_rjd_to_unix_seconds (double rjd, double *subsec)
+@deftypefunx int64_t gal_units_mjd_to_unix_seconds (double mjd, double *subsec)
+@deftypefunx int64_t gal_units_tjd_to_unix_seconds (double tjd, double *subsec)
+@deftypefunx int64_t gal_units_djd_to_unix_seconds (double djd, double *subsec)
+@deftypefunx int64_t gal_units_cjd_to_unix_seconds (double cjd, double *subsec)
+@deftypefunx int64_t gal_units_ccjd_to_unix_seconds (double ccjd, double *subsec)
+@deftypefunx int64_t gal_units_mjd2000_to_unix_seconds (double mjd2000, double *subsec)
+@deftypefunx int64_t gal_units_lilian_to_unix_seconds (double lilian, double *subsec)
+@deftypefunx int64_t gal_units_rata_to_unix_seconds (double rata, double *subsec)
+@deftypefunx int64_t gal_units_mars_sol_to_unix_seconds (double sol, double *subsec)
+Return the Unix seconds corresponding to the given variant of the Julian days, see @ref{Date conversion} for more on the definition of each variation.
+These functions also return any possible sub-second fraction in the space that @code{subsec} points to.
+@end deftypefun
+
+@deftypefun  double gal_units_jd_to_rjd (double jd)
+@deftypefunx double gal_units_jd_to_mjd (double jd)
+@deftypefunx double gal_units_jd_to_tjd (double jd)
+@deftypefunx double gal_units_jd_to_djd (double jd)
+@deftypefunx double gal_units_jd_to_cjd (double jd)
+@deftypefunx double gal_units_jd_to_ccjd (double jd)
+@deftypefunx double gal_units_jd_to_mjd2000 (double jd)
+@deftypefunx double gal_units_jd_to_lilian (double jd)
+@deftypefunx double gal_units_jd_to_rata (double jd)
+@deftypefunx double gal_units_jd_to_mars_sol (double jd)
+Return the desired Julian date variant from the Julian date, see @ref{Date conversion} for more on the definition of each variation.
+@end deftypefun
+
 
 @node Spectral lines library, Cosmology library, Unit conversion library, Gnuastro library
 @subsection Spectral lines library (@file{speclines.h})
