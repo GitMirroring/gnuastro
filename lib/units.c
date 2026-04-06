@@ -31,6 +31,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <gnuastro/type.h>
 #include <gnuastro/pointer.h>
@@ -904,6 +905,10 @@ gal_units_unix_seconds_to_date(int64_t unixsec, double subsec,
     error(EXIT_FAILURE, 0, "%s: the value of the 'subsec' argument "
           "should be larger or equal to 0.0. However, its value is "
           "%e", __func__, subsec);
+  if( sizeof t < 8 && (unixsec>2147483647 || unixsec<-2147483648) )
+    error(EXIT_FAILURE, 0, "%s: the input Unix-seconds (%"PRId64"), "
+          "is larger than this system's 'time_t' width (%zu bits)",
+          __func__, unixsec, (sizeof t)*8);
 
   /* Break-down the Unix-seconds into YYYY-MM-DD and hh:mm:ss
      components. We are using 'gmtime' to have an output in UTC, and its
@@ -917,14 +922,13 @@ gal_units_unix_seconds_to_date(int64_t unixsec, double subsec,
      output format of 'YYYY-MM-DDThh:mm:ss' has 20 characters (including
      the string termination character. But for B.C. dates, a '-' will be
      added on the year and for dates too far into the future, the year can
-     be longer, so to avoid strange outputs, we'll allow 29 characaters in
-     the printable string. */
-  out=gal_pointer_allocate(GAL_TYPE_UINT8, 30, 0, __func__, "out");
-  nchr=strftime(out, 30, "%FT%T", &tp);
-  if( nchr > 29 ) /* Number of chars ('nchr') does not include '/0'. */
+     be longer. */
+  out=gal_pointer_allocate(GAL_TYPE_UINT8, 35, 0, __func__, "out");
+  nchr=strftime(out, 35, "%FT%T", &tp);
+  if( nchr > 34 ) /* Number of chars ('nchr') does not include '/0'. */
     error(EXIT_FAILURE, 0, "%s: the broken-down time could not "
           "printed in the desired format for the input Unix-second "
-          "'%ld'", __func__, unixsec);
+          "'%ld', the value of 'nchr' is %zu", __func__, unixsec, nchr);
 
   /* If a non-zero sub-second string is given, add it to the output. */
   if(subsecdigits && subsec!=0.0f)
