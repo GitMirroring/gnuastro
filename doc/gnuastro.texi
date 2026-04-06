@@ -22399,7 +22399,7 @@ Scalinger selected 12:00 (noon) of January 1st in that year (according to his Ju
 Another problem that the Julian day fixes is the units of time that are smaller than a day, with their different basis.
 In particular, hours, minutes and seconds that are on the basis of 24, 60 and 60 respectively.
 When treating the Julian day as a floating point, these smaller units simply become decimal fractions of a day.
-For example the Julian day of 2026--04--02 at 17:14:54 is 2461133.218681: the Julian date is a large integer.
+For example the Julian day of 2026--04--02 at 17:14:54 is 2461133.218681: the Julian date has many significant digits.
 
 All the significant digits of the Julian date can slow down the processing (when it should be executed a lot!).
 But there is a more important issue: that floating point precision has non-linear systematics, which become worse as the number of significant digits increases.
@@ -22415,7 +22415,11 @@ To help in the design of their new Unix operating system (first released in Nove
 They chose the starting date of their system as 00:00:00 of January 1st, 1970 based on their need/convenience and this became known as the Unix time.
 The Unix time is stored as a @emph{signed} 64-bit integer, so it does not have the systematic issues of floating points, and can also accommodate negative values that can be used for dates prior to 1970 (for the range of possible values, see @ref{Numeric data types}).
 
-Given the moden processor and network speeds, even seconds are large intervals (do not have the necessary resolution).
+Don't worry about the 64-bit limit: on a manual trial, the largest Unix time that would could get a date for (with @code{sec-to-date} below) was 67 thousand trillion (@mymath{6.7\times10^{16}}, or @code{6.7e16} if you want to try the command).
+After conversion to the current Gregorian calendar, this corresponds to 15:51:28 of December 20th in the year 2123147432 A.D; more than 2.1 million years from now.
+So the 64-bits have enough space (in the past and future) for a precision of a single second as long as your desired time intervals are less than this.
+
+Given the modern processor and network speeds, even seconds are large intervals (do not have the necessary resolution).
 As a result, there are also systems that count milli-seconds and nano-seconds (both also commonly starting at the Unix time epoch).
 For example day-time telescopes designed for imaging the Sun have exposure times on the scale of milli-seconds and the EXT4 filesystem measures time in counts of nano-seconds.
 
@@ -22442,7 +22446,6 @@ DD/MM/YYThh:mm:ss+OH:OM
 
 @noindent
 Some notes on the formats above are listed below.
-Some of the formats that are not supported by the formal standards (FITS or ISO 8601), you should not worry about them when you are feeding the operators here: those that read a date string will read any of the above, and those that write the date into a string do so within the UTC timezone (to be compatible with FITS).
 @enumerate
 @item
 All the operators that will print human-friendly date strings will print in this format: assuming a UTC time zone.
@@ -22455,8 +22458,9 @@ You can use this mode to include an offset (or timezone; where the @code{+OH} ca
 The @code{OH} is the offset hours and the @code{OM} is the offset minutes.
 Note that an offset is not defined in the FITS standrad (where all times are in UTC).
 @item
-Gnuastro also interprets the older format (two characters for year).
+Gnuastro also interprets this non-standard format (with two characters for the year and starting with days) as input (not output).
 In this case: year values 68 to 99 are interpreted as 1969 to 1999 and values 0 to 68 as the years 2000 to 2068.
+This format is only acceptable as input, not output, so the fact that it is not supported by either of the FITS or ISO 8601, is not a problem.
 @end enumerate
 
 @noindent
@@ -22476,7 +22480,8 @@ $ asttable date.txt -c'arith $1 date-to-jd'
 @end example
 
 @item jd-to-date
-Return the calendar date (in the format of @code{YYYY-MM-DDThh:mm:ss} in UTC) of the given Julian date.
+Return the calendar date (in the format of @code{YYYY-MM-DDThh:mm:ss} in UTC) of the given Julian date (when it doesn't have sub-second precision).
+When the input has sub-second precision, the returned string will have the format of @code{YYYY-MM-DDThh:mm:ss.ddd}.
 For example, in the command below you can see exact time that the European Space Agency's Euclid mission was launched, but in Julian date.
 Run it to see what date/time it corresponded to.
 
@@ -22485,7 +22490,7 @@ $ astarithmetic 2460127.13334 jd-to-date
 @end example
 
 @item date-to-sec
-Return the Unix time (an integer, counting seconds) of the given date sting (in the format above).
+Return the Unix time (an integer, counting seconds) of the given date string (in the format above).
 The example below uses this operator, in combination with the @option{--keyvalue} option of the Fits program, to sort your desired FITS files by observation date (value in the @code{DATE-OBS} keyword in example below).
 For more on @option{--keyvalue}, see @ref{Keyword inspection and manipulation}.
 
@@ -22509,7 +22514,7 @@ $ astarithmetic 59553.12349 rjd-to-millisec millisec-to-date
 @end example
 
 @item date-to-millisec
-Return the Unix time (an integer, counting milli-seconds) of the given date sting (in the format above).
+Return the Unix time (an integer, counting milli-seconds) of the given date string (in the format above).
 The returned value is not a floating point type (in units of seconds) because for large numbers, the floating point data types loose single-digit precision systematically (which is important here).
 This operator behaves similarly to @code{date-to-sec}; see the description of that operator for an example.
 

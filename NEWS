@@ -169,7 +169,7 @@ See the end of the file for license conditions.
     different for each function (not a generic suffix for any
     operation). The suffix table is listed below, where the '%' is the
     input's base-name. For example if the input is 'img.fits', the '%'
-    would be 'in'.
+    would be 'img'.
      --copy:            %-copy.fits
      --cut:             %-cut.fits
      --wcsdistortion:   %-STR.fits ('STR' is value given to this option).
