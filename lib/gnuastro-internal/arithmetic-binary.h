@@ -183,9 +183,9 @@ enum arithmetic_binary_outtype_flags
 /* Set the right operator type only for integers (integer operators can't
    take floating point types). So floating point types must not be in the
    list of possibilities. */
-#define BINARY_SET_RT_INT(F, OP, LT)                                        \
-  switch(r->type)                                                           \
-    {                                                                       \
+#define BINARY_SET_RT_INT(F, OP, LT)                                    \
+  switch(r->type)                                                       \
+    {                                                                   \
     case GAL_TYPE_UINT8:   BINARY_SET_OUT_INT( F, OP, LT, uint8_t  ) break; \
     case GAL_TYPE_INT8:    BINARY_SET_OUT_INT( F, OP, LT, int8_t   ) break; \
     case GAL_TYPE_UINT16:  BINARY_SET_OUT_INT( F, OP, LT, uint16_t ) break; \
@@ -194,10 +194,10 @@ enum arithmetic_binary_outtype_flags
     case GAL_TYPE_INT32:   BINARY_SET_OUT_INT( F, OP, LT, int32_t  ) break; \
     case GAL_TYPE_UINT64:  BINARY_SET_OUT_INT( F, OP, LT, uint64_t ) break; \
     case GAL_TYPE_INT64:   BINARY_SET_OUT_INT( F, OP, LT, int64_t  ) break; \
-    default:                                                                \
-      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "       \
-            "address the problem. %d is not a usable type code",            \
-            "BINARY_SET_RT", PACKAGE_BUGREPORT, r->type);                   \
+    default:                                                            \
+      error(EXIT_FAILURE, 0, "type '%s' (of the right operand) is not " \
+            "usable with the '%s' operator (in 'BINARY_SET_RT_INT')",   \
+            gal_type_name(r->type, 1), #OP);                            \
     }
 
 
@@ -219,9 +219,9 @@ enum arithmetic_binary_outtype_flags
     case GAL_TYPE_FLOAT32: BINARY_SET_OUT( F, OP, LT, float    ) break; \
     case GAL_TYPE_FLOAT64: BINARY_SET_OUT( F, OP, LT, double   ) break; \
     default:                                                            \
-      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "   \
-            "address the problem. %d is not a usable type code",        \
-            "BINARY_SET_RT", PACKAGE_BUGREPORT, r->type);               \
+      error(EXIT_FAILURE, 0, "type '%s' (of the right operand) is not " \
+            "usable with the '%s' operator (in 'BINARY_SET_RT')",       \
+            gal_type_name(r->type, 1), #OP);                            \
     }
 
 
@@ -243,9 +243,9 @@ enum arithmetic_binary_outtype_flags
     case GAL_TYPE_UINT64:  BINARY_SET_RT_INT( F, OP, uint64_t ) break;  \
     case GAL_TYPE_INT64:   BINARY_SET_RT_INT( F, OP, int64_t  ) break;  \
     default:                                                            \
-      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "   \
-            "address the problem. %d is not a usable type code",        \
-            "BINARY_SET_LT_INT", PACKAGE_BUGREPORT, l->type);           \
+      error(EXIT_FAILURE, 0, "type '%s' (of the left operand) is not "  \
+            "usable with the '%s' operator (in 'BINARY_SET_LT_INT')",   \
+            gal_type_name(l->type, 1), #OP);                            \
     }
 
 
@@ -267,9 +267,9 @@ enum arithmetic_binary_outtype_flags
     case GAL_TYPE_FLOAT32: BINARY_SET_RT( F, OP, float    ) break;      \
     case GAL_TYPE_FLOAT64: BINARY_SET_RT( F, OP, double   ) break;      \
     default:                                                            \
-      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "   \
-            "address the problem. %d is not a usable type code",        \
-            "BINARY_SET_LT", PACKAGE_BUGREPORT, l->type);               \
+      error(EXIT_FAILURE, 0, "type '%s' (of the left operand) is not "  \
+            "usable with the '%s' operator (in 'BINARY_SET_LT')",       \
+            gal_type_name(l->type, 1), #OP);                            \
     }
 
 
