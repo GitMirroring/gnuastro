@@ -509,8 +509,8 @@ ui_prepare_inputs(struct segmentparams *p)
          connected regions. The user is allowed to supply a simple binary
          image.*/
       maxd=gal_statistics_maximum(p->olabel);
-      maxd=gal_data_copy_to_new_type_free(maxd, GAL_TYPE_INT64);
-      p->numdetections = *((uint64_t *)(maxd->array));
+      maxd=gal_data_copy_to_new_type_free(maxd, GAL_TYPE_SIZE_T);
+      p->numdetections = *((size_t *)(maxd->array));
       if( p->numdetections == 1 )
         {
           ccin=gal_data_copy_to_new_type_free(p->olabel, GAL_TYPE_UINT8);

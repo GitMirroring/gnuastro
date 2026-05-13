@@ -48605,6 +48605,15 @@ In @file{developer-build} you can ask for this behavior through the
 In order to understand the building process, you can go through the Autoconf, Automake and Libtool manuals, like all GNU manuals they provide both a great tutorial and technical documentation.
 The ``A small Hello World'' section in Automake's manual (in chapter 2) can be a good starting guide after you have read the separate introductions.
 
+Once you have implemented a new feature or fixed a bug, see @ref{Contributing to Gnuastro} section for the technicalities of getting your work included in Gnuastro for the benefit of all users.
+In particular, after the @ref{Copyright assignment} is done (only once), see @ref{Forking tutorial} within that section for the simplest workflow to get every fix merged.
+Just don't forget Gnuastro's @ref{Commit guidelines}.
+
+
+
+
+
+
 
 
 
