@@ -972,8 +972,11 @@ gal_options_parse_list_of_numbers(char *string, char *filename,
 
 
 /* Replacement characters for commented comma (ASCII code 14 for "Shift
-   out") or colon (ASCII code 15 for "Shift in"). These are chosen as
-   non-printable ASCII characters, that user's will not be typing. */
+   out"). These are chosen as non-printable ASCII characters, that user's
+   will not be typing. In the past, the colon was also considered as a
+   delimiter (with the ASCII code 15 for "Shift in"). But in strings,
+   colons can regularly happen (for example when writing dates in the
+   "YYYY-MM-DDThh:mm:ss" format). So it was removed. */
 #define OPTIONS_COMMENTED_COMMA 14
 #define OPTIONS_COMMENTED_COLON 15
 gal_data_t *
@@ -982,9 +985,8 @@ gal_options_parse_list_of_strings(char *string, char *filename,
 {
   size_t num;
   gal_data_t *out;
-  int needscorrection;
   gal_list_str_t *list=NULL, *tll;
-  char *c, *d, *cp, *token, **strarr, delimiters[]=",:";
+  char *c, *d, *cp, *token, **strarr, delimiters[]=",";
 
   /* The nature of the arrays/numbers read here is very small, so since
      'p->cp.minmapsize' might not have been read yet, we will set it to -1
@@ -995,7 +997,7 @@ gal_options_parse_list_of_strings(char *string, char *filename,
   /* If we have an empty string, just return NULL. */
   if(string==NULL || *string=='\0') return NULL;
 
-  /* Make a copy of the input string, remove all commented delimiters
+  /* Make a copy of the input string and remove all commented delimiters
      (those with a preceding '\'). */
   gal_checkset_allocate_copy(string, &cp);
   for(c=cp; *c!='\0'; c++)
@@ -1005,14 +1007,12 @@ gal_options_parse_list_of_strings(char *string, char *filename,
            replace it with a non-delimiter (and not-typed!) character and
            shift the whole string back by one character to simplify future
            steps. */
-        needscorrection=0;
         switch(c[1])
           {
-          case ',': *c=OPTIONS_COMMENTED_COMMA; needscorrection=1; break;
-          case ':': *c=OPTIONS_COMMENTED_COLON; needscorrection=1; break;
+          case ',': *c=OPTIONS_COMMENTED_COMMA; break;
+          default: *c=*(c+1);
           }
-        if(needscorrection)
-          { for(d=c+2; *d!='\0'; ++d) {*(d-1)=*d;} *(d-1)='\0'; }
+        for(d=c+2; *d!='\0'; ++d) {*(d-1)=*d;} *(d-1)='\0';
       }
 
   /* Start separating the tokens. */
@@ -1041,7 +1041,6 @@ gal_options_parse_list_of_strings(char *string, char *filename,
         switch(*c)
           {
           case OPTIONS_COMMENTED_COMMA: *c=','; break;
-          case OPTIONS_COMMENTED_COLON: *c=':'; break;
           }
 
       /* Put the pointer of the string in the output array. */
@@ -1641,8 +1640,9 @@ gal_options_read_sigma_clip(struct argp_option *option, char *arg,
    values are in its array (of 'char *' or 'float64' type). */
 static void *
 gal_options_parse_name_and_values(struct argp_option *option, char *arg,
-                                  char *filename, size_t lineno, void *junk,
-                                  int str0_f641_sz2, int append)
+                                  char *filename, size_t lineno,
+                                  void *junk, int str0_f641_sz2,
+                                  int append)
 {
   double *darray=NULL;
   size_t i, nc, *sizarr=NULL;

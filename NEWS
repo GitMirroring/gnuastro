@@ -214,6 +214,10 @@ See the end of the file for license conditions.
     it contains a comma in any of the name, value or comments. Found and
     fixed by Giacomo Lorenzetti.
 
+  - bug #68349: Table's '--equal', '--notequal' and '--colmetadata' not
+    working with strings that have a colon (like the ISO 8601 date format:
+    'YYYY-MM-DDThh:mm:ss').
+
 
 
 

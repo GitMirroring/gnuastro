@@ -19863,12 +19863,12 @@ For the precedence of this operation in relation to others, see @ref{Operation p
 The first value (before the first comma) given to this option is the column's identifier.
 It can either be a counter (positive integer, counting from 1), or a name (the column's name in the output if this option was not called).
 
-After the to-be-updated column is identified, at least one other string should be given, with a maximum of three strings.
+After the to-be-updated column is identified, at least one other string should be given, with a maximum of three strings, separated by commas (`@code{,}').
 The first string after the original name will the selected column's new name.
 The next (optional) string will be the selected column's unit and the third (optional) will be its comments.
 If the two optional strings are not given, the original column's units or comments will remain unchanged.
 
-If any of the values contains a comma, you should place a `@code{\}' before the comma to avoid it getting confused with a delimiter.
+If any of the values contains a comma, you should place a `@code{\}' before the comma to avoid it getting confused with the delimiter.
 For example, see the command below for a column description that contains a comma:
 
 @example
