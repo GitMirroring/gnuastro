@@ -223,6 +223,9 @@ See the end of the file for license conditions.
     working with strings that have a colon (like the ISO 8601 date format:
     'YYYY-MM-DDThh:mm:ss').
 
+  - bug #68475: Reading WCS fails when both CD and CROTA are present. Found
+    and fixed by Giacomo Lorenzetti.
+
 
 
 

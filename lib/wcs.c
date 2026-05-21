@@ -746,9 +746,11 @@ gal_wcs_write_wcsstr(struct wcsprm *wcs, int *nkeyrec)
   int status=0;
 
   /* Finalize the linear transformation matrix. Note that some programs may
-     have worked on the WCS. So even if 'altlin' is already 2, we'll just
-     ensure that the final matrix is CD here. */
-  if(wcs->altlin==2 || wcs_use_cd_for_distortion(wcs)) gal_wcs_to_cd(wcs);
+     have worked on the WCS before getting to this function. So before
+     writing it is necessary to make sure everything is consistent and
+     standardized. */
+  if(wcs->altlin & 0x2 || wcs_use_cd_for_distortion(wcs))
+    gal_wcs_to_cd(wcs);
   else gal_wcs_decompose_pc_cdelt(wcs);
 
   /* Clean up small errors in the PC matrix and CDELT values. */
@@ -2026,6 +2028,28 @@ gal_wcs_on_tile(gal_data_t *tile)
 
 
 
+/* Convert CROTAi to CDi_j. The output matrix has to be already allocated,
+   here we just check if it has the correct size. */
+static void
+wcs_crota_to_cd(double *crota, double *cdelt, double *out, size_t size)
+{
+  double crota2;
+
+  if(size!=4)
+    error(EXIT_FAILURE, 0, "%s: the CD matrix derived from CROTA "
+          "can only be 2x2. Check whether NAXIS is 2.", __func__);
+
+  crota2=crota[1];
+  out[0] = cdelt[0] * cos(crota2);
+  out[1] = -1 * cdelt[1] *sin(crota2);
+  out[2] = cdelt[0] * sin(crota2);
+  out[3] = cdelt[1] * cos(crota2);
+}
+
+
+
+
+
 /* Return the Warping matrix of the given WCS structure. This will be the
    final matrix irrespective of the type of storage in the WCS
    structure. Recall that the FITS standard has several methods to store
@@ -2035,7 +2059,7 @@ gal_wcs_on_tile(gal_data_t *tile)
 double *
 gal_wcs_warp_matrix(struct wcsprm *wcs)
 {
-  double *out, crota2;
+  double *out;
   size_t i, j, size=wcs->naxis*wcs->naxis;
 
   /* Allocate the necessary array. */
@@ -2064,7 +2088,15 @@ gal_wcs_warp_matrix(struct wcsprm *wcs)
         error(EXIT_FAILURE, 0, "%s: CROTAi currently on works in 2 "
               "dimensions.", __func__);
       if(wcs->crota[0]!=0.0)
-        error(EXIT_FAILURE, 0, "%s: CROTA1 is not zero", __func__);
+        {
+          error(EXIT_SUCCESS, 0, "%s: CROTA1 has been read as zero "
+                "(original value: %g), but it should never be set "
+                "according to URL at the end of this message. It has "
+                "been automatically set to 0 by "
+                "https://fits.gsfc.nasa.gov/users_guide/users_guide/node57.html",
+                __func__, wcs->crota[0]);
+          wcs->crota[0]=0.0;
+        }
 
       /* CROTAi keywords are depreciated in the FITS standard. However, old
          files may still use them. For a full description of CROTAi
@@ -2078,11 +2110,7 @@ gal_wcs_warp_matrix(struct wcsprm *wcs)
          the 'CDELT' values). So to speed things up, we won't bother
          dividing and then multiplying by the same CDELT values in the
          off-diagonal elements. */
-      crota2=wcs->crota[1];
-      out[0] = wcs->cdelt[0] * cos(crota2);
-      out[1] = -1 * wcs->cdelt[1] *sin(crota2);
-      out[2] = wcs->cdelt[0] * sin(crota2);
-      out[3] = wcs->cdelt[1] * cos(crota2);
+      wcs_crota_to_cd(wcs->crota, wcs->cdelt, out, size);
 
       /* For a check:
       printf("cdelt: %f, %f\n", wcs->cdelt[0], wcs->cdelt[1]);
@@ -2210,19 +2238,26 @@ gal_wcs_decompose_pc_cdelt(struct wcsprm *wcs)
 void
 gal_wcs_to_cd(struct wcsprm *wcs)
 {
-  size_t i, j, n;
-  double er=1e-10;
+  size_t i, j, n=wcs->naxis;
+  double er=1e-10, tmpcd[4];
 
   /* If there is on WCS, then don't do anything. */
   if(wcs==NULL) return;
 
   /* 'wcs->altlin' identifies which rotation element is being used (PCi_j,
-     CDi_J or CROTAi). For PCi_j, the first bit will be 1 (==1), for CDi_j,
-     the second bit is 1 (==2) and for CROTAi, the third bit is 1 (==4). */
-  n=wcs->naxis;
-  switch(wcs->altlin)
+     CDi_J or CROTAi or any combination as bit-flags):
+       - has PCi_j:  first bit will be 1 (0x1).
+       - has CDi_j:  second bit will be 1 (0x2).
+       - has CROTAi: third bit is 1 (0x4).
+     We start with 'altlin & 0x3' (which only keeps the first two bits of
+     altlin). This means that 'altlin==4' (only CROTAi) will go into the
+     'case 0', while 'altlin==5' (i.e. 0b0101 for PCi_j) will go into 'case
+     1' and 'altlin==6' (i.e. 0b0110 for CDi_j) will go into 'case 2' and
+     etc.*/
+  switch(wcs->altlin & 0x3)
     {
-   /* PCi_j: Convert it to CDi_j. */
+
+    /* PCi_j: Convert it to CDi_j. */
     case 1:
 
       /* Fill in the CD matrix and correct the PC and CDELT arrays. We have
@@ -2242,13 +2277,48 @@ gal_wcs_to_cd(struct wcsprm *wcs)
       wcs->altlin=2;
       break;
 
-    /* CDi_j: No need to do any conversion. */
-    case 2: return; break;
+    /* CDi_j: a check is necessary if CROTAi is present (to make sure it is
+       consistent with the CDi_j and inform the user if not. */
+    case 2:
+      if(wcs->altlin & 0x3)
+        {
+          n=wcs->naxis*wcs->naxis;
+          wcs_crota_to_cd(wcs->crota, wcs->cdelt, tmpcd, n);
+          for(i=0;i<n;++i)
+            if(wcs->cd[i] - tmpcd[i] > er)
+              {
+                wcs->altlin=2;
+                wcs->crota[0]=wcs->crota[1]=NAN;
+                error(EXIT_SUCCESS, 0, "%s: WARNING: the input WCS has "
+                      "both the CDi_j and CROTAi conventions for "
+                      "defining the rotation and scale. However, they do "
+                      "not match! Since the CROTAi convention has been "
+                      "replaced by the more modern CDi_j we will ignore "
+                      "the CROTAi keywords in the next steps; see "
+                      "Greisen & Calabretta (2002): "
+                      "https://scixplorer.org/abs/2002A&A...395.1077C . "
+                      "But it is worth checking what caused this "
+                      "difference upstream in your pipeline and fix it. "
+                      "To remove the wrong set of keywords you can use "
+                      "'astfits file.fits --delete=KEYNAME' (to delete "
+                      "the keyword 'KEYNAME'; and you can call "
+                      "'--delete' multiple times). For more on the "
+                      "definitions of standardized keywords, along with "
+                      "the paper above, you can see: "
+                      "https://fits.gsfc.nasa.gov/fits_standard.html",
+                      __func__);
+                break;
+              }
+        }
+      break;
 
     /* Both PCi_j and CDi_j are present! If they are the same (within
        floating point errors), we'll just set WCS to use the 'CD' matrix
        (as demanded from this function). If they are not the same, then
-       print an error. */
+       print an error. In this case we are aborting the program (unlike the
+       check between CD and CROTA) because both the CD and PC conventions
+       are actively used in the modern time and if they are different then
+       something bad has gone wrong. */
     case 3:
       for(i=0;i<n;++i)
         for(j=0;j<n;++j)
@@ -2260,20 +2330,47 @@ gal_wcs_to_cd(struct wcsprm *wcs)
                   "keywords (you can use 'astfits file.fits "
                   "--delete=KEYNAME' to delete the keyword 'KEYNAME'; "
                   "and you can call '--delete' multiple times). For "
-                  "more on the definition of the different "
-                  "representations, see the FITS standard: "
+                  "more on the definition of each, see: "
+                  "https://scixplorer.org/abs/2002A&A...395.1077C and "
                   "https://fits.gsfc.nasa.gov/fits_standard.html",
                   __func__);
       wcs->altlin=2;
       break;
 
-    /* CROTAi: not yet supported. */
-    case 4:
-      error(0, 0, "%s: WARNING: Conversion of 'CROTAi' keywords to the CD "
-            "matrix is not yet supported (for lack of time!), please "
-            "contact us at %s to add this feature. But this may not cause a "
-            "problem at all, so please check if the output's WCS is "
-            "reasonable", __func__, PACKAGE_BUGREPORT);
+    /* Case 0 actually refers to wcs->altlin=0bXX00, That means that
+       neither PC nor CD flags are set. We have to deal with such cases
+       separately. */
+    case 0:
+
+      /* wcs->altlin==0b0000: should never happen (wcs is always
+         initialized by WCSLIB in Gnuastro). */
+      if(wcs->altlin==0)
+        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "
+              "fix the problem. 'wcs->altlin' has a value of 0",
+              __func__, PACKAGE_BUGREPORT);
+
+      /* wcs->altlin==0b1000: should never happen, we'd expect 0b1001 */
+      else if(wcs->altlin==8)
+        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "
+              "fix the problem. 'wcs->altlin' is set to 8 (i.e. 0b1000), "
+              "but this should came with a PC matrix (i.e. 0b1001)",
+              __func__, PACKAGE_BUGREPORT);
+
+      /* wcs->altlin==0b0100: CROTA set, convert it to CD.
+         Update wcs->altlin to 0b0010 (i.e. ignore CROTA) */
+      else if(wcs->altlin==4)
+        {
+          wcs_crota_to_cd(wcs->crota, wcs->cdelt,
+                          wcs->cd, wcs->naxis*wcs->naxis);
+          wcs->crota[0]=wcs->crota[1]=NAN;
+          wcs->altlin=2;
+        }
+
+      /* No idea what this value is! */
+      else
+        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "
+              "fix the problem. The value %d for wcs->altlin isn't "
+              "recognized", __func__, PACKAGE_BUGREPORT, wcs->altlin);
       break;
 
     /* The value isn't supported! */
