@@ -29,6 +29,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <wcslib/wcs.h>
 
 #include <gnuastro/data.h>
+#include <gnuastro/tile.h>
 
 /* C++ Preparations */
 #undef __BEGIN_C_DECLS
@@ -73,58 +74,43 @@ typedef struct
   gal_data_t       *cdelt;  /* WCS-Build: Pixel scale of the output.     */
   gal_data_t      *center;  /* WCS-Build: Center of output in RA and Dec.*/
   uint8_t    checkmaxfrac;  /* Check: Write max fraction per pixel.      */
+  size_t        *tilesize;  /* Size of tiles to use.                     */
+  float     remainderfrac;  /* Frac. of remainers in each dim to cut. */
 
   /* Output (must be freed by caller) */
   gal_data_t      *output;  /* Pointer to output data structure.         */
 
   /* Internal variables (allocated and freed internally)  */
-  size_t               v0;  /* The first vertical corner in each pixel.  */
   size_t             nhor;  /* No. of vertices on top side of output.    */
   size_t             ncrn;  /* No. of total vertices around each pixel.  */
   size_t             gcrn;  /* Gap between corners of each row.          */
-  int               isccw;  /* Rotation orientation of pixel edges.      */
-  gal_data_t    *vertices;  /* Stores all vertice coords of output img.  */
+  gal_data_t       *tiles;  /* Array of tiles of output.                 */
 } gal_warp_wcsalign_t;
 
 
 
 
 
-/* Return an empty set of the wcsalign data structure. */
+
+
+
+
+
+/* Return an empty 'gal_warp_wcsalign_t'. */
 gal_warp_wcsalign_t
-gal_warp_wcsalign_template();
-
-
-/* Create the empty output WCS-ready image. */
-void
-gal_warp_wcsalign_init(gal_warp_wcsalign_t *wa);
-
-
-/* Fill nonlinear output by pixel. */
-void
-gal_warp_wcsalign_onpix(gal_warp_wcsalign_t *wa, size_t ind);
-
-
-/* Worker function to align per pixel. */
-void *
-gal_warp_wcsalign_onthread(void *inparam);
-
+gal_warp_wcsalign_init();
 
 /* Spin-off the threads and finalize the output 'gal_data_t' image in
    'wa->output'. */
 void
 gal_warp_wcsalign(gal_warp_wcsalign_t *wa);
 
-
-/* Clean up ONLY the internal variables. Caller must 'free' their own
-   inputs as well as the output (e.g. the input image). */
-void
-gal_warp_wcsalign_free(gal_warp_wcsalign_t *wa);
-
-
 /* Return an image where each pixel shows its own area on the sky. */
 void
 gal_warp_pixelarea(gal_warp_wcsalign_t *wa);
+
+
+
 
 
 __END_C_DECLS    /* From C++ preparations */

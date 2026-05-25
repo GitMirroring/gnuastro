@@ -26754,6 +26754,10 @@ This artifact should be removed if you are coadding several exposures, especiall
 If not see @ref{Moire pattern in coadding and its correction} for ways to mitigate the visible patterns.
 See the description of @option{--gridfile} below for more.
 
+In this mode, the Warp program uses tesselation to speed up its processing and RAM consumption.
+The tesselation has no effect on the output pixel values, but can affect run-time and CPU usage.
+To customize the tesselation, you can use the common options of @option{--tilesize} and @option{--remainderfrac} that are described in @ref{Processing options}.
+
 @cartouche
 @noindent
 @cindex WCSLIB
@@ -46240,10 +46244,9 @@ By default the output is only a single dataset, but when the @code{checkmaxfrac}
 The main data container for inputs, output and internal variables to simplify the WCS-aligning functions.
 Due to the large number of input variables, this structure makes it easy to call the main functions.
 Similar to @code{gal_data_t}, the @code{gal_warp_wcsalign_t} is a structure @code{typedef}'d as a new type, see @ref{Library data container}.
-Please note that this structure has elements that are @emph{allocated} dynamically and must be freed after usage.
-@code{gal_warp_wcsalign_free} only frees the internal variables, so you are responsible for freeing your own inputs (@code{cdelt}, @code{input}, etc.) and the output.
-The internal variables are cached here to cut cpu-intensive computations.
-To prevent from using uninitialized variables, we recommend using the helper function @code{gal_warp_wcsalign_template} to get a clean structure before setting your own variables.
+Please note that this structure has elements that are @emph{allocated} dynamically and are internally deleted by the functions tha use it.
+Some internal variables are also cached here to cut cpu-intensive computations.
+To prevent from using uninitialized variables, we recommend using the helper function @code{gal_warp_wcsalign_init} to get a clean structure before setting your own variables.
 The structure and each of its elements are defined below:
 
 @example
@@ -46265,13 +46268,13 @@ typedef struct
   /* Output (must be freed by caller) */
   gal_data_t      *output;
 
-  /* Internal variables (allocated and freed internally)  */
-  size_t               v0;
+  /* Internal variables (allocated and freed internally, not */
+  /* described below). */
   size_t             nhor;
   size_t             ncrn;
   size_t             gcrn;
   int               isccw;
-  gal_data_t    *vertices;
+  gal_data_t       *tiles;
 @} gal_warp_wcsalign_t;
 @end example
 
@@ -46335,8 +46338,8 @@ For more, see @ref{Moire pattern in coadding and its correction}.
 @end table
 @end deftp
 
-@deftypefun gal_warp_wcsalign_t gal_warp_wcsalign_template (void)
-A high-level helper function that returns a clean @code{gal_warp_wcsalign_t} struct with all values initialized
+@deftypefun gal_warp_wcsalign_t gal_warp_wcsalign_init (void)
+A high-level helper function that returns a clean @code{gal_warp_wcsalign_t} struct with all values initialized to NULL or blank values.
 This function returns a copy of a statically allocated structure.
 So you don't need to free the returned structure.
 
@@ -46345,42 +46348,23 @@ Uninitialized pointers can point to random space in RAM which can create segment
 It is therefore good practice to manually set unused pointers to @code{NULL} and give blank values to numbers
 Since there are many variables and pointers in @code{gal_warp_wcsalign_t}, it is easy to forget @emph{initializing} them.
 With that said, we recommend using this function to minimize human error.
-
-
 @end deftypefun
 
 @deftypefun void gal_warp_wcsalign (gal_warp_wcsalign_t *wa)
 A high-level function to align the input dataset's pixels to its WCS coordinates and write the result in @code{wa->output}.
 This function assumes that the input variables have already been set in the @code{wa} structure.
 The input variables are clearly shown in the definition of @code{gal_warp_wcsalign_t}.
-It will call the lower level functions below to do the job and will free the internal variables afterwards.
-@end deftypefun
 
-The following low-level functions are called from the high-level @code{gal_warp_wcsalign} function.
-They are provided here in scenarios where fine grain control over the thread workflow is necessary, see @ref{Multithreaded programming}.
-
-@deftypefun void gal_warp_wcsalign_init (gal_warp_wcsalign_t *wa)
-Low-level function to initialize all the elements inside the @code{wa} structure assuming that the input variables have been set.
-The input variables are clearly shown in the definition of @code{gal_warp_wcsalign_t}.
-This includes sanity checking the input arguments, as well as allocating the output image's empty pixels (that can be filled with @code{gal_warp_wcsalign_onpix}, possibly on threads).
-@end deftypefun
-
-@deftypefun void gal_warp_wcsalign_onpix (gal_warp_wcsalign_t *nl, size_t ind)
-Low-level function that fills pixel @code{ind} (counting from 0) in the already initialized output image.
-@end deftypefun
-
-@deftypefun {void *} gal_warp_wcsalign_onthread (void *inparam)
-Low-level worker function that can be passed to the high-level @code{gal_threads_spin_off} or the lower-level @code{pthread_create} with some modifications, see @ref{Multithreaded programming}.
-@end deftypefun
-
-@deftypefun void gal_warp_wcsalign_free (gal_warp_wcsalign_t *wa)
-Low-level function to free the internal variables inside @code{wa} only.
-The caller must free the input pointers themselves, this function will not free them (they may be necessary in other parts of the caller's higher-level architecture).
+Except for the output dataset (@code{wa->output}), this function automatically frees all the allocated arrays within the input @code{wa} structure, so there is no need to free anything you have allocated/set before calling this function.
+Therefore, in case you plan to use the input WCS after this function, be sure to use @code{gal_wcs_copy} to set it.
 @end deftypefun
 
 @deftypefun void gal_warp_pixelarea (gal_warp_wcsalign_t *wa)
 Calculate each input pixel's area based on its WCS and save it to a copy of the input image with only one difference: the pixel values now show pixel area.
 For examples on its usage, see @ref{Pixel information images}.
+
+Except for the output dataset (@code{wa->output}), this function automatically frees all the allocated arrays within the input @code{wa} structure, so there is no need to free anything you have allocated/set before calling this function.
+Therefore, in case you plan to use the input WCS after this function, be sure to use @code{gal_wcs_copy} to set it.
 @end deftypefun
 
 
@@ -47705,7 +47689,7 @@ main(void)
   size_t ndim, *dsize;
 
   /* Initialize the 'wa' struct with empty values and NULL pointers. */
-  gal_warp_wcsalign_t wa=gal_warp_wcsalign_template();
+  gal_warp_wcsalign_t wa=gal_warp_wcsalign_init();
 
   /* Read the input image and its WCS. */
   wa.input=gal_array_read_one_ch_to_type(filename, hdu, NULL,
@@ -47839,7 +47823,7 @@ main(void)
   size_t two=2;
 
   /* Initialize the 'wa' struct with empty values and NULL pointers. */
-  gal_warp_wcsalign_t wa=gal_warp_wcsalign_template();
+  gal_warp_wcsalign_t wa=gal_warp_wcsalign_init();
 
   /* Set the width (and height!) of the output in pixels (as a 1D and
    * 2 element 'gal_data_t'). When it is NULL, the library will

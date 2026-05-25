@@ -532,43 +532,22 @@ warp_write_wcs_linear(struct warpparams *p)
 void
 warp(struct warpparams *p)
 {
-  struct timeval t0;
   gal_warp_wcsalign_t *wa=&p->wa;
 
-  /* Do the preparations and set the pointers to the functions to use. */
+  /* Different strategies for linear or WCS-based warps. */
   if( p->wcsalign )
     {
-      /* Calculate and allocate the output image size and WCS. */
-      if(!p->cp.quiet)
-        {
-          gal_timing_report(NULL, "Initializing the output image...", 1);
-          gettimeofday(&t0, NULL);
-        }
-      gal_warp_wcsalign_init(wa);
-
-      /* Fill the output image. */
-      if(!p->cp.quiet)
-        {
-          gal_timing_report(&t0, "Done", 2);
-          gal_timing_report(NULL, "Warping the input image...", 1);
-          gettimeofday(&t0, NULL);
-        }
-      gal_threads_spin_off(gal_warp_wcsalign_onthread, wa,
-                           wa->output->size, wa->numthreads,
-                           wa->input->minmapsize, wa->input->quietmmap);
-      if(!p->cp.quiet) gal_timing_report(&t0, "Done", 2);
+      /* Do the WCS-based warp and keep the output in the main structure
+         and write it to file. */
+      gal_warp_wcsalign(wa);
       p->output=wa->output;
       wa->output=NULL; /* must be here! */
-      gal_warp_wcsalign_free(wa);
-
-      /* Write the final keywords and the file. */
       warp_write_to_file(p, 0);
     }
   else
     {
+      /* Initialize the linear warp and fill the output image. */
       warp_linear_init(p);
-
-      /* Fill the output image */
       gal_threads_spin_off(warp_onthread_linear, p, p->output->size,
                            p->cp.numthreads, p->cp.minmapsize,
                            p->cp.quietmmap);

@@ -2280,7 +2280,7 @@ gal_wcs_to_cd(struct wcsprm *wcs)
     /* CDi_j: a check is necessary if CROTAi is present (to make sure it is
        consistent with the CDi_j and inform the user if not. */
     case 2:
-      if(wcs->altlin & 0x3)
+      if(wcs->altlin & 0x4)
         {
           n=wcs->naxis*wcs->naxis;
           wcs_crota_to_cd(wcs->crota, wcs->cdelt, tmpcd, n);

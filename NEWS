@@ -98,6 +98,32 @@ See the end of the file for license conditions.
     where a multi-extension FITS file only has WCS metadata in one HDU (as
     in JWST images). This feature was suggested by Leindert Boogaard.
 
+*** Fits
+
+  --pixelareaonwcs: Measuring pixel coverage of the input on the sky using
+    tesselation. This resulted in significantly less RAM usage (+3 times)
+    and significantly shorter run time (+2 times), while producing exactly
+    the same output as before. Therefore Fits now also takes the following
+    two tessellation options: '--tilesize' and '--remainderfrac' that are
+    only necessary with this option and have no effect on the output pixel
+    values, but no need to set them on every run: they have default values
+    in Gnuastro's common configuration file since they are used in many
+    programs. Implemented by Giacomo Lorenzetti.
+
+*** Warp
+
+  - WCS-based warps: measuring pixel coverage of the input and warped pixel
+    grids in WCS-mode now using tesselation. This resulted in significantly
+    less RAM usage: more than x5 with '--edgesampling=0', more than x10 for
+    '--edgesampling=1' and much more with higher edge-samplings (making
+    them actually possible on normal computers now). It also improved CPU
+    usage (run time is shorter). Therefore Warp now also takes the
+    following two tessellation options: '--tilesize' and '--remainderfrac'
+    that are only necessary for WCS-based warps and have no effect on
+    output pixel values. But there is no need to set them on every run:
+    they have default values in Gnuastro's common configuration file since
+    they are used in many programs. Implemented by Giacomo Lorenzetti.
+
 *** astscript-fits-view
 
   --ds9region: also supports a space-separated list of regions and
@@ -149,6 +175,15 @@ See the end of the file for license conditions.
 
   - gal_fits_key_date_to_struct_tm: removed due to simplify new
     implementation as part of 'units.h'.
+  - gal_warp_wcsalign_init:
+  - gal_warp_wcsalign_onpix:
+  - gal_warp_wcsalign_onthread:
+    Removed from 'warp.h' (are now 'static' functions within 'lib/warp.c')
+    and no longer callable from outside. This became necessary after the
+    refactoring of the warp library (to use the tessellation features of
+    'tile.h' and improve the RAM-usage and run-time) introduced extra
+    complexity in the structs for these lower-level functions. If these
+    functions are necessary for your work, please inform us.
 
 ** Changed features
 

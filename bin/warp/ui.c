@@ -143,9 +143,17 @@ ui_initialize_options(struct warpparams *p,
       /* Select by group. */
       switch(cp->coptions[i].group)
         {
+        /* Tesselation options: we only need two of them that are only
+           relevant in WCS-based warps, so we'll change their groups. */
         case GAL_OPTIONS_GROUP_TESSELLATION:
-          cp->coptions[i].doc=NULL; /* Necessary to remove title. */
-          cp->coptions[i].flags=OPTION_HIDDEN;
+          if(    cp->coptions[i].key==GAL_OPTIONS_KEY_TILESIZE
+              || cp->coptions[i].key==GAL_OPTIONS_KEY_REMAINDERFRAC )
+            cp->coptions[i].group=UI_GROUP_ALIGN;
+          else
+            {
+              cp->coptions[i].doc=NULL; /* Necessary to remove title. */
+              cp->coptions[i].flags=OPTION_HIDDEN;
+            }
           break;
         }
     }
@@ -656,34 +664,40 @@ ui_check_options_and_arguments_wcsalign(struct warpparams *p)
 static void
 ui_check_options_and_arguments(struct warpparams *p)
 {
+  struct gal_options_common_params *cp=&p->cp;
+
   /* Read the input. */
   if(p->inputname==NULL)
     error(EXIT_FAILURE, 0, "no input file is specified");
 
   /* Make sure a HDU is given. */
-  if( gal_fits_file_recognized(p->inputname) && p->cp.hdu==NULL )
+  if( gal_fits_file_recognized(p->inputname) && cp->hdu==NULL )
     error(EXIT_FAILURE, 0, "no HDU specified, you can use the '--hdu' "
           "('-h') option and give it the HDU number (starting from "
           "zero), or extension name (generally, anything acceptable "
           "by CFITSIO)");
 
-  /* Make sure mandatory options are provided. */
+  /* Make sure mandatory options are provided for WCS-mode. */
   if(p->modularll==NULL && p->matrix==NULL)
     {
       p->wcsalign=1;
       if(p->wa.edgesampling==GAL_BLANK_SIZE_T)
         error(EXIT_FAILURE, 0, "no '--edgesampling' provided");
+      if( cp->tl.tilesize ) p->wa.tilesize=cp->tl.tilesize;
+      else error(EXIT_FAILURE, 0, "no '--tilesize' ('-Z') provided");
+      if( cp->tl.remainderfrac ) p->wa.remainderfrac=cp->tl.remainderfrac;
+      else error(EXIT_FAILURE, 0, "no '--remainderfrac' ('-F') provided");
     }
 
   /* Read the input image as double type and its WCS structure. */
-  p->input=gal_array_read_one_ch_to_type(p->inputname, p->cp.hdu,
+  p->input=gal_array_read_one_ch_to_type(p->inputname, cp->hdu,
                                          NULL, GAL_TYPE_FLOAT64,
-                                         p->cp.minmapsize,
-                                         p->cp.quietmmap, "--hdu");
+                                         cp->minmapsize,
+                                         cp->quietmmap, "--hdu");
 
   /* Read the WCS and remove one-element wide dimension(s). */
-  p->input->wcs=gal_wcs_read(p->inputname, p->cp.hdu,
-                             p->cp.wcslinearmatrix, p->hstartwcs,
+  p->input->wcs=gal_wcs_read(p->inputname, cp->hdu,
+                             cp->wcslinearmatrix, p->hstartwcs,
                              p->hendwcs, &p->input->nwcs, "--hdu");
   p->input->ndim=gal_dimension_remove_extra(p->input->ndim,
                                             p->input->dsize,

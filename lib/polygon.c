@@ -583,12 +583,10 @@ gal_polygon_clip(double *s, size_t n, double *c, size_t m,
   double in[2*GAL_POLYGON_MAX_CORNERS], *S, *E;
   size_t t, ii=m-1, i=0, jj, j, outnum, innum;
 
-  /*
   if(n>GAL_POLYGON_MAX_CORNERS || m>GAL_POLYGON_MAX_CORNERS)
     error(EXIT_FAILURE, 0, "the two polygons given to the function "
           "gal_polygon_clip in polygon.c have %zu and %zu vertices. They cannot"
-          " have any values larger than %zu", n, m, GAL_POLYGON_MAX_CORNERS);
-  */
+          " have any values larger than %u", n, m, GAL_POLYGON_MAX_CORNERS);
 
   /* 2*outnum because for each vertice, there are two elements. */
   outnum=n; for(t=0;t<2*outnum;++t) o[t]=s[t];

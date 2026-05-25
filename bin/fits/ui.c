@@ -139,9 +139,17 @@ ui_initialize_options(struct fitsparams *p,
       /* Select by group. */
       switch(cp->coptions[i].group)
         {
+        /* Tesselation options: we only need two of them that are only
+           relevant in WCS-based warps, so we'll change their groups. */
         case GAL_OPTIONS_GROUP_TESSELLATION:
-          cp->coptions[i].doc=NULL; /* Necessary to remove title. */
-          cp->coptions[i].flags=OPTION_HIDDEN;
+          if(    cp->coptions[i].key==GAL_OPTIONS_KEY_TILESIZE
+              || cp->coptions[i].key==GAL_OPTIONS_KEY_REMAINDERFRAC )
+            cp->coptions[i].group=UI_GROUP_META;
+          else
+            {
+              cp->coptions[i].doc=NULL; /* Necessary to remove title. */
+              cp->coptions[i].flags=OPTION_HIDDEN;
+            }
           break;
         }
     }

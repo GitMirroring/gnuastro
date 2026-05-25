@@ -58,6 +58,12 @@ meta_initialize(struct fitsparams *p, gal_warp_wcsalign_t *wa)
   char *hdu=cp->hdu;
   char *inputname=p->input->v;
 
+  /* Sanity check on the tile options. */
+  if( cp->tl.tilesize ) wa->tilesize=cp->tl.tilesize;
+  else error(EXIT_FAILURE, 0, "no '--tilesize' ('-Z') provided");
+  if( cp->tl.remainderfrac ) wa->remainderfrac=cp->tl.remainderfrac;
+  else error(EXIT_FAILURE, 0, "no '--remainderfrac' ('-F') provided");
+
   /* Read the input image and its WCS, must free it when done. */
   input=gal_array_read_one_ch_to_type(inputname, hdu, NULL,
                                       GAL_TYPE_FLOAT64, -1,  0, "--hdu");
@@ -144,7 +150,7 @@ meta_pixelareaonwcs(struct fitsparams *p)
   gettimeofday(&t1, NULL);
 
   /* Call for an empty wcsalign structure. */
-  gal_warp_wcsalign_t wa=gal_warp_wcsalign_template();
+  gal_warp_wcsalign_t wa=gal_warp_wcsalign_init();
 
   /* Initialize the warping variables based on command-line arguments. */
   meta_initialize(p, &wa);
