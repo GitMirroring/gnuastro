@@ -47928,7 +47928,7 @@ This chapter concludes with how you can learn about the development and get invo
 @cindex C++ programming language
 @cindex Java programming language
 @cindex Python programming language
-Currently the programming languages that are commonly used in scientific applications are C++@footnote{@url{https://isocpp.org/}}, Java@footnote{@url{https://en.wikipedia.org/wiki/Java_(programming_language)}}; Python@footnote{@url{https://www.python.org/}}, and Julia@footnote{@url{https://julialang.org/}} (which is a newcomer but swiftly gaining ground).
+Currently the programming languages that are commonly used in scientific applications are C++@footnote{@url{https://isocpp.org/}}, Java@footnote{@url{https://en.wikipedia.org/wiki/Java_(programming_language)}}; Python@footnote{@url{https://www.python.org/}}, and Julia@footnote{@url{https://julialang.org/}}.
 One of the main reasons behind choosing these is their high-level abstractions.
 However, GNU Astronomy Utilities is fully written in the C programming language@footnote{@url{https://en.wikipedia.org/wiki/C_(programming_language)}}.
 The reasons can be summarized with simplicity, portability and efficiency/speed.
@@ -47955,20 +47955,20 @@ So when an outside reader is only interested in one part of the program, that pa
 
 Recently it is also becoming common to write scientific software in Python, or a combination of it with C or C++.
 Python is a high level scripting language which does not need compilation.
-It is very useful when you want to do something on the go and do not want to be halted by the troubles of compiling, linking, memory checking, etc.
-When the datasets are small and the job is temporary, this ability of Python is great and is highly encouraged.
-A very good example might be plotting, in which Python is undoubtedly one of the best.
+Its design philosophy is useful when you want to do something on the go (future usability is not a concern), and do not want to be halted by the troubles of compiling, linking, memory checking, etc.
+When the datasets are small and the job is temporary, these limitations are not a problem.
 
 But as the data sets increase in size and the processing becomes more complicated, the speed of Python scripts significantly decrease.
-So when the program does not change too often and is widely used in a large community, mostly on large data sets (like astronomical images), using Python will waste a lot of valuable research-hours.
+So when the program does not change too often and is widely used in a large community, mostly on large data sets (like astronomical images), using Python will waste a lot of valuable research-hours and impairs future usability of all the hard work.
 It is possible to wrap C or C++ functions with Python to fix the speed issue.
 But this creates further complexity, because the interested scientist has to master two programming languages and their connection (which is not trivial).
 
 Like C++, Python is object oriented, so as explained above, it needs a high level of experience with that particular program to reasonably understand its inner workings.
 To make things worse, since it is mainly for on-the-go programming@footnote{Note that Python is good for fast programming, not fast programs.}, it can undergo significant changes.
 One recent example is how Python 2.x and Python 3.x are not compatible.
-Lots of research teams that invested heavily in Python 2.x cannot benefit from Python 3.x or future versions any more.
-Some converters are available, but since they are automatic, lots of complications might arise in the conversion@footnote{For example see Jenness @url{https://arxiv.org/abs/1712.00461,2017}, which describes how LSST is managing the transition.}.
+Lots of research teams that invested heavily in Python 2.x could not benefit from Python 3.x, and Pythonn 2.x was officially deprecated in 2020.
+Some converters are available, but since they are automatic, lots of complications might arise in the conversion.
+For example see Jenness @url{https://arxiv.org/abs/1712.00461,2017}, which describes how LSST managed the transition.
 If a research project begins using Python 3.x today, there is no telling how compatible their investments will be when Python 4.x or 5.x will come out.
 
 @cindex JVM: Java virtual machine
