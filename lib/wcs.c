@@ -2292,20 +2292,20 @@ gal_wcs_to_cd(struct wcsprm *wcs)
                 error(EXIT_SUCCESS, 0, "%s: WARNING: the input WCS has "
                       "both the CDi_j and CROTAi conventions for "
                       "defining the rotation and scale. However, they do "
-                      "not match! Since the CROTAi convention has been "
-                      "replaced by the more modern CDi_j we will ignore "
-                      "the CROTAi keywords in the next steps; see "
-                      "Greisen & Calabretta (2002): "
-                      "https://scixplorer.org/abs/2002A&A...395.1077C . "
-                      "But it is worth checking what caused this "
-                      "difference upstream in your pipeline and fix it. "
-                      "To remove the wrong set of keywords you can use "
-                      "'astfits file.fits --delete=KEYNAME' (to delete "
-                      "the keyword 'KEYNAME'; and you can call "
-                      "'--delete' multiple times). For more on the "
-                      "definitions of standardized keywords, along with "
-                      "the paper above, you can see: "
-                      "https://fits.gsfc.nasa.gov/fits_standard.html",
+                      "not match! Since the more generic CDi_j is "
+                      "recommended in Section 2.1.2. of Greisen & "
+                      "Calabretta (2002, see [1] below) we will ignore "
+                      "the CROTAi keywords in the next steps. But it is "
+                      "worth checking what caused this difference "
+                      "upstream in your pipeline and fix it. To remove "
+                      "the wrong set of keywords you can use 'astfits "
+                      "file.fits --delete=KEYNAME' (to delete the "
+                      "keyword 'KEYNAME'; and you can call '--delete' "
+                      "multiple times). For more on the definitions of "
+                      "standardized keywords, also see [2] and [3]. "
+                      "[1] https://scixplorer.org/abs/2002A&A...395.1061G "
+                      "[2] https://scixplorer.org/abs/2002A&A...395.1077C "
+                      "[3] https://fits.gsfc.nasa.gov/fits_standard.html",
                       __func__);
                 break;
               }
@@ -2317,7 +2317,8 @@ gal_wcs_to_cd(struct wcsprm *wcs)
        (as demanded from this function). If they are not the same, then
        print an error. In this case we are aborting the program (unlike the
        check between CD and CROTA) because both the CD and PC conventions
-       are actively used in the modern time and if they are different then
+       are similarly generic and recommended by the standard (see the
+       warning message above for CROTA). So if they are different then
        something bad has gone wrong. */
     case 3:
       for(i=0;i<n;++i)
