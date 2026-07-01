@@ -39755,7 +39755,7 @@ To check if an array/dataset has blank elements or to find which elements in an 
 
 
 @deftypefun int gal_blank_present (gal_data_t @code{*input}, int @code{updateflag})
-Return 1 if the dataset has a blank value and zero if it does not.
+Return a non-zero value if the dataset has a blank value and zero if it does not.
 Before checking the dataset, this function will look at @code{input}'s flags.
 If the @code{GAL_DATA_FLAG_BLANK_CH} bit of @code{input->flag} is on, this function will not do any check and will just use the information in the flags.
 This can greatly speed up processing when a dataset needs to be checked multiple times.
