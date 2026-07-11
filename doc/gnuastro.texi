@@ -1911,6 +1911,7 @@ Valentina Abril-melgarejo,
 Marjan Akbari,
 Carlos Allende Prieto,
 Hamed Altafi,
+Stergios Amarantidis,
 Roland Bacon,
 Roberto Baena Gall@'e,
 Zahra Bagheri,
@@ -2712,7 +2713,7 @@ main(void)
     @{
       /* Calculate the angular diameter distance. */
       adist=gal_cosmology_angular_distance(z, H0, olambda,
-                                           omatter, oradiation);
+                                           omatter, oradiation, 0);
 
       /* Calculate the tangential distance of one arcsecond. */
       tandist = adist * 1000 * M_PI / 3600 / 180;
@@ -47017,42 +47018,37 @@ The cosmological input parameters in the functions below are @code{H0}, @code{o_
 
 All these functions are declared in @file{gnuastro/cosmology.h}.
 For a more extended introduction/discussion of the cosmological parameters, please see @ref{CosmicCalculator}.
+When @code{quiet!=0}, a warning will be printed in case the conditions for @url{https://savannah.gnu.org/bugs/?65195, bug 65195} occur.
 
-@deftypefun double gal_cosmology_age (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0})
-Returns the age of the universe at redshift @code{z} in units of Giga
-years.
+@deftypefun double gal_cosmology_age (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0}, int @code{quiet})
+Returns the age of the universe at redshift @code{z} in units of Giga years.
 @end deftypefun
 
-@deftypefun double gal_cosmology_proper_distance (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0})
-Returns the proper distance to an object at redshift @code{z} in units of
-Mega parsecs.
+@deftypefun double gal_cosmology_proper_distance (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0}, int @code{quiet})
+Returns the proper distance to an object at redshift @code{z} in units of Mega parsecs.
 @end deftypefun
 
-@deftypefun double gal_cosmology_comoving_volume (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0})
-Returns the comoving volume over 4pi stradian to @code{z} in units of Mega
-parsecs cube.
+@deftypefun double gal_cosmology_comoving_volume (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0}, int @code{quiet})
+Returns the comoving volume over 4pi stradian to @code{z} in units of Mega-parsecs cube.
 @end deftypefun
 
-@deftypefun double gal_cosmology_critical_density (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0})
-Returns the critical density at redshift @code{z} in units of
-@mymath{g/cm^3}.
+@deftypefun double gal_cosmology_critical_density (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0}, int @code{quiet})
+Returns the critical density at redshift @code{z} in units of @mymath{g/cm^3}.
 @end deftypefun
 
-@deftypefun double gal_cosmology_angular_distance (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0})
-Return the angular diameter distance to an object at redshift @code{z} in
-units of Mega parsecs.
+@deftypefun double gal_cosmology_angular_distance (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0}, int @code{quiet})
+Return the angular diameter distance to an object at redshift @code{z} in units of Mega parsecs.
 @end deftypefun
 
-@deftypefun double gal_cosmology_luminosity_distance (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0})
-Return the luminosity diameter distance to an object at redshift @code{z}
-in units of Mega parsecs.
+@deftypefun double gal_cosmology_luminosity_distance (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0}, int @code{quiet})
+Return the luminosity diameter distance to an object at redshift @code{z} in units of Mega parsecs.
 @end deftypefun
 
-@deftypefun double gal_cosmology_distance_modulus (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0})
+@deftypefun double gal_cosmology_distance_modulus (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0}, int @code{quiet})
 Return the distance modulus at redshift @code{z} (with no units).
 @end deftypefun
 
-@deftypefun double gal_cosmology_to_absolute_mag (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0})
+@deftypefun double gal_cosmology_to_absolute_mag (double @code{z}, double @code{H0}, double @code{o_lambda_0}, double @code{o_matter_0}, double @code{o_radiation_0}, int @code{quiet})
 Return the conversion from apparent to absolute magnitude for an object at redshift @code{z}.
 This value has to be added to the apparent magnitude to give the absolute magnitude of an object at redshift @code{z}.
 @end deftypefun
