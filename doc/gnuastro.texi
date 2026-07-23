@@ -6508,6 +6508,13 @@ See the @code{CLUMPS} extension.
 Do you see how the whole center of the star has indeed been identified as a single clump?
 We thus achieved our aim and did not let the saturated pixels harm the identification of the center!
 
+Looking at the commands above, a question that may occur for you is this: why don't we just let NoiseChisel (and later Segment) convolve their input (@file{sat-fill.fits}) as they normally do?
+The reason is that convolution mixes the values of nearby non-NaN pixels.
+But @file{sat-fill.fits} does not have any NaN values so NoiseChisel (or Segment's) default convolution will mix those artificially-filled (scientifically meaning-less) values with the meaningful non-saturated pixels (which can cause problems in later steps).
+Thefore we first convolved the image that contains NaNs (so only meaningful pixels get mixed with each other), then filled the convolved image with artificial values to produce @file{sat-fill-conv.fits}.
+We then asked NoiseChisel and Segment to use this as the convolved image and not do any convolution themselves.
+Not all NaN pixels are due to saturation (for example regions of images without any exposures are usually also given a NaN value), so this cannot be done within NoiseChisel or Segment: it is up to the user of NoiseChisel or Segment to pre-process the image based on their paritcular dataset and their usage.
+
 If the issue was only clumps (like in a normal deep image processing), this was the end of Segment's special considerations.
 However, in the scenario here, with the very extended wings of the bright stars, it usually happens that background objects become ``clumps'' in the outskirts and will rip the bright star outskirts into separate ``objects''.
 In the next section (@ref{One object for the whole detection}), we will describe how you can modify Segment to avoid this issue.
