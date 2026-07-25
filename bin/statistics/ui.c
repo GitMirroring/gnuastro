@@ -29,7 +29,6 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <string.h>
 
-#include <gnuastro/fit.h>
 #include <gnuastro/txt.h>
 #include <gnuastro/wcs.h>
 #include <gnuastro/fits.h>
@@ -143,7 +142,6 @@ ui_initialize_options(struct statisticsparams *p,
   p->meanmedqdiff        = NAN;
   p->sclipparams[0]      = NAN;
   p->sclipparams[1]      = NAN;
-  p->fitmaxpower         = GAL_BLANK_SIZE_T;
 
   /* Set the mandatory common options. */
   for(i=0; !gal_options_is_last(&cp->coptions[i]); ++i)
@@ -406,6 +404,13 @@ ui_check_only_options(struct statisticsparams *p)
   struct gal_tile_two_layer_params *tl=&p->cp.tl;
 
 
+  /* Deprecated feature. */
+  if(p->fitname)
+    error(EXIT_FAILURE, 0, "the '--fit' has been moved to the 'astfit' "
+          "program and no longer available in the Statistics program "
+          "since August 2026");
+
+
   /* Check if the format of the output table is valid, given the type of
      the output. */
   gal_tableintern_check_fits_format(p->cp.output, p->cp.tableformat);
@@ -423,8 +428,8 @@ ui_check_only_options(struct statisticsparams *p)
     {
       /* The tile or sky mode cannot be called with any other modes. */
       if( p->asciihist || p->asciicfp || p->histogram || p->histogram2d
-          || p->cumulative || p->sigmaclip || p->madclip || p->fitname
-          || !isnan(p->mirror) )
+          || p->cumulative || p->sigmaclip || !isnan(p->mirror)
+          || p->madclip )
         error(EXIT_FAILURE, 0, "'--ontile' or '--sky' cannot be called "
               "with any of the 'particular' calculation options, for "
               "example '--histogram' or '--madclip'. Because these "
@@ -574,53 +579,6 @@ ui_check_only_options(struct statisticsparams *p)
           "'--numasciibins' and '--asciiheight' are mandatory, but "
           "at least one of these has not been given");
 
-  /* Find the fitting type code from the input string. */
-  if(p->fitname)
-    {
-      /* Interpret the name. */
-      p->fitid=gal_fit_name_to_id(p->fitname);
-
-      /* Wrong name? */
-      if(p->fitid==GAL_FIT_INVALID)
-        error(EXIT_FAILURE, 0, "'%s' is not a recognized name for "
-              "the type of fitting, please see the description of "
-              "'--fit' in the manual (you can run `info %s`",
-              p->fitname, PROGRAM_EXEC);
-
-      /* Options for polynomial fits. */
-      if(    p->fitid==GAL_FIT_POLYNOMIAL
-          || p->fitid==GAL_FIT_POLYNOMIAL_ROBUST
-          || p->fitid==GAL_FIT_POLYNOMIAL_WEIGHTED )
-        {
-
-          /* '--fitmaxpower' is mandatory. */
-          if(p->fitmaxpower==GAL_BLANK_SIZE_T)
-            error(EXIT_FAILURE, 0, "'--fitmaxpower' is necessary for "
-                  "polynomial fitting. This is the maximum power of X "
-                  "in the fitted polynomial");
-
-          /* For the robust types, '--fitrobustname' is mandatory. */
-          if( p->fitid==GAL_FIT_POLYNOMIAL_ROBUST )
-            {
-              /* Make sure '--fitrobust' is given at all. */
-              if(p->fitrobustname==NULL)
-                error(EXIT_FAILURE, 0, "'--fitrobust' is mandatory for "
-                      "robust fittings");
-
-              /* Find the ID of the fit. */
-              p->fitrobustid=gal_fit_name_robust_to_id(p->fitrobustname);
-              if(p->fitrobustid==GAL_FIT_ROBUST_INVALID)
-                error(EXIT_FAILURE, 0, "'%s' is not a recognized robust "
-                      "function in the polynomial fittings, please see "
-                      "the manual for the acceptable names",
-                      p->fitrobustname);
-
-              /* If the user asked for 'default', write the actual name */
-              p->fitrobustname=gal_fit_name_robust_from_id(p->fitrobustid);
-            }
-        }
-    }
-
   /* In case '--checkskynointep' is given, we want everything to be similar
      to '--checksky' in the initial phases (when necessary, we will
      check 'p->checkskynointerp'. */
@@ -652,8 +610,8 @@ ui_check_options_and_arguments(struct statisticsparams *p)
                   "(starting from zero), extension name, or anything "
                   "acceptable by CFITSIO");
 
-          /* If its an image, make sure column isn't given (in case the
-             user confuses an image with a table). */
+          /* If it is an image, make sure '--column' isn't given (in case
+             the user confuses an image with a table). */
           p->hdu_type=gal_fits_hdu_format(p->inputname, p->cp.hdu,
                                           "--hdu");
           if(p->hdu_type==IMAGE_HDU && p->columns)
@@ -934,13 +892,13 @@ ui_read_columns(struct statisticsparams *p)
      coma) into one list. */
   ui_read_columns_in_one(p);
 
-  /* If any columns are specified, and fitting hasn't been requested, make
-     sure there is a maximum of two columns.  */
-  if(p->fitname==NULL && gal_list_str_number(p->columns)>2)
+  /* If any columns are specified, make sure there is a maximum of two
+     columns.  */
+  if(gal_list_str_number(p->columns)>2)
     error(EXIT_FAILURE, 0, "%zu input columns were given but currently a "
-          "maximum of two columns are supported (two columns only for "
-          "special operations, the majority of operations are on a single "
-          "column)", gal_list_str_number(p->columns));
+          "maximum of two columns are supported (only for special "
+          "operations, the majority of operations are on a single column)",
+          gal_list_str_number(p->columns));
 
   /* If no column is specified, Statistics will abort and an error will be
      printed when the table has more than one column. If there is only one
@@ -1030,153 +988,6 @@ ui_read_columns(struct statisticsparams *p)
 
 
 void
-ui_preparations_fitestimate(struct statisticsparams *p)
-{
-  size_t one=1;
-  double dbl, *dptr=&dbl;
-  gal_list_str_t *fecols=NULL;
-
-  if( gal_type_from_string((void **)(&dptr), p->fitestimate,
-                           GAL_TYPE_FLOAT64) )
-    {
-      /* If the value was "self", then we should put the input file name,
-         its HDU and the first column in required values so they are fully
-         read. We aren't using the read 'p->input' because rows with a
-         blank value have been removed there. */
-      if( !strcmp(p->fitestimate, "self") )
-        {
-          free(p->fitestimate);
-          free(p->fitestimatehdu);
-          free(p->fitestimatecol);
-          gal_checkset_allocate_copy(p->inputname, &p->fitestimate);
-          gal_checkset_allocate_copy(p->cp.hdu, &p->fitestimatehdu);
-          if(p->columns)
-            gal_checkset_allocate_copy(p->columns->v, &p->fitestimatecol);
-        }
-
-      /* Make sure a HDU is specified. We need to do this here (not
-         in 'ui_check_only_options') because only here we know
-         that the user specified a file not a value. */
-      if( gal_fits_name_is_fits(p->fitestimate) && p->fitestimatehdu==NULL )
-        error(EXIT_FAILURE, 0, "no HDU specified for '%s' (given to "
-              "'--fitestimate'). Please use the '--fitestimatehdu' "
-              "option to specify the HDU", p->fitestimate);
-
-      if(p->fitndim==1)
-        {
-          /* Make sure a column is specified. We need to do this here (not
-             in 'ui_check_only_options') because only here we know
-             that the user specified a file not a value. */
-          if( p->fitestimatecol==NULL )
-            error(EXIT_FAILURE, 0, "no column specified for '%s' (given to "
-                  "'--fitestimate'). Please use the '--fitestimatecol' "
-                  "option to specify the column", p->fitestimate);
-
-          /* Read the given column as a table. */
-          gal_list_str_add(&fecols, p->fitestimatecol, 1);
-          p->fitestval=gal_table_read(p->fitestimate, p->fitestimatehdu,
-                                      NULL, fecols,
-                                      p->cp.searchin, p->cp.ignorecase, 1,
-                                      p->cp.minmapsize, p->cp.quietmmap,
-                                      NULL, "--fitestimatehdu");
-
-          /* If more than one column matched, inform the user. */
-          if(p->fitestval->next)
-            gal_tableintern_error_col_selection(p->fitestimate,
-                p->fitestimatehdu, "More than one column matched "
-                "the value given to '--fitestimatecol'.");
-        }
-      else
-        error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "
-              "fix the problem. Fit estimation is not yet implemented "
-              "in multi-dimensional fitting", __func__, PACKAGE_BUGREPORT);
-    }
-  else
-    {
-      /* Given string could be read as a double (in variable 'd'). */
-      p->fitestval=gal_data_alloc(NULL, GAL_TYPE_FLOAT64, 1, &one,
-                                  NULL, 0, -1, 1, NULL, NULL, NULL);
-      ((double *)(p->fitestval->array))[0]=dbl;
-    }
-
-  /* Make sure 'fitestval' has a double type. */
-  p->fitestval=gal_data_copy_to_new_type_free(p->fitestval,
-                                              GAL_TYPE_FLOAT64);
-}
-
-
-
-
-
-void
-ui_preparations_fit(struct statisticsparams *p)
-{
-  size_t nin;
-  double *d, *df;
-  gal_data_t *wht;
-
-  /* The number of input columns. */
-  nin=gal_list_data_number(p->input);
-
-  /* This is only necessary for fitting models that require a weight. */
-  switch(p->fitid)
-    {
-    case GAL_FIT_LINEAR_WEIGHTED:
-    case GAL_FIT_POLYNOMIAL_WEIGHTED:
-    case GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED:
-
-      /* Basic sanity check first. */
-      if(nin<3)
-        error(EXIT_FAILURE, 0, "no weight column specified! A "
-              "weight-based fit needs a third input column");
-      if(p->fitweight==0)
-        error(EXIT_FAILURE, 0, "the nature of the input weights for "
-              "fitting haven't been specified. Please use the "
-              "'--fitweight' option to specify this. It can take "
-              "values of 'std' (if the weight column is the standard "
-              "deviation), 'var' (for variance) and 'inv-var' "
-              "(inverse-variance) which is direct");
-
-      /* Convert the third dataset to double-precision. */
-      wht=gal_data_copy_to_new_type_free(p->input->next->next,
-                                         GAL_TYPE_FLOAT64);
-      p->input->next->next=wht;
-
-      /* Based on the input nature, convert it to the inverse of the
-         variance. */
-      d=wht->array;
-      if( !strcmp(p->fitweight, "std") )         /* Standard deviation. */
-        {
-          p->fitwhtid=STATISTICS_FIT_WHT_STD;
-          df=d+wht->size; do *d=1/(*d * *d); while(++d<df);
-        }
-      else if ( !strcmp(p->fitweight, "var") )             /* Variance. */
-        {
-          p->fitwhtid=STATISTICS_FIT_WHT_VAR;
-          df=d+wht->size; do *d = 1 / *d; while(++d<df);
-        }
-      else if ( !strcmp(p->fitweight, "inv-var") ) /* Inverse variance. */
-        p->fitwhtid=STATISTICS_FIT_WHT_INVVAR;
-      else                                    /* Not recognized: error! */
-        error(EXIT_FAILURE, 0, "'%s' is not a recognized weight-type! "
-              "Please use either 'std' (standard deviation), 'var' "
-              "(variance) or 'inv-var' (inverse variance)", p->fitweight);
-
-      /* If there is only three input columns, then this is a 1D
-         fit. Otherwise, we have a 2D fit. */
-      p->fitndim = nin==3 ? 1 : 2;
-      break;
-
-    /* Non-weighted fits. */
-    default: p->fitndim = nin==2 ? 1 : 2;
-    }
-}
-
-
-
-
-
-void
 ui_preparations(struct statisticsparams *p)
 {
   gal_data_t *check;
@@ -1209,7 +1020,7 @@ ui_preparations(struct statisticsparams *p)
       p->inputformat=INPUT_FORMAT_TABLE;
 
       /* Two columns can only be given with 2D histogram mode. */
-      if(p->histogram2d==0 && p->fitname==NULL && p->input->next!=NULL)
+      if(p->histogram2d==0 && p->input->next!=NULL)
         error(EXIT_FAILURE, 0, "multi-column input is currently only "
               "supported for 2D histogram or fitting modes");
     }
@@ -1262,7 +1073,7 @@ ui_preparations(struct statisticsparams *p)
 
   /* If the positions of the points are not relevant, then re-order and
      change the input. */
-  if(p->ontile==0 && p->sky==0 && p->fitid==0 && p->contour==NULL)
+  if(p->ontile==0 && p->sky==0 && p->contour==NULL)
     {
       /* Only keep the elements we want. Note that if we have more than one
          column, we need to move the same rows in both (otherwise their
@@ -1293,11 +1104,6 @@ ui_preparations(struct statisticsparams *p)
   /* Make sure the output doesn't already exist. */
   gal_checkset_writable_remove(p->cp.output, p->inputname, p->cp.keep,
                                p->cp.dontdelete);
-
-  /* Set the fit-estimate column, and prepare the weight based on the
-     user's specification.*/
-  ui_preparations_fit(p);
-  if(p->fitestimate) ui_preparations_fitestimate(p);
 }
 
 

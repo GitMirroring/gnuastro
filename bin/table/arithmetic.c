@@ -447,34 +447,6 @@ arithmetic_indexs_final(struct tableparams *p)
 /*********************************************************************/
 /********************       Low-level tools      *********************/
 /*********************************************************************/
-static void
-arithmetic_placeholder_name(gal_data_t *col)
-{
-  static size_t counter=0;
-
-  /* Increment counter next time this function is called. */
-  ++counter;
-
-  /* Free any possibly existing metadata. */
-  if(col->name)    free(col->name);
-  if(col->unit)    free(col->unit);
-  if(col->comment) free(col->comment);
-
-  /* Set the new meta-data. */
-  errno=0;
-  if( asprintf(&col->name, "ARITH_%zu", counter)==-1 )
-    error(EXIT_FAILURE, errno, "%s: asprintf error for name", __func__);
-  if( asprintf(&col->unit, "arith_unit_%zu", counter)==-1)
-    error(EXIT_FAILURE, errno, "%s: asprintf error for unit", __func__);
-  if( asprintf(&col->comment, "Column from arithmetic operation %zu",
-               counter)==-1 )
-    error(EXIT_FAILURE, errno, "%s: asprintf error for comment", __func__);
-}
-
-
-
-
-
 static gal_data_t *
 arithmetic_stack_pop(gal_data_t **stack, int operator, char *errormsg)
 {
@@ -1043,7 +1015,10 @@ arithmetic_operator_run(struct tableparams *p,
 
       /* Reset the meta-data for the element that was just put on the
          stack. */
-      arithmetic_placeholder_name(*stack);
+      if((*stack)->name) { free((*stack)->name); (*stack)->name=NULL; }
+      if((*stack)->unit) { free((*stack)->unit); (*stack)->unit=NULL; }
+      if((*stack)->comment)
+        { free((*stack)->comment); (*stack)->comment=NULL; }
     }
 
   /* This operator is specific to this program (Table). */

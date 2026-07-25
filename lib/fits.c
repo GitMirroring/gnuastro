@@ -1668,6 +1668,23 @@ gal_fits_key_list_reverse(gal_fits_list_key_t **list)
 
 
 
+void
+gal_fits_key_list_append(gal_fits_list_key_t *list,
+                         gal_fits_list_key_t *toappend)
+{
+  gal_fits_list_key_t *tmp;
+  for(tmp=list;tmp!=NULL;tmp=tmp->next)
+    if(tmp->next==NULL) /* we are on the last element. */
+      {
+        tmp->next=toappend;
+        break;
+      }
+}
+
+
+
+
+
 /* Write a blank keyword field and a title under it in the specified FITS
    file pointer. */
 void

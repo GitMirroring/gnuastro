@@ -1,4 +1,4 @@
-# Do a robust polynomial fit to the given data
+# 2D fitting
 #
 # See the Tests subsection of the manual for a complete explanation
 # (in the Installing gnuastro section).
@@ -6,7 +6,7 @@
 # Original author:
 #     Mohammad Akhlaghi <mohammad@akhlaghi.org>
 # Contributing author(s):
-# Copyright (C) 2022-2026 Free Software Foundation, Inc.
+# Copyright (C) 2026-2026 Free Software Foundation, Inc.
 #
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
@@ -23,10 +23,9 @@
 # Set the variables (The executable is in the build tree). Do the
 # basic checks to see if the executable is made or if the defaults
 # file exists (basicchecks.sh is in the source tree).
-prog=statistics
+prog=fit
 execname=../bin/$prog/ast$prog
-table=$topsrc/tests/statistics/fitting-data.txt
-
+execarith=../bin/arithmetic/astarithmetic
 
 
 
@@ -41,8 +40,8 @@ table=$topsrc/tests/statistics/fitting-data.txt
 #
 #   - The input data was not made (for example the test that created the
 #     data file failed).
-if [ ! -f $execname ]; then echo "$execname not created."; exit 77; fi
-if [ ! -f $table    ]; then echo "$table does not exist."; exit 77; fi
+if [ ! -f $execname  ]; then echo "$execname not created."; exit 77; fi
+if [ ! -f $execarith ]; then echo "$execarith not created.";  exit 77; fi
 
 
 
@@ -54,6 +53,19 @@ if [ ! -f $table    ]; then echo "$table does not exist."; exit 77; fi
 # 'check_with_program' can be something like Valgrind or an empty
 # string. Such programs will execute the command if present and help in
 # debugging when the developer doesn't have access to the user's system.
-$check_with_program $execname $table -cX,Y --fit=polynomial-robust \
-                    --fitmaxpower=2 --fitestimate=self \
-                    --output=fitting-estimate.txt
+output=fit1d.fits
+input=fit1d-input.fits
+export GSL_RNG_SEED=1788653609
+$execarith 100 100 2 makenew indexonly set-i \
+           i 100 % 1 + set-X1 \
+           i 100 / 1 + set-X2 \
+           5 10 X2 x + X1 X2 x + f64 set-Yraw \
+           Yraw sqrt set-Ystd \
+           Yraw Ystd mknoise-sigma set-Ynoised \
+           i 50 constant 100 mknoise-uniform set-rand \
+           Ynoised rand 60 gt nan where set-Y \
+           Ystd Y --writeall --envseed --output=$input
+$check_with_program $execname $input -cX,Y --model=polynomial --degree=2 \
+                    --weight=samefile --weight-col=Y-STD \
+                    --estimate=self --residual --output=$output
+rm $input

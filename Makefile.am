@@ -71,6 +71,9 @@ if COND_CROP
   MAYBE_CROP = bin/crop
   MAYBE_COMPLETE_CROP = bin/crop/astcrop-complete.bash
 endif
+if COND_FIT
+  MAYBE_FIT = bin/fit
+endif
 if COND_FITS
   MAYBE_FITS = bin/fits
   MAYBE_COMPLETE_FITS = bin/fits/astfits-complete.bash
@@ -140,6 +143,7 @@ SUBDIRS = bootstrapped/lib \
           $(MAYBE_CONVOLVE) \
           $(MAYBE_COSMICCAL) \
           $(MAYBE_CROP) \
+          $(MAYBE_FIT) \
           $(MAYBE_FITS) \
           $(MAYBE_MATCH) \
           $(MAYBE_MKCATALOG) \

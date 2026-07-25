@@ -55,7 +55,7 @@ struct argp_option program_options[] =
       UI_KEY_ONOFF,
       0,
       0,
-      "This option takes no value,.",
+      "This option takes no value.",
       GAL_OPTIONS_GROUP_OPERATING_MODE,
       &p->onoff,
       GAL_OPTIONS_NO_ARG_TYPE,

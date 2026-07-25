@@ -142,6 +142,12 @@ if COND_CROP
   crop/imgcenternoblank.sh: mkprof/mosaic1.sh.log
 
 endif
+if COND_FIT
+  MAYBE_FIT_TESTS = fit/1d.sh \
+                    fit/2d.sh
+  fit/1d.sh: prepconf.sh.log
+  fit/2d.sh: prepconf.sh.log
+endif
 if COND_FITS
   MAYBE_FITS_TESTS = fits/write.sh \
                      fits/print.sh \
@@ -210,12 +216,8 @@ endif
 if COND_STATISTICS
   MAYBE_STATISTICS_TESTS = statistics/basicstats.sh \
                            statistics/from-stdin.sh \
-                           statistics/estimate_sky.sh \
-                           statistics/fitting-polynomial-2d.sh \
-                           statistics/fitting-polynomial-robust.sh
+                           statistics/estimate_sky.sh
   statistics/from-stdin.sh: prepconf.sh.log
-  statistics/fitting-polynomial-2d.sh: prepconf.sh.log
-  statistics/fitting-polynomial-robust.sh: prepconf.sh.log
   statistics/basicstats.sh: arithmetic/mknoise-sigma-from-mean.sh.log
   statistics/estimate_sky.sh: arithmetic/mknoise-sigma-from-mean.sh.log
 endif
@@ -318,6 +320,7 @@ TESTS = prepconf.sh \
         $(MAYBE_CONVOLVE_TESTS) \
         $(MAYBE_COSMICCAL_TESTS) \
         $(MAYBE_CROP_TESTS) \
+        $(MAYBE_FIT_TESTS) \
         $(MAYBE_FITS_TESTS) \
         $(MAYBE_MATCH_TESTS) \
         $(MAYBE_MKCATALOG_TESTS) \
@@ -349,7 +352,6 @@ EXTRA_DIST = $(TESTS) during-dev.sh \
   mkprof/mkprofcat3.txt \
   mkprof/mkprofcat4.txt \
   mkprof/radeccat.txt \
-  statistics/fitting-data.txt \
   statistics/stdin-input.txt \
   table/table.txt
 

@@ -98,6 +98,12 @@ See the end of the file for license conditions.
     where a multi-extension FITS file only has WCS metadata in one HDU (as
     in JWST images). This feature was suggested by Leindert Boogaard.
 
+*** Fit
+
+  - New program (called with 'astfit') for regression analysis (fitting) of
+    data with models in 1D and 2D; see the newly added tutorial in the
+    manual and the "Fit" section in the manual for the details.
+
 *** Fits
 
   --pixelareaonwcs: Measuring pixel coverage of the input on the sky using
@@ -170,6 +176,11 @@ See the end of the file for license conditions.
   - gal_units_jd_to_mars_sol: JD to Mars Sol date.
 
 ** Removed features
+
+*** Statistics
+
+  --fit: is no longer available: the functionality has been moved (and
+    expanded) into the independent Fit program (astfit).
 
 *** Library
 

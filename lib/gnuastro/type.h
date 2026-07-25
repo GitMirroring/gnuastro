@@ -23,6 +23,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #ifndef __GAL_TYPE_H__
 #define __GAL_TYPE_H__
 
+#include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
 

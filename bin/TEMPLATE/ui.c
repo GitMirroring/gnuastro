@@ -137,7 +137,7 @@ ui_initialize_options(struct TEMPLATEparams *p,
 
 
 
-/* Parse a single option: */
+/* Parse a single option or argument. */
 error_t
 parse_opt(int key, char *arg, struct argp_state *state)
 {
@@ -163,13 +163,16 @@ parse_opt(int key, char *arg, struct argp_state *state)
     {
     /* Read the non-option tokens (arguments): */
     case ARGP_KEY_ARG:
-      /* The user may give a shell variable that is empty! In that case
-         'arg' will be an empty string! We don't want to account for such
-         cases (and give a clear error that no input has been given). */
+
+      /* Only one input file name is acceptable in this program. All other
+         files should be given to options. */
       if(p->inputname)
         argp_error(state, "only one argument (input file) may be "
                    "given; the extra argument is '%s'", arg);
       else
+        /* The user may give a shell variable that is empty! In that case
+           'arg' will be an empty string! We don't want to account for such
+           cases (and give a clear error that no input has been given). */
         if(arg[0]!='\0') p->inputname=arg;
       break;
 
@@ -178,6 +181,7 @@ parse_opt(int key, char *arg, struct argp_state *state)
       return gal_options_set_from_key(key, arg, p->cp.poptions, &p->cp);
     }
 
+  /* This option/argument has been parsed successfully. */
   return 0;
 }
 
@@ -324,6 +328,10 @@ ui_read_check_inputs_setup(int argc, char *argv[], struct TEMPLATEparams *p)
      after the option checks so un-sane values are not printed in the
      output state. */
   gal_options_print_state(&p->cp);
+
+
+  /* Prepare all the options as FITS keywords to write in output later. */
+  gal_options_as_fits_keywords(&p->cp);
 
 
   /* Check that the options and arguments fit well with each other. Note

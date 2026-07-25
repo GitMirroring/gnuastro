@@ -1,11 +1,11 @@
 /*********************************************************************
-Statistics - Statistical analysis on input dataset.
-Statistics is part of GNU Astronomy Utilities (Gnuastro) package.
+Fit - Regression analysis of the input to a certain model.
+Fit is part of GNU Astronomy Utilities (Gnuastro) package.
 
 Original author:
-     Mohammad Akhlaghi <mohammad@akhlaghi.org>
+     Mohammad akhlaghi <mohammad@akhlaghi.org>
 Contributing author(s):
-Copyright (C) 2019-2026 Free Software Foundation, Inc.
+Copyright (C) 2026-2026 Free Software Foundation, Inc.
 
 Gnuastro is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -20,10 +20,27 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************/
-#ifndef CONTOUR_H
-#define CONTOUR_H
+#ifndef FIT_H
+#define FIT_H
+
+/* Definitions. */
+enum fit_models
+  {
+    FIT_MODEL_INVALID,   /* Invalid (=0 by C standard). */
+    FIT_MODEL_LINEAR,
+    FIT_MODEL_LINEAR_NO_CONSTANT,
+    FIT_MODEL_POLYNOMIAL,
+  };
+
+enum fit_weight_types
+  {
+    FIT_WHT_INVALID,   /* Invalid (=0 by C standard). */
+    FIT_WHT_STD,
+    FIT_WHT_VAR,
+    FIT_WHT_INVVAR,
+  };
 
 void
-contour(struct statisticsparams *p);
+fit(struct fitparams *p);
 
 #endif

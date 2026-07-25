@@ -53,23 +53,7 @@ __BEGIN_C_DECLS  /* From C++ preparations */
 
 
 
-/* Definitions. */
-enum gal_fit_types
-{
-  GAL_FIT_INVALID,   /* Invalid (=0 by C standard).  */
-  GAL_FIT_LINEAR,
-  GAL_FIT_LINEAR_WEIGHTED,
-  GAL_FIT_LINEAR_NO_CONSTANT,
-  GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED,
-  GAL_FIT_POLYNOMIAL,
-  GAL_FIT_POLYNOMIAL_ROBUST,
-  GAL_FIT_POLYNOMIAL_WEIGHTED,
-  GAL_FIT_POLYNOMIAL_TIKHONOV,
-
-  /* This will be the total number of shapes (good for scripts). */
-  GAL_FIT_NUMBER
-};
-
+/* Robust algorithms for the polynomial model. */
 enum gal_fit_robust_types
 {
   GAL_FIT_ROBUST_INVALID,   /* Invalid (=0 by C standard).  */
@@ -128,11 +112,11 @@ gal_fit_name_robust_from_id(uint8_t robustid);
 
 gal_data_t *
 gal_fit_linear_1d(gal_data_t *xin, gal_data_t *yin,
-                  gal_data_t *ywht);
+                  gal_data_t *ywht, double *redchisq);
 
 gal_data_t *
 gal_fit_linear_no_constant_1d(gal_data_t *xin, gal_data_t *yin,
-                              gal_data_t *ywht);
+                              gal_data_t *ywht, double *redchisq);
 
 gal_data_t *
 gal_fit_linear_estimate_1d(gal_data_t *fit, gal_data_t *xin);
@@ -153,10 +137,8 @@ gal_fit_polynomial_tikhonov(gal_data_t *xin, gal_data_t *yin,
                             uint8_t matrixid, double tikhonovlambda);
 
 gal_data_t *
-gal_fit_polynomial_estimate_1d(gal_data_t *fit, gal_data_t *xin);
-
-gal_data_t *
-gal_fit_polynomial_estimate_2d(gal_data_t *fit, gal_data_t *xin);
+gal_fit_polynomial_estimate(gal_data_t *fit, gal_data_t *xin,
+                            size_t maxpower);
 
 __END_C_DECLS    /* From C++ preparations */
 

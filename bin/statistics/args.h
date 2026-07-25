@@ -967,108 +967,27 @@ struct argp_option program_options[] =
     },
 
 
-    {
-      0, 0, 0, 0,
-      "Fitting (1 and 2 dimensional)",
-      UI_GROUP_FIT
-    },
+
+    /* Operating mode options. */
     {
       "fit",
       UI_KEY_FIT,
       "STR",
       0,
-      "Type of fitting: 'linear', 'linear-weighted', "
-      "'linear-no-constant', 'linear-no-constant-weighted', "
-      "'polynomial', 'polynomial-weighted', "
-      "'polynomial-robust'.",
-      UI_GROUP_FIT,
+      "Deprecated: please use 'astfit --model'.",
+      GAL_OPTIONS_GROUP_OPERATING_MODE,
       &p->fitname,
       GAL_TYPE_STRING,
       GAL_OPTIONS_RANGE_ANY,
       GAL_OPTIONS_NOT_MANDATORY,
       GAL_OPTIONS_NOT_SET
     },
-    {
-      "fitweight",
-      UI_KEY_FITWEIGHT,
-      "STR",
-      0,
-      "Input weight: 'std', 'var' or 'inv-variance'.",
-      UI_GROUP_FIT,
-      &p->fitweight,
-      GAL_TYPE_STRING,
-      GAL_OPTIONS_RANGE_ANY,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
-    {
-      "fitmaxpower",
-      UI_KEY_FITMAXPOWER,
-      "INT",
-      0,
-      "Maximum power in polynomial to fit.",
-      UI_GROUP_FIT,
-      &p->fitmaxpower,
-      GAL_TYPE_SIZE_T,
-      GAL_OPTIONS_RANGE_GE_0,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
-    {
-      "fitrobust",
-      UI_KEY_FITROBUST,
-      "STR",
-      0,
-      "The robust function name to use.",
-      UI_GROUP_FIT,
-      &p->fitrobustname,
-      GAL_TYPE_STRING,
-      GAL_OPTIONS_RANGE_ANY,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
-    {
-      "fitestimate",
-      UI_KEY_FITESTIMATE,
-      "STR/FLT",
-      0,
-      "Estimate fitted func. (number, file or 'self').",
-      UI_GROUP_FIT,
-      &p->fitestimate,
-      GAL_TYPE_STRING,
-      GAL_OPTIONS_RANGE_ANY,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
-    {
-      "fitestimatehdu",
-      UI_KEY_FITESTIMATEHDU,
-      "STR/INT",
-      0,
-      "HDU containing the --fitestimate values.",
-      UI_GROUP_FIT,
-      &p->fitestimatehdu,
-      GAL_TYPE_STRING,
-      GAL_OPTIONS_RANGE_ANY,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
-    {
-      "fitestimatecol",
-      UI_KEY_FITESTIMATECOL,
-      "STR/INT",
-      0,
-      "Column containing the --fitestimate values.",
-      UI_GROUP_FIT,
-      &p->fitestimatecol,
-      GAL_TYPE_STRING,
-      GAL_OPTIONS_RANGE_ANY,
-      GAL_OPTIONS_NOT_MANDATORY,
-      GAL_OPTIONS_NOT_SET
-    },
 
 
 
+
+
+    /* Last element. */
     {0}
   };
 

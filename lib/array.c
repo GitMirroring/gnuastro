@@ -32,6 +32,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/jpeg.h>
 #include <gnuastro/tiff.h>
 #include <gnuastro/array.h>
+#include <gnuastro/pointer.h>
 
 
 
@@ -54,9 +55,9 @@ gal_array_name_recognized(char *name)
 
   /* Control should not get to here, but just to avoid compiler warnings,
      we'll return a NULL. */
-  error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to solve the "
-        "problem. Control must not reach the end of this function", __func__,
-        PACKAGE_BUGREPORT);
+  error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to solve "
+        "the problem. Control must not reach the end of this function",
+        __func__, PACKAGE_BUGREPORT);
   return 0;
 }
 
@@ -96,6 +97,60 @@ gal_array_file_recognized(char *name)
 
 
 
+size_t
+gal_array_info_size(char *filename, char *extension,
+                    char *hdu_option_name, size_t **dsize)
+{
+  fitsfile *fptr;
+  gal_data_t *tout;
+  char *name, *unit;
+  int type, status=0;
+  size_t ndim, numimgs;
+
+  /* FITS  */
+  if( gal_fits_file_recognized(filename) )
+    {
+      fptr=gal_fits_hdu_open_format(filename, extension, 0,
+                                    hdu_option_name);
+      gal_fits_img_info(fptr, &type, &ndim, dsize, &name, &unit);
+      if( fits_close_file(fptr, &status) )
+        gal_fits_io_error(status, NULL);
+    }
+
+  /* TIFF */
+  else if ( gal_tiff_name_is_tiff(filename) )
+    error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to fix "
+          "the problem: this function does not support TIFF files yet",
+          __func__,  PACKAGE_BUGREPORT);
+
+  /* JPEG */
+  else if ( gal_jpeg_name_is_jpeg(filename) )
+    error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to fix "
+          "the problem: this function does not support JPEG files yet",
+          __func__, PACKAGE_BUGREPORT);
+
+  /* Default: plain text. */
+  else
+    {
+      ndim=2; /* Currently only works for 2D arrays. */
+      *dsize=gal_pointer_allocate(GAL_TYPE_SIZE_T, 2, 0, __func__,
+                                  "*dsize");
+      tout=gal_txt_image_info(filename, NULL, &numimgs, *dsize);
+      if(numimgs!=1)
+        error(EXIT_FAILURE, 0, "%s: for plain-text files, only a "
+              "single image should be given, it contains %zu",
+              __func__, numimgs);
+      gal_list_data_free(tout);
+    }
+
+  /* Return the number of dimensions. */
+  return ndim;
+}
+
+
+
+
+
 /* Read (all the possibly existing) color channels within each
    extension/dir of the given file. */
 gal_data_t *
@@ -126,9 +181,9 @@ gal_array_read(char *filename, char *extension, gal_list_str_t *lines,
 
   /* Control should not get to here, but just to avoid compiler warnings,
      we'll return a NULL. */
-  error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to solve the "
-        "problem. Control must not reach the end of this function", __func__,
-        PACKAGE_BUGREPORT);
+  error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to solve "
+        "the problem. Control must not reach the end of this function",
+        __func__, PACKAGE_BUGREPORT);
   return NULL;
 }
 

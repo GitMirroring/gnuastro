@@ -46,7 +46,11 @@ Permission is granted to copy, distribute and/or modify this document under the 
 A copy of the license is included in the section entitled ``GNU Free Documentation License''.
 @end quotation
 
-See the next page for the full list of contributors and @ref{Acknowledgments and short history} for the various grants, institutes and people that have made Gnuastro possible.
+@c Reason for line-break: for some reason the '@ref{}' is placing many
+@c SPACE characters before citing the corresponding section. With the
+@c line-break, it looks as if that section is in the middle of the line.
+For the list of direct contributors see next page, and for the various grants, institutes and people that have made Gnuastro possible over the years, see@*
+@ref{Acknowledgments and short history}.
 
 @c Cite this book in academic literature with the DOI of the title page.
 For the publications to cite, run the programs you have used with @option{--cite} (be sure to include the version of Gnuastro in your publication).
@@ -284,6 +288,7 @@ Tutorials
 * Pointing pattern design::     Optimizing the pointings of your observations.
 * Moire pattern in coadding and its correction::  How to avoid this grid-based artifact.
 * Clipping outliers::           How to avoid outliers in your measurements.
+* Least squares fitting::       Fittings models to 1D or 2D data.
 
 General program usage tutorial
 
@@ -369,6 +374,16 @@ Clipping outliers
 * Sigma clipping::              Standard deviation (STD) clipping.
 * MAD clipping::                Median Absolute Deviation (MAD) clipping.
 * Contiguous outliers::         Two clips with holes filled in the middle.
+
+Least squares fitting
+
+* One dimensional polynomial fitting::  Independent variable is a column.
+* Fitting with outliers::       Real data usually have outliers.
+* Two dimensional polynomial fitting::  Independent variable is an image or two columns.
+
+Two dimensional polynomial fitting
+
+* Two dimensional fitting input from table::  Some 2D data can be tables.
 
 Installation
 
@@ -639,12 +654,12 @@ Data analysis
 * Segment::                     Segment detections based on signal structure.
 * MakeCatalog::                 Catalog from input and labeled images.
 * Match::                       Match two datasets.
+* Fit::                         Finding model constants from input X,Y data.
 
 Statistics
 
 * Histogram and Cumulative Frequency Plot::  Basic definitions.
 * 2D Histograms::               Plotting the distribution of two variables.
-* Least squares fitting::       Fitting with various parametric functions.
 * Sky value::                   Definition and derivation of the Sky value.
 * Invoking aststatistics::      Arguments and options to Statistics.
 
@@ -652,11 +667,6 @@ Statistics
 
 * 2D histogram as a table for plotting::  Format and usage in table format.
 * 2D histogram as an image::    Format and usage in image format
-
-Least squares fitting
-
-* One dimensional polynomial fitting::  Independent variable is a column.
-* Two dimensional polynomial fitting::  Independent variable is an image or two columns.
 
 Sky value
 
@@ -669,7 +679,6 @@ Invoking Statistics
 * Input to Statistics::         How to specify the inputs to Statistics.
 * Single value measurements::   Can be used together (like --mean, or --maximum).
 * Generating histograms and cumulative frequency plots::  Histogram and CFP tables.
-* Fitting options::             Least squares fitting.
 * Contour options::             Table of contours.
 * Statistics on tiles::         Possible to do single-valued measurements on tiles.
 
@@ -743,6 +752,10 @@ Match
 * Unambiguous matching::        How we avoid multiple matches.
 * Matching algorithms::         Different ways to find the match.
 * Invoking astmatch::           Inputs, outputs and options of Match.
+
+Fit
+
+* Invoking astfit::             Command-line options and input/output.
 
 Data modeling
 
@@ -1142,6 +1155,9 @@ Convolve can also do deconvolution to find the appropriate kernel to PSF-match t
 @item Crop
 (@file{astcrop}, see @ref{Crop}) Crop region(s) from one or many image(s) and stitch several images if necessary.
 Input coordinates can be in pixel coordinates or world coordinates.
+
+@item Fit
+(@file{astfit}, see @ref{Fit}) Regression analysis (fitting with a model) of 1D and 2D data; also producing residuals and estimates of the model.
 
 @item Fits
 (@file{astfits}, see @ref{Fits}) View and manipulate FITS file extensions and header keywords.
@@ -2099,7 +2115,8 @@ In @ref{Detecting lines and extracting spectra in 3D data}, we use MUSE cubes (a
 In @ref{Color channels in same pixel grid} we demonstrate how you can warp multiple images into a single pixel grid (often necessary with multi-wavelength data), and build a single color image.
 In @ref{Moire pattern in coadding and its correction} we show how you can avoid the unwanted Moir@'e pattern which happens when warping separate exposures to build a coadded deeper image.
 In @ref{Zero point of an image} we review the process of estimating the zero point of an image using a reference image or catalog.
-Finally, in @ref{Pointing pattern design} we show the process by which you can simulate a dither pattern to find the best observing strategy for your next exciting scientific project.
+@ref{Pointing pattern design} shows the process by which you can simulate a dither pattern to find the best observing strategy for your next scientific project.
+Finally, in @ref{Least squares fitting} we demonstrate how you can use Gnuastro's Fit program to fit known functions to data (in 1D or 2D).
 
 In these tutorials, we have intentionally avoided too many cross references to make it more easy to read.
 For more information about a particular program, you can visit the section with the same name as the program in this book.
@@ -2118,6 +2135,7 @@ For an explanation of the conventions we use in the example codes through the bo
 * Pointing pattern design::     Optimizing the pointings of your observations.
 * Moire pattern in coadding and its correction::  How to avoid this grid-based artifact.
 * Clipping outliers::           How to avoid outliers in your measurements.
+* Least squares fitting::       Fittings models to 1D or 2D data.
 @end menu
 
 
@@ -4114,7 +4132,7 @@ $ astscript-fits-view cmd.fits --ds9scale=minmax \
            --ds9extra="-saveimage cmd-2d.jpeg -quit"
 @end example
 
-@cindex PGFPlots (@LaTeX{} package)
+@cindex PGFPlots in @TeX{} or @LaTeX{}
 This is good for a fast progress update.
 But for your paper or more official report, you want to show something with higher quality.
 For that, you can use the PGFPlots package in @LaTeX{} to add axes in the same font as your text, sharp grids and many other elegant/powerful features (like over-plotting interesting points and lines).
@@ -10987,7 +11005,7 @@ Note that this discussion is on small shifts between pointings (dithers), not la
 
 
 
-@node Clipping outliers,  , Moire pattern in coadding and its correction, Tutorials
+@node Clipping outliers, Least squares fitting, Moire pattern in coadding and its correction, Tutorials
 @section Clipping outliers
 
 @cindex Outlier
@@ -11736,6 +11754,709 @@ Of course, if the potential outlier signal can become weaker, there are some sol
 @c The difference is now clearly visible when you plot both in one ``Plane plot'' window.
 @c In the filled re-clipping case, we see a clear dip in the number of pixels that very nicely corresponds to the number of pixels associated to the circle.
 @c But the dip is much more noisy in the simple MAD-clipping.
+
+
+@node Least squares fitting,  , Clipping outliers, Tutorials
+@section Least squares fitting
+
+@cindex Radial profile
+@cindex Least squares fitting
+@cindex Fitting (least squares)
+@cindex Star formation main sequence
+After completing a good observation, doing robust data reduction and finalizing the measurements, it is commonly necessary to parameterize the derived correlations.
+For example, you have derived the radial profile of the PSF of your image (see @ref{Building the extended PSF}) and you want to parameterize the radial profile to estimate the slope.
+Alternatively, you may have found the star formation rate and stellar mass of your sample of galaxies.
+Now, you want to derive the star formation main sequence as a parametric relation between the two.
+The fitting functions below can be used for such purposes.
+
+@cindex GSL
+@cindex GNU Scientific Library
+Gnuastro's least squares fitting features are just wrappers over the least squares fitting methods of the @url{https://www.gnu.org/software/gsl/doc/html/lls.html, linear} and @url{https://www.gnu.org/software/gsl/doc/html/nls.html, nonlinear} least-squares fitting functions of the GNU Scientific Library (GSL).
+The names of the various methods in Gnuastro are identical to those of GSL to simplify the connection and allow following the details in the GSL documentation.
+
+GSL is a very low-level library, designed for maximal portability to many scenarios, and power.
+Therefore calling GSL's functions directly for a fast operation requires a good knowledge of the C programming language and many lines of code.
+This is intentional: GSL is designed to be the back-end of higher-level programs (like Gnuastro, and many others).
+Gnuastro's @ref{Fit} program provides the easy command-line interface to GSL's powerful least squares fitting engine and in this tutorial we review their usage using 1D and 2D data.
+
+@menu
+* One dimensional polynomial fitting::  Independent variable is a column.
+* Fitting with outliers::       Real data usually have outliers.
+* Two dimensional polynomial fitting::  Independent variable is an image or two columns.
+@end menu
+
+@node One dimensional polynomial fitting, Fitting with outliers, Least squares fitting, Least squares fitting
+@subsection One dimensional polynomial fitting
+
+@cindex Gaussian noise
+@cindex Noise (Gaussian)
+In @ref{Least squares fitting} an introduction was given for fitting in Gnuastro.
+In this short tutorial, let's go through a hands-on review of 1D fitting to demonstrate them in practice.
+
+The command below will build a fake measurement table (including noise) from the 1D polynomial @mymath{y=1.23-4.56x+7.89x^2}.
+If you are not familiar with Gnuastro's Arithmetic operations, see @ref{Reverse polish notation} and @ref{Column arithmetic}.
+We will set the X axis to have values from 0.1 to 2, with steps of 0.01 and let's assume a random Gaussian noise for each @mymath{y} measurement, where @mymath{\sigma_y=0.1y}.
+To make the random number generation exactly reproducible, we are also setting the seed by exporting the specific environment variable before the command (see @ref{Generating random numbers}, which also uses GSL as a backend).
+To learn more about the @code{mknoise-sigma} operator, see the Arithmetic program's @ref{Random number generators}.
+
+@example
+$ export GSL_RNG_SEED=1664015492
+$ seq 0.1 0.01 2 \
+      | asttable --output=noisy.fits --envseed -c1 \
+                 -c'arith 1.23 -4.56 $1 x + 7.89 $1 x $1 x + set-y \
+                          0.1 y x                            set-ystd \
+                          y ystd mknoise-sigma ystd' \
+                 --colmetadata=1,X --colmetadata=2,Y \
+                 --colmetadata=3,Y-STD
+@end example
+
+@noindent
+Let's have a look at the output plot with TOPCAT using the command below.
+
+@example
+$ astscript-fits-view noisy.fits
+@end example
+
+@noindent
+Once TOPCAT is opened, go to the ``Graphics'' menu, and then ``Plane Plot''.
+To see the error-bars, go into the ``Form'' tab and click on the button with a green ``+'' sign followed by ``Forms'' and select ``Add XYError''.
+On the side-menu, in front of ``Y Positive Error'', select the @code{Y-STD} column of the input table.
+
+As you see, the error bars increase for higher Y axis values.
+Since we have error bars in this example (as in any measurement), we can use weighted fitting (which is activated by calling @option{--weight}).
+Note that the weight is not mandatory and all the models can do the fit without weights also.
+But the cost that you pay is that the model's error bars or final @mymath{\chi^2} will not be accurate.
+Also, this isn't a linear relation, so we'll use a second degree polynomial (with a maximum power of 2 in the form of @mymath{Y=c_0+c_1X+c_2X^2}):
+
+@example
+$ astfit noisy.fits -cX,Y --model=polynomial --degree=2 \
+         --weight=samefile --weight-col=Y-STD
+Fit (GNU Astronomy Utilities) @value{VERSION}
+-------
+Fitting results (remove extra info with '--quiet' or '-q)
+Input file: noisy.fits (hdu: 1) with 191 elements.
+Weight: samefile [Standard deviation of Y in each row]
+
+Fit function [1d]: Y = c0 + (c1 * X^1) + (c2 * X^2) + ... (cN * X^N)
+  Degree:  2
+  c0:  +1.228621160847268e+00
+  c1:  -4.512779663561775e+00
+  c2:  +7.843588394311610e+00
+
+Covariance matrix:
+  +1.049600116297175e-03 -3.992848808597763e-03 +2.836739018633878e-03
+  -3.992848808597763e-03 +1.752441266706594e-02 -1.380307783807857e-02
+  +2.836739018633878e-03 -1.380307783807857e-02 +1.281298063945589e-02
+
+Reduced chi^2 of fit:
+  +9.740670089585158e-01
+Fit finished in:  0.021430 seconds
+@end example
+
+As you see from the printed message, the weighted polynomial fitting has found values for the @mymath{c_0}, @mymath{c_1} and @mymath{c_2} constants of @mymath{Y=c_0+c_1X+c_2X^2}.
+Our input values were @mymath{c_0=1.23}, @mymath{c_1=-4.56} and @mymath{c_2=7.89}, and the fitted values are @mymath{c_0\approx1.2286}, @mymath{c_1\approx-4.5128} and @mymath{c_2\approx7.8436} (which are very similar to the values we created the data with).
+
+@cindex Covariance matrix
+@cindex Matrix, covariance
+As you see from the above, the @url{https://en.wikipedia.org/wiki/Covariance_matrix, covariance matrix} is also calculated.
+The covariance matrix is necessary to calculate error bars on the estimations and contains a lot of information (e.g., possible correlations between parameters).
+Finally, the @url{https://en.wikipedia.org/wiki/Reduced_chi-squared_statistic,reduced @mymath{\chi^2}}, or @mymath{\chi_{red}^2}, of the fit is also printed (which was the measure to minimize).
+Assuming the error-bars are realistic, a @mymath{\chi_{red}^2\approx1} shows a good fit.
+This is good for real-world scenarios when you don't know the original values a-priori.
+For more on interpreting @mymath{\chi_{red}^2\approx1}, see Andrae et al. @url{https://arxiv.org/abs/1012.3754,2010}.
+
+When you need to save the parameters in your higher-level script, all that verbose, human-friendly text can be annoying.
+To remove them, use the @option{--quiet} option.
+It will print the parameters, rows of the covariance matrix and @mymath{\chi_{red}^2} on separate lines with nothing extra.
+This allows you to parse the values in any way that you would like.
+
+@example
+$ astfit noisy.fits -cX,Y --model=polynomial --degree=2 \
+         --weight=samefile --weight-col=Y-STD --quiet
++1.228621160847268e+00 -4.512779663561775e+00 +7.843588394311610e+00
++1.049600116297175e-03 -3.992848808597763e-03 +2.836739018633878e-03
+-3.992848808597763e-03 +1.752441266706594e-02 -1.380307783807857e-02
++2.836739018633878e-03 -1.380307783807857e-02 +1.281298063945589e-02
++9.740670089585158e-01
+@end example
+
+@cindex Anscombe's quartet
+The comparison of fitted and input values look pretty good, but nothing beats visual inspection.
+Especially if you remember Anscombe's quartet (see @ref{Science and its tools}).
+To see how this fitted model look like, and compare it with the data, let's open the table again:
+
+@example
+$ astscript-fits-view noisy.fits
+@end example
+
+Repeat the steps above to show the scatter plot and error-bars.
+Then, go to the ``Layers'' menu and select ``Add Function Control''.
+Use the results above to fill the box in front of ``Function Expression'': @code{1.2286+(-4.5128*x)+(7.8436*x*x)} and press Enter.
+You will see that a thin line has been added to the plot.
+But the legend made the plot too thin!
+Fortunately you have a lot of empty space within the plot.
+To bring the legend in, click on the ``Legend'' item on the bottom-left menu, in the ``Location'' tab, click on ``Internal'' and hold and move it to the top-left in the box below.
+Another problem is that function's line is hard to see because it is the same color as the points and is very thin.
+To make it more visible, click on the ``Function'' plot and then its ``Style'' tab and change the color and thickness to be more visible.
+We see that second order polynomial falls very nicely over the points.
+But this fit is not perfect: it also has errors (inherited from the measurement errors).
+We need the covariance matrix to estimate the errors on each point, and that can be complex to do by hand.
+
+Fortunately Fit has the tools to easily estimate the function at any point and also calculate its corresponding error.
+To access this feature program, you should use the @option{--estimate} option.
+You can either give an independent table file name (with @option{--estimate-hdu} and @option{--estimate-col} to specify the HDU and column in that file), or just @code{self} so it uses the same X axis column that was used in this fit.
+Let's use the latter (easier) scenario:
+
+@example
+$ astfit noisy.fits -cX,Y --model=polynomial --degree=2 \
+         --weight=samefile --weight-col=Y-STD --estimate=self
+Output: noisy-fit-estimate.fits
+Fit finished in:  0.010087 seconds
+@end example
+
+The first thing you will notice is that except for the name of the output file, nothing else was printed on the standard output!
+Most importantly, the constants of the model (results of the fit).
+Instead, they are printed in the first (0th) HDU of the output FITS file (that is always reserved for metadata like this):
+
+@example
+$ astfits noisy-fit-estimate.fits -h0
+
+...[[truncated]]...
+
+                      / Regression analysis (fitting) results
+INPUT   = 'noisy.fits'         / Name of input file.
+FITC0   =     1.22862116084727 / C0: polynomial constant (degree=2).
+FITC1   =    -4.51277966356177 / C1: polynomial constant (degree=2).
+FITC2   =     7.84358839431161 / C2: polynomial constant (degree=2).
+FCOV11  =  0.00104960011629718 / Element (1,1) of covariance matrix.
+FCOV12  = -0.00399284880859776 / Element (1,2) of covariance matrix.
+FCOV13  =  0.00283673901863388 / Element (1,3) of covariance matrix.
+FCOV21  = -0.00399284880859776 / Element (2,1) of covariance matrix.
+FCOV22  =   0.0175244126670659 / Element (2,2) of covariance matrix.
+FCOV23  =  -0.0138030778380786 / Element (2,3) of covariance matrix.
+FCOV31  =  0.00283673901863388 / Element (3,1) of covariance matrix.
+FCOV32  =  -0.0138030778380786 / Element (3,2) of covariance matrix.
+FCOV33  =   0.0128129806394559 / Element (3,3) of covariance matrix.
+FRDCHISQ=    0.974067008958516 / Reduced chi^2 of fit.
+END
+@end example
+
+This form of preserving the constants of the model is much more robust: has standard keyword names that you can easily extract with a command like below for example:
+
+@example
+$ astfits noisy-fit-estimate.fits -h0 \
+          --keyvalue=FITC0,FITC1,FITC2
+@end example
+
+@noindent
+Now, let's look into the actual data (the estimated model values) in the output file.
+For that, we can use the @option{--information} (or @option{-i}) option of Gnuastro's Table program:
+
+@example
+$ asttable noisy-fit-estimate.fits -i
+--------
+noisy-fit-estimate.fits (hdu: 1)
+-------            -----  ----     -------
+No.Name            Units  Type     Comment
+-------            -----  ----     -------
+1  X               n/a    float64  n/a
+2  Y               n/a    float64  n/a
+3  Y-STD           n/a    float64  n/a
+4  Y-ESTIMATE      n/a    float64  n/a
+5  Y-ESTIMATE-STD  n/a    float64  n/a
+--------
+Number of rows: 191
+--------
+@end example
+
+You see that besides the raw outputs (last two columns), Fit also included the inputs that you provided.
+This is the default behavior because you usually want to to plot the independent variable (X) as a function of the dependent variable (Y) and its estimation: at least for a visual check.
+Let's do that now with the command below:
+
+@example
+$ astscript-fits-view noisy-fit-estimate.fits
+@end example
+
+Like before, in the ``Graphics'' menu, open ``Plane Plot'' to see your inputs.
+But this time you do not need to read the model constants, you can simply load a the new @code{Y-ESTIMATE} column into the same plot.
+To do that, in the ``Layers'' menu of the plot window, select ``Add position control'' and in the left panel below the plot, select the input table from the scroll-down menu infront of ``Table: ''.
+Keep the same input @code{X} column for X, but for Y, select @code{Y-ESTIMATE}.
+You can even follow the steps mentioned previously to show the errors in each estimate.
+They are much smaller than the error in each point because we had a very good sampling of the function in our noisy data.
+
+Besides the @mymath{\chi^2}, an important quality check for any fit is to estimate the residuals: the difference between the input and estimated dependent variables, divided by the input.
+This can be done with Table's @ref{Column arithmetic} like below:
+
+@example
+$ asttable noisy-fit-estimate.fits -cX,'arith Y Y-ESTIMATE - Y /' \
+           --output=noisy-residual.fits
+@end example
+
+But since the residual is very commonly needed in any fitting, Fit has the @option{--residual} option to do this for you.
+When run with this option, Fit will do the subtraction above and put it in a @code{Y-RESIDUAL-FRAC} column like the command below (where we have also specified a file name for the output):
+
+@example
+$ astfit noisy.fits -cX,Y --model=polynomial --degree=2 \
+         --weight=samefile --weight-col=Y-STD --estimate=self \
+         --residual --output=fit.fits
+Fit finished in:  0.013329 seconds
+
+$ asttable fit.fits -i
+--------
+fit.fits (hdu: 1)
+-------            -----  ----     -------
+No.Name            Units  Type     Comment
+-------            -----  ----     -------
+1  X               n/a    float64  n/a
+2  Y               n/a    float64  n/a
+3  Y-STD           n/a    float64  n/a
+4  Y-RESIDUAL-FRAC n/a    float64  n/a
+5  Y-ESTIMATE      n/a    float64  n/a
+6  Y-ESTIMATE-STD  n/a    float64  n/a
+--------
+Number of rows: 191
+--------
+@end example
+
+The estimate and residual are in the same table here because they both occurred on the same independent variables.
+If the value given to @option{--estimate} is not @code{self}, then the residual and estimate tables will be saved in different HDUs of the output.
+Finally, in case you do not want the input columns in the output, you can use @option{--out-table-no-input}.
+
+@node Fitting with outliers, Two dimensional polynomial fitting, One dimensional polynomial fitting, Least squares fitting
+@subsection Fitting with outliers
+
+@cindex Outliers in fitting
+@cindex Fitting with outliers
+In @ref{One dimensional polynomial fitting}, we demonstrated how to derive the constants of a polynomial for a certain input dataset.
+But that dataset was idealistic: just adding noise over a known model.
+Real data (that come from measurements) usually have outliers which can severely harm the fit.
+To see this in practice, let's add some outliers to the table of the previous section.
+With @command{echo} commands, we'll build a two-row plain-text table with the outliers and use Table's @option{--catrowfile} to concatenate (or append) those two rows to the original table.
+Finally, we'll run the same fitting step above:
+
+@example
+$ echo "0.6  20  0.01"  > outliers.txt
+$ echo "0.8  20  0.01" >> outliers.txt
+
+$ asttable noisy.fits --catrowfile=outliers.txt \
+           --output=with-outlier.fits
+
+$ astfit with-outlier.fits -cX,Y --model=polynomial --degree=2 \
+         --weight=samefile --weight-col=Y-STD
+Fit (GNU Astronomy Utilities) @value{VERSION}
+-------
+Fitting results (remove extra info with '--quiet' or '-q)
+  Input file:    with-outlier.fits (hdu: 1) with 193 non-blank rows.
+  X      column: X
+  Y      column: Y
+  Weight column: Y-STD    [Standard deviation of Y in each row]
+
+Fit function [1d]: Y = c0 + (c1 * X^1) + (c2 * X^2) + ... (cN * X^N)
+  Degree:  2
+  c0:  -1.364460368990998e+01
+  c1:  +6.684632585474085e+01
+  c2:  -3.087463035905803e+01
+
+Covariance matrix:
+  +7.889160207384704e-04 -2.770630971763179e-03 +2.220893924207887e-03
+  -2.770630971763179e-03 +1.139224675069806e-02 -1.003067318200353e-02
+  +2.220893924207887e-03 -1.003067318200353e-02 +9.408722628837454e-03
+
+Reduced chi^2 of fit:
+  +4.501835671915003e+03
+Fit finished in:  0.010883 seconds
+@end example
+
+We see that the coefficient values have changed significantly and that @mymath{\chi_{red}^2} has increased to @mymath{4502}!
+Recall that a good fit should have @mymath{\chi_{red}^2\approx1}.
+These numbers clearly show that the fit was bad, but again, nothing beats a visual inspection.
+To visually see the effect of those outliers, let's include the estimation and open the file with TOPCAT:
+
+@example
+$ astfit with-outlier.fits -cX,Y --model=polynomial --degree=2 \
+         --weight=samefile --weight-col=Y-STD --estimate=self \
+         --output=fit.fits
+$ astscript-fits-view fit.fits
+@end example
+
+Repeating the steps of @ref{One dimensional polynomial fitting} to open the input and estimated values together.
+You see that those two points have clearly caused a terrible turn in the fitted result, producing a completely different shape in the fitted output.
+For such cases, GSL has @url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression, Robust linear regression}.
+In Gnuastro's Statistics, you can access them with the @option{--robust} option.
+It takes the name of the robust algorithm you would like to use.
+For the full list see the description of this option in @ref{Invoking astfit}.
+Note that the robust method doesn't take an error column (because GSL estimates the errors internally while rejecting outliers, based on the algorithm used).
+
+@example
+$ astfit with-outlier.fits -cX,Y --model=polynomial --degree=2 \
+         --estimate=self --robust=bisquare --output=fit.fits
+
+$ astfits fit.fits -h0 | grep ^FITC
+FITC0   =     1.20422691185238 / C0: multiple of x^0 in polynomial
+FITC1   =     -4.4779253576348 / C1: multiple of x^1 in polynomial
+FITC2   =     7.84986153686548 / C2: multiple of x^2 in polynomial
+
+$ astscript-fits-view fit.fits
+@end example
+
+It is clear that the coefficients are very similar to the no-outlier scenario above and if you run the third command to view the scatter plots on TOPCAT, you also see that the fit nicely follows the curve and is not affected by those two points.
+When you know your data may have outliers, it helps a to read about and check the various outlier rejection algorithms available to find the most appropriate for your data.
+
+@node Two dimensional polynomial fitting,  , Fitting with outliers, Least squares fitting
+@subsection Two dimensional polynomial fitting
+
+In @ref{One dimensional polynomial fitting} we reviewed the general interface of the Fit program for 1D inputs and in @ref{Fitting with outliers}, we reviewed how outliers can be treated.
+If you have not yet read (and tried) those sections, please stop here and do that tutorial before continuing (the interface is generic and does not depend on dimensionality).
+
+For a 2D polynomial fit, two independent variables are needed (usually called as X1 and X2).
+Just like the 1D fitting, the two independent variables and the dependent variable (Y) should be in the same input file.
+But in 2D, the file can either be an image (where the position of each pixel in each FITS dimension is taken as the independent variable and the pixel value is the dependent variable) or table columns (where the order of the columns determines their interpretation: the first and second are the first two independent variables and the third is the dependent variable).
+Let's start with an image and end with using table columns.
+
+@cindex FITS coordinates
+Let's use the Arithmetic program to generate an image from the following 2D polynomial: @mymath{Y=5+10X_2+X_1X_2}.
+In a FITS image, @mymath{X_1} is the first FITS axis (horizontal) and @mymath{X_2} is the second FITS axis (vertical) and counting of pixels starts from 1.
+For the details of the operators, see @ref{Arithmetic operators}.
+
+@example
+$ astarithmetic 100 100 2 makenew indexonly set-i \
+                i 100 % 1 + set-X1 \
+                i 100 / 1 + set-X2 \
+                5 10 X2 x + X1 X2 x + f64 \
+                --output=model.fits
+
+$ astscript-fits-view model.fits
+@end example
+
+The gradient of the 2D polynomial is clearly visible in the image.
+You can directly give this image to the Fit program for as shown below (with some outputs printed on the standard output when no residual or estimation is requested):
+
+@example
+$ astfit model.fits --model=polynomial --degree=2
+Fit (GNU Astronomy Utilities) @value{VERSION}
+-------
+Fitting results (remove extra info with '--quiet' or '-q)
+Input file: model.fits (hdu: 1) with 10000 elements.
+
+Fitting model [2d, Y=f(X1,X2)]: Y = c0 + c1.X1 + c2.X2 + ...
+  Degree:  2
+  c0:  +5.000000000073776e+00
+  c1:  +2.460254222569347e-13
+  c2:  +9.999999999995385e+00
+  c3:  -2.773822838086915e-15
+  c4:  +1.000000000000002e+00
+  c5:  +4.474025316891783e-14
+
+Covariance matrix:
+...[[truncated]]...
+
+Reduced chi^2 of fit:
+  +1.224395957644269e-21
+Fit finished in:  0.012455 seconds
+@end example
+
+
+@cindex Floating point errors
+@cindex Errors (floating point precision)
+@noindent
+Except for the functional form of the the 2D fit and the number of constants, all the outputs are similar to a 1D fit.
+The extremely small values of the coefficients (@mymath{\sim10^{-13}}) are just @url{https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems, floating point errors} that are due to the limited precision of representing floating point numbers in discrete bits.
+So we can safely consider them to be equal to zero.
+In conclusion: the three constants that we had originally set are nicely determined.
+
+In @ref{One dimensional polynomial fitting} we said that a good value for the reduced @mymath{\chi^2} is around unity.
+But here, the value is @mymath{10^{21}} times less than that (and deep into the floating point error regime)!
+This is because the input does not have any noise and the we created the input with exactly the same model, so such a small value is expected.
+Like the 1D fitting, nothing beats visual inspection, so let's actually estimate the fit and its residual:
+
+@example
+$ astfit model.fits --model=polynomial --degree=2 --estimate=self \
+         --residual --output=fit2d-model.fits
+Output: fit2d.fits
+Fit finished in:  0.014487 seconds
+
+$ astfits fit2d-model.fits
+Fits (GNU Astronomy Utilities) @value{VERSION}
+Run on Wed Aug 26 10:41:29 2026
+-----
+HDU (extension) information: 'fit2d.fits'.
+ Column 1: Index (counting from 0, usable with '--hdu').
+ Column 2: Name ('EXTNAME' in FITS standard, usable with '--hdu').
+ Column 3: Image data type or 'table' format (ASCII or binary).
+ Column 4: Size of data in HDU.
+ Column 5: Units of data in HDU (only images, for tables 'asttable -i').
+           ('n/a': no unit in HDU metadata, or HDU is a table)
+-----
+0      FIT-CONFIG      no-data         0       n/a
+1      Y-RESIDUAL-FRAC float64         100x100 n/a
+2      Y-ESTIMATE      float64         100x100 n/a
+3      Y-ESTIMATE-STD  float64         100x100 n/a
+@end example
+
+Like the 1D fitting before, the parameters of the fit are no longer printed, but are written in the 0th HDU of the output file (@code{FIT-CONFIG}).
+The HDU names are also the same as column names for 1D fit outputs.
+However, unlike the 1D fitting, the input is not stored in the output.
+This is because images are usually much larger (in size) and visualizing images is very different from table columns: you don't get much advantage by having them in one file.
+Now that the HDUs have been explained, let's actually open the images and see the outputs:
+
+@example
+$ astscript-fits-view fit2d-model.fits
+@end example
+
+The @code{Y-RESIDUAL-FRAC} extension/HDU is the first that is opened.
+Recall (like the 1D case) that the fractional residual is the difference between the estimated model and input, divided by the input.
+You do see a 2D pattern, however, when you look at the values, you see that they are all safely in the floating point error regime (about @mymath{10^{-14}}).
+The next two extensions show the estimated values and the error in the estimate.
+Since we did not have any weights in this test, the 2D pattern you see in the @code{Y-ESTIMATE-STD} is because of that.
+But again, all the values in it are in the floating point error regime: so not numerically (and statistically) significant.
+
+Now that the basics are covered, let's make this fit more realistic!
+We are rarely lucky enough to have a value for the full plane, sufficient sampling or a perfect polynomial behavior like above.
+Let's make this test a little more realistic by adding some noise to it and setting a fraction of the pixels (60%) to NaN.
+This (a fraction of the pixels not being usable) happens a lot in 2D fits; for example you mask all the detected stars and galaxies in the image to model the underlying background.
+
+@example
+$ export GSL_RNG_SEED=1788653609
+$ astarithmetic 100 100 2 makenew indexonly set-i \
+                i 100 % 1 + set-X1 \
+                i 100 / 1 + set-X2 \
+                5 10 X2 x + X1 X2 x + f64 set-Yraw \
+                Yraw sqrt set-Ystd \
+                Yraw Ystd mknoise-sigma set-Ynoised \
+                i 50 constant 100 mknoise-uniform set-rand \
+                Ynoised rand 60 gt nan where set-Y \
+                Ystd Y --writeall --envseed --output=image.fits
+
+
+$ astscript-fits-view image.fits
+
+
+$ astfit image.fits --model=polynomial --degree=2  --residual \
+         --weight=image.fits --weight-hdu=2 --estimate=self \
+         --output=fit2d-image.fits
+Output: fit2d-image.fits
+Fit finished in:  0.012269 seconds
+
+
+$ astfits fit2d-image.fits -h0
+...
+INPUT   = 'image.fits'        / Name of input file.
+FITC0   =     5.17987308127265 / C0: polynomial constant (degree=2).
+FITC1   =  -0.0201935916544367 / C1: polynomial constant (degree=2).
+FITC2   =     9.98820484292549 / C2: polynomial constant (degree=2).
+FITC3   = 0.000360370525026198 / C3: polynomial constant (degree=2).
+FITC4   =    0.999408030482402 / C4: polynomial constant (degree=2).
+FITC5   = 0.000666740094459821 / C5: polynomial constant (degree=2).
+...
+FRDCHISQ=    0.970387361186378 / Reduced chi^2 of fit.
+
+
+$ astscript-fits-view fit2d-image.fits
+@end example
+
+The reduced @mymath{\chi^2} is near one (which is good), we also see that C0 and C2 and C4 are very close to their original values (from the Arithmetic command: 5, 10 and 1 respectively).
+In DS9, when looking at @code{Y-RESIDUAL-FRAC}, we see that the values are distributed around 0 and with most values less that @mymath{\pm0.2}; which is reasonable.
+Looking at @code{Y-ESTIMATE-STD}, we don't see a geometric 2D pattern like before, but it now has a structure almost like the input (which is reasonable). this is because we gave a weight image this time.
+
+There is another problem in real data that was not included above: we can have outliers!
+For example when you are masking the stars and galaxies, you may have missed some of their outer edges.
+Let's manually create some outliers in this image with @ref{MakeProfiles}: putting two circular flat profiles centered at the pixel coordiantes (10,10) and (30,30), with values of 15000 and 14000 respectively.
+Afterwards, we will insert them into the image and do the fit.
+Just be sure to check the images in DS9 on every step to get a good visual impression of the outliers.
+
+@example
+$ printf "1 10 10 5 5 0 0 1 15000 1\n1 30 30 5 5 0 0 1 14000 1\n" \
+         | astmkprof --background=image.fits --oversample=1 \
+                     --clearcanvas --mforflatpix -o outliers.fits
+
+$ astarithmetic image.fits -h1 set-p \
+                image.fits -h2 set-w \
+                outliers.fits -h1 set-o \
+                p o 0 ne o where set-Y \
+                w o 0 ne o sqrt where set-Ystd \
+                Ystd Y --writeall --output=with-outliers.fits
+
+$ astscript-fits-view with-outliers.fits
+
+$ astfit with-outliers.fits --model=polynomial --degree=2 \
+         --residual --weight=with-outliers.fits --weight-hdu=2 \
+         --estimate=self --output=fit2d-outliers.fits
+
+$ astfits fit2d-outliers.fits -h0
+...
+FITC0   =     21.2227622249724 / C0: polynomial constant (degree=2).
+FITC1   =    0.284811918145692 / C1: polynomial constant (degree=2).
+FITC2   =     12.0172952503883 / C2: polynomial constant (degree=2).
+FITC3   = -0.00920153246145324 / C3: polynomial constant (degree=2).
+FITC4   =     1.00476956103721 / C4: polynomial constant (degree=2).
+FITC5   =  -0.0279475383662398 / C5: polynomial constant (degree=2).
+...
+FRDCHISQ=     354.611961254749 / Reduced chi^2 of fit.
+
+$ astscript-fits-view fit2d-outliers.fits
+@end example
+
+We see that the reduced @mymath{\chi^2} has been dramatically worsened and the constants are also very different from the inputs.
+Also when inspecting @code{Y-RESIDUAL-FRAC}, you see that the values are worse compared to the image without outliers.
+
+Like the 1D scenario, the solution to the problem of outliers is to use robust fitting algorithms.
+Let's start with GSL's suggested (more generic) robust algorithm: bisquare.
+
+@example
+$ astfit with-outliers.fits --model=polynomial --degree=2 \
+         --robust=bisquare --residual --estimate=self \
+         --output=fit2d-robust.fits
+
+$ astfits fit2d-robust.fits -h0
+...
+FITC0   =     7.12330731290108 / C0: polynomial constant (degree=2).
+FITC1   =  -0.0554304440647369 / C1: polynomial constant (degree=2).
+FITC2   =     9.89095628172739 / C2: polynomial constant (degree=2).
+FITC3   = 0.000678239675763904 / C3: polynomial constant (degree=2).
+FITC4   =    0.999642217202754 / C4: polynomial constant (degree=2).
+FITC5   =   0.0016336401560185 / C5: polynomial constant (degree=2).
+...
+FRDCHISQ=     29336.9153003198 / Reduced chi^2 of fit.
+@end example
+
+We see that the reduced @mymath{\chi^2} is terrible (much worse than the non-robust fit).
+However, the five constants look very close to those of the input now.
+Let's actually open the two residuals and visually compare them with the command below.
+With the @option{--ds9extra} option, we set the scale and limits of both images to be the same: so the color-bar corresponds to the same pixel values in both.
+
+@example
+$ astscript-fits-view fit2d-outliers.fits fit2d-robust.fits \
+                      --ds9extra="-lock scalelimits yes"
+@end example
+
+When DS9 opens above, you see that around the bottom-left corner of the image (near the two outliers) the non-robust image has many dark values: the model went wrong.
+In other words, the robust fit has done a better job at ignoring the outliers; even though the reduced @mymath{\chi^2} suggests the opposite.
+This is because the denominator of @mymath{\chi^2} is the standard deviation (the @code{Y-ESTIMATE-STD} image), and you can see that its values are not realistic (compared to the weight image we calculated before).
+An important lesson from this test is that in robust fits the standard deviation (and thus the reduced @mymath{\chi^2}) are not reliable.
+
+To use the weight image and get a realistic estimation standard deviation, we need to identify and mask the 2D outliers (using the residual image of the robust fit) and then use a non-robust fit like the commands below.
+
+@example
+$ maskthresh=5         # Multiple of sigma to identify outliers.
+$ rthresh=$(aststatistics fit2d-robust.fits --sigclip-median \
+                          --sigclip-std \
+                          | awk -v mt=$maskthresh '@{print $1+mt*$2@}')
+
+$ astarithmetic fit2d-robust.fits set-res -g1 \
+                with-outliers.fits set-orig \
+                res $rthresh gt 1 erode 2 dilate set-mask \
+                orig mask nan where \
+                --output=masked-outlier.fits
+
+$ astfit masked-outlier.fits --model=polynomial --degree=2 \
+         --residual --weight=image.fits --weight-hdu=2 \
+         --estimate=self --output=fit2d-no-outliers.fits
+
+$ astfits fit2d-no-outliers.fits -h0
+...
+FITC0   =     5.29970595989789 / C0: polynomial constant (degree=2).
+FITC1   =  -0.0216547221883192 / C1: polynomial constant (degree=2).
+FITC2   =     9.99117394563778 / C2: polynomial constant (degree=2).
+FITC3   = 0.000352345616526667 / C3: polynomial constant (degree=2).
+FITC4   =    0.999433512196397 / C4: polynomial constant (degree=2).
+FITC5   = 0.000609453610766302 / C5: polynomial constant (degree=2).
+...
+FRDCHISQ=    0.974305177894159 / Reduced chi^2 of fit.
+@end example
+
+@noindent
+We now have very good value for the reduced @mymath{\chi^2} and the polynomial constants.
+
+@menu
+* Two dimensional fitting input from table::  Some 2D data can be tables.
+@end menu
+
+@node Two dimensional fitting input from table,  , Two dimensional polynomial fitting, Two dimensional polynomial fitting
+@subsubsection Two dimensional fitting input from table
+
+In @ref{Two dimensional polynomial fitting} we reviewed 2D fitting in the scenario the most common format: when the 2D data is arranged in an image.
+In other words, the two indepdent variables are the horizontal and vertical positions of each pixel, with the pixel value being the dependent variable.
+But in different scenarios, two dimensiontal inputs can be in the form of two table columns for each of the two independent variables (X1 and X2), and a third column for the dependent variable (Y).
+In this short sub-section, we'll review the usage of Gnuastro's @ref{Fit} program for such cases.
+This tutorial uses the output(s) of @ref{Two dimensional polynomial fitting}, so be sure to complete that first.
+
+As the input for this sub-section, let's use the @file{image.fits} image we made previously.
+The first command below will generate a 3 column table with the same number of rows as pixels in the image (one row per pixel).
+The first and second columns will be the first (horizontal) and second (vertical) positions of the pixel and the third column will be the pixel value.
+Since many of the pixels are NaN, to speed things up, in the second command, we will prune them out and also give some human-friendly names to the columns.
+
+@example
+$ astarithmetic image.fits set-i \
+                i 1 size    set-width \
+                i indexonly set-ind \
+                ind width % 1 + u32 set-X1 \
+                ind width / 1 + u32 set-X2 \
+                i to-1d X2 to-1d X1 to-1d \
+                --writeall --output=tab2d-raw.fits
+
+$ asttable tab2d-raw.fits --noblank=_all --output=tab2d.fits \
+           --colmetadata=1,X1 --colmetadata=2,X2 \
+           --colmetadata=3,Y
+
+$ astscript-fits-view tab2d.fits
+@end example
+
+The last command above will open TOPCAT for you to visualize the table.
+Take the following steps to see the pixels and their values:
+
+@enumerate
+@item
+In the ``Graphics'' menu, select ``Plane Plot''.
+@item
+In the opened window, select the @code{X2} column for TOPCAT's ``Y'' column.
+@item
+Select the ``Axes'' from the left side-bar and activate ``Aspect Lock''.
+@item
+Select ``1:tab2d.fits'' in the side bar and go to the ``Form'' tab.
+@item
+Click on the ``auto'' drop-down menu and select ``aux''.
+@item
+In the opened drop-down menu for ``Aux:'' select @code{Y}.
+You will see the gradient that you previously saw in DS9 with the color-bar showing the pixel values.
+@end enumerate
+
+@noindent
+Now that our input table is ready, let's call Gnuastro's Fit for a 2D polynomial fit and then check the metadata:
+
+@example
+$ astfit tab2d.fits -cX1,X2,Y --model=polynomial --degree=2 \
+         --residual --estimate=self --output=fit2d-table.fits
+
+$ asttable fit2d-table.fits -i
+--------
+fit2d-table.fits (hdu: 1)
+-------             -----  ----     -------
+No.Name             Units  Type     Comment
+-------             -----  ----     -------
+1  X1               n/a    float64  n/a
+2  X2               n/a    float64  n/a
+3  Y                n/a    float64  n/a
+4  Y-RESIDUAL-FRAC  n/a    float64  n/a
+5  Y-ESTIMATE       n/a    float64  n/a
+6  Y-ESTIMATE-STD   n/a    float64  n/a
+--------
+Number of rows: 5933
+--------
+
+$ astfits fit2d-table.fits -h0
+...
+FITC0   =      5.9241579442991 / C0: polynomial constant (degree=2).
+FITC1   =  -0.0513291041924973 / C1: polynomial constant (degree=2).
+FITC2   =     9.96381848864731 / C2: polynomial constant (degree=2).
+FITC3   = 0.000819520373941115 / C3: polynomial constant (degree=2).
+FITC4   =    0.999276920553552 / C4: polynomial constant (degree=2).
+FITC5   = 0.000915129709324442 / C5: polynomial constant (degree=2).
+@end example
+
+We see that the constants of the polynomial were very nicely found.
+You can use the same checklist above to open the output table and inspect the 2D distribution of the residual, input and estimate.
+As an exercise, you can also create the weight column like above and give the weight (using @code{--weight-col}) to @code{astfit} also.
+This will produce exactly the same fitting result that we got before (when the input was @file{image.fits}: the input to this table).
 
 
 
@@ -13544,10 +14265,9 @@ current values.
 @node Tests, A4 print book, Separate build and source directories, Build and install
 @subsection Tests
 
-@cindex @command{make check}
-@cindex @file{mock.fits}
 @cindex Tests, running
 @cindex Checking tests
+@cindex @command{make check}
 After successfully building (compiling) the programs with the @command{$ make} command you can check the installation before installing.
 To run the tests, run
 
@@ -13886,7 +14606,8 @@ The outputs of @option{--usage} and @option{--help} shows which arguments are op
 As their name suggests, @emph{options} can be considered to be optional and most of the time, you do not have to worry about what order you specify them in.
 When the order does matter, or the option can be invoked multiple times, it is explicitly mentioned in the ``Invoking ProgramName'' section of each program (this is a very important aspect of an option).
 
-@cindex Metacharacters on the command-line In case your arguments or option values contain any of the shell's meta-characters, you have to quote them.
+@cindex Metacharacters on the command-line
+In case your arguments or option values contain any of the shell's meta-characters, you have to quote them.
 If there is only one such character, you can use a backslash (@command{\}) before it.
 If there are multiple, it might be easier to simply put your whole argument or option value inside of double quotes (@command{"}).
 In such cases, everything inside the double quotes will be seen as one token or word.
@@ -15782,7 +16503,7 @@ The most generic column information comment line has the following format:
 # Column N: NAME [UNIT, TYPE(NUM), BLANK] COMMENT
 @end example
 
-@cindex NaN
+@cindex NaN (Not a Number)
 @noindent
 Any sequence of characters between `@key{:}' and `@key{[}' will be interpreted as the column name (so it can contain anything except the `@key{[}' character).
 Anything between the `@key{]}' and the end of the line is defined as a comment.
@@ -17519,7 +18240,7 @@ Contours over the image to show radio/X-ray emission, over an optical image for 
 Text, arrows, etc., over certain parts of the image.
 @end itemize
 
-@cindex PGFPlots
+@cindex PGFPlots in @TeX{} or @LaTeX{}
 Because of the modular philosophy of Gnuastro, ConvertType is only focused on converting your FITS images to printer friendly formats like JPEG or PDF.
 But to present your results in a slide or paper, you will often need to annotate the raw JPEG or PDF with some of the features above.
 The good news is that there are many powerful plotting programs that you can use to add such annotations.
@@ -17535,7 +18256,7 @@ Therefore the full script (except for the data download step) is available in @r
 @end cartouche
 
 @cindex TiKZ
-@cindex Matplotlib
+@cindex Matplotlib (Python)
 PGFPlots uses the same @LaTeX{} graphic engine that typesets your paper/slide.
 Therefore when you build your plots and figures using PGFPlots (and its underlying package PGF/TiKZ@footnote{@url{http://mirrors.ctan.org/graphics/pgf/base/doc/pgfmanual.pdf}}) your plots will blend beautifully within your text: same fonts, same colors, same line properties, etc.
 Since most papers (and presentation slides@footnote{To build slides, @LaTeX{} has packages like Beamer, see @url{http://mirrors.ctan.org/macros/latex/contrib/beamer/doc/beameruserguide.pdf}}) are made with @LaTeX{}, PGFPlots is therefore the best tool for those who use @LaTeX{} to create documents.
@@ -18140,7 +18861,7 @@ The mapping of a single-channel dataset to HSV is done through the Hue and Value
 This creates darker colors for fainter parts, while also respecting the range of colors.
 
 @item viridis
-@cindex matplotlib
+@cindex Matplotlib (Python)
 @cindex Colormap: Viridis
 @cindex Viridis: Colormap
 Viridis is the default colormap of the popular Matplotlib module of Python and available in many other visualization tools like PGFPlots.
@@ -22082,6 +22803,8 @@ Therefore in its 23rd General Assembly, the International Astronomical Union app
 ICRS is designed to be within the errors of the Equatorial J2000 coordinate system, so they are currently very similar; but ICRS has much better accuracy.
 We will be adding ICRS in the operators below soon.
 
+@cindex Floating point errors
+@cindex Errors (floating point precision)
 @strong{Floating point errors:} The operation to convert between the coordinate systems involves many sines, cosines (and their inverse).
 Therefore, floating point errors (due to the limited precision of the definition of floating points in bits) can cause small offsets.
 For example see the code below were we convert equatorial to galactic and back, then compare the input and output (which is in the 5th and 6th decimal of a degree; or about 0.2 or 0.01 arcseconds).
@@ -22934,7 +23657,7 @@ Below are some important points for all the coadding operators described in this
 @itemize
 
 @item
-@cindex NaN
+@cindex NaN (Not a Number)
 NaN/blank pixels will be ignored, see @ref{Blank pixels}.
 
 @item
@@ -26563,8 +27286,8 @@ These three operations can be merged in one operation by calculating the matrix 
 @cindex Resampling
 @cindex Pixel mixing
 @cindex Photoelectrons
-@cindex Picture element
 @cindex Mixing pixel values
+@cindex Picture element (pixel)
 A digital image is composed of discrete `picture elements' or `pixels'.
 When a real image is created from a camera or detector, each pixel's area is used to store the number of photo-electrons that were created when incident photons collided with that pixel's surface area.
 This process is called the `sampling' of a continuous or analog data into digital data.
@@ -27105,7 +27828,7 @@ All the elements in this matrix must be separated by commas(@key{,}) characters 
 The transformation matrix can be either a 2 by 2 (4 numbers), or a 3 by 3 (9 numbers) array.
 In the former case (if a 2 by 2 matrix is given), then it is put into a 3 by 3 matrix (see @ref{Linear warping basics}).
 
-@cindex NaN
+@cindex NaN (Not a Number)
 The determinant of the matrix has to be non-zero and it must not contain any non-number values (for example, infinities or NaNs).
 The elements of the matrix have to be written row by row.
 So for the general Homography matrix of @ref{Linear warping basics}, it should be called with @command{--matrix=a,b,c,d,e,f,g,h,1}.
@@ -27157,6 +27880,7 @@ For example, getting general or specific statistics of the dataset (with @ref{St
 * Segment::                     Segment detections based on signal structure.
 * MakeCatalog::                 Catalog from input and labeled images.
 * Match::                       Match two datasets.
+* Fit::                         Finding model constants from input X,Y data.
 @end menu
 
 @node Statistics, NoiseChisel, Data analysis, Data analysis
@@ -27175,7 +27899,6 @@ The Statistics program is designed for such situations.
 @menu
 * Histogram and Cumulative Frequency Plot::  Basic definitions.
 * 2D Histograms::               Plotting the distribution of two variables.
-* Least squares fitting::       Fitting with various parametric functions.
 * Sky value::                   Definition and derivation of the Sky value.
 * Invoking aststatistics::      Arguments and options to Statistics.
 @end menu
@@ -27220,7 +27943,7 @@ Formally, an interval/bin between a and b is represented by [a, b).
 When the over-all range of the dataset is specified (with the @option{--greaterequal}, @option{--lessthan}, or @option{--qrange} options), the acceptable values of the dataset are also defined with a similar inclusive-exclusive manner.
 But when the range is determined from the actual dataset (none of these options is called), the last element in the dataset is included in the last bin's count.
 
-@node 2D Histograms, Least squares fitting, Histogram and Cumulative Frequency Plot, Statistics
+@node 2D Histograms, Sky value, Histogram and Cumulative Frequency Plot, Statistics
 @subsection 2D Histograms
 @cindex 2D histogram
 @cindex Histogram, 2D
@@ -27423,7 +28146,7 @@ $ ds9 cmd-2d-hist.fits -cmap sls -zoom 4 -grid yes \
       -grid type publication -saveimage cmd-2d.jpeg -quit
 @end example
 
-@cindex PGFPlots (@LaTeX{} package)
+@cindex PGFPlots in @TeX{} or @LaTeX{}
 This is good for a fast progress update.
 But for your paper or more official report, you want to show something with higher quality.
 For that, you can use the PGFPlots package in @LaTeX{} to add axes in the same font as your text, sharp grids and many other elegant/powerful features (like over-plotting interesting points and lines).
@@ -27479,404 +28202,7 @@ PGFPlots can also built the PDF of the plot separately from the rest of the pape
 
 
 
-
-@node Least squares fitting, Sky value, 2D Histograms, Statistics
-@subsection Least squares fitting
-
-@cindex Radial profile
-@cindex Least squares fitting
-@cindex Fitting (least squares)
-@cindex Star formation main sequence
-After completing a good observation, doing robust data reduction and finalizing the measurements, it is commonly necessary to parameterize the derived correlations.
-For example, you have derived the radial profile of the PSF of your image (see @ref{Building the extended PSF}).
-You may want to parameterize the radial profile to estimate the slope.
-Alternatively, you may have found the star formation rate and stellar mass of your sample of galaxies.
-Now, you want to derive the star formation main sequence as a parametric relation between the two.
-The fitting functions below can be used for such purposes.
-
-@cindex GSL
-@cindex GNU Scientific Library
-Gnuastro's least squares fitting features are just wrappers over the least squares fitting methods of the @url{https://www.gnu.org/software/gsl/doc/html/lls.html, linear} and @url{https://www.gnu.org/software/gsl/doc/html/nls.html, nonlinear} least-squares fitting functions of the GNU Scientific Library (GSL).
-For the low-level details and equations of the methods, please see the GSL documentation.
-The names have been preserved here in Gnuastro to simplify the connection with GSL and follow the details in the detailed documentation there.
-
-GSL is a very low-level library, designed for maximal portability to many scenarios, and power.
-Therefore calling GSL's functions directly for a fast operation requires a good knowledge of the C programming language and many lines of code.
-As a low-level library, GSL is designed to be the back-end of higher-level programs (like Gnuastro).
-Through the Statistics program, in Gnuastro we provide a high-level interface to access to GSL's very powerful least squares fitting engine to read/write from/to standard data formats in astronomy.
-A fully working example is shown below.
-
-@cindex Gaussian noise
-@cindex Noise (Gaussian)
-To activate fitting in Statistics, simply give your desired fitting method to the @option{--fit} option (for the full list of acceptable methods, see @ref{Fitting options}).
-Statistics accepts both 1-dimensional and 2-dimensional inputs which we'll describe in the sub-sections below.
-
-@menu
-* One dimensional polynomial fitting::  Independent variable is a column.
-* Two dimensional polynomial fitting::  Independent variable is an image or two columns.
-@end menu
-
-@node One dimensional polynomial fitting, Two dimensional polynomial fitting, Least squares fitting, Least squares fitting
-@subsubsection One dimensional polynomial fitting
-
-In @ref{Least squares fitting} an introduction was given for fitting in Gnuastro.
-Here, we'll go through a hands-on review of 1D fitting.
-For example, with the command below, we'll build a fake measurement table (including noise) from the polynomial @mymath{y=1.23-4.56x+7.89x^2}.
-To understand how this equation translates to the command below (part before @code{set-y}), see @ref{Reverse polish notation} and @ref{Column arithmetic}.
-We will set the X axis to have values from 0.1 to 2, with steps of 0.01 and let's assume a random Gaussian noise to each @mymath{y} measurement: @mymath{\sigma_y=0.1y}.
-To make the random number generation exactly reproducible, we are also setting the seed (see @ref{Generating random numbers}, which also uses GSL as a backend).
-To learn more about the @code{mknoise-sigma} operator, see the Arithmetic program's @ref{Random number generators}.
-
-@example
-$ export GSL_RNG_SEED=1664015492
-$ seq 0.1 0.01 2 \
-      | asttable --output=noisy.fits --envseed -c1 \
-                 -c'arith 1.23 -4.56 $1 x + 7.89 $1 x $1 x + set-y \
-                          0.1 y x                            set-yerr \
-                          y yerr mknoise-sigma yerr' \
-                 --colmetadata=1,X --colmetadata=2,Y \
-                 --colmetadata=3,Yerr
-@end example
-
-@noindent
-Let's have a look at the output plot with TOPCAT using the command below.
-
-@example
-$ astscript-fits-view noisy.fits
-@end example
-
-@noindent
-To see the error-bars, after opening the scatter plot, go into the ``Form'' tab for that plot.
-Click on the button with a green ``+'' sign followed by ``Forms'' and select ``XYError''.
-On the side-menu, in front of ``Y Positive Error'', select the @code{Yerr} column of the input table.
-
-As you see, the error bars do indeed increase for higher X axis values.
-Since we have error bars in this example (as in any measurement), we can use weighted fitting.
-Also, this isn't a linear relation, so we'll use a polynomial to second order (a maximum power of 2 in the form of @mymath{Y=c_0+c_1X+c_2X^2}):
-
-@example
-$ aststatistics noisy.fits -cX,Y,Yerr --fit=polynomial-weighted \
-                --fitmaxpower=2
-Statistics (GNU Astronomy Utilities) @value{VERSION}
--------
-Fitting results (remove extra info with '--quiet' or '-q)
-  Input file:    noisy.fits (hdu: 1) with 191 non-blank rows.
-  X      column: X
-  Y      column: Y
-  Weight column: Yerr    [Standard deviation of Y in each row]
-
-Fit function: Y = c0 + (c1 * X^1) + (c2 * X^2) + ... (cN * X^N)
-  N:  2
-  c0:  +1.2286211608
-  c1:  -4.5127796636
-  c2:  +7.8435883943
-
-Covariance matrix:
-  +0.0010496001        -0.0039928488        +0.0028367390
-  -0.0039928488        +0.0175244127        -0.0138030778
-  +0.0028367390        -0.0138030778        +0.0128129806
-
-Reduced chi^2 of fit:
-  +0.9740670090
-@end example
-
-As you see from the elaborate message, the weighted polynomial fitting has found return the @mymath{c_0}, @mymath{c_1} and @mymath{c_2} of @mymath{Y=c_0+c_1X+c_2X^2} that best represents the data we inserted.
-Our input values were @mymath{c_0=1.23}, @mymath{c_1=-4.56} and @mymath{c_2=7.89}, and the fitted values are @mymath{c_0\approx1.2286}, @mymath{c_1\approx-4.5128} and @mymath{c_2\approx7.8436} (which is statistically a very good fit! given that we knew the original values a-priori!).
-The covariance matrix is also calculated, it is necessary to calculate error bars on the estimations and contains a lot of information (e.g., possible correlations between parameters).
-Finally, the reduced @mymath{\chi^2} (or @mymath{\chi_{red}^2}) of the fit is also printed (which was the measure to minimize).
-A @mymath{\chi_{red}^2\approx1} shows a good fit.
-This is good for real-world scenarios when you don't know the original values a-priori.
-For more on interpreting @mymath{\chi_{red}^2\approx1}, see Andrae et al. @url{https://arxiv.org/abs/1012.3754,2010}.
-
-The comparison of fitted and input values look pretty good, but nothing beats visual inspection!
-To see how this looks compared to the data, let's open the table again:
-
-@example
-$ astscript-fits-view noisy.fits
-@end example
-
-Repeat the steps below to show the scatter plot and error-bars.
-Then, go to the ``Layers'' menu and select ``Add Function Control''.
-Use the results above to fill the box in front of ``Function Expression'': @code{1.2286+(-4.5128*x)+(7.8436*x*x)}.
-You will see that the second order polynomial falls very nicely over the points@footnote{After plotting, you will notice that the legend made the plot too thin.
-Fortunately you have a lot of empty space within the plot.
-To bring the legend in, click on the ``Legend'' item on the bottom-left menu, in the ``Location'' tab, click on ``Internal'' and hold and move it to the top-left in the box below.
-To make the functional fit more clear, you can click on the ``Function'' item of the bottom-left menu.
-In the ``Style'' tab, change the color and thickness.}.
-But this fit is not perfect: it also has errors (inherited from the measurement errors).
-We need the covariance matrix to estimate the errors on each point, and that can be complex to do by hand.
-
-Fortunately GSL has the tools to easily estimate the function at any point and also calculate its corresponding error.
-To access this feature within Gnuastro's Statistics program, you should use the @option{--fitestimate} option.
-You can either give an independent table file name (with @option{--fitestimatehdu} and @option{--fitestimatecol} to specify the HDU and column in that file), or just @code{self} so it uses the same X axis column that was used in this fit.
-Let's use the easier case:
-
-@example
-$ aststatistics noisy.fits -cX,Y,Yerr --fit=polynomial-weighted \
-                --fitmaxpower=2 --fitestimate=self --output=est.fits
-
-...[[truncated; same as above]]...
-
-Requested estimation:
-  Written to: est.fits
-@end example
-
-The first lines of the printed text are the same as before.
-Afterwards, you will see a new line printed in the output, saying that the estimation was written in @file{est.fits}.
-You can now inspect the two tables with TOPCAT again with the command below.
-After TOPCAT opens, plot both scatter plots:
-
-@example
-$ astscript-fits-view noisy.fits est.fits
-@end example
-
-It is clear that they fall nicely on top of each other.
-The @file{est.fits} table also has a third column with error bars.
-You can follow the same steps before and draw the error bars to see how they compare with the scatter of the measured data.
-They are much smaller than the error in each point because we had a very good sampling of the function in our noisy data.
-
-Another useful point with the estimated output file is that it contains all the fitting outputs as keywords in the header:
-
-@example
-$ astfits est.fits -h1
-...[[truncated]]...
-
-                      / Fit results
-FITTYPE = 'polynomial-weighted' / Functional form of the fitting.
-FITMAXP =                    2 / Maximum power of polynomial.
-FITIN   = 'noisy.fits'         / Name of file with input columns.
-FITINHDU= '1       '           / Name or Number of HDU with input cols.
-FITXCOL = 'X       '           / Name or Number of independent (X) col.
-FITYCOL = 'Y       '           / Name or Number of measured (Y) column.
-FITWCOL = 'Yerr    '           / Name or Number of weight column.
-FITWNAT = 'Standard deviation' / Nature of weight column.
-FRDCHISQ=    0.974067008958516 / Reduced chi^2 of fit.
-FITC0   =     1.22862116084727 / C0: multiple of x^0 in polynomial
-FITC1   =    -4.51277966356177 / C1: multiple of x^1 in polynomial
-FITC2   =     7.84358839431161 / C2: multiple of x^2 in polynomial
-FCOV11  =  0.00104960011629718 / Covariance matrix element (1,1).
-FCOV12  = -0.00399284880859776 / Covariance matrix element (1,2).
-FCOV13  =  0.00283673901863388 / Covariance matrix element (1,3).
-FCOV21  = -0.00399284880859776 / Covariance matrix element (2,1).
-FCOV22  =   0.0175244126670659 / Covariance matrix element (2,2).
-FCOV23  =  -0.0138030778380786 / Covariance matrix element (2,3).
-FCOV31  =  0.00283673901863388 / Covariance matrix element (3,1).
-FCOV32  =  -0.0138030778380786 / Covariance matrix element (3,2).
-FCOV33  =   0.0128129806394559 / Covariance matrix element (3,3).
-
-...[[truncated]]...
-@end example
-
-In scenarios were you don't want the estimation, but only the fitted parameters, all that verbose, human-friendly text or FITS keywords can be an annoying extra step.
-For such cases, you should use the @option{--quiet} option like below.
-It will print the parameters, rows of the covariance matrix and @mymath{\chi_{red}^2} on separate lines with nothing extra.
-This allows you to parse the values in any way that you would like.
-
-@example
-$ aststatistics noisy.fits -cX,Y,Yerr --fit=polynomial-weighted \
-                --fitmaxpower=2 --quiet
-+1.2286211608 -4.5127796636 +7.8435883943
-+0.0010496001        -0.0039928488        +0.0028367390
--0.0039928488        +0.0175244127        -0.0138030778
-+0.0028367390        -0.0138030778        +0.0128129806
-+0.9740670090
-@end example
-
-As a final example, because real data usually have outliers, let's look at the ``robust'' polynomial fit which has special features to remove outliers.
-First, we need to add some outliers to the table.
-To do this, we'll make a plain-text table with @command{echo}, and use Table's @option{--catrowfile} to concatenate (or append) those two rows to the original table.
-Finally, we'll run the same fitting step above:
-
-@example
-$ echo "0.6  20  0.01"  > outliers.txt
-$ echo "0.8  20  0.01" >> outliers.txt
-
-$ asttable noisy.fits --catrowfile=outliers.txt \
-           --output=with-outlier.fits
-
-$ aststatistics with-outlier.fits -cX,Y,Yerr --fit=polynomial-weighted \
-                --fitmaxpower=2 --fitestimate=self \
-                --output=est-out.fits
-
-Statistics (GNU Astronomy Utilities) @value{VERSION}
--------
-Fitting results (remove extra info with '--quiet' or '-q)
-  Input file:    with-outlier.fits (hdu: 1) with 193 non-blank rows.
-  X      column: X
-  Y      column: Y
-  Weight column: Yerr    [Standard deviation of Y in each row]
-
-Fit function: Y = c0 + (c1 * X^1) + (c2 * X^2) + ... (cN * X^N)
-  N:  2
-  c0:  -13.6446036899
-  c1:  +66.8463258547
-  c2:  -30.8746303591
-
-Covariance matrix:
-  +0.0007889160        -0.0027706310        +0.0022208939
-  -0.0027706310        +0.0113922468        -0.0100306732
-  +0.0022208939        -0.0100306732        +0.0094087226
-
-Reduced chi^2 of fit:
-  +4501.8356719150
-
-Requested estimation:
-  Written to: est-out.fit
-@end example
-
-We see that the coefficient values have changed significantly and that @mymath{\chi_{red}^2} has increased to @mymath{4501}!
-Recall that a good fit should have @mymath{\chi_{red}^2\approx1}.
-These numbers clearly show that the fit was bad, but again, nothing beats a visual inspection.
-To visually see the effect of those outliers, let's plot them with the command below.
-You see that those two points have clearly caused a turn in the fitted result which is terrible.
-
-@example
-$ astscript-fits-view with-outlier.fits est-out.fits
-@end example
-
-For such cases, GSL has @url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression, Robust linear regression}.
-In Gnuastro's Statistics, you can access it with @option{--fit=polynomial-robust}, like the example below.
-Just note that the robust method doesn't take an error column (because it estimates the errors internally while rejecting outliers, based on the method).
-
-@example
-$ aststatistics with-outlier.fits -cX,Y --fit=polynomial-robust \
-                --fitmaxpower=2 --fitestimate=self \
-                --output=est-out.fits --quiet
-
-$ astfits est-out.fits -h1 | grep ^FITC
-FITC0   =     1.20422691185238 / C0: multiple of x^0 in polynomial
-FITC1   =     -4.4779253576348 / C1: multiple of x^1 in polynomial
-FITC2   =     7.84986153686548 / C2: multiple of x^2 in polynomial
-
-$ astscript-fits-view with-outlier.fits est-out.fits
-@end example
-
-It is clear that the coefficients are very similar to the no-outlier scenario above and if you run the second command to view the scatter plots on TOPCAT, you also see that the fit nicely follows the curve and is not affected by those two points.
-GSL provides many methods to reject outliers.
-For their full list, see the description of @option{--fitrobust} in @ref{Fitting options}.
-For a description of the outlier rejection methods, see the @url{https://www.gnu.org/software/gsl/doc/html/lls.html#c.gsl_multifit_robust_workspace, GSL manual}.
-
-You may have noticed that unlike the cases before the last Statistics command above didn't print anything on the standard output.
-This is becasue @option{--quiet} and @option{--fitestimate} were called together.
-In this case, because all the fitting parameters are written as FITS keywords, because of the @option{--quiet} option, they are no longer printed on standard output.
-
-@node Two dimensional polynomial fitting,  , One dimensional polynomial fitting, Least squares fitting
-@subsubsection Two dimensional polynomial fitting
-
-In @ref{Least squares fitting} an introduction was given for fitting in Gnuastro and one-dimensional fitting was reviewed in @ref{One dimensional polynomial fitting} (which should be read before this in a first read).
-For a 2D polynomial fit, two independent variables are needed.
-The two independent variables can be given either as an image or as table columns.
-We'll start with an image here, and end with using table columns.
-
-Let's use the Arithmetic program to generate an image from the following 2D polynomial: @mymath{Y=5+10X_2+X_1X_2}.
-In a FITS image, @mymath{X_1} is the first FITS axis (horizontal) and @mymath{X_2} is the second FITS axis (vertical).
-For the details of the operators, see @ref{Arithmetic operators}.
-
-@example
-$ astarithmetic 100 100 2 makenew indexonly set-i \
-                i 100 % 1 + set-X1 \
-                i 100 / 1 + set-X2 \
-                5 10 X2 x + X1 X2 x + f64 \
-                --output=pixels.fits
-$ astscript-fits-view pixels.fits
-@end example
-
-The gradient of the 2D polynomial is clearly visible in the image.
-You can directly give such an image to the statistics program for fitting in a very similar way @ref{One dimensional polynomial fitting} as shown below (with some outputs printed):
-
-@example
-$ aststatistics pixels.fits --fit=polynomial --fitmaxpower=2
-Statistics (GNU Astronomy Utilities) @value{VERSION}
--------
-Fitting results (remove extra info with '--quiet' or '-q)
-  Input file:    pixels.fits (hdu: 1) with 10000 non-blank rows.
-  X column: Horizontal position of non-NAN pixels.
-  Y column: Vertical position of non-NAN pixels.
-
-Fit function [2d, Y=f(X1,X2)]: Y = c0 + c1.X1 + c2.X2 + c3.X1^2
-+ c4.X1.X2 + c5.X2^2 + c6.X1^3 + c7.X1^2.X2 + c8.X1.X2^2 + c9.X2^3
-+ ... + cn.X1^(j).X2^(d-j)
-  N:  2
-  c0:  +5.000000000073776e+00
-  c1:  +2.460254222569347e-13
-  c2:  +9.999999999995385e+00
-  c3:  -2.773822838086915e-15
-  c4:  +1.000000000000002e+00
-  c5:  +4.474025316891783e-14
-
-Covariance matrix:
-  +3.318964094598024e-24 -6.837076956939867e-26 -6.837076956940090e-26
-  +3.786011000755381e-28 +4.497322158473032e-28 +3.786011000755588e-28
-  ...
-@end example
-
-@noindent
-Except for the functional form of the the 2D fit and the number of constants, all the outputs are similar to what was introduced in @ref{One dimensional polynomial fitting}.
-In this context, the extremely small values (@mymath{\sim10^{-14}}) are just floating point errors and can be considered equal to zero.
-We therefore see that the three constants that we had originally set and nicely determined.
-But we are rarely lucky enough to have a value for the full plane like above.
-Let's simulate such a situation by adding a noisy dataset (@code{n}, with each pixel having a random value from a Gaussian distribution with @mymath{\sigma=100}).
-In the command below, we'll use that noisy dataset to randomly remove (set to NaN/blank) all pixels that have a value below 50 in it.
-
-@example
-$ astarithmetic 100 100 2 makenew indexonly set-i \
-                i 100 % 1 + set-X1 \
-                i 100 / 1 + set-X2 \
-                5 10 X2 x + X1 X2 x + f64 set-p \
-                i 0 constant 100 mknoise-sigma set-n \
-                p n 50 lt nan where --output=pixels.fits
-
-$ astscript-fits-view pixels.fits
-
-$ aststatistics pixels.fits --fit=polynomial --fitmaxpower=2
-@end example
-
-With the second command, you can see that many of the pixels have become NaN and from the third command, you can see that the fit is still good.
-You can try decreasing the number of useful (non-NaN) pixels (by increasing the @code{50} threshold above) and see how robust the fit is to fewer pixels.
-
-@cartouche
-@noindent
-@strong{@option{--fitestimate} not yet implemented in 2D}: as of this version, this option is not yet implemented in 2D.
-We will try to implement it as soon as time allows.
-Until then, the 2D image for a polynomial can be created in formalism like above: where the @code{X1} and @code{X2} of every pixel are extracted and the constants are multiplied to each term of the polynomial.
-@end cartouche
-
-As mentioned at the start of this section, you can also feed your input data as table columns.
-First let's generate some table columns from the @file{pixels.fits} image we made above: we will feed the resulting table to statistics instead of table.
-The top command below will generate a 3 column table with the same number of rows as pixels in the image (one row per pixel).
-The first and second columns will be the first (horizontal) and second (vertical) positions of the pixel and the third column will be the pixel value.
-
-@example
-$ astarithmetic pixels.fits set-i \
-                i 1 size    set-width \
-                i indexonly set-ind \
-                ind width % 1 + u32 set-X1 \
-                ind width / 1 + u32 set-X2 \
-                i to-1d X2 to-1d X1 to-1d \
-                --writeall --output=pixels-tab-raw.fits
-@end example
-
-@noindent
-If you inspect this table, you will notice that many rows are NaN (as expected!).
-To remove the NaN rows, you can use Table's @option{--noblank} option:
-
-@example
-$ asttable pixels-tab-raw.fits --noblank=_all \
-           --output=for-2d-fit.fits
-@end example
-
-Now that we have the two independent variables (horizontal and vertical positions) along with the function/pixel value, we are ready to call Statistics for a 2D polynomial fit:
-
-@example
-$ aststatistics for-2d-fit.fits --fit=polynomial -c1,2,3 \
-                --fitmaxpower=2
-@end example
-
-@noindent
-You will notice that the fitted parameters are the same as the case where you gave an image.
-In fact, when given an image, Statistics does a similar thing to what we did here to extract the positions and values of all the non-NaN pixels into a table and then feed them to Gnuastro's internal fitting library.
-
-@node Sky value, Invoking aststatistics, Least squares fitting, Statistics
+@node Sky value, Invoking aststatistics, 2D Histograms, Statistics
 @subsection Sky value
 
 @cindex Sky
@@ -28240,7 +28566,6 @@ If you want another statistical parameter, please contact us and we will do out 
 * Input to Statistics::         How to specify the inputs to Statistics.
 * Single value measurements::   Can be used together (like --mean, or --maximum).
 * Generating histograms and cumulative frequency plots::  Histogram and CFP tables.
-* Fitting options::             Least squares fitting.
 * Contour options::             Table of contours.
 * Statistics on tiles::         Possible to do single-valued measurements on tiles.
 @end menu
@@ -28506,7 +28831,7 @@ $ aststatistics gaussian.fits \
 From the quantile-of-mean value of approximately 0.5, we see that the distribution is symmetric and from the concentration, we see that it is not a uniform one.
 @end table
 
-@node Generating histograms and cumulative frequency plots, Fitting options, Single value measurements, Invoking aststatistics
+@node Generating histograms and cumulative frequency plots, Contour options, Single value measurements, Invoking aststatistics
 @subsubsection Generating histograms and cumulative freq.
 
 The list of options below are for those statistical operations that output more than one value.
@@ -28648,7 +28973,7 @@ For example, when a histogram range includes negative and positive values and ze
 As a result that bin will have counts of positive and negative.
 By setting @option{--onebinstart=0}, you can make sure that one bin will only count negative values in the vicinity of zero and the next bin will only count positive ones in that vicinity.
 
-@cindex NaN
+@cindex NaN (Not a Number)
 Note that by default, the first row of the histogram and cumulative frequency plot show the central values of each bin.
 So in the example above you will not see the 0.000 in the first column, you will see two symmetric values.
 
@@ -28679,181 +29004,13 @@ Similar to @option{--onebinstart}, but for the second column when a 2D histogram
 
 @end table
 
-@node Fitting options, Contour options, Generating histograms and cumulative frequency plots, Invoking aststatistics
-@subsubsection Fitting options
-
-With the options below, you can customize the least squares fitting features of Statistics.
-For a tutorial of the usage of least squares fitting in Statistics, please see @ref{Least squares fitting}.
-Here, we will just review the details of each option.
-
-To activate least squares fitting in Statistics, it is necessary to use the @option{--fit} option to specify the type of fit you want to do.
-See the description of @option{--fit} for the various available fitting models.
-The fitting models that account for weights require three input columns, while the non-weighted ones only take two input columns.
-Here is a summary of the input columns:
-
-@enumerate
-@item
-The first input column is assumed to be the independent variable (on the horizontal axis of a plot, or @mymath{X} in the equations of each fit).
-@item
-The second input column is assumed to be the measured value (on the vertical axis of a plot, or @mymath{Y} in the equation above).
-@item
-The third input column is only for fittings with a weight.
-It is assumed to be the ``weight'' of the measurement column.
-The nature of the ``weight'' can be set with the @option{--fitweight} option, for example, if you have the standard deviation of the error in @mymath{Y}, you can use @option{--fitweight=std} (which is the default, so unless the default value has been changed, you will not need to set this).
-@end enumerate
-
-If three columns are given to a model without weight, or two columns are given to a model that requires weights, Statistics will abort and inform you.
-Below you can see an example of fitting with the same linear model, once weighted and once without weights.
-
-@example
-$ aststatistics table.fits --column=X,Y      --fit=linear
-$ aststatistics table.fits --column=X,Y,Yerr --fit=linear-weighted
-@end example
-
-The output of the fitting can be in three modes listed below.
-For a complete example, see the tutorial in @ref{Least squares fitting}).
-@table @asis
-@item Human friendly format
-By default (for example, the commands above) the output is an elaborate description of the model parameters.
-For example, @mymath{c_0} and @mymath{c_1} in the linear model (@mymath{Y=c_0+c_1X}).
-Their covariance matrix and the reduced @mymath{\chi^2} of the fit are also printed on the output.
-@item Raw numbers
-If you don't need the human friendly components of the output (which are annoying when you want to parse the outputs in some scenarios), you can use @option{--quiet} option.
-Only the raw output numbers will be printed.
-@item Estimate on a custom X column
-Through the @option{--fitestimate} option, you can specify an independent table column to estimate the fit (it can also take a single value).
-See the description of this option for more.
-@end table
-
-@table @option
-@item -f STR
-@itemx --fit=STR
-The name of the fitting method to use.
-They are based on the @url{https://www.gnu.org/software/gsl/doc/html/lls.html, linear} and @url{https://www.gnu.org/software/gsl/doc/html/nls.html, nonlinear} least-squares fitting functions of the GNU Scientific Library (GSL).
-@table @code
-@item linear
-@mymath{Y=c_0+c_1X}
-@item linear-weighted
-@mymath{Y=c_0+c_1X}; accounting for ``weights'' in @mymath{Y}.
-@item linear-no-constant
-@mymath{Y=c_1X}.
-@item linear-no-constant-weighted
-@mymath{Y=c_1X}; accounting for ``weights'' in @mymath{Y}.
-@item polynomial
-@mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_nX^n}; the maximum required power (@mymath{n}) is specified by @option{--fitmaxpower}.
-@item polynomial-weighted
-@mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_nX^n}; accounting for ``weights'' in @mymath{Y}.
-The maximum required power (@mymath{n}) is specified by @option{--fitmaxpower}.
-@item polynomial-robust
-@cindex Robust polynomial fit
-@cindex Polynomial fit (robust)
-@mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_nX^n}; rejects outliers.
-The function to use for outlier removal can be specified with the @option{--fitrobust} option described below.
-This model doesn't take weights since they are calculated internally based on the outlier removal function (requires two input columns).
-The maximum required power (@mymath{n}) is specified by @option{--fitmaxpower}.
-
-For a comprehensive review of ``robust'' fitting and the available functions, please see the @url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression, Robust linear regression} section of the GNU Scientific Library.
-@end table
-
-@item --fitweight=STR
-The nature of the ``weight'' column (when a weight is necessary for the model).
-It can take one of the following values:
-@table @code
-@item std
-Standard deviation of each @mymath{Y} axis measurement: this is the usual ``error'' associated with a measurement (for example, in @ref{MakeCatalog}) and is the default value to this option.
-@item var
-Variance of each @mymath{Y} axis measurement.
-Assuming a Gaussian distribution with standard deviation @mymath{\sigma}, the variance is @mymath{\sigma^2}.
-@item inv-var
-Inverse variance of each @mymath{Y} axis measurement.
-Assuming a Gaussian distribution with standard deviation @mymath{\sigma}, the variance is @mymath{1/\sigma^2}.
-@end table
-
-@item --fitmaxpower=INT
-The maximum power (an integer) in a polynomial (@mymath{n} in @mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_nX^n}).
-This is only relevant when one of the polynomial models is given to @option{--fit}.
-The fit will return @mymath{n+1} coefficients.
-
-@item --fitrobust=STR
-The function for rejecting outliers in the @code{polynomial-robust} fitting model.
-For a comprehensive review of ``robust'' fitting and the available functions, please see the @url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression, Robust linear regression} section of the GNU Scientific Library.
-This function can take the following values:
-@table @code
-@item bisquare
-@cindex Tukey’s biweight (bisquare) function
-@cindex Biweight function of Tukey
-@cindex Bisquare function of Tukey
-Tukey’s biweight (bisquare) function, this is the default function.
-According to the GSL manual, this is a good general purpose weight function.
-@item cauchy
-@cindex Cauchy's function (robust weight)
-@cindex Lorentzian function (robust weight)
-Cauchy’s function (also known as the Lorentzian function).
-It doesn't guarantee a unique solution, so it should be used with care.
-@item fair
-@cindex Fair function (robust weight)
-The fair function.
-It guarantees a unique solution and has continuous derivatives to three orders.
-@item huber
-@cindex Huber function (robust weight)
-Huber's @mymath{\rho} function.
-This is also a good general purpose weight function for rejecting outliers, but can cause difficulty in some special scenarios.
-@item ols
-Ordinary Least Squares (OLS) solution with a constant weight of unity.
-@item welsch
-@cindex Welsch function (robust weight)
-Welsch function which is useful when the residuals follow an exponential distribution.
-@end table
-
-@item --fitestimate=STR/FLT
-Estimate the fitted function at a single point or a complete column of points.
-Note that this option is currently only available for a 1D fit (due to lack of time); we will try our best to implement it in 2D fitting as soon as time allows.
-The input @mymath{X} axis positions to estimate the function can be specified in the following ways:
-@itemize
-@item
-A real number: the fitted function will be estimated at that @mymath{X} position and the corresponding @mymath{Y} and its error will be printed to standard output.
-@item
-@code{self}: in this mode, the same X axis column that was used in the fit will be used for estimating the fitted function.
-This can be useful to visually/easily check the fit, see @ref{Least squares fitting}.
-@item
-A file name: If the value is none of the above, Statistics expects it to be a file name containing a table.
-If the file is a FITS file, the HDU containing the table should be specified with the @option{--fitestimatehdu} option.
-The column of the table to use for the @mymath{X} axis points should be specified with the @option{--fitestimatecol} option.
-@end itemize
-The output in this mode can be customized in the following ways:
-@itemize
-@item
-If a single floating point value is given @option{--fitestimate}, the fitted function will be estimated on that point and printed to standard output.
-@item
-When nothing is given to @option{--output}, the independent column and the estimated values and errors are printed on the standard output.
-@item
-If a file name is given to @option{--output}, the estimated table above is saved in that file.
-It can have any of the formats in @ref{Recognized table formats}.
-As a FITS file, all the fit outputs (coefficients, covariance matrix and reduced @mymath{\chi^2}) are kept as FITS keywords in the same HDU of the estimated table.
-For a complete example, see @ref{Least squares fitting}.
-
-When the covariance matrix (and thus the @mymath{\chi^2}) cannot be calculated (for example if you only have two rows!), the printed values on the terminal will be NaN.
-However, the FITS standard does not allow NaN values in keyword values!
-Therefore, when writing the @mymath{\chi^2} and covariance matrix elements into the output FITS keywords, the largest value of the 64-bit floating point type will be written: @mymath{1.79769313486232\times10^{308}}; see @ref{Numeric data types}.
-
-@item
-When @option{--quiet} is given with @option{--fitestimate}, the fitted parameters are no longer printed on the standard output; they are available as FITS keywords in the file given to @option{--output}.
-@end itemize
-
-@item --fitestimatehdu=STR/INT
-HDU name or counter (counting from zero) that contains the table to be used for the estimating the fitted function over many points through @option{--fitestimate}.
-For more on selecting a HDU, see the description of @option{--hdu} in @ref{Input output options}.
-
-@item --fitestimatecol=STR/INT
-Column name or counter (counting from one) that contains the table to be used for the estimating the fitted function over many points through @option{--fitestimate}.
-See @ref{Selecting table columns}.
-@end table
 
 
 
 
 
-@node Contour options, Statistics on tiles, Fitting options, Invoking aststatistics
+
+@node Contour options, Statistics on tiles, Generating histograms and cumulative frequency plots, Invoking aststatistics
 @subsubsection Contour options
 
 Contours are useful to highlight the 2D shape of a certain flux level over an image.
@@ -29385,7 +29542,7 @@ The pixels above the threshold are known as foreground pixels (have a value of 1
 @item --smoothwidth=INT
 Width of flat kernel used to smooth the interpolated quantile thresholds, see @option{--qthresh} for more.
 
-@cindex NaN
+@cindex NaN (Not a Number)
 @item --checkqthresh
 Check the quantile threshold values on the mesh grid.
 A multi-extension FITS file, suffixed with @file{_qthresh.fits} will be created showing each step of how the final quantile threshold is found.
@@ -31547,7 +31704,8 @@ Similar to the first moment, the geometric second moment can be found by setting
 So while the first moment quantified the position of the brightness distribution, the second moment quantifies how that brightness is dispersed about the first moment.
 In other words, it quantifies how ``sharp'' the object's image is.
 
-@cindex Floating point error
+@cindex Floating point errors
+@cindex Errors (floating point precision)
 Before continuing to two dimensions and the derivation of the elliptical parameters, let's pause for an important implementation technicality.
 You can ignore this paragraph and the next two if you do not want to implement these concepts.
 The basic definition (first definition of @mymath{\overline{x^2}} above) can be used without any major problem.
@@ -32666,7 +32824,7 @@ Therefore, in case you have generated the input labels with Segment, we do not r
 
 
 
-@node Match,  , MakeCatalog, Data analysis
+@node Match, Fit, MakeCatalog, Data analysis
 @section Match
 
 High-level data (catalogs) of a single astronomical source can come come from different telescopes, filters, software (detection, segmentation and cataloging tools on the same image) and even different configurations for a single software.
@@ -33390,9 +33548,222 @@ The last three are the three Euler angles in units of degrees in the ZXZ order a
 
 
 
+@node Fit,  , Match, Data analysis
+@section Fit
 
+@cindex Fitting (Regression analysis)
+@cindex Regression analysis (fitting)
+Fitting, also known as @url{https://en.wikipedia.org/wiki/Regression_analysis, Regression analysis}, will derive the coefficients of a model (or function) given @emph{independent} (X) and @emph{dependent} (Y) variables.
+For example, a 1D linear model has the form @mymath{Y=c_1+c_2X} with two constants: @mymath{c_1} and @mymath{c_2}; fitting will find these constants given an input X and Y.
+But it can work on any many different
 
+@menu
+* Invoking astfit::             Command-line options and input/output.
+@end menu
 
+@node Invoking astfit,  , Fit, Fit
+@subsection Invoking Fit
+
+The Fit program will return the constants of a model (given by the user) given input data as 1D columns or a 2D image.
+A complete tutorial for a hands-on demonstration of the most commonly used features is available in @ref{Least squares fitting}.
+
+@noindent
+The executable name is @file{astfit} with the following general template
+
+@example
+$ astfit [OPTION ...] input
+@end example
+
+@noindent
+One line examples:
+
+@example
+## Find the second-order polynomial constants for a 1D fit; the
+## constants of the model are printed on standard output (the terminal).
+$ astfit table.fits -cX,Y --mode=polynomial --degree=2
+
+## Same as above, but an estimate of the fit is also calculated for the
+## input X column, as well as a residual. These are stored in an output
+## file. The constants of the fit and covariance matrix are stored as
+## headers in the 0th HDU of the output.
+$ astfit table.fits -cX,Y --output=fit.fits --mode=polynomial \
+         --degree=2 --estimate=self --residual
+
+## Same as above, but with weights.
+$ astfit table.fits -cX,Y --output=fit.fits --mode=polynomial \
+         --degree=2 --estimate=self --residual --weight=samefile \
+         --weight-col=Ystd --weight-type=std
+
+## Find the second-order polynomial constants for a 2D fit.
+$ astfit image.fits --model=polynomial --degree=2 --residual \
+         --estimate=self --output=fit2dimg.fits
+
+## Same as above, but with weights and estimation on another image.
+$ astfit image.fits --model=polynomial --degree=2 --residual \
+         --estimate=self --weight=wht.fits --output=fit2dimg.fits
+
+## 2D fit, but with X1, X2 and Y in columns, not an image.
+$ astfit table.fits -cX1,X2,Y --weight=samefile --weight-col=Ystd \
+         --model=polynomial --degree=2 --estimate=self --residual \
+         --output=fit.fits
+@end example
+
+The Fit program expects a single input which can be a table (for 1D or 2D fitting) or an image (only 2D fitting).
+When the input is an image, the independent variables (X1 and X2) are assumed to be the locations of the pixels and the dependent variable (Y) is taken as the pixel value.
+When a table is given, the two (for 1D) and three (for 2D) used columns should be given to the @option{--column} (or @option{-c}) option.
+Blank (NaN) rows/pixels in any of the input columns/images will be ignored.
+A weight can optionally be given (using @option{--weight}), but it has to have the same type as the main input (for example you cannot give a weight as a table, when the input is an image).
+
+When Fit is not asked to do any calculations, it will just print the constants and their covariance matrix on the standard output (the terminal) and abort.
+However, calculations are usually necessary after a fitting; for example to access the residual of the fit given the same input (with @option{--residual}), or to estimate the model and found constants on the same or a different dataset (with @option{--estimate}.
+In these scenarios, Fit will write the output of the calculation into a FITS file (that can possibly have multiple HDUs: for example when both are requested in the same run).
+When a model calculation is done (and output file is created), the model constants and covarience matrix are no longer printed on the standard output, instead they are stored as FITS headers in the 0th HDU of the output file.
+
+With the options below, you can customize the least squares fitting features of Statistics.
+For a tutorial of the usage of least squares fitting in Statistics, please see @ref{Least squares fitting}.
+Here, we will describe the low-level/technical details of each option, if you have not used Fit until now, reading the tutorial above is recommended before reading the details of each option here.
+This section only describes options that are specific for the Fit program, but many of its options are shared with the rest of Gnuastro's programs.
+For their description, see @ref{Common options}.
+
+When an output name is given (to @option{--output}; a common option), it will be used to store the residual and/or estimation outputs (as separate HDUs, or columns when @option{--estimate=self}.
+Otherwise, when an output dataset is necessary, the output name will be set using Gnuastro's @ref{Automatic output} with the following suffixes: @file{-fit.fits} (when both @option{--residual} and @option{--estimate} are given), @file{-fit-estimate.fits} (when only an estimation is requested) and @option{-fit-residual.fits} when only a residual is requested.
+The group of options below are used to specify the inputs to the fitting:
+@table @option
+
+@item -c STR,STR[,STR]
+@itemx --columns=STR,STR[,STR]
+When the input in a table, it is mandatory to select the columns to use using this option.
+You can specify either the column name or number (counting from one); see @ref{Selecting table columns}.
+For a 1D fit, you need to give two columns to this option (X and Y), while a 2D fit needs three columns (X1, X2 and Y).
+
+@item -w STR
+@itemx --weight=STR
+Name of file to use use for a weight on the dependent variables (Y) to be included in the fitting.
+With the special value @file{samefile}, Fit will use the main input file name for the weight also (for example if it is a different column of the same table or a weight image is given in another HDU).
+When the input is a table, you should also specify the column containing the weights using @option{--weight-col}.
+
+@item --weight-hdu=STR/INT
+The HDU name or number (counting from 0) containing the weight column or image (in the file given to @option{--weight}).
+By default the value of this option is 1, so it is only necessary when your weight image is in a different HDU.
+The usage of this option is similar to @option{--hdu}, that is described in @ref{Input output options}.
+
+@item --weight-col=STR/INT
+The column to use for the weights of the dependent (Y) variables.
+This is only relevant when the input is not an image (1D or 2D fitting with a table).
+For its usage, see @ref{Selecting table columns}.
+
+@item --weight-type=STR
+The type or nature of the weight column that can take these values: @code{std} (standard deviation; the default), @code{var} (variance) or @code{inv-var} (inverse variance).
+The weight that will be passed to the fitting function will be the inverse variance, so no extra processing will be done if your input is the same type.
+But this is not a processing-heavy part of the Fit program, so do not worry if your weight is in either of the other two types.
+
+Recall that in a Gaussian distribution with standard deviation @mymath{\sigma}, the variance is @mymath{\sigma^2} and the inverse variance is @mymath{1/\sigma^2}.
+
+@item --estimate=STR/FLT[,FLT]
+Name of file containing the independent variables (X) to estimate the model after the coefficients have been found.
+This can either be an image (for 2D) or a table (1D or 2D).
+Alternatively, if you want the fit for only one row, you can also directly give the value(s) to this option; for example @option{--estimate=3.456,1.234}.
+
+When this option is given the special value @file{same}, it will use the input independent variables (that the fitting was done with) for the estimation.
+Note that if you just want to see the residual (difference between estimate and input), you can use @option{--residual}.
+
+@item --estimate-hdu=STR/INT
+The HDU name or number (counting from 0) containing the independent variables (X) to estimate the model after the coefficients have been found.
+The usage of this option is similar to @option{--hdu}, that is described in @ref{Input output options}.
+
+@item --estimate-col=STR/INT
+The name or number (counting from 1) of column(s) containing the independent variables (X) to estimate the model after the coefficients have been found.
+This is only relevant when the input is not an image (1D or 2D fitting with a table).
+For its usage, see @ref{Selecting table columns}.
+
+@item --txt-is-img
+When the input is a plain-text file, read it as an image, not a table.
+By default, plain-text inputs are read as plain-text tables as described in @ref{Gnuastro text table format}.
+@end table
+
+@noindent
+The options below can be used to customize the fitting process:
+
+@table @option
+
+@item -m STR
+@itemx --model=STR
+The name of the model to use for the fitting.
+They are based on the @url{https://www.gnu.org/software/gsl/doc/html/lls.html, linear least-squares} fitting functions of the GNU Scientific Library (GSL); which is the underlying engine used by Gnuastro's Fit program.
+@table @code
+@item polynomial
+@cindex Degree of polynomial
+@mymath{Y=c_0+c_1X+c_2X^2+\cdots+c_nX^n}; works on 1D and 2D data.
+The maximum power (@mymath{n}; also known as the @emph{degree} of the polynomial) is specified through @option{--degree}.
+The polynomial model works on 1D and 2D data.
+
+@item linear
+@mymath{Y=c_0+c_1X}; only works on 1D data.
+This is effectively a polynomial of degree 1, so at first sight it may seem redundant.
+But GSL provides more optimized solutions for this particular 1D model; so it is more efficient.
+
+@item linear-no-constant
+@mymath{Y=c_1X}; only works on 1D data.
+This is a special case of the linear and polynomial models, so at first sight it may seem redundant.
+But GSL provides more optimized solutions when you know there is only a single constant.
+@end table
+
+@item -d INT
+@itemx --degree=INT
+When the selected @option{--model} is polynomial, this option specifies its degree.
+The degree of a polynomial is the highest power of its independent variables.
+
+@item -r STR
+@itemx --robust=STR
+When the selected @option{--model} is polynomial, with this option, you are instructing Fit to use the robust linear regression functions of the GNU Scientific Library (GSL; which is the underlying engine behind Gnuastro's Fit).
+Robust functions do not take weights: they are calculated internally based on the outlier removal function.
+For a comprehensive description of each of the functions below, see the @url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression,GSL manual}.
+
+@table @code
+@item bisquare
+@cindex Tukey’s biweight (bisquare) function
+@cindex Biweight function of Tukey
+@cindex Bisquare function of Tukey
+Tukey’s biweight (bisquare) function.
+According to the GSL manual, this is a good general purpose weight function.
+@item cauchy
+@cindex Cauchy's function (robust weight)
+@cindex Lorentzian function (robust weight)
+Cauchy’s function (also known as the Lorentzian function).
+It doesn't guarantee a unique solution, so it should be used with care.
+@item fair
+@cindex Fair function (robust weight)
+The fair function.
+It guarantees a unique solution and has continuous derivatives to three orders.
+@item huber
+@cindex Huber function (robust weight)
+Huber's @mymath{\rho} function.
+This is also a general purpose weight function for rejecting outliers, but can cause difficulty in some special scenarios.
+@item ols
+Ordinary Least Squares (OLS) solution with a constant weight of unity.
+@item welsch
+@cindex Welsch function (robust weight)
+Welsch function which is useful when the residuals follow an exponential distribution.
+@end table
+
+@end table
+
+@noindent
+The final group of options are related to the outputs:
+
+@table @option
+
+@item -R
+@itemx --residual
+Calculate the residual and write it in the output (a HDU in the case of an image or a column/HDU in the case of tables).
+The residual is calculated by subtracting the input from the estimated model (using the same independent variables, X, that went into the fit) and dividing that by the input.
+This option will add two HDUs (if the input was an image) or two columns (if the input was a table) to the output: the residual (@code{Y-RESIDUAL-FRAC}) and the model's estimated standard deviation for that residual (@code{Y-RESIDUAL-ESTIMATE-STD})
+In case you have also called @option{--estimate=self}, therefore the output will only have three HDUs, not four (because @code{Y-RESIDUAL-ESTIMATE-STD} is the same as @code{Y-ESTIMATE-STD}).
+
+@item --out-table-no-input
+Do not include the input variables (independent or dependent) in the output tables; only relevant when the input of a 1D or 2D fitting was a table, not an image.
+By default, the inputs are included to help in custom analysis on the fit.
+@end table
 
 
 
@@ -39648,14 +40019,14 @@ You need a way to separate the pixels outside your scientific field from those i
 Blank values act as these place holders in a dataset.
 They have no usable value but they have a position.
 
-@cindex NaN
+@cindex NaN (Not a Number)
 Every type needs a corresponding blank value (see @ref{Numeric data types} and @ref{Library data types}).
 Floating point types have a unique value identified by IEEE known as Not-a-Number (or NaN) which is a unique value that is recognized by the compiler.
 However, integer and string types do not have any standard value.
 For integers, in Gnuastro we take an extremum of the given type: for signed types (that allow negatives), the minimum possible value is used as blank and for unsigned types (that only accept positives), the maximum possible value is used.
 To be generic and easy to read/write we define a macro for these blank values and strongly encourage you only use these, and never make any assumption on the value of a type's blank value.
 
-@cindex NaN
+@cindex NaN (Not a Number)
 The IEEE NaN blank value type is defined to fail on any comparison, so if you are dealing with floating point types, you cannot use equality (a NaN will @emph{not} be equal to a NaN).
 If you know your dataset is floating point, you can use the @code{isnan} function in C's @file{math.h} header.
 For a description of numeric data types see @ref{Numeric data types}.
@@ -39715,12 +40086,12 @@ Blank value for @code{size_t} type (@code{uint32_t} or @code{uint64_t} in
 32-bit or 64-bit systems).
 @end deffn
 
-@cindex NaN
+@cindex NaN (Not a Number)
 @deffn {Global integer}  GAL_BLANK_FLOAT32
 Blank value for a single precision, 32-bit floating point type (IEEE NaN value).
 @end deffn
 
-@cindex NaN
+@cindex NaN (Not a Number)
 @deffn {Global integer}  GAL_BLANK_FLOAT64
 Blank value for a double precision, 64-bit floating point type (IEEE NaN value).
 @end deffn
@@ -42149,7 +42520,7 @@ This is just a wrapper around @code{gal_fits_img_read} (to read the image/array 
 See the description there for more.
 @end deftypefun
 
-@cindex NaN
+@cindex NaN (Not a Number)
 @cindex Convolution kernel
 @cindex Kernel, convolution
 @deftypefun {gal_data_t *} gal_fits_img_read_kernel (char @code{*filename}, char @code{*hdu}, size_t @code{minmapsize}, int @code{quietmmap}, char @code{*hdu_option_name})
@@ -42765,6 +43136,8 @@ For more, see the description of @option{--wcslinearmatrix} in @ref{Input output
 The various types of recognized FITS WCS projections; for more details see @ref{Align pixels with WCS considering distortions}.
 @end deffn
 
+@cindex Floating point errors
+@cindex Errors (floating point precision)
 @deffn Macro GAL_WCS_FLTERROR
 Limit of rounding for floating point errors.
 @end deffn
@@ -44429,7 +44802,7 @@ When sorting a dataset is necessary, the C programming language provides the @co
 To define ``greater'' and ``smaller'' (for sorting), @code{qsort} needs another function, even for simple numerical types.
 The functions introduced in this section are to passed onto @code{qsort}.
 
-@cindex NaN
+@cindex NaN (Not a Number)
 Note that larger and smaller operators are not defined on NaN elements.
 Therefore, if the input array is a floating point type, and contains NaN values, the relevant functions of this section are going to put the NaN elements at the end of the list (after the sorted non-NaN elements), irrespective of the requested sorting order (increasing or decreasing).
 
@@ -45402,7 +45775,7 @@ To remove rows with a NaN/blank, you can use @code{gal_blank_remove_rows} (which
 
 @cindex Chi-squared
 @cindex Covariance matrix
-@cindex Matrix (covariance)
+@cindex Matrix, covariance
 @cindex Variance-covariance matrix
 The output is a single dataset with a @code{GAL_TYPE_FLOAT64} type with 6 elements:
 @enumerate
@@ -48029,8 +48402,8 @@ We have put a few simple examples in @ref{Tutorials}.
 @cindex @LaTeX{}
 @cindex GNU Bash
 @cindex Python Matplotlib
-@cindex Matplotlib, Python
-@cindex PGFplots in @TeX{} or @LaTeX{}
+@cindex Matplotlib (Python)
+@cindex PGFPlots in @TeX{} or @LaTeX{}
 For example, all the analysis output can be saved as ASCII tables which can be fed into your favorite plotting program to inspect visually.
 Python's Matplotlib is very useful for fast plotting of the tables to immediately check your results.
 If you want to include the plots in a document, you can use the PGFplots package within @LaTeX{}, no attempt is made to include such operations in Gnuastro.
@@ -49644,8 +50017,8 @@ WCSLIB uses this package to make plots if you want it to make plots.
 If you are interested you can also use it for your own purposes.
 
 @cindex Python Matplotlib
-@cindex Matplotlib, Python
-@cindex PGFplots in @TeX{} or @LaTeX{}
+@cindex Matplotlib (Python)
+@cindex PGFPlots in @TeX{} or @LaTeX{}
 If you want your plotting codes in between your C program, PGPLOT is currently one of your best options.
 The recommended alternative to this method is to get the raw data for the plots in text files and input them into any of the various more modern and capable plotting tools separately, for example, the Matplotlib library in Python or PGFplots in @LaTeX{}.
 This will also significantly help code readability.

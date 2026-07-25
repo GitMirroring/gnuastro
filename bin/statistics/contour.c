@@ -28,11 +28,11 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <gnuastro-internal/checkset.h>
-
 #include <gnuastro/wcs.h>
 #include <gnuastro/binary.h>
 #include <gnuastro/arithmetic.h>
+
+#include <gnuastro-internal/checkset.h>
 
 #include "main.h"
 #include "contour.h"

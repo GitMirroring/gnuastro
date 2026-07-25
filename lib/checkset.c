@@ -978,7 +978,8 @@ gal_checkset_dir_0_file_1(struct gal_options_common_params *cp, char *name,
     return 0;
   else if (S_ISREG(nameinfo.st_mode))  /* It is a file, GOOD. */
     {
-      gal_checkset_writable_remove(name, basename, cp->keep, cp->dontdelete);
+      gal_checkset_writable_remove(name, basename, cp->keep,
+                                   cp->dontdelete);
       return 1;
     }
   else                                 /* Not a file or a dir, ABORT. */

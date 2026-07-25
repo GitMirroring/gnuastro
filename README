@@ -63,6 +63,9 @@ categories/chapters.
   - Crop (astcrop): Crop region(s) from an image and stitch several images
     if necessary.  Inputs can be in pixel coordinates or world coordinates.
 
+  - Fit (astfit): Regression analysis (fitting with a model) of 1D and 2D
+    data; also producing residuals and estimates of the model.
+
   - Fits (astfits): View and manipulate FITS file HDUs/extensions and
     header keywords.
 

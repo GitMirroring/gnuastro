@@ -1,9 +1,9 @@
 ## Process this file with automake to produce Makefile.inx
 ##
 ## Original author:
-##     Mohammad Akhlaghi <mohammad@akhlaghi.org>
+##     Mohammad akhlaghi <mohammad@akhlaghi.org>
 ## Contributing author(s):
-## Copyright (C) 2015-2026 Free Software Foundation, Inc.
+## Copyright (C) 2026-2026 Free Software Foundation, Inc.
 ##
 ## Gnuastro is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by
@@ -27,26 +27,25 @@ AM_CPPFLAGS = -I\$(top_builddir)/bootstrapped/lib \
 
 
 
-
-
 ## Program definition (name, linking, sources and headers)
-bin_PROGRAMS = aststatistics
+bin_PROGRAMS = astfit
 
-## Reason for linking with 'libgnu' described in 'bin/TEMPLATE/Makefile.am'.
-aststatistics_LDADD = $(top_builddir)/bootstrapped/lib/libgnu.la \
-                      $(top_builddir)/lib/libgnuastro.la \
-                      $(CONFIG_LDADD)
+## We are linking with 'libgnu' first eventhough 'libgnu' is already linked
+## to 'libgnuastro'. The reason is that some linkers (Mac OS for example),
+## don't keep external variables (needed in Argp) after the first link. So
+## the 'libgnu' (that is indirectly linked through 'libgnuastro') can't see
+## those variables. We thus need to explicitly link with 'libgnu' first.
+astfit_LDADD = $(top_builddir)/bootstrapped/lib/libgnu.la \
+               $(top_builddir)/lib/libgnuastro.la \
+               $(CONFIG_LDADD)
 
-aststatistics_SOURCES = main.c ui.c contour.c sky.c statistics.c
+astfit_SOURCES = main.c ui.c fit.c
 
-EXTRA_DIST = main.h authors-cite.h args.h ui.h sky.h statistics.h \
-             contour.h
-
-
+EXTRA_DIST = main.h authors-cite.h args.h ui.h fit.h
 
 
 
 ## The configuration file (distribute and install).
 ## NOTE: the man page is created in doc/Makefile.am
 pkgsysconfdir = $(sysconfdir)/$(PACKAGE)
-dist_pkgsysconf_DATA = aststatistics.conf
+dist_pkgsysconf_DATA = astfit.conf

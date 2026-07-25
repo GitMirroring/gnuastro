@@ -251,6 +251,10 @@ void
 gal_fits_key_list_reverse(gal_fits_list_key_t **list);
 
 void
+gal_fits_key_list_append(gal_fits_list_key_t *list,
+                         gal_fits_list_key_t *toappend);
+
+void
 gal_fits_key_write_title_in_ptr(char *title, fitsfile *fptr);
 
 void

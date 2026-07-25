@@ -698,6 +698,78 @@ txt_get_info_line(char *line, gal_data_t **datall, char *comm_start,
 
 
 
+/* Checks if the given plain-text file contains the required metadata for
+   Gnuastro's image format. */
+int
+gal_txt_is_image(char *filename)
+{
+  FILE *fp;
+  int isimg=0;
+  char *c, *line;
+  size_t linelen=10; /* 'linelen' will be increased by 'getline'. */
+
+  /* Open the file. */
+  errno=0;
+  fp=fopen(filename, "r");
+  if(fp==NULL)
+    error(EXIT_FAILURE, errno, "%s: couldn't open to read as a plain "
+          "text (from Gnuastro's '%s')", filename, __func__);
+
+  /* Allocate the space necessary to keep each line as we parse
+     it. Note that 'getline' is going to later 'realloc' this space to
+     fit the line length. */
+  errno=0;
+  line=malloc(linelen*sizeof *line);
+  if(line==NULL)
+    error(EXIT_FAILURE, errno, "%s: allocating %zu bytes for line",
+          __func__, linelen*sizeof *line);
+
+  /* Read the comments of the line for possible information about the
+     lines, but also confirm/complete the info by parsing the first
+     uncommented line. */
+  size_t counter=0;
+  while( getline(&line, &linelen, fp) != -1 )
+    {
+      /* Find the first occurance of '#'. */
+      for(c=line; *c!='\0'; ++c)
+        {
+          ++counter;
+          if( isspace(*c) ) continue;
+          else
+            {
+              if(*c=='#') /* Only relevant columns for this test. */
+                {
+                  /* We will put  */
+                  if( !strncmp(c, "# Image 1: ",  11) ) isimg=1;
+                  if( !strncmp(c, "# Column 1: ", 12) ) isimg=-1;
+                }
+              break;
+            }
+        }
+
+      /* If we reach the end of the line searching for metadata, then it
+         did not have any and we should continue. Otherwise, we can stop
+         searching for metadata. */
+      if(isimg) break;
+    }
+
+  printf("%s: chars checked: %zu\n", __func__, counter); exit(0);
+
+  /* Clean up and close the file. */
+  free(line);
+  errno=0;
+  if(fclose(fp))
+    error(EXIT_FAILURE, errno, "%s: couldn't close file after reading "
+          "plain text information (from Gnuastro's '%s')", filename,
+          __func__);
+
+  /* Return the result. */
+  return isimg>0;
+}
+
+
+
+
 
 /* Return the information about a text file table. If there were no
    readable rows, it will return NULL. */

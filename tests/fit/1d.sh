@@ -1,4 +1,4 @@
-# Do a 2D fitting
+# 1D fitting
 #
 # See the Tests subsection of the manual for a complete explanation
 # (in the Installing gnuastro section).
@@ -6,8 +6,7 @@
 # Original author:
 #     Mohammad Akhlaghi <mohammad@akhlaghi.org>
 # Contributing author(s):
-#     Giacomo Lorenzetti <glorenzetti@cefca.es>
-# Copyright (C) 2025-2026 Free Software Foundation, Inc.
+# Copyright (C) 2026-2026 Free Software Foundation, Inc.
 #
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
@@ -24,11 +23,9 @@
 # Set the variables (The executable is in the build tree). Do the
 # basic checks to see if the executable is made or if the defaults
 # file exists (basicchecks.sh is in the source tree).
-prog=statistics
-prog2=arithmetic
+prog=fit
 execname=../bin/$prog/ast$prog
-execarith=../bin/$prog2/ast$prog2
-
+exectable=../bin/table/asttable
 
 
 
@@ -43,8 +40,8 @@ execarith=../bin/$prog2/ast$prog2
 #
 #   - The input data was not made (for example the test that created the
 #     data file failed).
-if [ ! -f $execname ];  then echo "$execname not created.";  exit 77; fi
-if [ ! -f $execarith ]; then echo "$execarith not created."; exit 77; fi
+if [ ! -f $execname  ]; then echo "$execname not created."; exit 77; fi
+if [ ! -f $exectable ]; then echo "$exectable not created.";  exit 77; fi
 
 
 
@@ -56,14 +53,17 @@ if [ ! -f $execarith ]; then echo "$execarith not created."; exit 77; fi
 # 'check_with_program' can be something like Valgrind or an empty
 # string. Such programs will execute the command if present and help in
 # debugging when the developer doesn't have access to the user's system.
-fitin=fitting-polynomial-2d-input.fits
-$execarith 100 100 2 makenew indexonly set-i \
-           i 100 / 1 + set-Y \
-           i 100 % 1 + set-X \
-           5 X Y x + 10 Y x + f64 set-p \
-           i 0 constant 100 mknoise-sigma set-n \
-           p n 100 lt nan where --output=$fitin
-
-$check_with_program $execname $fitin --fit=polynomial-robust \
-                    --fitmaxpower=2 --output=fitting-estimate.txt
-rm $fitin
+output=fit2d.fits
+input=fit2d-input.fits
+export GSL_RNG_SEED=1788653608
+seq 0.1 0.01 2 \
+    | $exectable --output=$input --envseed -c1 \
+                 -c'arith 1.23 -4.56 $1 x + 7.89 $1 x $1 x + set-y \
+                          0.1 y x                            set-ystd \
+                          y ystd mknoise-sigma ystd' \
+                 --colmetadata=1,X --colmetadata=2,Y \
+                 --colmetadata=3,Y-STD
+$check_with_program $execname $input --model=polynomial --degree=2  \
+                    --residual --weight=image.fits --weight-hdu=2 \
+                    --estimate=self --output=$output
+rm $input

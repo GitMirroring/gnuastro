@@ -253,29 +253,83 @@ gal_dimension_index_to_coord(size_t index, size_t ndim, size_t *dsize,
 
 
 
-/* Given an input image, extract the non-blank pixels into three separate
-   columns: X, Y and value (where X and Y are defined according to the FITS
-   standard). */
-
-
+/* Given an input image(s), extract the non-blank pixels into three
+   separate columns: X, Y and value (where X and Y are defined according to
+   the FITS standard). In case the 'next' element of the input is active,
+   the output will have four columns and the blank test is done on both
+   inputs: only non-nan elements in both will be included in the
+   output.  */
 gal_data_t *
 gal_dimension_image_to_table(gal_data_t *input)
 {
+  int b1, b2;
   uint32_t *x, *y;
-  gal_data_t *out=NULL;
+  uint8_t *f, *f2, *ff;
   int qmm=input->quietmmap;
-  size_t pw=input->dsize[1];
-  size_t i, j=0, nout=input->size-gal_blank_number(input, 1);
-  size_t bw=gal_type_sizeof(input->type), mms=input->minmapsize;
-  uint8_t *v, *arr=input->array; /* Type-agnostic: for pointer-arith. */
+  gal_data_t *flag2, *out=NULL, *flag=NULL;
+  size_t i, j=0, nout=0, pw=input->dsize[1];
+  size_t w2=input->next?gal_type_sizeof(input->next->type):0;
+  size_t w1=gal_type_sizeof(input->type), mms=input->minmapsize;
+
+  /* These are type-agnostic. The 'uint8_t' is only for a custom
+     pointer-arith: using the 'w1' and 'w2' above. */
+  uint8_t *v1, *v2, *a1=input->array;
+  uint8_t *a2=input->next ? input->next->array : NULL;
 
   /* Sanity checks. */
   if(input->ndim!=2)
     error(EXIT_FAILURE, 0, "%s: the input should be a 2-dimensional "
           "image, but it has %zu-dimensions", __func__, input->ndim);
+  if(input->next && gal_dimension_is_different(input, input->next) )
+    error(EXIT_FAILURE, 0, "%s: 'input->next' does not have the same "
+          "dimensions and size as 'input'", __func__);
 
-  /* Allocate the three output columns (note that they are added in the
+  /* Number of elements in the output. When there are two inputs, then we
+     should find the one with the most number of blank elements and use
+     that since we want the */
+  b1=gal_blank_present(input, 1);
+  if(input->next)
+    {
+      /* If either of the two inputs has blanks, we need to create the flag
+         array to use later. */
+      b2=gal_blank_present(input->next, 1);
+      if(b1 || b2)
+        {
+          /* Create the two flag images. */
+          flag=gal_blank_flag_not(input);
+          flag2=gal_blank_flag_not(input->next);
+
+          /* Parse over the two flags. Note that because '&&' does not
+             always execute both its operands, the '++f2' cannot be
+             included in the same expression as the '&&'. */
+          f2=flag2->array; ff=(f=flag->array)+flag->size;
+          do {*f = *f && *f2; nout+=*f; ++f2;} while(++f<ff);
+          gal_data_free(flag2);
+        }
+      else nout=input->size;
+    }
+
+  /* There is only one input. */
+  else
+    {
+      if(b1) /* The input has blank values. */
+        {
+          flag=gal_blank_flag_not(input);
+          ff=(f=flag->array)+flag->size; do nout+=*f; while(++f<ff);
+        }
+      else nout=input->size;
+    }
+
+  /* For a check
+  if(flag) gal_fits_img_write(flag, "flag.fits", NULL, 0);
+  printf("%s: nout: %zu\n", __func__, nout); exit(0);
+  //*/
+
+  /* Allocate the output columns (note that they are added in the
      last-in-first-out order) */
+  if(input->next)
+    gal_list_data_add_alloc(&out, NULL, input->next->type, 1, &nout,
+                            NULL, 0, mms, qmm, NULL, NULL, NULL);
   gal_list_data_add_alloc(&out, NULL, input->type, 1, &nout, NULL, 0,
                           mms, qmm, NULL, NULL, NULL);
   gal_list_data_add_alloc(&out, NULL, GAL_TYPE_UINT32, 1, &nout, NULL,
@@ -286,10 +340,18 @@ gal_dimension_image_to_table(gal_data_t *input)
   /* Parse over the input and extract non-blank elements. */
   x=out->array;
   y=out->next->array;
-  v=out->next->next->array;
+  f=flag?flag->array:NULL;
+  v1=out->next->next->array;
+  v2=out->next->next->next ? out->next->next->next->array : NULL;
   for(i=0;i<input->size;++i)
-    if(!gal_blank_is(arr+i*bw, input->type))
-      { x[j]=i%pw+1; y[j]=i/pw+1; memcpy(v+j*bw, arr+i*bw, bw); j++; }
+    if( flag ? f[i] : 1 ) /* When flag==NULL, all should be used. */
+      {
+        x[j]=i%pw+1;
+        y[j]=i/pw+1;
+        if(v2){memcpy(v1+j*w1,a1+i*w1,w1); memcpy(v2+j*w2,a2+i*w2,w2);}
+        else   memcpy(v1+j*w1,a1+i*w1,w1);
+        ++j;
+      }
 
   /* For a check.
   gal_table_write(out, NULL, NULL, GAL_TABLE_FORMAT_BFITS, "out.fits",
@@ -297,6 +359,7 @@ gal_dimension_image_to_table(gal_data_t *input)
   //*/
 
   /* Clean up and return. */
+  gal_data_free(flag);
   return out;
 }
 
