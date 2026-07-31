@@ -244,6 +244,18 @@ ui_check_only_options(struct segmentparams *p)
           "mandatory to provide a signal-to-noise ratio manually",
           UI_KEY_CLUMPSNTHRESH);
 
+  /* The user may expect two HDUs, while only one will be created. */
+  if(!isnan(p->clumpsnthresh) && p->checksn && !p->cp.quiet)
+    error(EXIT_SUCCESS, 0,"WARNNING: when '--clumpsnthresh' and "
+          "'--checksn' options are called together, the created file will "
+          "only contain the S/N table of clumps in detections. This is "
+          "because with the '--clumpsnthresh' option, you have defined "
+          "the S/N threshold manually, so Segment did not attempt to "
+          "find clumps over undetected (sky) regions. If you want to "
+          "examine the S/N values of clumps for both the sky and the "
+          "detections, do not call '--clumpsnthresh'. To suppress this "
+          "message, run with '--quiet'");
+
   /* If the convolved HDU is given. */
   if(p->convolvedname && p->chdu==NULL)
     error(EXIT_FAILURE, 0, "no value given to '--convolvedhdu'. When the "
