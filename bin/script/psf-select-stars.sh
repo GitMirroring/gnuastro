@@ -13,6 +13,7 @@
 # Original author:
 #     Sepideh Eskandarlou <sepideh.eskandarlou@gmail.com>
 # Contributing author:
+#     Faezeh Bidjarchian <fbidjarchian@gmail.com>
 #     Raul Infante-Sainz <infantesainz@gmail.com>
 #     Mohammad Akhlaghi <mohammad@akhlaghi.org>
 #     Carlos Morales-Socorro <cmorsoc@gmail.com>
@@ -586,7 +587,7 @@ if [ x"$catalog" != x ]; then
              --output=$skycoverage
 
     # The number of stars in the overlaping area.
-    number=$(asttable $skycoverage | wc -l)
+    number=$(asttable $skycoverage --info-num-rows)
 
     # If catalog overlap the image, select stars with magnitudes between
     # the fainter and larger than bright values.
@@ -770,7 +771,7 @@ asttable $circular -c$racolumn,$deccolumn,$field \
    # Check number of neighborhod and remove each star that has more than 2
    # neighbors: 1 means match with itself; >2 means that there are nearby
    # contaminant objects).
-   lof=$(asttable $numberneighbor | wc -l)
+   lof=$(asttable $numberneighbor --info-num-rows)
    if [ $lof -lt 2 ]; then
        echo $r $d $mag >> $lessneighbor
    else
@@ -804,14 +805,14 @@ asttable $moreneighbor --output=$contaminated_objects
 # If the user do not want to see all steps of run, the 'quiet' option must
 # be used. Without this option user can see all steps of run.
 if [ x"$quiet" = x ]; then
-   stats_nstars_total=$(asttable $catalog_main | wc -l)
-   stats_nstars_noneighbors=$(asttable $output | wc -l)
-   stats_nstars_goodparallax=$(asttable $goodparallax | wc -l)
+   stats_nstars_total=$(asttable $catalog_main --info-num-rows)
+   stats_nstars_noneighbors=$(asttable $output --info-num-rows)
+   stats_nstars_goodparallax=$(asttable $goodparallax --info-num-rows)
    echo "Number of stars in wider mag-range: $stats_nstars_total"
    echo "Number of stars with good parallax: $stats_nstars_goodparallax"
    echo "Number of stars with no neighbors:  $stats_nstars_noneighbors"
-   if [ ! -$segmented ]; then
-      stats_nstars_matched=$(asttable $qmatch)
+   if [ -f $segmented ]; then
+      stats_nstars_matched=$(asttable $qmatch --info-num-rows)
       echo "Number of clumps matched stars: $stats_nstars_matched"
    fi
 fi
