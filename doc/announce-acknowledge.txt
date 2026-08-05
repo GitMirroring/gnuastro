@@ -1,6 +1,9 @@
 Alphabetically ordered list to acknowledge in the next release.
 
+Ivan Brossard
 Leindert Boogaard
+Mariano Moles
+Raúl Infante Sainz
 Stergios Amarantidis
 
 

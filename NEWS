@@ -261,6 +261,11 @@ See the end of the file for license conditions.
   - bug #68475: Reading WCS fails when both CD and CROTA are present. Found
     and fixed by Giacomo Lorenzetti.
 
+  - bug #68598: Querying VizieR datasets with '--information'
+    fails. Reported by reported by Mariano Moles, and fixed with the
+    followup of Raul Infante Sainz and ultimately fixed with technique
+    suggested by Ivan Brossard (of CDS/VizieR).
+
 
 
 

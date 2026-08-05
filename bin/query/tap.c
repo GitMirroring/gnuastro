@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"
 
 #include "ui.h"
+#include "query.h"
 
 
 
@@ -114,14 +115,22 @@ tap_dataset_quote_if_necessary(struct queryparams *p)
 static char *
 tap_query_construct_meta(struct queryparams *p)
 {
-  char *querystr;
+  char *qstr, *querystr;
 
   /* If a dataset is given, build the query to download the metadata of
      that dataset. Otherwise, get the metadata of the full database. */
   if(p->datasetuse)
     {
+      /* As of 2026-07, VizieR needs to quote the table name since they
+         contain '/'. However, other databases (like ESA's Gaia) do not
+         work with the double quotation, so we should only insert them when
+         querying VizieR. */
+      qstr = p->database==QUERY_DATABASE_VIZIER ? "\\\"" : NULL;
+
+      /* Create the necessary commands. */
       if( asprintf(&querystr,  "\"SELECT * FROM TAP_SCHEMA.columns "
-                   "WHERE table_name = '%s'\"", p->datasetuse)<0 )
+                   "WHERE table_name = '%s%s%s'\"", qstr?qstr:"",
+                   p->datasetuse, qstr?qstr:"")<0 )
         error(EXIT_FAILURE, 0, "%s: asprintf allocation ('querystr')",
               __func__);
     }
@@ -130,7 +139,8 @@ tap_query_construct_meta(struct queryparams *p)
       if(p->limitinfo)
         {
           if( asprintf(&querystr,  "\"SELECT * FROM TAP_SCHEMA.tables "
-                       "WHERE description LIKE '%%%s%%'\"", p->limitinfo)<0 )
+                       "WHERE description LIKE '%%%s%%'\"",
+                       p->limitinfo)<0 )
             error(EXIT_FAILURE, 0, "%s: asprintf allocation ('querystr')",
                   __func__);
         }
