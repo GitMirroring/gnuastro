@@ -12167,15 +12167,21 @@ $ libtool --version
 
 @item GNU help2man (@command{help2man})
 @cindex GNU help2man
-GNU help2man is used to convert the output of the @option{--help} option
-(@ref{--help}) to the traditional Man page (@ref{Man pages}).
-
+GNU help2man is used to convert the output of the @option{--help} option (@ref{--help}) to the traditional Man page (@ref{Man pages}).
 To check that you have a working GNU Help2man in your system, you can try this command:
 
 @example
 $ help2man --version
 @end example
 
+@item GNU gperf (@command{gperf})
+@cindex GNU gperf
+GNU gperf is a hash function generator that is used by Gnulib during the packaging of Gnuastro (with @code{make dist}) after a clean bootstrap.
+To check that you have a working GNU gperf in your system, you can try this command:
+
+@example
+$ gperf --version
+@end example
 
 @item @LaTeX{} and some @TeX{} packages
 @cindex @LaTeX{}
