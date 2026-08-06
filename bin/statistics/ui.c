@@ -26,6 +26,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 #include <error.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <gnuastro/fit.h>
@@ -689,9 +690,9 @@ static void
 ui_out_of_range_to_blank(struct statisticsparams *p)
 {
   size_t one=1;
-  unsigned char flags=GAL_ARITHMETIC_FLAG_NUMOK;
-  unsigned char flagsor = ( GAL_ARITHMETIC_FLAG_INPLACE
-                            | GAL_ARITHMETIC_FLAG_NUMOK );
+  uint8_t flags=GAL_ARITHMETIC_FLAG_NUMOK;
+  uint8_t flagsor = ( GAL_ARITHMETIC_FLAG_INPLACE
+                      | GAL_ARITHMETIC_FLAG_NUMOK );
   gal_data_t *tmp, *tmp2, *cond_g=NULL, *cond_l=NULL, *cond, *blank, *ref;
 
 

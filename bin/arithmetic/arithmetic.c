@@ -26,8 +26,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <errno.h>
 #include <error.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gnuastro/wcs.h>
 #include <gnuastro/fits.h>
@@ -1677,7 +1678,7 @@ arithmetic_operator_run(struct arithmeticparams *p, int operator,
 {
   size_t i;
   unsigned int numop;
-  int flags = GAL_ARITHMETIC_FLAGS_BASIC;
+  uint8_t flags = GAL_ARITHMETIC_FLAGS_BASIC;
   gal_data_t *d1=NULL, *d2=NULL, *d3=NULL, *d4=NULL, *d5=NULL;
 
   /* Set the operating-mode flags if necessary. */

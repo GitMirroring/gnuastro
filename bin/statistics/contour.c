@@ -25,6 +25,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <errno.h>
 #include <error.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <gnuastro-internal/checkset.h>
@@ -43,8 +44,8 @@ contour_pixels(gal_data_t *input, double level, size_t minmapsize,
 {
   size_t one=1;
   uint8_t *b, *a, *af;
-  int flags=GAL_ARITHMETIC_FLAG_NUMOK;
   gal_data_t *number, *thresh, *eroded;
+  uint8_t flags=GAL_ARITHMETIC_FLAG_NUMOK;
 
   /* Allocate the single-element dataset to use in arithmetic.*/
   number=gal_data_alloc(NULL, GAL_TYPE_FLOAT64, 1, &one, NULL, 1,

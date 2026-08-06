@@ -232,6 +232,9 @@ See the end of the file for license conditions.
   - gal_units_date_to_unix_seconds: new name for
     'gal_fits_key_date_to_seconds'.
 
+  - gal_label_measure: the 'flags' argument is now 'uint8_t' since it is
+    used for bit-wise operations. Until now, it was an 'int'.
+
   - wcs.h: 'GAL_WCS_DISTORTION_SIP_NO_REVERSE' new distortion (see
     '--wcsdistortion' under 'astfits' above).
 

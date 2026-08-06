@@ -25,6 +25,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <argp.h>
 #include <errno.h>
 #include <error.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -2049,9 +2050,9 @@ options_sanity_check(struct argp_option *option, char *arg,
 {
   size_t dsize=1;
   char *message=NULL;
-  int mcflag=GAL_ARITHMETIC_FLAGS_BASIC;
   int operator1=GAL_ARITHMETIC_OP_INVALID;
   int operator2=GAL_ARITHMETIC_OP_INVALID;
+  uint8_t mcflag=GAL_ARITHMETIC_FLAGS_BASIC;
   int multicheckop=GAL_ARITHMETIC_OP_INVALID;
   gal_data_t *value, *ref1=NULL, *ref2=NULL, *check1, *check2;
 

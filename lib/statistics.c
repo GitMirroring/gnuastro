@@ -27,9 +27,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 #include <error.h>
 #include <float.h>
-#include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gnuastro/data.h>
 #include <gnuastro/tile.h>
@@ -678,7 +678,7 @@ statistics_mad_in_sorted_no_blank(gal_data_t *sorted, gal_data_t *med,
   int out=0;
   uint8_t type;
   gal_data_t *use, *mad;
-  int flags=GAL_ARITHMETIC_FLAG_INPLACE | GAL_ARITHMETIC_FLAG_NUMOK;
+  uint8_t flags=GAL_ARITHMETIC_FLAG_INPLACE | GAL_ARITHMETIC_FLAG_NUMOK;
 
   /* Sanity check. */
   if(med->type!=sorted->type)

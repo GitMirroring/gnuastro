@@ -348,7 +348,7 @@ gal_arithmetic_load_col(char *str, int searchin, int ignorecase,
                         size_t minmapsize, int quietmmap);
 
 gal_data_t *
-gal_arithmetic(int operator, size_t numthreads, int flags, ...);
+gal_arithmetic(int operator, size_t numthreads, uint8_t flags, ...);
 
 
 

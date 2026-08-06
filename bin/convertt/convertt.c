@@ -26,8 +26,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <errno.h>
 #include <error.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gnuastro/eps.h>
 #include <gnuastro/pdf.h>
@@ -60,7 +61,7 @@ convertt_change(struct converttparams *p)
 {
   gal_data_t *channel, *cond;
   struct change *change, *tmp;
-  unsigned char flags = GAL_ARITHMETIC_FLAGS_BASIC;
+  uint8_t flags = GAL_ARITHMETIC_FLAGS_BASIC;
 
   /* In case there is no value to convert. */
   if(p->change==NULL) return;

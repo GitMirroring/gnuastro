@@ -81,8 +81,8 @@ gal_label_grow_indexs(gal_data_t *labels, gal_data_t *indexs,
 
 
 gal_data_t *
-gal_label_measure(gal_data_t *labels, gal_data_t *values, int operator,
-                  size_t numthreads, int flags);
+gal_label_measure(gal_data_t *labels, gal_data_t *values,
+                  int operator, size_t numthreads, uint8_t flags);
 
 __END_C_DECLS    /* From C++ preparations */
 

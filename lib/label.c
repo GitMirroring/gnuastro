@@ -25,8 +25,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <errno.h>
 #include <error.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gnuastro/list.h>
 #include <gnuastro/qsort.h>
@@ -1287,8 +1288,8 @@ label_measure_worker(void *inprm)
 
 
 gal_data_t *
-gal_label_measure(gal_data_t *labels, gal_data_t *values, int operator,
-                  size_t numthreads, int flags)
+gal_label_measure(gal_data_t *labels, gal_data_t *values,
+                  int operator, size_t numthreads, uint8_t flags)
 {
   int needsvals=0;
   struct label_measure_p p={0};

@@ -27,9 +27,10 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 #include <error.h>
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <wcslib/wcs.h>
 #include <gsl/gsl_rng.h>
@@ -124,7 +125,7 @@ arithmetic_check_float_input(gal_data_t *in, int operator, char *numstr)
    (a good scenario) don't do anything. Otherwise, print an error
    message. */
 static void
-arithmetic_sizes_bad_one_good(gal_data_t *a, gal_data_t *b, int flags,
+arithmetic_sizes_bad_one_good(gal_data_t *a, gal_data_t *b, uint8_t flags,
                               int operator)
 {
   if( !( (flags & GAL_ARITHMETIC_FLAG_NUMOK) && (a->size==1 || b->size==1))
@@ -140,7 +141,7 @@ arithmetic_sizes_bad_one_good(gal_data_t *a, gal_data_t *b, int flags,
 
 
 static gal_data_t *
-arithmetic_to_certain_type(gal_data_t *in, uint8_t desired_type, int flags)
+arithmetic_to_certain_type(gal_data_t *in, uint8_t desired_type, uint8_t flags)
 {
   return ( in->type==desired_type
            ? in
@@ -167,7 +168,7 @@ arithmetic_to_certain_type(gal_data_t *in, uint8_t desired_type, int flags)
 /***********************************************************************/
 /* Change input data structure type. */
 static gal_data_t *
-arithmetic_change_type(gal_data_t *data, int operator, int flags)
+arithmetic_change_type(int operator, uint8_t flags, gal_data_t *data)
 {
   int type=-1;
   gal_data_t *out;
@@ -213,7 +214,7 @@ arithmetic_change_type(gal_data_t *data, int operator, int flags)
   }
 
 static gal_data_t *
-arithmetic_not(gal_data_t *data, int flags)
+arithmetic_not(gal_data_t *data, uint8_t flags)
 {
   uint8_t *o;
   gal_data_t *out;
@@ -267,7 +268,7 @@ arithmetic_not(gal_data_t *data, int flags)
 
 /* Bitwise not operator. */
 static gal_data_t *
-arithmetic_bitwise_not(int flags, gal_data_t *in)
+arithmetic_bitwise_not(uint8_t flags, gal_data_t *in)
 {
   gal_data_t *o;
   uint8_t    *iu8  = in->array,  *iu8f  = iu8  + in->size,   *ou8;
@@ -354,7 +355,7 @@ arithmetic_bitwise_not(int flags, gal_data_t *in)
     do *o++ = FUNC(*a); while(++a<af);                             \
   }
 static gal_data_t *
-arithmetic_abs(int flags, gal_data_t *in)
+arithmetic_abs(uint8_t flags, gal_data_t *in)
 {
   gal_data_t *out;
 
@@ -572,7 +573,7 @@ arithmetic_units_degree_to_dec(double decimal)
 }
 
 static gal_data_t *
-arithmetic_function_unary(int operator, int flags, gal_data_t *in)
+arithmetic_function_unary(int operator, uint8_t flags, gal_data_t *in)
 {
   uint8_t otype;
   int inplace=0;
@@ -711,7 +712,7 @@ arithmetic_function_unary(int operator, int flags, gal_data_t *in)
 /* These are unit-conversion operators that need two components (like
    2D coordinate system conversion). */
 static gal_data_t *
-arithmetic_unit_binary(int operator, int flags, gal_data_t *a_in,
+arithmetic_unit_binary(int operator, uint8_t flags, gal_data_t *a_in,
                        gal_data_t *b_in)
 {
   int sys1, sys2;
@@ -887,7 +888,7 @@ arithmetic_unit_binary(int operator, int flags, gal_data_t *a_in,
 
 /* Convert the input date string the desired system. */
 static gal_data_t *
-arithmetic_date_str_to(int operator, int flags, gal_data_t *in)
+arithmetic_date_str_to(int operator, uint8_t flags, gal_data_t *in)
 {
   size_t i, v;
   int64_t *iarr;
@@ -1022,7 +1023,7 @@ arithmetic_date_str_to(int operator, int flags, gal_data_t *in)
 
 /* Generate a string date from the input date format. */
 static gal_data_t *
-arithmetic_date_str_from(int operator, int flags, gal_data_t *in)
+arithmetic_date_str_from(int operator, uint8_t flags, gal_data_t *in)
 {
   size_t i;
   int64_t sec;
@@ -1102,7 +1103,7 @@ arithmetic_date_str_from(int operator, int flags, gal_data_t *in)
 
 /* Convert all the numeric date systems to Julian dates. */
 static gal_data_t *
-arithmetic_date_to_jd(int operator, int flags, gal_data_t *in)
+arithmetic_date_to_jd(int operator, uint8_t flags, gal_data_t *in)
 {
   size_t i;
   double *o;
@@ -1146,7 +1147,7 @@ arithmetic_date_to_jd(int operator, int flags, gal_data_t *in)
 
 /* Convert all the numeric date systems to Julian dates. */
 static gal_data_t *
-arithmetic_date_to_sec(int operator, int flags, gal_data_t *in)
+arithmetic_date_to_sec(int operator, uint8_t flags, gal_data_t *in)
 {
   int ismilli=0;
   size_t i, *o;
@@ -1232,7 +1233,7 @@ arithmetic_date_to_sec(int operator, int flags, gal_data_t *in)
 
 /* Call functions in the 'gnuastro/statistics' library. */
 static gal_data_t *
-arithmetic_from_statistics(int operator, int flags, gal_data_t *input)
+arithmetic_from_statistics(int operator, uint8_t flags, gal_data_t *input)
 {
   gal_data_t *out=NULL;
   int ip= (    (flags & GAL_ARITHMETIC_FLAG_INPLACE)
@@ -1269,7 +1270,7 @@ arithmetic_from_statistics(int operator, int flags, gal_data_t *input)
 
 /* Call the gradient functions based on the operator. */
 static gal_data_t *
-arithmetic_gradient(int operator, int flags, gal_data_t *input)
+arithmetic_gradient(int operator, uint8_t flags, gal_data_t *input)
 {
   gal_data_t *out=NULL;
 
@@ -1305,7 +1306,7 @@ arithmetic_gradient(int operator, int flags, gal_data_t *input)
 
 /* Call functions in the 'gnuastro/statistics' library. */
 static gal_data_t *
-arithmetic_to_oned(int operator, int flags, gal_data_t *input)
+arithmetic_to_oned(int operator, uint8_t flags, gal_data_t *input)
 {
   gal_data_t *out=NULL;
   int inplace=flags & GAL_ARITHMETIC_FLAG_FREE;
@@ -1354,7 +1355,7 @@ arithmetic_to_oned(int operator, int flags, gal_data_t *input)
 /***********************************************************************/
 
 static gsl_rng *
-arithmetic_gsl_initialize(int flags, const char **rng_name,
+arithmetic_gsl_initialize(uint8_t flags, const char **rng_name,
                           unsigned long *rng_seed, char *operator_str)
 {
   gsl_rng *rng;
@@ -1400,7 +1401,7 @@ arithmetic_gsl_initialize(int flags, const char **rng_name,
 
 /* The size operator. Reports the size along a given dimension. */
 static gal_data_t *
-arithmetic_mknoise(int operator, int flags, gal_data_t *in,
+arithmetic_mknoise(int operator, uint8_t flags, gal_data_t *in,
                    gal_data_t *arg)
 {
   size_t i;
@@ -1583,7 +1584,7 @@ arithmetic_random_from_hist_sanity(gal_data_t **inhist, gal_data_t **inbinc,
 
 /* Build a custom noise distribution. */
 static gal_data_t *
-arithmetic_random_from_hist(int operator, int flags, gal_data_t *in,
+arithmetic_random_from_hist(int operator, uint8_t flags, gal_data_t *in,
                             gal_data_t *binc, gal_data_t *hist)
 {
   size_t rind;
@@ -1670,7 +1671,7 @@ arithmetic_random_from_hist(int operator, int flags, gal_data_t *in,
 
 /* The size operator. Reports the size along a given dimension. */
 static gal_data_t *
-arithmetic_size(int operator, int flags, gal_data_t *in, gal_data_t *arg)
+arithmetic_size(int operator, uint8_t flags, gal_data_t *in, gal_data_t *arg)
 {
   size_t one=1, arg_val;
   gal_data_t *usearg=NULL, *out=NULL;
@@ -1736,7 +1737,7 @@ arithmetic_size(int operator, int flags, gal_data_t *in, gal_data_t *arg)
 
 /* Stitch multiple operands along a given dimension. */
 static gal_data_t *
-arithmetic_to_1d(int flags, gal_data_t *input)
+arithmetic_to_1d(uint8_t flags, gal_data_t *input)
 {
   size_t i;
 
@@ -1830,7 +1831,7 @@ arithmetic_stitch_sanity_check(gal_data_t *list, gal_data_t *fdim)
 
 /* Stitch multiple operands along a given dimension. */
 static gal_data_t *
-arithmetic_stitch(int flags, gal_data_t *list, gal_data_t *fdim)
+arithmetic_stitch(uint8_t flags, gal_data_t *list, gal_data_t *fdim)
 {
   void *oarr;
   gal_data_t *tmp, *out;
@@ -1992,7 +1993,7 @@ arithmetic_stitch(int flags, gal_data_t *list, gal_data_t *fdim)
 
 
 static void
-arithmetic_where(int flags, gal_data_t *out, gal_data_t *cond,
+arithmetic_where(uint8_t flags, gal_data_t *out, gal_data_t *cond,
                  gal_data_t *iftrue)
 {
   size_t i;
@@ -2754,7 +2755,7 @@ multioperand_on_thread(void *in_prm)
 
 
 static void
-arithmetic_multioperand_prepare(struct multioperandparams *p, int flags,
+arithmetic_multioperand_prepare(struct multioperandparams *p, uint8_t flags,
                                 gal_data_t *params)
 {
   size_t i, nin;
@@ -2986,7 +2987,7 @@ arithmetic_multioperand_clip_mask_worker(void *in_prm)
   uint8_t *u, *uf;
   gal_data_t *use, *tmp;
   size_t i, index, counter, sumflag, ndim=p->list->ndim;
-  int aflags=GAL_ARITHMETIC_FLAG_NUMOK; /* Don't free the inputs. */
+  uint8_t aflags=GAL_ARITHMETIC_FLAG_NUMOK; /* Don't free the inputs. */
 
   /* Go over all the actions (input datasets in this case) that were
      assigned to this thread. */
@@ -3116,8 +3117,8 @@ arithmetic_multioperand_clip_mask(struct multioperandparams *p,
    number of operators is determined from the fact that the last node in
    the linked list must have a NULL pointer as its 'next' element. */
 static gal_data_t *
-arithmetic_multioperand(int operator, int flags, gal_data_t *list,
-                        gal_data_t *params, size_t numthreads)
+arithmetic_multioperand(int operator, size_t numthreads, uint8_t flags,
+                        gal_data_t *list, gal_data_t *params)
 {
   int freelist=1;
   gal_data_t *tmp, *ttmp;
@@ -3305,7 +3306,7 @@ arithmetic_binary_int_sanity_check(gal_data_t *l, gal_data_t *r,
 
 
 static gal_data_t *
-arithmetic_binary(int operator, int flags, gal_data_t *l, gal_data_t *r)
+arithmetic_binary(int operator, uint8_t flags, gal_data_t *l, gal_data_t *r)
 {
   /* Read the variable arguments. 'lo' and 'ro' keep the original data, in
      case their type isn't built (based on configure options are configure
@@ -3484,7 +3485,7 @@ arithmetic_binary(int operator, int flags, gal_data_t *l, gal_data_t *r)
 
 
 static gal_data_t *
-arithmetic_function_binary_flt(int operator, int flags, gal_data_t *il,
+arithmetic_function_binary_flt(int operator, uint8_t flags, gal_data_t *il,
                                gal_data_t *ir)
 {
   int final_otype;
@@ -3637,7 +3638,7 @@ arithmetic_function_binary_flt(int operator, int flags, gal_data_t *il,
   }
 
 static gal_data_t *
-arithmetic_function_ternary_flt(int operator, int flags, gal_data_t *il,
+arithmetic_function_ternary_flt(int operator, uint8_t flags, gal_data_t *il,
                                gal_data_t *im, gal_data_t *ir)
 
 {
@@ -3725,7 +3726,7 @@ arithmetic_function_ternary_flt(int operator, int flags, gal_data_t *il,
      d2: Zeropoint.
      d3: Area.      */
 static gal_data_t *
-arithmetic_counts_to_from_sb(int operator, int flags, gal_data_t *d1,
+arithmetic_counts_to_from_sb(int operator, uint8_t flags, gal_data_t *d1,
                              gal_data_t *d2, gal_data_t *d3)
 {
   gal_data_t *tmp, *out=NULL;
@@ -3762,7 +3763,7 @@ arithmetic_counts_to_from_sb(int operator, int flags, gal_data_t *d1,
 
 static gal_data_t *
 arithmetic_box_around_ellipse(gal_data_t *a_data, gal_data_t *b_data,
-                              gal_data_t *pa_data, int flags)
+                              gal_data_t *pa_data, uint8_t flags)
 {
   size_t i;
   double *a=a_data->array, *b=b_data->array, *pa=pa_data->array, out[2];
@@ -3803,7 +3804,7 @@ arithmetic_box_around_ellipse(gal_data_t *a_data, gal_data_t *b_data,
 static gal_data_t *
 arithmetic_box_vertices_on_sphere(gal_data_t *d1, gal_data_t *d2,
                                   gal_data_t *d3, gal_data_t *d4,
-                                  int flags)
+                                  uint8_t flags)
 {
   size_t i;
   double vertices[8];
@@ -3863,8 +3864,9 @@ arithmetic_box_vertices_on_sphere(gal_data_t *d1, gal_data_t *d2,
 
 
 static gal_data_t *
-arithmetic_box(gal_data_t *d1, gal_data_t *d2, gal_data_t *d3,
-               gal_data_t *d4, int operator, int flags)
+arithmetic_box(int operator, uint8_t flags,
+               gal_data_t *d1, gal_data_t *d2,
+               gal_data_t *d3, gal_data_t *d4)
 {
   size_t i;
   gal_data_t *out=NULL;
@@ -3962,7 +3964,7 @@ arithmetic_rotate_size_err(gal_data_t *in, size_t *osize, char *num,
 
 
 static gal_data_t *
-arithmetic_rotate(int operator, int flags, gal_data_t *d1, gal_data_t *d2,
+arithmetic_rotate(int operator, uint8_t flags, gal_data_t *d1, gal_data_t *d2,
                   gal_data_t *d3, gal_data_t *d4, gal_data_t *d5)
 {
   size_t i, osize=1;
@@ -4201,7 +4203,7 @@ arithmetic_makenew(gal_data_t *sizes)
 #define ARITHMETIC_FILL_COUNTER(IT) {                                   \
     IT i=0, *a=out->array, *af=a+out->size; do *a = ++i; while(++a<af); }
 static gal_data_t *
-arithmetic_index_counter(gal_data_t *input, int operator, int flags)
+arithmetic_index_counter(int operator, uint8_t flags, gal_data_t *input)
 {
   uint8_t otype;
   gal_data_t *out;
@@ -4268,8 +4270,8 @@ arithmetic_index_counter(gal_data_t *input, int operator, int flags)
 
 
 static gal_data_t *
-arithmetic_constant(gal_data_t *input, gal_data_t *constant, int operator,
-                    int flags)
+arithmetic_constant(int operator, uint8_t flags,
+                    gal_data_t *input, gal_data_t *constant)
 {
   gal_data_t *out;
   size_t i, tsize;
@@ -4303,8 +4305,8 @@ arithmetic_constant(gal_data_t *input, gal_data_t *constant, int operator,
 
 
 static gal_data_t *
-arithmetic_pool(gal_data_t *input, gal_data_t *psize, gal_data_t *stride,
-                int operator, size_t numthreads, int flags)
+arithmetic_pool(int operator, size_t numthreads, uint8_t flags,
+                gal_data_t *input, gal_data_t *psize, gal_data_t *stride)
 {
   gal_data_t *out=NULL;
   size_t *pstrarr, *psizearr;
@@ -5306,7 +5308,7 @@ gal_arithmetic_operator_string(int operator)
 
 
 gal_data_t *
-gal_arithmetic(int operator, size_t numthreads, int flags, ...)
+gal_arithmetic(int operator, size_t numthreads, uint8_t flags, ...)
 {
   va_list va;
   gal_data_t *d1, *d2, *d3, *d4, *d5, *out=NULL;
@@ -5546,8 +5548,15 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
       out=arithmetic_to_oned(operator, flags, d1);
       break;
 
-    /* Measurements over labels; some take a single argument, others take
-       two.*/
+    /* Measurements over labels. Unlike the rest of the operator functions
+       here, the arguments of 'gal_label_measure' first have the datasets,
+       then the configuration arguments (operator, numthreads and
+       flags). This is because these are library functions, not static
+       functions within this file. Only this function ('gal_arithmetic') in
+       the library starts with the configuration parameters and that is
+       because it is a variadic function with the variable arguments being
+       the input datasets. So only in this function, the configuration
+       arguments are first.*/
     case GAL_ARITHMETIC_OP_LABEL_AREA:
       d1 = va_arg(va, gal_data_t *);
       out=gal_label_measure(d1, NULL, operator, numthreads, flags);
@@ -5589,7 +5598,7 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_MADCLIP_MASKFILLED:
       d1 = va_arg(va, gal_data_t *);
       d2 = va_arg(va, gal_data_t *);
-      out=arithmetic_multioperand(operator, flags, d1, d2, numthreads);
+      out=arithmetic_multioperand(operator, numthreads, flags, d1, d2);
       break;
 
     /* Binary operators that only work on integer types. */
@@ -5653,7 +5662,7 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_TO_FLOAT32:
     case GAL_ARITHMETIC_OP_TO_FLOAT64:
       d1 = va_arg(va, gal_data_t *);
-      out=arithmetic_change_type(d1, operator, flags);
+      out=arithmetic_change_type(operator, flags, d1);
       break;
 
     /* Constants. */
@@ -5677,11 +5686,11 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
       d2 = va_arg(va, gal_data_t *);
       d3 = va_arg(va, gal_data_t *);
       if(operator==GAL_ARITHMETIC_OP_BOX_AROUND_ELLIPSE)
-        out=arithmetic_box(d1, d2, d3, NULL, operator, flags);
+        out=arithmetic_box(operator, flags, d1, d2, d3, NULL);
       else
         {
           d4=va_arg(va, gal_data_t *);
-          out=arithmetic_box(d1, d2, d3, d4, operator, flags);
+          out=arithmetic_box(operator, flags, d1, d2, d3, d4);
         }
       break;
 
@@ -5710,7 +5719,7 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_INDEXONLY:
     case GAL_ARITHMETIC_OP_COUNTERONLY:
       d1 = va_arg(va, gal_data_t *);
-      out=arithmetic_index_counter(d1, operator, flags);
+      out=arithmetic_index_counter(operator, flags, d1);
       break;
     case GAL_ARITHMETIC_OP_SWAP:
       d1 = va_arg(va, gal_data_t *);
@@ -5720,7 +5729,7 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
     case GAL_ARITHMETIC_OP_CONSTANT:
       d1 = va_arg(va, gal_data_t *);
       d2 = va_arg(va, gal_data_t *);
-      out=arithmetic_constant(d1, d2, operator, flags);
+      out=arithmetic_constant(operator, flags, d1, d2);
       break;
 
     /* Pooling operators. */
@@ -5732,7 +5741,7 @@ gal_arithmetic(int operator, size_t numthreads, int flags, ...)
       d1 = va_arg(va, gal_data_t *);
       d2 = va_arg(va, gal_data_t *);
       d3 = va_arg(va, gal_data_t *);
-      out=arithmetic_pool(d1, d2, d3, operator, numthreads, flags);
+      out=arithmetic_pool(operator, numthreads, flags, d1, d2, d3);
       break;
 
     /* Memory options. */

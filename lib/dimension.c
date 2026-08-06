@@ -26,8 +26,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <errno.h>
 #include <error.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gnuastro/wcs.h>
 #include <gnuastro/binary.h>
@@ -1047,7 +1048,7 @@ dimension_collapse_sortbased_fill(struct dimension_sortbased_p *p,
   float *farr=fstat->array;
   gal_data_t *formask=conv?conv:work, *out=NULL;
   gal_data_t *tmp, *multip, *upper, *lower, *center, *spread;
-  int aflags=GAL_ARITHMETIC_FLAG_NUMOK; /* Don't free the inputs. */
+  uint8_t aflags=GAL_ARITHMETIC_FLAG_NUMOK; /* Don't free the inputs. */
 
   /* Basic checks. */
   switch(p->operator)

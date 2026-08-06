@@ -43535,7 +43535,7 @@ They all take two operands and return two @code{gal_data_t}s (as a list).
 For more on celestial coordinate conversion, see @ref{Coordinate conversion operators}.
 @end deffn
 
-@deftypefun {gal_data_t *} gal_arithmetic (int @code{operator}, size_t @code{numthreads}, int @code{flags}, ...)
+@deftypefun {gal_data_t *} gal_arithmetic (int @code{operator}, size_t @code{numthreads}, uint8_t @code{flags}, ...)
 Apply the requested arithmetic operator on the operand(s).
 The @emph{operator} is identified through the macros above (that start with @code{GAL_ARITHMETIC_OP_}).
 The number of necessary operands (number of arguments to replace `@code{...}' in the declaration of this function, above) depends on the operator and is described under each operator, above.
@@ -43560,7 +43560,7 @@ main(void)
 @{
   /* Define the datasets and flag. */
   gal_data_t *in1, *in2, *out1, *out2;
-  int flag=GAL_ARITHMETIC_FLAGS_BASIC;
+  uint8_t flag=GAL_ARITHMETIC_FLAGS_BASIC;
 
   /* Read the input images. */
   in1=gal_fits_img_read("image1.fits", "1", -1, 1, NULL);
@@ -45886,7 +45886,7 @@ Connectivity is a value between @code{1} (fewest number of neighbors) and the nu
 For example, in a 2D dataset, a connectivity of @code{1} and @code{2} corresponds to 4-connected and 8-connected neighbors.
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_label_measure (gal_data_t @code{*labels}, gal_data_t @code{*values}, int @code{operator}, size_t @code{numthreads}, int @code{flags})
+@deftypefun {gal_data_t *} gal_label_measure (gal_data_t @code{*labels}, gal_data_t @code{*values}, int @code{operator}, size_t @code{numthreads}, uint8_t @code{flags})
 Implement the given arithmetic measurement operator on the pixels that have the same label in @code{labels} (possibly on the @code{values} array) and write the operator's output over the pixels of that label.
 For examples of how this function can be useful see the examples of @code{label-*} operators of the Arithmetic program in @ref{Statistical operators}.
 

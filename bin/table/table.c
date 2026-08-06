@@ -25,8 +25,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 #include <error.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <gsl/gsl_rng.h>
@@ -135,8 +136,8 @@ table_selection_range(struct tableparams *p, gal_data_t *col)
 {
   size_t one=1;
   double *darr;
-  int numok=GAL_ARITHMETIC_FLAG_NUMOK;
-  int inplace=GAL_ARITHMETIC_FLAG_INPLACE;
+  uint8_t numok=GAL_ARITHMETIC_FLAG_NUMOK;
+  uint8_t inplace=GAL_ARITHMETIC_FLAG_INPLACE;
   gal_data_t *min=NULL, *max=NULL, *tmp, *ltmin, *gemax=NULL;
 
   /* First, make sure everything is OK. */
@@ -306,8 +307,8 @@ table_selection_equal_or_notequal(struct tableparams *p, gal_data_t *col,
   void *varr;
   char **strarr;
   size_t i, one=1;
-  int numok=GAL_ARITHMETIC_FLAG_NUMOK;
-  int inplace=GAL_ARITHMETIC_FLAG_INPLACE;
+  uint8_t numok=GAL_ARITHMETIC_FLAG_NUMOK;
+  uint8_t inplace=GAL_ARITHMETIC_FLAG_INPLACE;
   gal_data_t *eq, *out=NULL, *value=NULL;
   gal_data_t *arg = e0n1 ? p->notequal : p->equal;
 
@@ -398,7 +399,7 @@ table_select_by_value(struct tableparams *p)
   size_t i, *s, ngood=0;
   struct list_select *tmp;
   uint8_t *u, *uf, *ustart;
-  int inplace=GAL_ARITHMETIC_FLAG_INPLACE;
+  uint8_t inplace=GAL_ARITHMETIC_FLAG_INPLACE;
   gal_data_t *mask, *col, *blmask, *addmask=NULL;
 
   /* It may happen that the input table is empty! In such cases, just
