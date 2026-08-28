@@ -6770,12 +6770,15 @@ By doing this, the script will generate the radial profile of the entire stamp.
 In this particular step we set it to @code{--normradii=500,510}.
 We also use the @option{--nocentering} option to disable sub-pixel warping in this phase (it is only relevant for the central part of the PSF).
 Furthermore, since there are several stars, we iterate over each row of the catalog using a while loop.
+Note that each star is given its own subdirectory (@code{star-$counter}) under @option{finding-normradii} to keep its temporary files for later inspection (the @option{--tmpdir} option).
+This helps here because the script's temporary files always use the same names.
+Therefore, using one shared directory for every star would mean each star's files simply overwrite the one before it, leaving only the last star's files once the loop finishes.
 
 @example
 $ counter=1
 $ mkdir finding-normradii
 $ asttable outer/67510-6-10.fits \
-           | while read -r ra dec mag; do
+           | while read -r ra dec mag; do \
                astscript-psf-stamp label/67510-seg.fits \
                     --mode=wcs \
                     --nocentering \
@@ -6784,7 +6787,7 @@ $ asttable outer/67510-6-10.fits \
                     --widthinpix=1000,1000 \
                     --segment=label/67510-seg.fits \
                     --output=finding-normradii/$counter.fits \
-                    --tmpdir=finding-normradii --keeptmp; \
+                    --tmpdir=finding-normradii/star-$counter --keeptmp; \
                counter=$((counter+1)); \
              done
 @end example
@@ -6794,7 +6797,7 @@ Once they all open, feel free to zoom-in, they are all matched and locked.
 It is always good to check the different stamps to ensure the quality and possible two dimensional features that are difficult to detect from the radial profiles (such as ghosts and internal reflections).
 
 @example
-$ astscript-fits-view finding-normradii/cropped-masked*.fits
+$ astscript-fits-view finding-normradii/star-*/cropped-masked*.fits
 @end example
 
 @noindent
@@ -6803,7 +6806,7 @@ Note that @command{astscript-fits-view} calls the @command{topcat} graphic user 
 If you do not already have it, see @ref{TOPCAT}.
 
 @example
-$ astscript-fits-view finding-normradii/rprofile*.fits
+$ astscript-fits-view finding-normradii/star-*/rprofile*.fits
 @end example
 
 After some study of this data, we could say that a good normalization ring is those pixels between R=20 and R=30 pixels.
@@ -6812,6 +6815,7 @@ Also, at such distance from the center the signal to noise is high and there are
 Note that the profiles are different because we are considering a wide range of magnitudes, so the fainter stars are much more noisy.
 However, in this tutorial we will keep these stars in order to have a higher number of stars for the outer part.
 In a real case scenario, we should look for stars with a much more similar brightness (smaller range of magnitudes) to not lose signal to noise as a consequence of the inclusion of fainter stars.
+Now that the radius is found, we can delete the temporary @file{finding-normradii} directory and run the script one more time with the final parameters.
 
 @example
 $ rm -r finding-normradii
