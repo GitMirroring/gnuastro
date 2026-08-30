@@ -146,33 +146,67 @@ See the end of the file for license conditions.
 
 *** Library
 
+  - gal_array_info_size: return the number of dimensions and length along
+    each dimention of the array in the given file.
+
+  - gal_fit_polynomial_estimate: Estimate the given polynomial model on the
+    given inputs (can be in 1D and 2D).
+
+  - gal_fits_key_list_append: Append one keyword list to another.
+
   - gal_gradient_direction: measure the gradient direction around each
     pixel of the input image.
+
   - gal_gradient_magnitude: measure the gradient magnitude around each
     pixel of the input image.
+
   - gal_gradient_direction_magnitude: meausre both the direction and
     magnitude of the gradient in a single parsing of the input.
+
   - gal_list_sizetf64_number: return the number of nodes in the list.
+
+  - gal_txt_is_image: return 1 if the input text file is an image.
+
   - gal_units_jd_to_unix_seconds: Julian dates (JD) to Unix seconds.
+
   - gal_units_rjd_to_unix_seconds: Reduced JD to Unix seconds.
+
   - gal_units_mjd_to_unix_seconds: Modified JD to Unix seconds.
+
   - gal_units_tjd_to_unix_seconds: Truncated JD to Unix seconds.
+
   - gal_units_djd_to_unix_seconds: Dublin JD to Unix seconds.
+
   - gal_units_cjd_to_unix_seconds: CNES JD to Unix seconds.
+
   - gal_units_ccjd_to_unix_seconds: CCSDS JD to Unix seconds.
+
   - gal_units_mjd2000_to_unix_seconds: Modified JD 2000 to Unix seconds.
+
   - gal_units_lilian_to_unix_seconds: Lilian date to Unix seconds.
+
   - gal_units_rata_to_unix_seconds: Rata Die to Unix seconds.
+
   - gal_units_mars_sol_to_unix_seconds: Mars Sol date to Unix seconds.
+
   - gal_units_jd_to_rjd: JD to reduced JD.
+
   - gal_units_jd_to_mjd: JD to modified JD.
+
   - gal_units_jd_to_tjd: JD to truncated JD.
+
   - gal_units_jd_to_djd: JD to Dublin JD.
+
   - gal_units_jd_to_cjd: JD to CNES JD.
+
   - gal_units_jd_to_ccjd: JD to CCSDS JD.
+
   - gal_units_jd_to_mjd2000: JD to modified JD 2000.
+
   - gal_units_jd_to_lilian: JD to Lilian dates.
+
   - gal_units_jd_to_rata: JD to Rata Die.
+
   - gal_units_jd_to_mars_sol: JD to Mars Sol date.
 
 ** Removed features
@@ -184,8 +218,12 @@ See the end of the file for license conditions.
 
 *** Library
 
+  - gal_fit_polynomial_1d_estimate: replaced with the more generic
+    'gal_fit_polynomial_estimate' (that works in 1D and 2D).
+
   - gal_fits_key_date_to_struct_tm: removed due to simplify new
     implementation as part of 'units.h'.
+
   - gal_warp_wcsalign_init:
   - gal_warp_wcsalign_onpix:
   - gal_warp_wcsalign_onthread:
@@ -240,13 +278,19 @@ See the end of the file for license conditions.
 
 *** Library
 
-  - gal_units_date_to_unix_seconds: new name for
-    'gal_fits_key_date_to_seconds'.
+  - gal_fit_linear_1d:
+  - gal_fit_linear_no_constant_1d: the reduced chi^2 is written into the
+    new '*redchisq' argument, not in the output array.
+
+  - gal_fit_linear_estimate_1d: new name for 'gal_fit_linear_1d_estimate'.
 
   - gal_label_measure: the 'flags' argument is now 'uint8_t' since it is
     used for bit-wise operations. Until now, it was an 'int'.
 
-  - wcs.h: 'GAL_WCS_DISTORTION_SIP_NO_REVERSE' new distortion (see
+  - gal_units_date_to_unix_seconds: new name for
+    'gal_fits_key_date_to_seconds'.
+
+  - GAL_WCS_DISTORTION_SIP_NO_REVERSE of 'wcs.h': new distortion (see
     '--wcsdistortion' under 'astfits' above).
 
 ** Bugs fixed

@@ -98,11 +98,6 @@ enum gal_fit_matrix_types
 
 
 /* Functions */
-uint8_t
-gal_fit_name_to_id(char *name);
-
-char *
-gal_fit_name_from_id(uint8_t fitid);
 
 int
 gal_fit_name_robust_to_id(char *name);
@@ -123,22 +118,22 @@ gal_fit_linear_estimate_1d(gal_data_t *fit, gal_data_t *xin);
 
 gal_data_t *
 gal_fit_polynomial(gal_data_t *xin, gal_data_t *yin,
-                   gal_data_t *ywht, size_t maxpower,
+                   gal_data_t *ywht, size_t degree,
                    double *redchisq, uint8_t matrixid);
 
 gal_data_t *
 gal_fit_polynomial_robust(gal_data_t *xin, gal_data_t *yin,
-                          size_t maxpower, uint8_t robustid,
+                          size_t degree, uint8_t robustid,
                           double *redchisq, uint8_t matrixid);
 
 gal_data_t *
 gal_fit_polynomial_tikhonov(gal_data_t *xin, gal_data_t *yin,
-                            size_t maxpower, double *redchisq,
+                            size_t degree, double *redchisq,
                             uint8_t matrixid, double tikhonovlambda);
 
 gal_data_t *
 gal_fit_polynomial_estimate(gal_data_t *fit, gal_data_t *xin,
-                            size_t maxpower);
+                            size_t degree);
 
 __END_C_DECLS    /* From C++ preparations */
 

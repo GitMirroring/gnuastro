@@ -28481,13 +28481,6 @@ $ aststatistics image.fits --sky --kernel=kernel.fits
 ## column value between 26 and 27:
 $ aststatistics cat.fits -cMAG_F160W -g26 -l27 --sigmaclip=3,0.2
 
-## Find the polynomial (to third order) that best fits the X and Y
-## columns of 'table.fits'. Robust fitting will be used to reject
-## outliers. Also, estimate the fitted polynomial on the same input
-## column (with errors).
-$ aststatistics table.fits --fit=polynomial-robust --fitmaxpower=3 \
-                -cX,Y --fitestimate=self --output=estimated.fits
-
 ## Print the median value of all records in column MAG_F160W that
 ## have a value larger than 3 in column PHOTO_Z:
 $ aststatistics tab.txt -rPHOTO_Z -g3 -cMAG_F160W --median
@@ -41736,6 +41729,10 @@ Similar to @code{gal_array_name_recognized}, but for FITS files, it will also ch
 See the description of @code{gal_fits_file_recognized} for more (@ref{FITS macros errors filenames}).
 @end deftypefun
 
+@deftypefun size_t gal_array_info_size (char @code{*filename}, char @code{*extension}, char @code{*hdu_option_name}, size_t @code{**dsize})
+Return the number of dimensions and allocate an array with the length along each dimention of the array in the given file within the pointer that @code{dsize} points to.
+@end deftypefun
+
 @deftypefun gal_data_t gal_array_read (char @code{*filename}, char @code{*extension}, gal_list_str_t @code{*lines}, size_t @code{minmapsize}, int @code{quietmmap}, char @code{*hdu_option_name})
 Read the array within the given extension (@code{extension}) of @code{filename}, or the @code{lines} list (see below).
 If the array is larger than @code{minmapsize} bytes, then it will not be read into RAM, but a file on the HDD/SSD (no difference for the programmer).
@@ -42397,6 +42394,10 @@ For more, see the description of @code{COMMIT} in @ref{Output FITS files}.
 Reverse the input list of keywords.
 @end deftypefun
 
+@deftypefun void gal_fits_key_list_append(gal_fits_list_key_t @code{*list}, gal_fits_list_key_t @code{*toappend})
+Append the second list to the first: set the first node of @code{toappend} as the @code{next} node of the last element of @code{list}.
+@end deftypefun
+
 @deftypefun void gal_fits_key_write_title_in_ptr (char @code{*title}, fitsfile @code{*fptr})
 Add two lines of ``title'' keywords to the given CFITSIO @code{fptr} pointer.
 The first line will be blank and the second will have the string in @code{title} roughly in the middle of the line (a fixed distance from the start of the keyword line).
@@ -42675,7 +42676,7 @@ Gnuastro defines a simple format for metadata of table columns in a plain text f
 The functions to get information from, read from and write to plain text files also follow those conventions.
 
 
-@deffn Macro GAL_TXT_LINESTAT_INVALID
+@deffn  Macro GAL_TXT_LINESTAT_INVALID
 @deffnx Macro GAL_TXT_LINESTAT_BLANK
 @deffnx Macro GAL_TXT_LINESTAT_COMMENT
 @deffnx Macro GAL_TXT_LINESTAT_DATAROW
@@ -42701,6 +42702,10 @@ If the input pointer is @code{NULL}, or the string only has white-space characte
 Return 1 if the string that @code{match} points to, can be exactly found within the string that @code{full} points to (character by character).
 The to-match string can be in any part of the full string.
 If any of the two strings have zero length or are a @code{NULL} pointer, this function will return 0.
+@end deftypefun
+
+@deftypefun int gal_txt_is_image (char @code{*filename})
+Return 1 if the contents of the given file is a Gnuastro plain text image.
 @end deftypefun
 
 @deftypefun {gal_data_t *} gal_txt_table_info (char @code{*filename}, gal_list_str_t @code{*lines}, size_t @code{*numcols}, size_t @code{*numrows})
@@ -45704,22 +45709,6 @@ After doing a measurement, it is usually necessary to parameterize the relation 
 The functions in this section are wrappers over the GNU Scientific Library (GSL) @url{https://www.gnu.org/software/gsl/doc/html/lls.html, Linear Least-Squares Fitting}, to make them easily accessible using Gnuastro's @ref{Generic data container}.
 The respective GSL function is mentioned under each function.
 
-@deffn  {Global integer} GAL_FIT_INVALID
-@deffnx {Global integer} GAL_FIT_LINEAR
-@deffnx {Global integer} GAL_FIT_LINEAR_WEIGHTED
-@deffnx {Global integer} GAL_FIT_LINEAR_NO_CONSTANT
-@deffnx {Global integer} GAL_FIT_LINEAR_NO_CONSTANT_WEIGHTED
-@deffnx {Global integer} GAL_FIT_POLYNOMIAL
-@deffnx {Global integer} GAL_FIT_POLYNOMIAL_ROBUST
-@deffnx {Global integer} GAL_FIT_POLYNOMIAL_WEIGHTED
-@deffnx {Global integer} GAL_FIT_POLYNOMIAL_TIKHONOV
-@deffnx {Global integer} GAL_FIT_NUMBER
-Identifiers for the various types of fitting functions.
-These can be used by the callers of these functions to select between various fitting types.
-They can easily be converted to, and from, fixed human-readable strings using the @code{gal_fit_name_*} functions below.
-The last one @code{GAL_FIT_NUMBER} is the total number of available fitting methods (can be used to add more macros in the calling program and to avoid overlaps with existing codes).
-@end deffn
-
 @deffn  {Global integer} GAL_FIT_ROBUST_INVALID
 @deffnx {Global integer} GAL_FIT_ROBUST_BISQUARE
 @deffnx {Global integer} GAL_FIT_ROBUST_CAUCHY
@@ -45742,16 +45731,6 @@ The last one @code{GAL_FIT_ROBUST_NUMBER} is the total number of available funct
 The last one @code{GAL_FIT_MATRIX_TOTAL_ALL} is the total number of available matrices (can be used to add more macros in the calling program and to avoid overlaps with existing codes), while @code{GAL_FIT_MATRIX_NUMBER_1D} show how many of them are 1D.
 @end deffn
 
-@deftypefun uint8_t gal_fit_name_to_id (char @code{*name})
-Return the internal code of a standard human-readable name for the various fitting functions.
-If the name is not recognized, the returned value will be @code{GAL_FIT_INVALID}.
-@end deftypefun
-
-@deftypefun {char *} gal_fit_name_from_id (uint8_t @code{fitid})
-Return a standard human-readable name for the fitting function identified with the @code{fitid} (read as ``fitting ID'').
-If the fitting ID couldn't be recognized, a NULL pointer is returned.
-@end deftypefun
-
 @deftypefun uint8_t gal_fit_name_robust_to_id (char @code{*name})
 Return the internal code of a standard human-readable name for the various robust fitting types.
 If the name is not recognized, the returned value will be @code{GAL_FIT_INVALID}.
@@ -45762,7 +45741,7 @@ Return a standard human-readable name for the input robust fitting type.
 If the fitting ID couldn't be recognized, a NULL pointer is returned.
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_linear_1d (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht})
+@deftypefun {gal_data_t *} gal_fit_linear_1d (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, double @code{*redchisq})
 @cindex Weight (in fitting)
 Preform a 1D linear regression fit with a constant term@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#linear-regression-with-a-constant-term}} in the form of @mymath{Y=c_0+c_1X}.
 The input @code{xin} contains the independent variable values and @code{yin} contains the measured variable values for each independent variable.
@@ -45777,7 +45756,8 @@ To remove rows with a NaN/blank, you can use @code{gal_blank_remove_rows} (which
 @cindex Covariance matrix
 @cindex Matrix, covariance
 @cindex Variance-covariance matrix
-The output is a single dataset with a @code{GAL_TYPE_FLOAT64} type with 6 elements:
+The output is a single dataset with a @code{GAL_TYPE_FLOAT64} type with 5 elements listed below.
+The reduced @mymath{\chi^2} of the fit is stored in the space that @code{redchisq} points to.
 @enumerate
 @item
 @mymath{c_0}: the constant in @mymath{Y=c_0+c_1X}.
@@ -45788,13 +45768,11 @@ First element of variance-covariance matrix.
 @item
 Second and third (which are equal) elements of the variance-covariance matrix.
 @item
-Fourth element of the variance-covariance matrix.
-@item
-The reduced @mymath{\chi^2} of the fit.
+Third element of the variance-covariance matrix.
 @end enumerate
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_linear_1d_no_constant (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht})
+@deftypefun {gal_data_t *} gal_fit_linear_1d_no_constant (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, double @code{*redchisq})
 @cindex Weight (in fitting)
 Preform a 1D linear regression fit @emph{without} a constant term@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#linear-regression-without-a-constant-term}}, formally: @mymath{Y=c_1X}.
 The input @code{xin} contains the independent variable values and @code{yin} contains the measured variable values for each independent variable.
@@ -45805,14 +45783,13 @@ For a Gaussian error distribution with standard deviation @mymath{\sigma}, the w
 If any of the values in any of the inputs is blank (NaN in floating point), the final fitted parameters will all be NaN.
 To remove rows with a NaN/blank, you can use @code{gal_blank_remove_rows} (which will remove all rows with a blank values in any of the columns with a single call).
 
-The output is a single dataset with a @code{GAL_TYPE_FLOAT64} type with 3 elements:
+The output is a single dataset with a @code{GAL_TYPE_FLOAT64} type with 2 elements as listed below.
+The reduced @mymath{\chi^2} of the fit is stored in the space that @code{redchisq} points to.
 @enumerate
 @item
 @mymath{c_1}: the multiple in @mymath{Y=c_0+c_1X}.
 @item
 Variance of @mymath{c_1}.
-@item
-The reduced @mymath{\chi^2} of the fit.
 @end enumerate
 @end deftypefun
 
@@ -45826,12 +45803,12 @@ Naturally, both have the same number of elements as @code{xin}.
 Being a list, helps in easily printing the output columns to a table (see @ref{Table input output}).
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_polynomial (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, size_t @code{maxpower}, double @code{*redchisq}, uint8_t @code{matrixid})
+@deftypefun {gal_data_t *} gal_fit_polynomial (gal_data_t @code{*xin}, gal_data_t @code{*yin}, gal_data_t @code{*ywht}, size_t @code{degree}, double @code{*redchisq}, uint8_t @code{matrixid})
 @cindex Polynomial fit
 @cindex Fitting (polynomial)
 Perform a polynomial fit on the independent variable(s), @code{xin} to best fit the values in @code{yin}.
 Currently only ordinary 1D and 2D polynomial models are supported using GSL's multi-parameter regression@footnote{@url{https://www.gnu.org/s/gsl/doc/html/lls.html#multi-parameter-regression}}.
-The degree of the polynomial is determined with the @code{maxpower} argument (which is @mymath{d} in the equation above).
+The degree of the polynomial is determined with the @code{degree} argument (which is @mymath{d} in the equation above).
 The reduced @mymath{\chi^2} of the fit is written in the space that @code{*redchisq} points to.
 
 The available polynomial model/matrix is determined with the @code{matrixid} argument which can accept one of the following models:
@@ -45869,7 +45846,7 @@ A two dimensional variance-covariance matrix with @mymath{(n+1)\times(n+1)} elem
 @end enumerate
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_polynomial_robust (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{maxpower}, uint8_t @code{robustid}, double @code{*redchisq}, uint8_t @code{matrixid})
+@deftypefun {gal_data_t *} gal_fit_polynomial_robust (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{degree}, uint8_t @code{robustid}, double @code{*redchisq}, uint8_t @code{matrixid})
 @cindex Robust Polynomial fit
 Perform a 1D (or 2D) robust polynomial fit, as already described in @code{gal_fit_polynomial}, using GSL's robust linear regression@footnote{@url{https://www.gnu.org/software/gsl/doc/html/lls.html#robust-linear-regression}}.
 See the description there for the details.
@@ -45878,7 +45855,7 @@ The inputs and outputs of this function are almost identical to @code{gal_fit_po
 You can pass any of the @code{GAL_FIT_ROBUST_*} codes defined at the top of this section to this (the names are identical to the names in GSL).
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_polynomial_tikhonov (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{maxpower}, double @code{*redchisq}, uint8_t @code{matrixid}, double @code{tikhonovlambda})
+@deftypefun {gal_data_t *} gal_fit_polynomial_tikhonov (gal_data_t @code{*xin}, gal_data_t @code{*yin}, size_t @code{degree}, double @code{*redchisq}, uint8_t @code{matrixid}, double @code{tikhonovlambda})
 @cindex Tikhonov regularization
 @cindex Regularized Polynomial fit
 Perform a 1D (or 2D) regularized polynomial fit, as already described in @code{gal_fit_polynomial}, but using GSL's Tikhonov regularized regression@footnote{@url{https://www.gnu.org/software/gsl/doc/html/lls.html#regularized-regression}}. See the description there for the details.
@@ -45891,10 +45868,11 @@ If you are interested to contribute to Gnuastro by adding the weights to this fu
 
 @end deftypefun
 
-@deftypefun {gal_data_t *} gal_fit_polynomial_1d_estimate (gal_data_t @code{*fit}, gal_data_t @code{*xin})
+@deftypefun {gal_data_t *} gal_fit_polynomial_estimate (gal_data_t @code{*fit}, gal_data_t @code{*xin}, size_t @code{degree})
 Given a 1D polynomial fit output (@code{fit}), estimate the fit on an arbitrary number of independent variable (horizontal axis, or X, in an X-Y plot) within @code{xin}.
-@code{fit} is assumed to be the output of @code{gal_fit_polynomial_1d}.
-In case you haven't used this function to obtain the constants and covariance matrix, see the description of that function for the expected format of @code{fit}.
+@code{fit} is assumed to be the output of the @code{gal_fit_polynomial*} functions above.
+In case you haven't used these function to obtain the constants and covariance matrix, see the description of @code{gal_fit_polynomial} for the expected format of @code{fit}.
+Like those functions, the number of elements in the @code{xin} determines the dimensionality.
 
 This function returns two columns (as a @ref{List of gal_data_t}): The top node of the list is the estimated values at the input X-axis positions, and the next node is the errors in the estimation.
 Naturally, both have the same number of elements as @code{xin}.
