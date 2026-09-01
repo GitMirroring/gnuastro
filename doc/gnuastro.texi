@@ -11829,7 +11829,7 @@ On the side-menu, in front of ``Y Positive Error'', select the @code{Y-STD} colu
 As you see, the error bars increase for higher Y axis values.
 Since we have error bars in this example (as in any measurement), we can use weighted fitting (which is activated by calling @option{--weight}).
 Note that the weight is not mandatory and all the models can do the fit without weights also.
-But the cost that you pay is that the model's error bars or final @mymath{\chi^2} will not be accurate.
+But the cost that you pay (when not giving a weight) is that the model's error bars or final @mymath{\chi^2} will not be accurate.
 Also, this isn't a linear relation, so we'll use a second degree polynomial (with a maximum power of 2 in the form of @mymath{Y=c_0+c_1X+c_2X^2}):
 
 @example
@@ -11869,10 +11869,10 @@ Assuming the error-bars are realistic, a @mymath{\chi_{red}^2\approx1} shows a g
 This is good for real-world scenarios when you don't know the original values a-priori.
 For more on interpreting @mymath{\chi_{red}^2\approx1}, see Andrae et al. @url{https://arxiv.org/abs/1012.3754,2010}.
 
-When you need to save the parameters in your higher-level script, all that verbose, human-friendly text can be annoying.
-To remove them, use the @option{--quiet} option.
-It will print the parameters, rows of the covariance matrix and @mymath{\chi_{red}^2} on separate lines with nothing extra.
-This allows you to parse the values in any way that you would like.
+When you need to save/use the parameters in your higher-level script, all that verbose, human-friendly text can be annoying.
+To remove them (and only print the numbers), use the @option{--quiet} option.
+It will print the parameters in the first line, rows of the covariance matrix (each row in one line) and @mymath{\chi_{red}^2} on the last line.
+This simplifies automatic parsing of the outputs compared to the above, but an even more robust way is presented later in this section.
 
 @example
 $ astfit noisy.fits -cX,Y --model=polynomial --degree=2 \
@@ -11886,8 +11886,8 @@ $ astfit noisy.fits -cX,Y --model=polynomial --degree=2 \
 
 @cindex Anscombe's quartet
 The comparison of fitted and input values look pretty good, but nothing beats visual inspection.
-Especially if you remember Anscombe's quartet (see @ref{Science and its tools}).
-To see how this fitted model look like, and compare it with the data, let's open the table again:
+Especially if you remember @url{https://en.wikipedia.org/wiki/Anscombe's_quartet,Anscombe's quartet} (that was first mentioned in @ref{Science and its tools}).
+To see what this fitted model look like, especially in comparison it with the data, let's visualize the table again:
 
 @example
 $ astscript-fits-view noisy.fits
@@ -11903,9 +11903,9 @@ To bring the legend in, click on the ``Legend'' item on the bottom-left menu, in
 Another problem is that function's line is hard to see because it is the same color as the points and is very thin.
 To make it more visible, click on the ``Function'' plot and then its ``Style'' tab and change the color and thickness to be more visible.
 We see that second order polynomial falls very nicely over the points.
-But this fit is not perfect: it also has errors (inherited from the measurement errors).
-We need the covariance matrix to estimate the errors on each point, and that can be complex to do by hand.
 
+But this fit is not perfect: it also has errors (inherited from the measurement errors).
+We should use the covariance matrix to estimate the errors on each point, and that can be too complex to do by hand.
 Fortunately Fit has the tools to easily estimate the function at any point and also calculate its corresponding error.
 To access this feature program, you should use the @option{--estimate} option.
 You can either give an independent table file name (with @option{--estimate-hdu} and @option{--estimate-col} to specify the HDU and column in that file), or just @code{self} so it uses the same X axis column that was used in this fit.

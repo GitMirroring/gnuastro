@@ -30,7 +30,6 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdlib.h>
 
-#include <gnuastro/fit.h>
 #include <gnuastro/wcs.h>
 #include <gnuastro/fits.h>
 #include <gnuastro/tile.h>
@@ -47,7 +46,6 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"
 
 #include "ui.h"
-#include "fit.h"
 #include "sky.h"
 #include "contour.h"
 #include "statistics.h"
