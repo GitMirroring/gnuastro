@@ -6453,7 +6453,7 @@ $ asttable sat-center-hist.fits --tail=20
 2474.6128517914    2
 @end example
 
-Since the number of points at the extreme end are increasing (from 1 to 2), We therefore see that a value 2500 is still above the saturation level (the number of pixels has started to increase)!
+Since the number of points at the extreme end are increasing (from 1 to 2), we therefore see that a value 2500 is still above the saturation level (the number of pixels has started to increase)!
 A more reasonable saturation level for this image would be 2200!
 As an exercise, you can try automating this selection with AWK.
 
@@ -6529,9 +6529,9 @@ We thus achieved our aim and did not let the saturated pixels harm the identific
 Looking at the commands above, a question that may occur for you is this: why don't we just let NoiseChisel (and later Segment) convolve their input (@file{sat-fill.fits}) as they normally do?
 The reason is that convolution mixes the values of nearby non-NaN pixels.
 But @file{sat-fill.fits} does not have any NaN values so NoiseChisel (or Segment's) default convolution will mix those artificially-filled (scientifically meaning-less) values with the meaningful non-saturated pixels (which can cause problems in later steps).
-Thefore we first convolved the image that contains NaNs (so only meaningful pixels get mixed with each other), then filled the convolved image with artificial values to produce @file{sat-fill-conv.fits}.
+Therefore we first convolved the image that contains NaNs (so only meaningful pixels get mixed with each other), then filled the convolved image with artificial values to produce @file{sat-fill-conv.fits}.
 We then asked NoiseChisel and Segment to use this as the convolved image and not do any convolution themselves.
-Not all NaN pixels are due to saturation (for example regions of images without any exposures are usually also given a NaN value), so this cannot be done within NoiseChisel or Segment: it is up to the user of NoiseChisel or Segment to pre-process the image based on their paritcular dataset and their usage.
+Not all NaN pixels are due to saturation (for example regions of images without any exposures are usually also given a NaN value), so this cannot be done within NoiseChisel or Segment: it is up to the user of NoiseChisel or Segment to pre-process the image based on their particular dataset and their usage.
 
 If the issue was only clumps (like in a normal deep image processing), this was the end of Segment's special considerations.
 However, in the scenario here, with the very extended wings of the bright stars, it usually happens that background objects become ``clumps'' in the outskirts and will rip the bright star outskirts into separate ``objects''.
@@ -6612,9 +6612,11 @@ $ astarithmetic flat/67510.fits set-i i i 2200 gt \
 $ astconvolve label/67510-masked-sat.fits --kernel=label/kernel.fits \
               --domain=spatial --output=label/67510-masked-conv.fits
 $ rm label/kernel.fits
-$ astarithmetic label/67510-masked-sat.fits 2 2 interpolate-maxofregion \
+$ astarithmetic label/67510-masked-sat.fits \
+                2 2 interpolate-maxofregion \
                 --output=label/67510-fill.fits
-$ astarithmetic label/67510-masked-conv.fits 2 2 interpolate-maxofregion \
+$ astarithmetic label/67510-masked-conv.fits \
+                2 2 interpolate-maxofregion \
                 --output=label/67510-fill-conv.fits
 $ rm label/67510-masked-conv.fits
 $ astnoisechisel label/67510-fill.fits --outliernumngb=100 \
@@ -6780,6 +6782,7 @@ $ mkdir finding-normradii
 $ asttable outer/67510-6-10.fits \
            | while read -r ra dec mag; do \
                astscript-psf-stamp label/67510-seg.fits \
+                    --keeptmp \
                     --mode=wcs \
                     --nocentering \
                     --center=$ra,$dec \
@@ -6787,7 +6790,7 @@ $ asttable outer/67510-6-10.fits \
                     --widthinpix=1000,1000 \
                     --segment=label/67510-seg.fits \
                     --output=finding-normradii/$counter.fits \
-                    --tmpdir=finding-normradii/star-$counter --keeptmp; \
+                    --tmpdir=finding-normradii/star-$counter; \
                counter=$((counter+1)); \
              done
 @end example
@@ -7011,7 +7014,7 @@ If you further zoom-out, you will see that the shallow slope at the larger radii
 This is a @emph{very important} point: this clearly shows that the inner profile is too noisy at these radii.
 @item
 Click-and-hold your mouse to see the inner parts of the two profiles (in the range 0 to 80).
-You will see that for radii less than 40 pixels, the inner profile (blue) points loose their scatter (and thus have a good signal-to-noise ratio).
+You will see that for radii less than 40 pixels, the inner profile (blue) points lose their scatter (and thus have a good signal-to-noise ratio).
 @item
 Zoom-in to the plot and follow the profiles until smaller radii (for example, 10 pixels).
 You see that for each radius, the inner (blue) points are consistently above the outer (red) points.
@@ -10556,7 +10559,7 @@ In other words, M94 will be present in all the exposures while doing the calibra
 Even in not-too-deep observations, we already see a large ring around this galaxy.
 When we do a low surface brightness optimized reduction, there is a good chance that the size of the galaxy is much larger than that ring.
 This very extended structure will make it hard to do the calibrations on very accurate scales.
-Accurate calibration is necessary if you do not want to loose the faint photons that have been recorded in your exposures.
+Accurate calibration is necessary if you do not want to lose the faint photons that have been recorded in your exposures.
 
 @cartouche
 @noindent
@@ -15478,7 +15481,7 @@ It will take the standard input (from the pipe in this scenario) and put it as a
 In other words, it is good for programs that don't take input from standard input (@command{printf} in this case; but also includes others like @command{cp}, @command{rm}, or @command{echo}).} (extended arguments) which puts the two numbers it gets from the pipe, as arguments for @command{printf} (formatted print; because @command{printf} doesn't take input from pipes).
 @item
 Within the @command{printf} call, we write the values after putting a variable name and equal-sign, and in between them we put a @key{;} (as if it was a shell command).
-The @code{%s} tells @command{printf} to print each input as a string (not to interpret it as a number and loose precision).
+The @code{%s} tells @command{printf} to print each input as a string (not to interpret it as a number and lose precision).
 Here is the output of this phase:
 
 @example
@@ -16426,7 +16429,7 @@ In the FITS ASCII table standard, each row is defined as a fixed number of chara
 All columns start at given character positions and have a fixed width (number of characters).
 
 Numbers in a FITS ASCII table are printed into ASCII format, they are not in binary (that the CPU uses).
-Hence, they can take a larger space in memory, loose their precision, and take longer to read into memory.
+Hence, they can take a larger space in memory, lose their precision, and take longer to read into memory.
 If you are dealing with integer type columns (see @ref{Numeric data types}), another issue with FITS ASCII tables is that the type information for the column will be lost (there is only one integer type in FITS ASCII tables).
 One problem with the binary format on the other hand is that it is not portable (different CPUs/compilers) have different standards for translating the zeros and ones.
 But since ASCII characters are defined on a byte and are well recognized, they are better for portability on those various systems.
@@ -19372,7 +19375,7 @@ For example see @url{https://commons.wikimedia.org/wiki/File:Float_example.svg, 
 @cindex Decimal digits
 @cindex Precision of floats
 In IEEE 754, around zero, the base-2 and base-10 representations approximately match.
-However, as we go away from 0, you will loose precision.
+However, as we go away from 0, you will lose precision.
 The important concept in understanding the precision of floating point numbers is ``decimal digits'', or the number of digits in the number, independent of where the decimal point is.
 For example @mymath{1.23} has three decimal digits and @mymath{4.5678\times10^9} has 5 decimal digits.
 According to IEEE 754@footnote{@url{https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats}}, 32-bit and 64-bit floating point numbers can accurately (statistically) represent a floating point with 7.22 and 15.95 decimal digits respectively.
@@ -20758,7 +20761,7 @@ $ echo 123.45678 | asttable -Y
 @cartouche
 @noindent
 @strong{Can result in loss of information}: be very careful with this option!
-It can loose precision or generally the full value if the value is not within a "good" range like this example.
+It can lose precision or generally the full value if the value is not within a "good" range like this example.
 Such cases are the reason that this is not the default format of plain-text outputs.
 
 @example
@@ -23126,7 +23129,7 @@ $ astarithmetic 3.37 1.13 / 4800 60 / sblim-diff 26.5 + -q \
 Therefore, judging purely based on exposed area and time (too idealistic!), the LSST will reach a @mymath{3\sigma} surface brightness limit of 30.07 over 100 arcsec@mymath{^2}.
 
 A simple note for the second command: this trick is only useful for operators like this that are sure to produce numbers that are larger than @mymath{10^{-2}}.
-You will loose precision for values smaller than that and using the default scientific notation is best.
+You will lose precision for values smaller than that and using the default scientific notation is best.
 @end table
 
 @node Date conversion, Distance conversion, Flux conversion, Arithmetic operators
@@ -23272,7 +23275,7 @@ $ astarithmetic 59553.12349 rjd-to-millisec millisec-to-date
 
 @item date-to-millisec
 Return the Unix time (an integer, counting milli-seconds) of the given date string (in the format above).
-The returned value is not a floating point type (in units of seconds) because for large numbers, the floating point data types loose single-digit precision systematically (which is important here).
+The returned value is not a floating point type (in units of seconds) because for large numbers, the floating point data types lose single-digit precision systematically (which is important here).
 This operator behaves similarly to @code{date-to-sec}; see the description of that operator for an example.
 
 @item jd-to-sec
@@ -26857,7 +26860,7 @@ Will be much faster when the image and kernel are both large.
 
 @noindent
 As a general rule of thumb, when working on an image of modeled profiles use the frequency domain and when working on an image of real (observed) objects use the spatial domain (corrected for the edges).
-The reason is that if you apply a frequency domain convolution to a real image, you are going to loose information on the edges and generally you do not want large kernels.
+The reason is that if you apply a frequency domain convolution to a real image, you are going to lose information on the edges and generally you do not want large kernels.
 But when you have made the profiles in the image yourself, you can just make a larger input image and crop the central parts to completely remove the edge effect, see @ref{If convolving afterwards}.
 Also due to oversampling, both the kernels and the images can become very large and the speed boost of frequency domain convolution will significantly improve the processing time, see @ref{Oversampling}.
 
@@ -27001,7 +27004,7 @@ The domain to use for the convolution.
 The acceptable values are `@code{spatial}' and `@code{frequency}', corresponding to the respective domain.
 
 For large images, the frequency domain process will be more efficient than convolving in the spatial domain.
-However, the edges of the image will loose some flux (see @ref{Edges in the spatial domain}) and the image must not contain any blank pixels, see @ref{Spatial vs. Frequency domain}.
+However, the edges of the image will lose some flux (see @ref{Edges in the spatial domain}) and the image must not contain any blank pixels, see @ref{Spatial vs. Frequency domain}.
 
 @item --checkfreqsteps
 With this option a file with the initial name of the output file will be created that is suffixed with @file{_freqsteps.fits}, all the steps done to arrive at the final convolved image are saved as extensions in this file.
@@ -34099,7 +34102,7 @@ This is also, generally speaking, what happens in practice with the photons on t
 The number of random points can be set with @option{--numrandom}.
 
 Unfortunately, repeating this Monte Carlo process would be extremely time and CPU consuming if it is to be applied to every pixel.
-In order to not loose too much accuracy, in MakeProfiles, the profile is built using both methods explained below.
+In order to not lose too much accuracy, in MakeProfiles, the profile is built using both methods explained below.
 The building of the profile begins from its central pixel and continues (radially) outwards.
 Monte Carlo integration is first applied (which yields @mymath{F_r}), then the central pixel value (@mymath{F_c}) is calculated on the same pixel.
 If the fractional difference (@mymath{|F_r-F_c|/F_r}) is lower than a given tolerance level (specified with @option{--tolerance}) MakeProfiles will stop using Monte Carlo integration and only use the central pixel value.
