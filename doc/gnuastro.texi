@@ -7386,7 +7386,7 @@ To solve such inconvenience, this script also has an option to not make the subt
 For doing that, it is necessary to run the script with the option @option{--modelonly}.
 We encourage the reader to obtain such scattered light field model.
 In some scenarios it could be interesting having such way of correcting the PSF.
-For example, if there are many faint stars that can be modeled at the same time because their flux do not affect each other.
+For example, if there are many faint stars that can be modeled at the same time because their flux does not affect each other.
 In such situation, the task could be easily parallelized without having to wait to model the brighter stars before the fainter ones.
 At the end, once all stars have been modeled, a simple Arithmetic command could be used to sum the different modeled-PSF stamps to obtain the entire scattered light field.
 
@@ -7406,10 +7406,10 @@ This is due to the non-accurate positioning: most probably this happens because 
 Note also that during this process we assumed that the PSF does not vary with the CCD position or any other parameter.
 In other words, we are obtaining an averaged PSF model from a few star stamps that are naturally different, and this also explains the residuals on each subtracted star.
 
-We let as an interesting exercise the modeling and subtraction of other stars, for example, the non saturated stars of the image.
+We leave the modeling and subtraction of other stars as an interesting exercise, for example, the non-saturated stars of the image.
 By doing this, you will notice that in the core region the residuals are different compared to the residuals of brighter stars that we have obtained.
 
-In general, in this tutorial we have showed how to deal with the most important challenges for constructing an extended PSF.
+In general, in this tutorial we have shown how to deal with the most important challenges for constructing an extended PSF.
 Each image or dataset will have its own particularities that you will have to take into account when constructing the PSF.
 
 
@@ -7538,7 +7538,7 @@ As described above, the catalog of profiles to build will be a table (multiple c
 @end example
 
 This contains all the ``data'' to build the profile, and you can easily pass it to Gnuastro's MakeProfiles: since Sufi already knows the columns and expected values very good, he has placed the information in the proper columns.
-However, when the student sees this, he just sees a mumble-jumble of numbers!
+However, when the student sees this, he just sees a mumbo-jumbo of numbers!
 Generally, Sufi explains to the student that even if you know the number positions and values very nicely today, in a couple of months you will forget!
 It will then be very hard for you to interpret the numbers properly.
 So you should never use naked data (or data without any extra information).
@@ -7575,7 +7575,7 @@ Before continuing, Sufi reminded the student that even though metadata may not b
 Therefore, a good scientist should never forget to keep metadata with any data that they create, use or archive.
 
 To start simulating the nebula, Sufi creates a directory named @file{simulationtest} in his home directory.
-Note that the @command{pwd} command will print the ``parent working directory'' of the current directory (its a good way to confirm/check your current location in the full file system: it always starts from the root, or `@code{/}').
+Note that the @command{pwd} command will print the ``parent working directory'' of the current directory (it's a good way to confirm/check your current location in the full file system: it always starts from the root, or `@code{/}').
 
 @example
 $ mkdir ~/simulationtest
@@ -7659,7 +7659,7 @@ $ rm test.txt
 @end example
 
 To put the catalog of profile data and their metadata (that was described above) into a file, Sufi uses the commands below.
-While Sufi was writing these commands, the student complained that ``I could have done in this in a text editor''.
+While Sufi was writing these commands, the student complained that ``I could have done this in a text editor''.
 Sufi reminded the student that it is indeed possible; but it requires manual intervention.
 The advantage of a solution like below is that it can be automated (for example, adding more rows; for more profiles in the final image).
 
@@ -7954,7 +7954,7 @@ The student was also happy to hear that he will not need to make it executable a
 The student was really excited, since now, through simple shell scripting, he could really speed up his work and run any command in any fashion he likes allowing him to be much more creative in his works.
 Until now he was using the graphical user interface which does not have such a facility and doing repetitive things on it was really frustrating and some times he would make mistakes.
 So he left to go and try scripting on his own computer.
-He later reminded Sufi that the second tutorial in the Gnuastro book as more complex commands in data analysis, and a more advanced introduction to scripting (see @ref{General program usage tutorial}).
+He later reminded Sufi that the first tutorial in the Gnuastro book has more complex commands in data analysis, and a more advanced introduction to scripting (see @ref{General program usage tutorial}).
 
 Sufi could now get back to his own work and see if the simulated nebula which resembled the one in the Andromeda constellation could be detected or not.
 Although it was extremely faint@footnote{The brightness of a diffuse object is added over all its pixels to give its final magnitude, see @ref{Brightness flux magnitude}.
@@ -8102,7 +8102,7 @@ This line shows the wavelength of the displayed image in the main window over th
 @cindex H-alpha
 @item
 The strongest emission line in this galaxy appears to be around 8500 Angstroms or @mymath{8.5\times10^{-7}} meters.
-From the position of the @url{https://en.wikipedia.org/wiki/Balmer_jump, Balmer break} (blue-ward of 5000 Angstroms for this galaxy), the strong seems to be H-alpha.
+From the position of the @url{https://en.wikipedia.org/wiki/Balmer_jump, Balmer break} (blue-ward of 5000 Angstroms for this galaxy), the strongest line seems to be H-alpha.
 @item
 To confirm that this is H-alpha, you can select the ``Edit'' menu in the spectrum window and select ``Zoom''.
 @item
@@ -8131,7 +8131,7 @@ H-alpha shows the un-obscured star formation of the galaxy!
 
 @cartouche
 @noindent
-@strong{Automaticly going to next slice:} When you want to get a general feeling of the cube, pressing the ``Next'' button many times is annoying and slow.
+@strong{Automatically going to next slice:} When you want to get a general feeling of the cube, pressing the ``Next'' button many times is annoying and slow.
 To automatically shift between the slices, you can press the ``Play'' button in the DS9 ``Cube'' window.
 You can adjust the time it stays on each slice by clicking on the ``Interval'' menu and selecting lower values.
 @end cartouche
@@ -8194,7 +8194,7 @@ $ astcosmiccal --obsline=H-alpha,8565.93 --listlinesatz | grep O-II-
 9568.22             O-II-7330
 @end example
 
-Please stop here and spend some time on doing the exercise above on other galaxies in the this cube to get a feeling of types of galaxy spectral features (and later on the full/large cube).
+Please stop here and spend some time on doing the exercise above on other galaxies in this cube to get a feeling of types of galaxy spectral features (and later on the full/large cube).
 You will notice that only star-forming galaxies have such strong emission lines!
 If you enjoy it, go get the full non-cropped cube and investigate the spectra, redshifts and emission/absorption lines of many more galaxies.
 
@@ -8231,7 +8231,7 @@ As a result, the Poisson noise also increases significantly (see @ref{Photon cou
 During the data reduction, the excess background flux of each slice is removed as the Sky (or the mean of undetected pixels, see @ref{Sky value}).
 However, the increased Poisson noise (scatter of pixel values) remains!
 
-To see spectrum of the sky emission lines, simply put a region somewhere in the @code{STAT} cube and generate its spectrum (as we did in @ref{Viewing spectra and redshifted lines}).
+To see the spectrum of the sky emission lines, simply put a region somewhere in the @code{STAT} cube and generate its spectrum (as we did in @ref{Viewing spectra and redshifted lines}).
 You will clearly see the comb-like shape of atmospheric emission lines and can use this to know where to expect them.
 
 
@@ -8274,7 +8274,7 @@ With the second command below, let's view the input @emph{and} continuum-subtrac
 $ astarithmetic a370-crop.fits set-i --output=no-continuum.fits \
                 i 3 0.2 1 1 100 i filter-sigclip-median -
 
-$ astscript-fits-view a370-crop.fits no-continuum.fits -g1 \
+$ astscript-fits-view a370-crop.fits no-continuum.fits -h1 \
                       --ds9scale="limits -5 20"
 @end example
 
