@@ -42401,8 +42401,9 @@ For more, see the description of @code{COMMIT} in @ref{Output FITS files}.
 Reverse the input list of keywords.
 @end deftypefun
 
-@deftypefun void gal_fits_key_list_append(gal_fits_list_key_t @code{*list}, gal_fits_list_key_t @code{*toappend})
+@deftypefun void gal_fits_key_list_append(gal_fits_list_key_t @code{**list}, gal_fits_list_key_t @code{*toappend})
 Append the second list to the first: set the first node of @code{toappend} as the @code{next} node of the last element of @code{list}.
+In case @code{*list==NULL}, this function will just place @code{toappend} at the start of the list.
 @end deftypefun
 
 @deftypefun void gal_fits_key_write_title_in_ptr (char @code{*title}, fitsfile @code{*fptr})

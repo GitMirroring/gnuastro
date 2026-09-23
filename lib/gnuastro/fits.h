@@ -251,7 +251,7 @@ void
 gal_fits_key_list_reverse(gal_fits_list_key_t **list);
 
 void
-gal_fits_key_list_append(gal_fits_list_key_t *list,
+gal_fits_key_list_append(gal_fits_list_key_t **list,
                          gal_fits_list_key_t *toappend);
 
 void

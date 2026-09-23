@@ -159,7 +159,7 @@ fit_params_to_keys(struct fitparams *p, gal_data_t *fit, double redchisq)
 
   /* Append this list to the end of the configuration keywords and then
      write it. */
-  gal_fits_key_list_append(cp->ckeys, out);
+  gal_fits_key_list_append(&cp->ckeys, out);
   gal_fits_key_write(cp->ckeys, cp->output, "0", "NONE", 1, 1);
 }
 
