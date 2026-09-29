@@ -427,9 +427,9 @@ ui_sanity_file_read(struct fitparams *p, char *name, char *hdu,
                     gal_list_str_t *columns, uint8_t isfits,
                     uint8_t isimg)
 {
-  int nwcs;
   gal_data_t *out;
   size_t ncols, *dsize;
+  int nwcs, isin=p->inputname==name;
   struct gal_options_common_params *cp=&p->cp;
 
   /* Read the given file. In the following two scenarios, we need to
@@ -439,7 +439,7 @@ ui_sanity_file_read(struct fitparams *p, char *name, char *hdu,
            comparison with the one in 'p').
          - If the stdin 'lines' was given.
        - The estimate dataset when it is a table ('isimg==0'). */
-  if( p->inputname==name || lines || isimg==0 )
+  if( isin || lines || isimg==0 )
     {
       out = ( isimg
               ? gal_array_read(name, hdu, lines,
@@ -490,8 +490,10 @@ ui_sanity_file_read(struct fitparams *p, char *name, char *hdu,
           "columns in a different way, please contact us at '%s'",
           PACKAGE_BUGREPORT);
 
-  /* In case the user's input does not have metadata, add them here. */
-  if(out->ndim==1)
+  /* When the input is in table format, check the number of input columns
+     and standardize the column metadata. Note that this check is not
+     necessary when the file given to this function was for an estimate. */
+  if( isin && out->ndim==1)
     {
       ncols=gal_list_data_number(out);
       switch(ncols)
@@ -511,8 +513,9 @@ ui_sanity_file_read(struct fitparams *p, char *name, char *hdu,
           gal_checkset_allocate_copy("Y", &out->next->next->name);
           break;
         default:
-          error(EXIT_FAILURE, 0, "there can only be 2 or 3 input columns "
-                "to read, but there are %zu columns", ncols);
+          error(EXIT_FAILURE, 0, "%s: the input for fitting has to have "
+                "2 or 3 input columns, but %zu column(s) were read",
+                name, ncols);
         }
     }
 
