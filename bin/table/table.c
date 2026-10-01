@@ -1191,7 +1191,7 @@ table_colmetadata(struct tableparams *p)
           /* We have been given a string, so find the first column that has
              the same name. */
           for(col=p->table; col!=NULL; col=col->next)
-            if(!strcasecmp(col->name, meta->name)) break;
+            if(col->name && !strcasecmp(col->name, meta->name)) break;
         }
       /* The column specifier is a number. */
       else
@@ -1212,7 +1212,10 @@ table_colmetadata(struct tableparams *p)
               "'--colmetadata'). Columns can either be specified by "
               "their position in the output table (integer counter, "
               "starting from 1), or their name (the first column "
-              "found with the given name will be used)", meta->name);
+              "found with the given name will be used). You can see "
+              "the list of columns in your table by giving it to "
+              "'asttable' along with '--information' (or '-i')",
+              meta->name);
 
       /* The matching column is found and we know that at least one value is
          already given (otherwise 'gal_options_parse_name_and_values' would
