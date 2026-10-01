@@ -31,7 +31,41 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
    This macro will be used in 'gal_options_print_citation' function of
    'lib/options.c' (from the top Gnuastro source code directory). */
 
-#define PROGRAM_BIBTEX ""
+#define PROGRAM_BIBTEX ""                                               \
+  "Paper describing '*-maskfilled' or 'collapse-*clip-fill-*' "         \
+  "operators\n"                                                         \
+  "-----------------------------------------------------------"         \
+  "---------\n"                                                         \
+  "@ARTICLE{2026RNAAS..10..271A,\n"                                     \
+  "       author = {{Akhlaghi}, Mohammad "                              \
+                    "and {Vives-Arias}, H{\'e}ctor "                    \
+                    "and {Renard}, Pablo "                              \
+                    "and {V{\'a}zquez Rami{\'o}}, H{\'e}ctor "          \
+                    "and {Infante-Sainz}, Ra{\'u}l},\n"                 \
+  "        title = \"{Gnuastro: Removing Extended/Diffuse Outliers "    \
+                   "while Coadding}\",\n"                               \
+  "      journal = {Research Notes of the American Astronomical "       \
+                   "Society},\n"                                        \
+  "     keywords = {Astronomy data reduction, "                         \
+                   "Astronomy image processing, "                       \
+                   "Astronomy software, 1861, 2306, 1855, "             \
+                   "Instrumentation and Methods for Astrophysics},\n"   \
+  "         year = 2026,\n"                                             \
+  "        month = sep,\n"                                              \
+  "       volume = {10},\n"                                             \
+  "       number = {9},\n"                                              \
+  "          eid = {271},\n"                                            \
+  "        pages = {271},\n"                                            \
+  "          doi = {10.3847/2515-5172/aea78e},\n"                       \
+  "archivePrefix = {arXiv},\n"                                          \
+  "       eprint = {2609.15529},\n"                                     \
+  " primaryClass = {astro-ph.IM},\n"                                    \
+  "       adsurl = {https://ui.adsabs.harvard.edu/abs/2026RNAAS..10..271A},\n" \
+  "      adsnote = {Provided by the SAO/NASA Astrophysics Data System}\n" \
+  "}"
+
+
+
 
 #define PROGRAM_AUTHORS "Mohammad Akhlaghi"
 

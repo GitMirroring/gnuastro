@@ -5,6 +5,14 @@ See the end of the file for license conditions.
 
 * Noteworthy changes in release X.XX (library XX.X.X) (YYYY-MM-DD)
 ** New publications
+
+  - https://scixplorer.org/abs/2026RNAAS..10..271A by Akhlaghi et al. that
+    describes the *-maskfilled coadding and collapsing operators of
+    Arithmetic. As the image in this research note shows, these are very
+    useful in removing diffuse outliers that are often present in
+    individual exposures and can remain after coadding; even when you use
+    sigma or MAD clipping.
+
 ** New features
 
 *** Configuration
@@ -323,6 +331,10 @@ See the end of the file for license conditions.
     fails. Reported by reported by Mariano Moles, and fixed with the
     followup of Raul Infante Sainz and ultimately fixed with technique
     suggested by Ivan Brossard (of CDS/VizieR).
+
+  - bug #68732: Table crashes with segmentation fault when '--colmetadata'
+    is given a name (not column number), but the input column(s) do not
+    have any name. Found and fixed by Sepideh Eskandarlou.
 
 
 

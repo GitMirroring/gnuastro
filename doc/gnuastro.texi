@@ -11045,6 +11045,10 @@ This tutorial reviews the effect of outliers and different available ways to rem
 In particular, we will be looking at coadding of multiple datasets and collapsing one dataset along one of its dimensions.
 But the concepts and methods are applicable to any analysis that is affected by outliers.
 
+For a short summary of the results and a demonstrative figure, see Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026}.
+Do not forget to cite this paper when the analysis here is useful in your work.
+As in all Gnuastro programs, you can get the instructions of how to cite these operators with the @option{--cite} option (see @ref{Citing Gnuastro}).
+
 @menu
 * Building inputs and analysis without clipping::  Building a dataset for demonstration below.
 * Sigma clipping::              Standard deviation (STD) clipping.
@@ -11059,9 +11063,9 @@ As described in @ref{Clipping outliers}, the goal of this tutorial is to demonst
 This is best done on an actual dataset (rather than pure theory).
 In this section we will build nine noisy images with the script below, such that one of the images has a circle in the middle.
 We will then coadd the 9 images into one final image based on different statistical measurements: the mean, median, standard deviation (STD), median absolute deviation (MAD) and number of inputs used in each pixel.
-We will then analyze the resulting coadds to demonstrate the problem with outliers.
+We will then analyze the resulting coadds to demonstrate the problem with outliers, similar to (but much more elaborte here) what was shown in Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026}).
 
-Put the script below into a plain-text file (assuming it is called @file{script.sh}), and run it with @command{bash ./script.sh}.
+To generate the input, put the script below into a plain-text file (assuming it is called @file{script.sh}), and run it with @command{bash ./script.sh}.
 For more on writing and good practices in shell scripts, see @ref{Writing scripts to automate the steps}.
 The last command of the script above calls DS9 to visualize the five output coadded images mentioned above.
 
@@ -11241,8 +11245,8 @@ See Figure 15 in Akhlaghi and Ichikawa, @url{https://arxiv.org/abs/1505.01664,20
 In such a case, when you plot the histogram (see @ref{Histogram and Cumulative Frequency Plot}) of the distribution, the pixels relating to those objects will be clearly separate from pixels that belong to parts of the image that did not have any signal (were just noise).
 In the cumulative frequency plot, after a steady rise (due to the noise), you would observe a long flat region were for a certain range of the dynamic range (horizontal axis), there is no increase in the index (vertical axis).
 
-In the previous section (@ref{Building inputs and analysis without clipping}) we created one such dataset (@file{in-9.fits}).
-With the command below, let's have a look at its histogram and cumulative frequency plot (in simple ASCII format; we are decreasing the default number of bins with @option{--numasciibins} to show them easily within the width of the print version of this manual; feel free to change this).
+In the previous section (@ref{Building inputs and analysis without clipping}) we created one such dataset (@file{in-9.fits}), also see the corresponding figure in Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026}.
+With the command below, let's have a look at the histogram and cumulative frequency plot of this image that has an outlier (in simple ASCII format; we are decreasing the default number of bins with @option{--numasciibins} to show them easily within the width of the print version of this manual; feel free to change this).
 
 @example
 $ aststatistics build/in-9.fits --asciihist --asciicfp \
@@ -11532,7 +11536,8 @@ $ aststatistics build/in-1.fits --std --mad | awk '@{print $2/$1@}'
 @end example
 
 The algorithm of MAD-clipping is identical to @mymath{\sigma}-clipping, except that instead of @mymath{\sigma}, it uses the median absolute deviation (also see the next paragraph).
-Since the median absolute deviation is smaller than the standard deviation by roughly 0.67, if you regularly use @mymath{3\sigma} there, you should use @mymath{(3/0.67)\rm{MAD}=(4.48)\rm{MAD}} when doing MAD-clipping.
+The median absolute deviation is smaller than the standard deviation by roughly 0.67.
+Therefore, if you regularly use @mymath{3\sigma} there, and your distributions are approximately Gaussian, you can use @mymath{(3/0.67)\rm{MAD}=(4.48)\rm{MAD}} when doing MAD-clipping.
 The usual tolerance should also be changed due to the differing (discrete) nature of the median absolute deviation (based on sorted differences) in relation to the standard deviation (based on the sum of squared differences; which is more smooth).
 A tolerance of 0.01 is better suited to the termination criteria of MAD-clipping.
 
@@ -11594,7 +11599,7 @@ $ for m in std mean median mad; do \
 $ astscript-fits-view $imgs --ds9extra="-tile grid layout 3 4"
 @end example
 
-The first column shows the non-clipped coadds for each statistic (generated in @ref{Building inputs and analysis without clipping}), the second column are @mymath{\sigma}-clipped coadds (generated in @ref{Sigma clipping}), and the third column shows the newly created MAD-clipped coadds.
+Similar to the figure in Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026}, the first column shows the non-clipped coadds for each statistic (generated in @ref{Building inputs and analysis without clipping}), the second column are @mymath{\sigma}-clipped coadds (generated in @ref{Sigma clipping}), and the third column shows the newly created MAD-clipped coadds.
 We see that the circle is much more weaker in the MAD-clipped coadds than in the @mymath{\sigma}-clipped coadds in all rows (different statistics).
 Let's confirm this with the numbers images of the two clipping methods:
 
@@ -11662,7 +11667,7 @@ Examples of this were created and thoroughly discussed in previous sections with
 @mymath{\sigma}-clipping had good purity (very few non-outliers were clipped) but at the cost of bad completeness (many outliers remained).
 MAD-clipping was the opposite: it masked many outliers (good completeness), but at the cost of clipping many pixels that shouldn't have been clipped (bad purity).
 
-Fortunately there is a good way to benefit from the best of both worlds.
+Fortunately, as described in Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026}, there is a good way to benefit from the best of both worlds.
 Recall that in the numbers image of the MAD-clipping output, the wrongly clipped pixels were randomly distributed are barely connected.
 On the other hand, those that covered the circle were nicely connected, with unclipped pixels scattered within it.
 Therefore, using their spatial distribution, we can improve the completeness (not have any ``holes'' within the masked circle) and purity (remove the false clips).
@@ -23564,7 +23569,7 @@ astarithmetic lab.fits set-l \
 
 @item madclip-maskfilled
 @item sigclip-maskfilled
-Mask (set to blank/NaN) all the outlying elements (defined by @mymath{\sigma} or MAD clipping) in the inputs and put all the inputs back on the stack.
+Mask (set to blank/NaN) all the outlying elements (defined by @mymath{\sigma} or MAD clipping) in the inputs and put all the inputs back on the stack (see the figure in Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026}).
 The first popped operand is the termination criteria of the clipping, the second popped operand is the multiple of @mymath{\sigma} or MAD and the third is the number of input datasets that will be popped for the actual operation.
 If you are not yet familiar with @mymath{\sigma} or MAD clipping, it is recommended to read this tutorial: @ref{Clipping outliers}.
 
@@ -23646,8 +23651,9 @@ Furthermore, within Arithmetic, ``Stack'' is already reserved for the stack of o
 @cartouche
 @noindent
 @strong{Masking outliers (before coadding):} Outliers in one of the inputs (for example star ghosts, satellite trails, or cosmic rays, can leave their imprints in the final coadd.
-One good way to remove them is the @code{madclip-maskfilled} operator that can be called before the operators here.
-It is described in @ref{Statistical operators}; and a full tutorial on understanding outliers and how best to remove them is available in @ref{Clipping outliers}.
+As shown in Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026}, one good way to remove them is the @code{madclip-maskfilled} operator that can be called before the operators here.
+It is described in @ref{Statistical operators}.
+A full tutorial on understanding outliers and how best to remove them is available in @ref{Clipping outliers}.
 @end cartouche
 
 @cartouche
@@ -23736,7 +23742,7 @@ The third popped operand (@command{3}) is number of datasets that should be coad
 Two other side-notes should be mentioned here:
 @itemize
 @item
-As mentioned above, before this operator, we are masking the filled MAD-clipped elements with @code{madclip-maskfilled}.
+As shown in Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026} and mentioned above, before this operator, we are masking the filled MAD-clipped elements with @code{madclip-maskfilled}.
 As described in @ref{Clipping outliers}, this is very important for removing the types of outliers that we have in astronomical imaging.
 @item
 We are using @option{--writeall} because this operator places two operands on the coadd: your desired statistics, and the number of inputs that were used in it (after clipping).
@@ -24408,7 +24414,7 @@ Similar to @option{collapse-sum}, but the returned dataset will be the desired s
 Collapse the input dataset (fourth popped operand) along the FITS dimension given as the first popped operand by calculating the desired statistic after median absolute deviation (MAD) filled re-clipping.
 The MAD-clipping parameters (namely, the multiple of sigma and termination criteria) are read as the third and second popped operands respectively.
 
-This is the most robust method to reject outliers; for more on filled re-clipping and its advantages, see @ref{Contiguous outliers}.
+This is the most robust method to reject outliers; for more on filled re-clipping and its advantages, see Akhlaghi et al. @url{https://arxiv.org/abs/2609.15529,2026} and @ref{Contiguous outliers}.
 For a more general tutorial on rejecting outliers, see @ref{Clipping outliers}.
 If you have not done this tutorial yet, we recommend you to take an hour or so and go through that tutorial for optimal understanding and results.
 
