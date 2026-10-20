@@ -23143,17 +23143,17 @@ You will lose precision for values smaller than that and using the default scien
 @cindex Julian calendar
 @cindex Gregorian calendar
 @cindex Calendar: Gregorian
-The Gregorian calendar (a modification of the Julian calendar formalized by the Vatican@footnote{For more on the Gregorian calendar and its history, see @url{https://en.wikipedia.org/wiki/Gregorian_calendar}} in the year 1582, and in use by most countries today) carries a lot of historical burden with it.
+The Gregorian calendar (a modification of the Julian calendar formalized by the Vatican@footnote{For more on the Gregorian calendar and its history, see @url{https://en.wikipedia.org/wiki/Gregorian_calendar}} in the year 1582, and in use by most countries today) carries a lot of historical burden/legacy with it.
 For example the length, number or name of months.
-It has therefore needed corrections/additions over the millennia to preserve the historical heritage, while remaining relevant.
-However, this heritage, makes it hard for doing science: for example the number of days between February 15th to March 15th is differnet from year to year (due to leap years) and is not the same as the number of days between August 15th and September 15h.
+It has therefore needed further corrections to preserve the historical heritage, while remaining relevant.
+On the other hand, this heritage, makes it hard for doing science: for example the number of days between February 15th to March 15th is not the same as the number of days between August 15th and September 15th and is differnet from year to year (due to leap years).
 
 @cindex Julian day
 @cindex Joseph Scaliger
 @cindex Scaliger, Joseph
 To help in a more objective comparison of different calendars Joseph Scaliger (1540 -- 1609@footnote{Just as an anecdote; 1609 is the year that Galileo (1564 -- 1642 A.D.) demonstrated his newly constructed telescope and observed the moon with it.} A.D.) defined in the Julian day@footnote{For more on the Julian day, see @url{https://en.wikipedia.org/wiki/Julian_day}} in 1583 (just one year after the Gregorian calendar was adopted).
 The Julian day is a simple counter of days (with no concept of months or years), so the example problems mentioned above become non-existant!
-He chose day 1 of this new system to be based on the 28-year and 19-year solar and lunar cycles of the Julian calendar, as well as the 15 year indiction (Roman tax assessment) cycles.
+He chose day 1 of this new system to be based on the 28-year and 19-year solar and lunar cycles of the Julian calendar, as well as the 15 year indiction@footnote{For more on the Indiction cycles, see @url{https://en.wikipedia.org/wiki/Indiction}} cycles of tax assessment (from ancient Roman times).
 The previous day that all three of these cycles coincided would be within the year 4713 B.C of our current improved Gregorian calendar (you can check with the command @command{astarithmetic 1 jd-to-date}).
 Scalinger selected 12:00 (noon) of January 1st in that year (according to his Julian calendar, not our current calendar) as the starting moment of the first Julian day.
 
@@ -23162,38 +23162,40 @@ In particular, hours, minutes and seconds that are on the basis of 24, 60 and 60
 When treating the Julian day as a floating point, these smaller units simply become decimal fractions of a day.
 For example the Julian day of 2026--04--02 at 17:14:54 is 2461133.218681: the Julian date has many significant digits.
 
-All the significant digits of the floating point in Julian date cause an important issue: floating point precision has non-linear systematics.
-These systematics which become worse as the number of significant digits increase.
+All the significant digits of the floating point in Julian date cause an important issue when doing arithmetic: floating point precision has non-linear systematics.
+These systematics become worse as the number of significant digits increase.
 To decrease these systematics, there are variations of the Julian date that shift the starting date based on different needs.
-For example the Modified Julian Date (MJD) starts at 00:00:00 of 1858--11--16, and the same date above translates to 61132.718681 (two digits less than the JD).
+For example the Modified Julian Date (MJD) starts at 00:00:00 of 1858--11--16, and the example date of the previous paragraph translates to 61132.718681 in MJD (two digits less than the JD).
 The operators below include all the major variants of the Julian day.
 
 @cindex Unix epoch time
 @cindex Time, Unix epoch
 @cindex Epoch, Unix time
 By the second half of the 20th centry (especially with the advent of computers and very high-speed processing), the Julian date's one-day resolution was starting to make problems.
-To help in the design of their new Unix operating system (first released in November 1971), its creators decided to count seconds, and remove the concept of days from their system.
+To help in the design of their new Unix operating system (first released in November 1971), its creators decided to remove the concept of days from their system and only count seconds.
 They chose the starting second of their counting/calendar system as 00:00:00 of January 1st, 1970 based on their needs.
 This system became known as the Unix time.
 On modern systems, the Unix time is stored as a @emph{signed} 64-bit integer, so it does not have the systematic issues of floating points.
-Because it is signed, it can also accommodate negative values that can be used for dates prior to 1970 (for the range of possible values, see @ref{Numeric data types}).
+Because it is signed, it can also accommodate negative values that can be used for dates prior to 1970.
+For the range of possible values in this type, see @ref{Numeric data types}.
 
 Given the modern processor and network speeds, even seconds are large intervals (do not have the necessary resolution).
 As a result, there are also systems that count milli-seconds and nano-seconds (both also commonly starting at the Unix time epoch).
 For example day-time telescopes designed for imaging the Sun have exposure times on the scale of milli-seconds and the EXT4 filesystem measures time in counts of nano-seconds.
+
 Within Gnuastro, the milliseconds are also stored as signed 64-bit integers.
-Don't worry about the 64-bit limit: when we are counting milliseconds, the largest value of this type corresponds to the year 292278994 A.D.
+Don't worry about the 64-bit limit: when we are counting milliseconds, the largest value of this type corresponds to the year 292278994 A.D (almost 300 million years from now).
 When counting seconds, it can go until@footnote{The largest signed 64-bit integer is 9223372036854775807 (see @ref{Numeric data types}.
 However as of this writing, the GNU C library function that we use (@code{gmtime_r} of Gnulib commit @code{dbd5c0e936}) fails on this input.
 The year reported above corresponds to the Unix-second: 67767799999999999 (found manually).} the year 2147478063 A.D. (more than 147 million years after the year 2 trillion A.D.!).
-So as long as your desired time intervals are less than this, you can safely use Unix seconds to avoid the floating-point systematics of Julian dates, and also be faster: integer operations are generally much faster than floating-point operations.
+So as long as your desired time intervals are within the limits above, you can safely use Unix seconds to avoid the floating-point systematics of Julian dates, and also be faster: integer operations are generally much faster than floating-point operations.
 
 @cindex FITS date format
 @cindex ISO 8601 (date format)
 @cindex Date format: ISO 8601
 The Arithmetic operators below allow the conversion of human-friendly date strings (using the modern Gregorian calendar) to Julian days (or its variants) or Unix seconds and milliseconds.
 The input date string can be in any of the following formats.
-The formats with @code{YYYY} conform with the FITS standard for dates and ISO 8601 (the year can have more than four digits for the distant future).
+The formats with @code{YYYY} are recommended and conform with the FITS standard for dates and ISO 8601 (the year can have more than four digits for the distant future).
 
 @example
 YYYY-MM-DD

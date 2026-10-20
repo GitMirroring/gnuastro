@@ -31,6 +31,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <wcslib/wcs.h>
 #include <gsl/gsl_rng.h>
@@ -1043,8 +1044,6 @@ arithmetic_date_str_from(int operator, uint8_t flags, gal_data_t *in)
                      1, in->minmapsize, in->quietmmap, "DATE", "UTC",
                      "Date formatted as ISO 8601 in UTC.");
 
-  /* Set the function for the  */
-
   /* Do the conversion. */
   sa=out->array;
   switch(operator)
@@ -1060,7 +1059,7 @@ arithmetic_date_str_from(int operator, uint8_t flags, gal_data_t *in)
           sa[i]=gal_units_unix_seconds_to_date(sec, 0.0f, 0);
           if(ismilli)
             {
-              sprintf(ssecstr, ".%ld", sec%=1000);
+              sprintf(ssecstr, ".%"PRId64, sec%=1000);
               tout=gal_checkset_malloc_cat(sa[i], ssecstr);
               free(sa[i]);
               sa[i]=tout;
