@@ -165,11 +165,11 @@ table_selection_range(struct tableparams *p, gal_data_t *col)
 
   /* Find all the elements outside this range (smaller than the minimum,
      larger than the maximum or blank) as separate binary flags. */
-  ltmin=gal_arithmetic(GAL_ARITHMETIC_OP_LT, 1, numok, col, min);
-  gemax=gal_arithmetic(GAL_ARITHMETIC_OP_GE, 1, numok, col, max);
+  ltmin=gal_arithmetic(numok, 1, GAL_ARITHMETIC_OP_LT, col, min);
+  gemax=gal_arithmetic(numok, 1, GAL_ARITHMETIC_OP_GE, col, max);
 
   /* Merge them both into one array. */
-  ltmin=gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, inplace, ltmin, gemax);
+  ltmin=gal_arithmetic(inplace, 1, GAL_ARITHMETIC_OP_OR, ltmin, gemax);
 
   /* For a check.
   {
@@ -354,13 +354,13 @@ table_selection_equal_or_notequal(struct tableparams *p, gal_data_t *col,
 
           /* Mark the rows that are equal (irrespective of the column's
              original numerical datatype). */
-          eq=gal_arithmetic(operator, 1, numok, col, value);
+          eq=gal_arithmetic(numok, 1, operator, col, value);
         }
 
       /* Merge the results with (possible) previous results. */
       if(out)
         {
-          out=gal_arithmetic(mergeop, 1, inplace, out, eq);
+          out=gal_arithmetic(inplace, 1, mergeop, out, eq);
           gal_data_free(eq);
         }
       else
@@ -461,7 +461,7 @@ table_select_by_value(struct tableparams *p)
           break;
 
         case SELECT_TYPE_NOBLANK:
-          addmask = gal_arithmetic(GAL_ARITHMETIC_OP_ISBLANK, 1, 0,
+          addmask = gal_arithmetic(0, 1, GAL_ARITHMETIC_OP_ISBLANK,
                                    tmp->col);
           break;
 
@@ -475,16 +475,16 @@ table_select_by_value(struct tableparams *p)
       /* Remove any blank elements (incase we are on a noblank column. */
       if(tmp->type!=SELECT_TYPE_NOBLANK && gal_blank_present(tmp->col, 1))
         {
-          blmask = gal_arithmetic(GAL_ARITHMETIC_OP_ISBLANK, 1, 0,
+          blmask = gal_arithmetic(0, 1, GAL_ARITHMETIC_OP_ISBLANK,
                                   tmp->col);
-          addmask=gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, inplace,
+          addmask=gal_arithmetic(inplace, 1, GAL_ARITHMETIC_OP_OR,
                                  addmask, blmask);
           gal_data_free(blmask);
         }
 
       /* Add this mask array to the cumulative mask array (of all
          selections). */
-      mask=gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, inplace, mask, addmask);
+      mask=gal_arithmetic(inplace, 1, GAL_ARITHMETIC_OP_OR, mask, addmask);
 
       /* For a check.
          {

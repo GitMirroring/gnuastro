@@ -685,7 +685,7 @@ ui_out_of_range_to_blank(struct statisticsparams *p)
       tmp=gal_data_alloc(NULL, GAL_TYPE_FLOAT32, 1, &one, NULL, 0, -1, 1,
                          NULL, NULL, NULL);
       *((float *)(tmp->array)) = p->greaterequal;
-      cond_g=gal_arithmetic(GAL_ARITHMETIC_OP_LT, 1, flags, ref, tmp);
+      cond_g=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_LT, ref, tmp);
       gal_data_free(tmp);
     }
   if( p->input->next && !isnan(p->greaterequal2) )
@@ -693,9 +693,9 @@ ui_out_of_range_to_blank(struct statisticsparams *p)
       tmp=gal_data_alloc(NULL, GAL_TYPE_FLOAT32, 1, &one, NULL, 0, -1, 1,
                          NULL, NULL, NULL);
       *((float *)(tmp->array)) = p->greaterequal2;
-      tmp2=gal_arithmetic(GAL_ARITHMETIC_OP_LT, 1, flags, p->input->next,
+      tmp2=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_LT, p->input->next,
                           tmp);
-      cond_g=gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, flagsor, cond_g,
+      cond_g=gal_arithmetic(flagsor, 1, GAL_ARITHMETIC_OP_OR, cond_g,
                             tmp2);
       gal_data_free(tmp);
       gal_data_free(tmp2);
@@ -708,7 +708,7 @@ ui_out_of_range_to_blank(struct statisticsparams *p)
       tmp=gal_data_alloc(NULL, GAL_TYPE_FLOAT32, 1, &one, NULL, 0, -1, 1,
                          NULL, NULL, NULL);
       *((float *)(tmp->array)) = p->lessthan;
-      cond_l=gal_arithmetic(GAL_ARITHMETIC_OP_GE, 1, flags, ref, tmp);
+      cond_l=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_GE, ref, tmp);
       gal_data_free(tmp);
     }
   if(p->input->next && !isnan(p->lessthan2))
@@ -716,9 +716,9 @@ ui_out_of_range_to_blank(struct statisticsparams *p)
       tmp=gal_data_alloc(NULL, GAL_TYPE_FLOAT32, 1, &one, NULL, 0, -1, 1,
                          NULL, NULL, NULL);
       *((float *)(tmp->array)) = p->lessthan2;
-      tmp2=gal_arithmetic(GAL_ARITHMETIC_OP_GE, 1, flags, p->input->next,
+      tmp2=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_GE, p->input->next,
                           tmp);
-      cond_l=gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, flagsor, cond_l,
+      cond_l=gal_arithmetic(flagsor, 1, GAL_ARITHMETIC_OP_OR, cond_l,
                             tmp2);
       gal_data_free(tmp);
       gal_data_free(tmp2);
@@ -734,7 +734,7 @@ ui_out_of_range_to_blank(struct statisticsparams *p)
       cond = isnan(p->greaterequal) ? cond_l : cond_g;
       break;
     case 2:
-      cond = gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, flagsor, cond_l,
+      cond = gal_arithmetic(flagsor, 1, GAL_ARITHMETIC_OP_OR, cond_l,
                             cond_g);
       gal_data_free(cond_g);
       break;
@@ -752,13 +752,13 @@ ui_out_of_range_to_blank(struct statisticsparams *p)
      blank value will be used in the proper type of the input in the
      'where' operator. Also reset the blank flags so they are checked again
      if necessary.*/
-  gal_arithmetic(GAL_ARITHMETIC_OP_WHERE, 1, flagsor, p->input,
+  gal_arithmetic(flagsor, 1, GAL_ARITHMETIC_OP_WHERE, p->input,
                  cond, blank);
   p->input->flag &= ~GAL_DATA_FLAG_BLANK_CH;
   p->input->flag &= ~GAL_DATA_FLAG_HASBLANK;
   if(p->input->next)
     {
-      gal_arithmetic(GAL_ARITHMETIC_OP_WHERE, 1, flagsor, p->input->next,
+      gal_arithmetic(flagsor, 1, GAL_ARITHMETIC_OP_WHERE, p->input->next,
                      cond, blank);
       p->input->next->flag &= ~GAL_DATA_FLAG_BLANK_CH;
       p->input->next->flag &= ~GAL_DATA_FLAG_HASBLANK;

@@ -55,7 +55,7 @@ contour_pixels(gal_data_t *input, double level, size_t minmapsize,
   /* Only keep the pixels above the requested level, we are using the
      arithmetic library to not have to worry about the type of the
      input. */
-  thresh=gal_arithmetic(GAL_ARITHMETIC_OP_GT, 1, flags, input, number);
+  thresh=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_GT, input, number);
 
   /* Erode the thresholded image by one. */
   eroded=gal_binary_erode(thresh, 1, 1, 0);

@@ -43929,7 +43929,7 @@ They all take two operands and return two @code{gal_data_t}s (as a list).
 For more on celestial coordinate conversion, see @ref{Coordinate conversion operators}.
 @end deffn
 
-@deftypefun {gal_data_t *} gal_arithmetic (int @code{operator}, size_t @code{numthreads}, uint8_t @code{flags}, ...)
+@deftypefun {gal_data_t *} gal_arithmetic (uint8_t @code{flags}, size_t @code{numthreads}, int @code{operator}, ...)
 Apply the requested arithmetic operator on the operand(s).
 The @emph{operator} is identified through the macros above (that start with @code{GAL_ARITHMETIC_OP_}).
 The number of necessary operands (number of arguments to replace `@code{...}' in the declaration of this function, above) depends on the operator and is described under each operator, above.
@@ -43961,10 +43961,10 @@ main(void)
   in2=gal_fits_img_read("image2.fits", "1", -1, 1, NULL);
 
   /* Take the logarithm (base-e) of the first input. */
-  out1=gal_arithmetic(GAL_ARITHMETIC_OP_LOG, 1, flag, in1);
+  out1=gal_arithmetic(flag, 1, GAL_ARITHMETIC_OP_LOG, in1);
 
   /* Add the second input with the logarithm of the first. */
-  out2=gal_arithmetic(GAL_ARITHMETIC_OP_PLUS, 1, flag, in2, out1);
+  out2=gal_arithmetic(flag, 1, GAL_ARITHMETIC_OP_PLUS, in2, out1);
 
   /* Write the output into a file. */
   gal_fits_img_write(out2, "out.fits", NULL, 0);

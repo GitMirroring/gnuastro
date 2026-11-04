@@ -510,7 +510,7 @@ wrapper_for_filter(struct arithmeticparams *p, char *token, int operator)
                   "along dimension %zu is a float", ndim-i);
 
           /* Make sure it isn't negative. */
-          comp=gal_arithmetic(GAL_ARITHMETIC_OP_GT, 1, 0, tmp, zero);
+          comp=gal_arithmetic(0, 1, GAL_ARITHMETIC_OP_GT, tmp, zero);
           if( *(uint8_t *)(comp->array) == 0 )
             error(EXIT_FAILURE, 0, "lengths of filter along dimensions "
                   "must be positive. The given length in dimension %zu"
@@ -1800,8 +1800,8 @@ arithmetic_operator_run(struct arithmeticparams *p, int operator,
          number of arguments it uses depend on the operator. So
          when the operator doesn't need three operands, the extra
          arguments will be ignored. */
-      operands_add(p, NULL, gal_arithmetic(operator, p->cp.numthreads,
-                                           flags, d1, d2, d3, d4, d5));
+      operands_add(p, NULL, gal_arithmetic(flags, p->cp.numthreads,
+                                           operator, d1, d2, d3, d4, d5));
 
       /* Operators with special attention afterwards. */
       switch(operator)

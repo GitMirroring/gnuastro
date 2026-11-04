@@ -3001,10 +3001,10 @@ arithmetic_multioperand_clip_mask_worker(void *in_prm)
         { if(counter==index) break; ++counter; }
 
       /* Flag all the pixels that are higher/lower than the limits. */
-      tmp=gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, aflags,
-                         gal_arithmetic(GAL_ARITHMETIC_OP_GT, 1, aflags,
+      tmp=gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_OR,
+                         gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_GT,
                                         use, p->upper),
-                         gal_arithmetic(GAL_ARITHMETIC_OP_LT, 1, aflags,
+                         gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_LT,
                                         use, p->lower));
 
       /* For a check.
@@ -5307,13 +5307,13 @@ gal_arithmetic_operator_string(int operator)
 
 
 gal_data_t *
-gal_arithmetic(int operator, size_t numthreads, uint8_t flags, ...)
+gal_arithmetic(uint8_t flags, size_t numthreads, int operator, ...)
 {
   va_list va;
   gal_data_t *d1, *d2, *d3, *d4, *d5, *out=NULL;
 
   /* Prepare the variable arguments (starting after the flags argument). */
-  va_start(va, flags);
+  va_start(va, operator);
 
   /* Depending on the operator, do the job: */
   switch(operator)

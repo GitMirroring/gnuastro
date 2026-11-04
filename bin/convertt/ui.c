@@ -530,9 +530,8 @@ ui_check_only_options(struct converttparams *p)
 
   if(p->fluxhighstr && p->fluxlowstr)
     {
-      cond=gal_arithmetic(GAL_ARITHMETIC_OP_GT, 1,
-                          GAL_ARITHMETIC_FLAG_NUMOK,
-                          p->fluxhigh, p->fluxlow);
+      cond=gal_arithmetic(GAL_ARITHMETIC_FLAG_NUMOK, 1,
+                          GAL_ARITHMETIC_OP_GT, p->fluxhigh, p->fluxlow);
 
       if( *((unsigned char *)cond->array) == 0 )
         error(EXIT_FAILURE, 0, "The value of '--fluxlow' must be less "

@@ -286,6 +286,13 @@ See the end of the file for license conditions.
 
 *** Library
 
+  - gal_arithmetic: the 'flag' argument is the first argument and must have
+    a 'uint8_t' type (since it is a bit flag) and the 'operator' argument
+    is the third to avoid undefined behavior with default argument
+    promotion to 'va_start' [-Wvarargs]. Until now the 'operator' argument
+    was first and 'flag' was third and was an 'int'. For more, see
+    https://savannah.gnu.org/bugs/?68805
+
   - gal_fit_linear_1d:
   - gal_fit_linear_no_constant_1d: the reduced chi^2 is written into the
     new '*redchisq' argument, not in the output array.
@@ -335,6 +342,9 @@ See the end of the file for license conditions.
   - bug #68732: Table crashes with segmentation fault when '--colmetadata'
     is given a name (not column number), but the input column(s) do not
     have any name. Found and fixed by Sepideh Eskandarlou.
+
+  - bug #68805: Compilation warning (-Wvarargs) for 'va_start'. Found with
+    the help of Stergios Amarantidis.
 
 
 

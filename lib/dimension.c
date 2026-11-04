@@ -1150,11 +1150,11 @@ dimension_collapse_sortbased_fill(struct dimension_sortbased_p *p,
   multip=gal_data_alloc(NULL, GAL_TYPE_FLOAT32, 1, &one, NULL, 0, -1, 1,
                         NULL, NULL, NULL);
   ((float *)(multip->array))[0]=p->sclipmultip;
-  tmp=gal_arithmetic(GAL_ARITHMETIC_OP_MULTIPLY, 1, aflags,
+  tmp=gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_MULTIPLY,
                      spread, multip);
-  upper=gal_arithmetic(GAL_ARITHMETIC_OP_PLUS, 1, aflags,
+  upper=gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_PLUS,
                        center, tmp);
-  lower=gal_arithmetic(GAL_ARITHMETIC_OP_MINUS, 1, aflags,
+  lower=gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_MINUS,
                        center, tmp);
   gal_data_free(tmp);
 
@@ -1162,10 +1162,10 @@ dimension_collapse_sortbased_fill(struct dimension_sortbased_p *p,
      the largest possible "hole" size should be smaller than higher
      dimensionality data, because two elements that are very far from each
      other can create a very large "hole".*/
-  tmp=gal_arithmetic(GAL_ARITHMETIC_OP_OR, 1, aflags,
-                     gal_arithmetic(GAL_ARITHMETIC_OP_GT, 1, aflags,
+  tmp=gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_OR,
+                     gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_GT,
                                     formask, upper),
-                     gal_arithmetic(GAL_ARITHMETIC_OP_LE, 1, aflags,
+                     gal_arithmetic(aflags, 1, GAL_ARITHMETIC_OP_LE,
                                     formask, lower));
 
   /* For a check (define 'int check' as an argument, and when calling this

@@ -1009,7 +1009,7 @@ arithmetic_operator_run(struct tableparams *p,
          arguments it uses depend on the operator. In other words, when the
          operator doesn't need three operands, the extra arguments will be
          ignored. */
-      o=gal_arithmetic(token->operator, p->cp.numthreads, flags,
+      o=gal_arithmetic(flags, p->cp.numthreads, token->operator,
                        d1, d2, d3, d4, d5);
       if(o) gal_list_data_add(stack, o); /* o==NULL for 'free' opertor. */
 

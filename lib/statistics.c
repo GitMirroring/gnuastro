@@ -709,13 +709,13 @@ statistics_mad_in_sorted_no_blank(gal_data_t *sorted, gal_data_t *med,
                                           ? sorted->type : type ) );
 
   /* Subtract the median from the input. */
-  use=gal_arithmetic(GAL_ARITHMETIC_OP_MINUS, 1, flags, use, med);
+  use=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_MINUS, use, med);
 
   /* Get the absolute value of the differences from the median. The
      absolute values of the differences can fit into the original input
      type, so to make things consistent, we'll take it back to the original
      type. */
-  use=gal_arithmetic(GAL_ARITHMETIC_OP_ABS, 1, flags, use);
+  use=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_ABS, use);
   use=gal_data_copy_to_new_type_free(use, sorted->type);
   use->flag=0;/* Necessary before new median to re-sort. */
   mad = gal_statistics_median(use, 1);

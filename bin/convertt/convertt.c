@@ -72,12 +72,11 @@ convertt_change(struct converttparams *p)
       {
         /* Make a condition array: all pixels with a value equal to
            'change->from' will be set as 1 in this array. */
-        cond=gal_arithmetic(GAL_ARITHMETIC_OP_EQ, 1,
-                            GAL_ARITHMETIC_FLAG_NUMOK, channel,
-                            change->from);
+        cond=gal_arithmetic(GAL_ARITHMETIC_FLAG_NUMOK, 1,
+                            GAL_ARITHMETIC_OP_EQ, channel, change->from);
 
         /* Now, use the condition array to set the proper values. */
-        channel=gal_arithmetic(GAL_ARITHMETIC_OP_WHERE, 1, flags, channel,
+        channel=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_WHERE, channel,
                                cond, change->to);
 
         /* Clean up, since we set the free flag, all extra arrays have been
@@ -106,11 +105,11 @@ convertt_trunc_function(int operator, gal_data_t *data, gal_data_t *value)
 
   /* Make a condition array: all pixels with a value equal to
      'change->from' will be set as 1 in this array. */
-  cond=gal_arithmetic(operator, 1, GAL_ARITHMETIC_FLAG_NUMOK, data, value);
+  cond=gal_arithmetic(GAL_ARITHMETIC_FLAG_NUMOK, 1, operator, data, value);
 
 
   /* Now, use the condition array to set the proper values. */
-  out=gal_arithmetic(GAL_ARITHMETIC_OP_WHERE, 1, flags, data, cond, value);
+  out=gal_arithmetic(flags, 1, GAL_ARITHMETIC_OP_WHERE, data, cond, value);
 
 
   /* A small sanity check. The process must be in-place so the original
@@ -202,8 +201,8 @@ convertt_scale_to_uchar(struct converttparams *p)
             }
 
           /* Calculate the minimum and maximum. */
-          mind = gal_arithmetic(GAL_ARITHMETIC_OP_MINVAL, 1, 0, channel);
-          maxd = gal_arithmetic(GAL_ARITHMETIC_OP_MAXVAL, 1, 0, channel);
+          mind = gal_arithmetic(0, 1, GAL_ARITHMETIC_OP_MINVAL, channel);
+          maxd = gal_arithmetic(0, 1, GAL_ARITHMETIC_OP_MAXVAL, channel);
           tmin = *((float *)(mind->array));
           tmax = *((float *)(maxd->array));
           gal_data_free(mind);
