@@ -28,8 +28,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 
 #include <gnuastro/wcs.h>
-
-#include <gnuastro-internal/checkset.h>
+#include <gnuastro/string.h>
 
 #include "main.h"
 
@@ -145,7 +144,7 @@ tap_query_construct_meta(struct queryparams *p)
                   __func__);
         }
       else
-        gal_checkset_allocate_copy("\"SELECT * FROM TAP_SCHEMA.tables\"",
+        gal_string_allocate_copy("\"SELECT * FROM TAP_SCHEMA.tables\"",
                                    &querystr);
     }
 

@@ -36,6 +36,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/units.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/statistics.h>
 
@@ -171,7 +172,7 @@ txt_info_vector_type(char *string, size_t *repeat)
      integer number, or the given integer was negative, just ignore the
      repeat (by setting it to 1). */
   *repeat = ( ( rstr
-                && gal_type_from_string(iptr, rstr, GAL_TYPE_INT)==0
+                && gal_string_to_type(iptr, rstr, GAL_TYPE_INT)==0
                 && irepeat>1 )
               ? irepeat
               : 1 );
@@ -236,7 +237,7 @@ txt_info_from_comment(char *in_line, gal_data_t **datall, char *comm_start,
       /* Because the 'line' pointer will change, we need a pointer to the
          start of the originally allocated lines. This is the purpose of
          'aline' (allocated-line). */
-      gal_checkset_allocate_copy(in_line, &aline);
+      gal_string_allocate_copy(in_line, &aline);
       line=aline;
     }
 
@@ -404,7 +405,7 @@ txt_info_from_first_row(char *in_line, gal_data_t **datall, int format,
   if(inplace) line=in_line;
   else
     {
-      gal_checkset_allocate_copy(in_line, &line);
+      gal_string_allocate_copy(in_line, &line);
       aline=line; /* We are going to change 'line' during this function. */
     }
   end=line+strlen(line);
@@ -509,7 +510,7 @@ txt_info_from_first_row(char *in_line, gal_data_t **datall, int format,
                  message when the input isn't actually a number but a
                  string (this test was added because of uncommented
                  metadata)! */
-              if( gal_type_from_string( &tmpdptr, token, GAL_TYPE_FLOAT64)
+              if( gal_string_to_type( &tmpdptr, token, GAL_TYPE_FLOAT64)
                   && isnan( gal_units_ra_to_degree(token) )
                   && isnan( gal_units_dec_to_degree(token) ) )
                 error(EXIT_FAILURE, 0, "'%s' couldn't be read as a "
@@ -954,7 +955,7 @@ txt_read_token(gal_data_t *data, gal_data_t *info, char *token,
         {
         case GAL_TYPE_STRING:
           free(str[i]);
-          gal_checkset_allocate_copy(GAL_BLANK_STRING, &str[i]); break;
+          gal_string_allocate_copy(GAL_BLANK_STRING, &str[i]); break;
         case GAL_TYPE_UINT8:  uc[i] = GAL_BLANK_UINT8;   break;
         case GAL_TYPE_INT8:    c[i] = GAL_BLANK_INT8;    break;
         case GAL_TYPE_UINT16: us[i] = GAL_BLANK_UINT16;  break;
@@ -977,11 +978,11 @@ txt_read_token(gal_data_t *data, gal_data_t *info, char *token,
       switch(data->type)
         {
         case GAL_TYPE_STRING:
-          gal_checkset_allocate_copy(gal_txt_trim_space(token), &str[i]);
+          gal_string_allocate_copy(gal_txt_trim_space(token), &str[i]);
           if( (strb=info->array) && !strcmp( *strb, str[i] ) )
             {
               free(str[i]);
-              gal_checkset_allocate_copy(GAL_BLANK_STRING, &str[i]);
+              gal_string_allocate_copy(GAL_BLANK_STRING, &str[i]);
             }
           break;
 
@@ -1127,7 +1128,7 @@ txt_fill(char *in_line, gal_data_t **tokeninout, size_t ntokforout,
 
   /* Make a copy of the input line if necessary. */
   if(inplace) line=in_line;
-  else gal_checkset_allocate_copy(in_line, &line);
+  else gal_string_allocate_copy(in_line, &line);
   end=line+strlen(line);
   aline=line; /* The 'line' pointer will be shifted. */
 
@@ -2065,7 +2066,8 @@ txt_write_keys(FILE *fp, struct gal_fits_list_key_t *keylist,
              string. */
           valuestr = ( tmp->type==GAL_TYPE_STRING
                        ? tmp->value
-                       : gal_type_to_string(tmp->value, tmp->type, 1) );
+                       : gal_string_from_type(tmp->value, tmp->type,
+                                              GAL_BLANK_UINT8, 0, 1, 0) );
 
           /* If a comment is requested, parepare it. */
           ending=NULL;

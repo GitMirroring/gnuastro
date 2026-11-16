@@ -32,12 +32,12 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/match.h>
 #include <gnuastro/table.h>
 #include <gnuastro/kdtree.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/permutation.h>
 
 #include <gnuastro-internal/timing.h>
-#include <gnuastro-internal/checkset.h>
 
 #include <main.h>
 
@@ -120,7 +120,7 @@ match_cat_from_coord(struct matchparams *p, gal_list_str_t *cols,
     {
       /* In 'ui_preparations_out_cols', we have done the necessary sanity
          checks, so we can safely use the values. */
-      rptr=gal_type_string_to_number(col->v, &readtype);
+      rptr=gal_string_to_number(col->v, &readtype);
       if(readtype!=GAL_TYPE_UINT8)
         error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to fix "
               "the problem. The given string didn't have a 'uint8' type",

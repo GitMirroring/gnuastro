@@ -36,11 +36,10 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/qsort.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/arithmetic.h>
 #include <gnuastro/statistics.h>
-
-#include <gnuastro-internal/checkset.h>
 
 
 
@@ -1130,6 +1129,8 @@ gal_statistics_quantile_function(gal_data_t *input, gal_data_t *value,
 gal_data_t *
 gal_statistics_unique(gal_data_t *input, int inplace)
 {
+  size_t i, j;
+  char **strarr;
   gal_data_t *out = inplace ? input : gal_data_copy(input);
 
   /* Since we are replacing the repeated elements with blank, re-set the
@@ -1150,6 +1151,16 @@ gal_statistics_unique(gal_data_t *input, int inplace)
     case GAL_TYPE_INT64:   UNIQUE_BYTYPE( int64_t  ); break;
     case GAL_TYPE_FLOAT32: UNIQUE_BYTYPE( float    ); break;
     case GAL_TYPE_FLOAT64: UNIQUE_BYTYPE( double   ); break;
+    case GAL_TYPE_STRING:
+      strarr=out->array;
+      for(i=0;i<out->size;++i)
+        if( strarr[i] && strcmp(strarr[i], GAL_BLANK_STRING) ) /* Not blank. */
+          {
+            for(j=i+1;j<out->size;++j)
+              if( strarr[j] && !strcmp(strarr[i], strarr[j]) )
+                { free(strarr[j]); strarr[j]=NULL; }
+          }
+      break;
     default:
       error(EXIT_FAILURE, 0, "the 'unique' operator doesn't support type "
             "code '%u'", out->type);
@@ -2430,9 +2441,9 @@ gal_statistics_histogram(gal_data_t *input, gal_data_t *bins, int normalize,
 
       /* Correct the name, units and comments. */
       free(hist->name); free(hist->unit); free(hist->comment);
-      gal_checkset_allocate_copy("hist_normalized", &hist->name);
-      gal_checkset_allocate_copy("frac", &hist->unit);
-      gal_checkset_allocate_copy("Normalized histogram value for this bin.",
+      gal_string_allocate_copy("hist_normalized", &hist->name);
+      gal_string_allocate_copy("frac", &hist->unit);
+      gal_string_allocate_copy("Normalized histogram value for this bin.",
                                  &hist->comment);
     }
   if(maxone)
@@ -2445,9 +2456,9 @@ gal_statistics_histogram(gal_data_t *input, gal_data_t *bins, int normalize,
 
       /* Correct the name, units and comments. */
       free(hist->name); free(hist->unit); free(hist->comment);
-      gal_checkset_allocate_copy("hist_maxone", &hist->name);
-      gal_checkset_allocate_copy("frac", &hist->unit);
-      gal_checkset_allocate_copy("Fractional histogram value for this bin "
+      gal_string_allocate_copy("hist_maxone", &hist->name);
+      gal_string_allocate_copy("frac", &hist->unit);
+      gal_string_allocate_copy("Fractional histogram value for this bin "
                                  "when maximum bin value is 1.0.",
                                  &hist->comment);
     }
@@ -2706,9 +2717,9 @@ gal_statistics_cfp(gal_data_t *input, gal_data_t *bins, int normalize)
 
       /* Correct the name, units and comments. */
       free(cfp->name); free(cfp->unit); free(cfp->comment);
-      gal_checkset_allocate_copy("cfp_normalized", &cfp->name);
-      gal_checkset_allocate_copy("frac", &cfp->unit);
-      gal_checkset_allocate_copy("Fraction of data elements from the start "
+      gal_string_allocate_copy("cfp_normalized", &cfp->name);
+      gal_string_allocate_copy("frac", &cfp->unit);
+      gal_string_allocate_copy("Fraction of data elements from the start "
                                  "to this bin (inclusive).", &cfp->comment);
     }
 

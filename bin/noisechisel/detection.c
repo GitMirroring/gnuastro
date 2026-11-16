@@ -32,13 +32,13 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/label.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/binary.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/dimension.h>
 #include <gnuastro/statistics.h>
 
 #include <gnuastro-internal/timing.h>
-#include <gnuastro-internal/checkset.h>
 
 #include "main.h"
 
@@ -1247,7 +1247,7 @@ detection(struct noisechiselparams *p)
             error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
         }
       else
-        gal_checkset_allocate_copy("Detection complete.", &msg);
+        gal_string_allocate_copy("Detection complete.", &msg);
       gal_timing_report(&t0, msg, 1);
       free(msg);
     }

@@ -32,6 +32,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/array.h>
 #include <gnuastro/binary.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/dimension.h>
 #include <gnuastro/statistics.h>
@@ -441,7 +442,7 @@ ui_prepare_inputs(struct segmentparams *p)
      remind the user that the sky (which may be given to Segment) has been
      subtracted (this is also the same name in NoiseChisel's output). */
   if(p->input->name) free(p->input->name);
-  gal_checkset_allocate_copy("INPUT-NO-SKY", &p->input->name);
+  gal_string_allocate_copy("INPUT-NO-SKY", &p->input->name);
 
 
   /* Check for blank values to help later processing.  */

@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/box.h>
 #include <gnuastro/fits.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/polygon.h>
 #include <gnuastro/pointer.h>
 
@@ -802,7 +803,8 @@ onecrop(struct onecropparams *crp)
              output, then print it without anything else (no identifier is
              necessary!). Otherwise, use the desired output filename as the
              identifier. */
-          stdoutstring=gal_type_to_string(array, p->type, 0);
+          stdoutstring=gal_string_from_type(array, p->type,
+                                            GAL_BLANK_UINT8, 0, 0, 0);
           if(p->numout==1) printf("%s\n", stdoutstring);
           else             printf("%s %s\n", crp->name, stdoutstring);
           free(stdoutstring);

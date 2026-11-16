@@ -33,6 +33,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/array.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/dimension.h>
@@ -564,7 +565,7 @@ ui_wcs_info(struct mkcatalogparams *p)
              non-dash characters. The loop will either stop either at the
              end or where there is a dash. So we can just replace it with
              an end-of-string character. */
-          gal_checkset_allocate_copy(p->objects->wcs->ctype[i],
+          gal_string_allocate_copy(p->objects->wcs->ctype[i],
                                      &p->ctype[i]);
           c=p->ctype[i]; while(*c!='\0' && *c!='-') ++c;
           *c='\0';
@@ -1299,13 +1300,13 @@ ui_preparations_read_inputs(struct mkcatalogparams *p)
             if( !strcmp(column->unit, MKCATALOG_NO_UNIT) )
               {
                 free(column->unit);
-                gal_checkset_allocate_copy(p->values->unit, &column->unit);
+                gal_string_allocate_copy(p->values->unit, &column->unit);
               }
           for(column=p->clumpcols; column!=NULL; column=column->next)
             if( !strcmp(column->unit, MKCATALOG_NO_UNIT) )
               {
                 free(column->unit);
-                gal_checkset_allocate_copy(p->values->unit, &column->unit);
+                gal_string_allocate_copy(p->values->unit, &column->unit);
               }
         }
     }

@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/array.h>
 #include <gnuastro/binary.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/dimension.h>
@@ -2014,7 +2015,7 @@ arithmetic_out_metadata(struct arithmeticparams *p, gal_data_t *data)
   for(s=p->metaname; s!=NULL && d!=NULL; s=s->next, d=d->next)
     {
       if(d->name) free(d->name);
-      gal_checkset_allocate_copy(s->v, &d->name);
+      gal_string_allocate_copy(s->v, &d->name);
     }
 
   /* Similar to 'metaname' but for meta units. */
@@ -2022,7 +2023,7 @@ arithmetic_out_metadata(struct arithmeticparams *p, gal_data_t *data)
   for(s=p->metaunit; s!=NULL && d!=NULL; s=s->next, d=d->next)
     {
       if(d->unit) free(d->unit);
-      gal_checkset_allocate_copy(s->v, &d->unit);
+      gal_string_allocate_copy(s->v, &d->unit);
     }
 
   /* Similar to 'metacomment' but for meta comments. */
@@ -2030,7 +2031,7 @@ arithmetic_out_metadata(struct arithmeticparams *p, gal_data_t *data)
   for(s=p->metacomment; s!=NULL && d!=NULL; s=s->next, d=d->next)
     {
       if(d->comment) free(d->comment);
-      gal_checkset_allocate_copy(s->v, &d->comment);
+      gal_string_allocate_copy(s->v, &d->comment);
     }
 }
 
@@ -2145,7 +2146,8 @@ reversepolish(struct arithmeticparams *p)
      && p->outnamerequested==0)
     {
       /* Make the string to print the number. */
-      printnum=gal_type_to_string(data->array, data->type, 0);
+      printnum=gal_string_from_type(data->array, data->type,
+                                    GAL_BLANK_UINT8, 0, 0, 0);
       printf("%s\n", printnum);
 
       /* Clean up (don't set it to 'NULL', this is used to specify if a

@@ -194,6 +194,11 @@ enum arithmetic_binary_outtype_flags
     case GAL_TYPE_INT32:   BINARY_SET_OUT_INT( F, OP, LT, int32_t  ) break; \
     case GAL_TYPE_UINT64:  BINARY_SET_OUT_INT( F, OP, LT, uint64_t ) break; \
     case GAL_TYPE_INT64:   BINARY_SET_OUT_INT( F, OP, LT, int64_t  ) break; \
+    case GAL_TYPE_STRING:                                               \
+      error(EXIT_FAILURE, 0, "type '%s' (of the right operand) is not " \
+            "usable with the '%s' operator, if it is a number that is " \
+            "stored as a string, use the 'string-to-number' operator",  \
+            gal_type_name(r->type, 1), #OP);                            \
     default:                                                            \
       error(EXIT_FAILURE, 0, "type '%s' (of the right operand) is not " \
             "usable with the '%s' operator (in 'BINARY_SET_RT_INT')",   \
@@ -218,6 +223,11 @@ enum arithmetic_binary_outtype_flags
     case GAL_TYPE_INT64:   BINARY_SET_OUT( F, OP, LT, int64_t  ) break; \
     case GAL_TYPE_FLOAT32: BINARY_SET_OUT( F, OP, LT, float    ) break; \
     case GAL_TYPE_FLOAT64: BINARY_SET_OUT( F, OP, LT, double   ) break; \
+    case GAL_TYPE_STRING:                                               \
+      error(EXIT_FAILURE, 0, "type '%s' (of the right operand) is not " \
+            "usable with the '%s' operator, if it is a number that is " \
+            "stored as a string, use the 'string-to-number' operator",  \
+            gal_type_name(r->type, 1), #OP);                            \
     default:                                                            \
       error(EXIT_FAILURE, 0, "type '%s' (of the right operand) is not " \
             "usable with the '%s' operator (in 'BINARY_SET_RT')",       \
@@ -242,6 +252,11 @@ enum arithmetic_binary_outtype_flags
     case GAL_TYPE_INT32:   BINARY_SET_RT_INT( F, OP, int32_t  ) break;  \
     case GAL_TYPE_UINT64:  BINARY_SET_RT_INT( F, OP, uint64_t ) break;  \
     case GAL_TYPE_INT64:   BINARY_SET_RT_INT( F, OP, int64_t  ) break;  \
+    case GAL_TYPE_STRING:                                               \
+      error(EXIT_FAILURE, 0, "type '%s' (of the left operand) is not "  \
+            "usable with the '%s' operator, if it is a number that is " \
+            "stored as a string, use the 'string-to-number' operator",  \
+            gal_type_name(l->type, 1), #OP);                            \
     default:                                                            \
       error(EXIT_FAILURE, 0, "type '%s' (of the left operand) is not "  \
             "usable with the '%s' operator (in 'BINARY_SET_LT_INT')",   \
@@ -266,6 +281,11 @@ enum arithmetic_binary_outtype_flags
     case GAL_TYPE_INT64:   BINARY_SET_RT( F, OP, int64_t  ) break;      \
     case GAL_TYPE_FLOAT32: BINARY_SET_RT( F, OP, float    ) break;      \
     case GAL_TYPE_FLOAT64: BINARY_SET_RT( F, OP, double   ) break;      \
+    case GAL_TYPE_STRING:                                               \
+      error(EXIT_FAILURE, 0, "type '%s' (of the left operand) is not "  \
+            "usable with the '%s' operator, if it is a number that is " \
+            "stored as a string, use the 'string-to-number' operator",  \
+            gal_type_name(l->type, 1), #OP);                            \
     default:                                                            \
       error(EXIT_FAILURE, 0, "type '%s' (of the left operand) is not "  \
             "usable with the '%s' operator (in 'BINARY_SET_LT')",       \

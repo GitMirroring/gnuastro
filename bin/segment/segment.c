@@ -33,6 +33,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/blank.h>
 #include <gnuastro/label.h>
 #include <gnuastro/binary.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/convolve.h>
@@ -40,7 +41,6 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/statistics.h>
 
 #include <gnuastro-internal/timing.h>
-#include <gnuastro-internal/checkset.h>
 
 #include "main.h"
 
@@ -94,7 +94,7 @@ segment_convolve(struct segmentparams *p)
 
       /* Set the name. */
       if(p->conv->name) free(p->conv->name);
-      gal_checkset_allocate_copy("CONVOLVED", &p->conv->name);
+      gal_string_allocate_copy("CONVOLVED", &p->conv->name);
     }
 
   /* Set the values to build clumps on. We are mainly doing this to avoid

@@ -38,12 +38,11 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/wcs.h>
 #include <gnuastro/tile.h>
 #include <gnuastro/fits.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/dimension.h>
 #include <gnuastro/statistics.h>
 #include <gnuastro/permutation.h>
-
-#include <gnuastro-internal/checkset.h>
 
 #if GAL_CONFIG_HAVE_WCSLIB_DIS_H
 #include <wcslib/dis.h>
@@ -711,7 +710,7 @@ gal_wcs_dimension_name(struct wcsprm *wcs, size_t dimension)
 
   /* Make a copy of the CTYPE value and set the first occurance of '-' to
      '\0', to avoid the projection type. */
-  gal_checkset_allocate_copy(wcs->ctype[dimension], &out);
+  gal_string_allocate_copy(wcs->ctype[dimension], &out);
   for(i=0;i<strlen(out);++i) if(out[i]=='-') out[i]='\0';
 
   /* Return the output array. */

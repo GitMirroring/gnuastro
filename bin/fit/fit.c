@@ -27,6 +27,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/fit.h>
 #include <gnuastro/data.h>
+#include <gnuastro/string.h>
 
 #include <gnuastro-internal/checkset.h>
 
@@ -200,12 +201,12 @@ fit_correct_name(gal_data_t *data, char *name, char *unit)
   if(name)
     {
       if(data->name) free(data->name);
-      gal_checkset_allocate_copy(name, &data->name);
+      gal_string_allocate_copy(name, &data->name);
     }
   if(unit)
     {
       if(data->unit) free(data->unit);
-      gal_checkset_allocate_copy(unit, &data->unit);
+      gal_string_allocate_copy(unit, &data->unit);
     }
 }
 

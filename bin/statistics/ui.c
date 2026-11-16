@@ -37,6 +37,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/qsort.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/arithmetic.h>
 #include <gnuastro/statistics.h>
@@ -225,7 +226,7 @@ ui_add_to_single_value(struct argp_option *option, char *arg,
   /* In case of printing the option values. */
   if(lineno==-1)
     {
-      gal_checkset_allocate_copy("1", &str);
+      gal_string_allocate_copy("1", &str);
       return str;
     }
 
@@ -950,7 +951,7 @@ ui_read_columns(struct statisticsparams *p)
   /* If the input was from standard input, we'll set the input name to be
      'stdin' (for future reporting). */
   if(p->inputname==NULL)
-    gal_checkset_allocate_copy("stdin", &p->inputname);
+    gal_string_allocate_copy("stdin", &p->inputname);
 
   /* Print an error if there are too many columns: */
   if(gal_list_str_number(p->columns)!=gal_list_data_number(cols))

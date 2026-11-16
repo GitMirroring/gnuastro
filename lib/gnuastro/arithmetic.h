@@ -298,6 +298,18 @@ enum gal_arithmetic_operators
   GAL_ARITHMETIC_OP_POOLMEAN,     /* The pool-mean of desired pixels. */
   GAL_ARITHMETIC_OP_POOLMEDIAN,   /* The pool-median of desired pixels. */
 
+  /* String operators. */
+  GAL_ARITHMETIC_OP_STRING_TO_NUMBER,  /* Convert strings into numbers  */
+  GAL_ARITHMETIC_OP_INT_TO_STRING,     /* Convert integers into strings */
+  GAL_ARITHMETIC_OP_FLOAT_TO_STRING,   /* Convert floats into strings */
+  GAL_ARITHMETIC_OP_APPEND,            /* Concatenate two strings. */
+  GAL_ARITHMETIC_OP_APPEND_HYPHEN,     /* Append an '-' */
+  GAL_ARITHMETIC_OP_APPEND_AMPERSAND,  /* Append an '&' */
+  GAL_ARITHMETIC_OP_APPEND_UNDERSCORE, /* Append an '_' */
+  GAL_ARITHMETIC_OP_STRING_TO_LOWER,   /* Change to lowercase */
+  GAL_ARITHMETIC_OP_STRING_TO_UPPER,   /* Change to uppercase */
+  GAL_ARITHMETIC_OP_REMOVE_SPACE,      /* Remove spaces from string */
+
   /* Celestial coordinate conversions (names are clear, no comment). */
   GAL_ARITHMETIC_OP_EQB1950_TO_EQJ2000,
   GAL_ARITHMETIC_OP_EQB1950_TO_ECB1950,

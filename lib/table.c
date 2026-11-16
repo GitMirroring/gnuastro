@@ -34,11 +34,11 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/blank.h>
 #include <gnuastro/qsort.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/permutation.h>
 
 #include <gnuastro-internal/timing.h>
-#include <gnuastro-internal/checkset.h>
 #include <gnuastro-internal/tableintern.h>
 
 
@@ -192,7 +192,7 @@ gal_table_print_info(gal_data_t *allcols, size_t numcols, size_t numrows)
             error(EXIT_FAILURE, 0, "%s: 'astprintf' allocation", __func__);
         }
       else
-        gal_checkset_allocate_copy(gal_type_name(allcols[i].type, 1),
+        gal_string_allocate_copy(gal_type_name(allcols[i].type, 1),
                                    &typestr);
 
       /* Print the actual info. */

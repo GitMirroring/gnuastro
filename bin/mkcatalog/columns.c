@@ -32,10 +32,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/wcs.h>
 #include <gnuastro/units.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/statistics.h>
-
-#include <gnuastro-internal/checkset.h>
 
 #include "main.h"
 #include "mkcatalog.h"
@@ -1045,7 +1044,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_GEOW1:
-          name           = gal_checkset_malloc_cat("GEO_", p->ctype[0]);
+          name           = gal_string_malloc_cat("GEO_", p->ctype[0]);
           unit           = p->objects->wcs->cunit[0];
           ocomment       = "Geometric center (WCS axis 1).";
           ccomment       = ocomment;
@@ -1063,7 +1062,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_GEOW2:
-          name           = gal_checkset_malloc_cat("GEO_", p->ctype[1]);
+          name           = gal_string_malloc_cat("GEO_", p->ctype[1]);
           unit           = p->objects->wcs->cunit[1];
           ocomment       = "Geometric center (WCS axis 2).";
           ccomment       = ocomment;
@@ -1081,7 +1080,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_GEOW3:
-          name           = gal_checkset_malloc_cat("GEO_", p->ctype[2]);
+          name           = gal_string_malloc_cat("GEO_", p->ctype[2]);
           unit           = p->objects->wcs->cunit[2];
           ocomment       = "Geometric center (WCS axis 3).";
           ccomment       = ocomment;
@@ -1098,7 +1097,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_CLUMPSW1:
-          name           = gal_checkset_malloc_cat("CLUMPS_", p->ctype[0]);
+          name           = gal_string_malloc_cat("CLUMPS_", p->ctype[0]);
           unit           = p->objects->wcs->cunit[0];
           ocomment       = "Flux.wht center of all clumps (WCS axis 1).";
           ccomment       = NULL;
@@ -1122,7 +1121,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_CLUMPSW2:
-          name           = gal_checkset_malloc_cat("CLUMPS_", p->ctype[1]);
+          name           = gal_string_malloc_cat("CLUMPS_", p->ctype[1]);
           unit           = p->objects->wcs->cunit[1];
           ocomment       = "Flux.wht center of all clumps (WCS axis 2).";
           ccomment       = NULL;
@@ -1146,7 +1145,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_CLUMPSW3:
-          name           = gal_checkset_malloc_cat("CLUMPS_", p->ctype[2]);
+          name           = gal_string_malloc_cat("CLUMPS_", p->ctype[2]);
           unit           = p->objects->wcs->cunit[2];
           ocomment       = "Flux.wht center of all clumps (WCS axis 3).";
           ccomment       = NULL;
@@ -1170,7 +1169,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_CLUMPSGEOW1:
-          name           = gal_checkset_malloc_cat("CLUMPS_GEO",
+          name           = gal_string_malloc_cat("CLUMPS_GEO",
                                                    p->ctype[0]);
           unit           = p->objects->wcs->cunit[0];
           ocomment       = "Geometric center of all clumps (WCS axis 1).";
@@ -1189,7 +1188,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_CLUMPSGEOW2:
-          name           = gal_checkset_malloc_cat("CLUMPS_GEO",
+          name           = gal_string_malloc_cat("CLUMPS_GEO",
                                                    p->ctype[1]);
           unit           = p->objects->wcs->cunit[1];
           ocomment       = "Geometric center of all clumps (WCS axis 2).";
@@ -1208,7 +1207,7 @@ columns_define_alloc(struct mkcatalogparams *p)
           break;
 
         case UI_KEY_CLUMPSGEOW3:
-          name           = gal_checkset_malloc_cat("CLUMPS_GEO",
+          name           = gal_string_malloc_cat("CLUMPS_GEO",
                                                    p->ctype[2]);
           unit           = p->objects->wcs->cunit[2];
           ocomment       = "Geometric center of all clumps (WCS axis 3).";

@@ -30,6 +30,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 
 #include <gnuastro/fits.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 
@@ -176,7 +177,7 @@ crop_write_to_log(struct onecropparams *crp)
         {
         case 1:
           strarr=tmp->array;
-          gal_checkset_allocate_copy(crp->name, &strarr[crp->out_ind]);
+          gal_string_allocate_copy(crp->name, &strarr[crp->out_ind]);
           break;
 
         case 2:
@@ -411,7 +412,7 @@ crop_log(struct cropparams *p)
      means that the user didn't give an output name, so we'll just use
      'astcrop.log'. */
   if( !strcmp(out, DEFAULTOUTPUT) )
-    gal_checkset_allocate_copy("astcrop-log.fits", &lname);
+    gal_string_allocate_copy("astcrop-log.fits", &lname);
 
   /* An output name was given. */
   else
@@ -420,9 +421,9 @@ crop_log(struct cropparams *p)
          remove it to build the log name. */
       if( out[strlen(out)-1]=='/' )
         {
-          gal_checkset_allocate_copy(out, &tmp);
+          gal_string_allocate_copy(out, &tmp);
           tmp[strlen(tmp)-1]='\0';
-          lname=gal_checkset_malloc_cat(tmp, suffix);
+          lname=gal_string_malloc_cat(tmp, suffix);
           free(tmp);
         }
 

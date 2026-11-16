@@ -164,20 +164,10 @@ gal_type_out(int first_type, int second_type);
 
 
 /*************************************************************
- **************         To/from string         ***************
+ **************              Debug             ***************
  *************************************************************/
-
 char *
 gal_type_bit_string(void *in, size_t size);
-
-char *
-gal_type_to_string(void *ptr, uint8_t type, int quote_if_str_has_space);
-
-int
-gal_type_from_string(void **out, char *string, uint8_t type);
-
-void *
-gal_type_string_to_number(char *string, uint8_t *type);
 
 
 

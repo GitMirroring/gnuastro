@@ -29,8 +29,8 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 
 #include <gnuastro/list.h>
+#include <gnuastro/string.h>
 
-#include <gnuastro-internal/checkset.h>
 #include <gnuastro-internal/arithmetic-set.h>
 
 
@@ -121,7 +121,7 @@ gal_arithmetic_set_name(struct gal_arithmetic_set_params *p, char *token)
         { free(p->named->unit); p->named->unit=NULL; }
       if(p->named->comment)
         { free(p->named->comment); p->named->comment=NULL; }
-      gal_checkset_allocate_copy(varname, &p->named->name);
+      gal_string_allocate_copy(varname, &p->named->name);
     }
   else
     {

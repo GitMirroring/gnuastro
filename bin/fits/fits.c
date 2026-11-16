@@ -32,6 +32,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/list.h>
 #include <gnuastro/fits.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/statistics.h>
 
@@ -228,10 +229,10 @@ fits_print_extension_info(struct fitsparams *p)
       if( gal_fits_hdu_is_healpix(fptr) )
         {
           hascomments=1;
-          gal_checkset_allocate_copy("HEALpix", cmstra+i);
+          gal_string_allocate_copy("HEALpix", cmstra+i);
         }
       else
-        gal_checkset_allocate_copy(GAL_BLANK_STRING, cmstra+i);
+        gal_string_allocate_copy(GAL_BLANK_STRING, cmstra+i);
 
 
       /* Write the size into a string. 'sprintf' returns the number of
@@ -261,10 +262,10 @@ fits_print_extension_info(struct fitsparams *p)
           switch(j)
             {
             case 0: ui16[i]=i;                                    break;
-            case 1: gal_checkset_allocate_copy(extname, estra+i); break;
-            case 2: gal_checkset_allocate_copy(tstr, tstra+i);    break;
-            case 3: gal_checkset_allocate_copy(sstr, sstra+i);    break;
-            case 4: gal_checkset_allocate_copy(bunit, ustra+i);   break;
+            case 1: gal_string_allocate_copy(extname, estra+i); break;
+            case 2: gal_string_allocate_copy(tstr, tstra+i);    break;
+            case 3: gal_string_allocate_copy(sstr, sstra+i);    break;
+            case 4: gal_string_allocate_copy(bunit, ustra+i);   break;
             }
           ++j;
         }
@@ -633,7 +634,7 @@ fits_list_certain_hdu_string(fitsfile *fptr, int hduindex)
     }
 
   /* Put the value into the allocated 'out' string. */
-  gal_checkset_allocate_copy(status ? extname : extname+1, &out);
+  gal_string_allocate_copy(status ? extname : extname+1, &out);
   return out;
 }
 

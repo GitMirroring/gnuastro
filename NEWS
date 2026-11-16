@@ -85,6 +85,34 @@ See the end of the file for license conditions.
       '-allngbs' suffix shows the usage of all 8 neighbors; see the
       documentation for more.
 
+    - unique: also supports string inputs (until now it only supported
+      numeric types).
+
+    - remove-space: remove space characters from the given string data
+      (does not do anything when there is no space characters an input
+      string).
+
+    - append: append (concatenate) two strings to each other.
+
+    - append-hyphen:
+    - append-ampersand:
+    - append-underscore:
+      Append the corresponding character to a string. This is useful when
+      you want to construct multi-component strings (for example to create
+      multi-component operators).
+
+    - string-to-lower:
+    - string-to-upper:
+      Manipulate strings, by removing spaces or by changing case.
+
+    - string-to-number: convert a string into a number. The type (integer
+      or double) is detected automatically.
+
+    - int-to-string: convert an integer into a string.
+
+    - float-to-string: convert a float into a string, with desired
+      precision and format.
+
 *** ConvertType
 
   - sls-no-white:
@@ -217,6 +245,14 @@ See the end of the file for license conditions.
 
   - gal_units_jd_to_mars_sol: JD to Mars Sol date.
 
+  - gal_string_has_space: tell if the string has a space.
+
+  - gal_string_case_change: select the case of a string.
+
+  - gal_string_malloc_cat: append two strings (dealing with allocations).
+
+  - gal_string_allocate_copy: allocate and copy a string.
+
 ** Removed features
 
 *** Statistics
@@ -250,7 +286,6 @@ See the end of the file for license conditions.
       now, this was not possible. The example in the book (drawing the
       circumference of a circle on a flat plane or on the sky) has also
       been updated.
-
 
 *** Book
 
@@ -307,6 +342,13 @@ See the end of the file for license conditions.
 
   - GAL_WCS_DISTORTION_SIP_NO_REVERSE of 'wcs.h': new distortion (see
     '--wcsdistortion' under 'astfits' above).
+
+  - gal_string_from_type: new name for 'gal_type_to_string' with extra
+    precision and format arguments for floating point numbers.
+
+  - gal_string_to_type: new name for 'gal_type_from_string'.
+
+  - gal_string_to_number: new name for 'gal_type_string_to_number'
 
 ** Bugs fixed
 

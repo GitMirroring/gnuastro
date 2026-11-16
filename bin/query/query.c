@@ -29,9 +29,8 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 
 #include <gnuastro/wcs.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
-
-#include <gnuastro-internal/checkset.h>
 
 #include "tap.h"
 #include "ned.h"
@@ -232,10 +231,10 @@ query_output_meta_dataset(struct queryparams *p)
         {
           allcols[i].minmapsize=1; /* The "repeat" for vectors. */
           allcols[i].type=query_type_from_tap(type[i]);
-          gal_checkset_allocate_copy(name[i], &allcols[i].name);
-          gal_checkset_allocate_copy(desc[i], &allcols[i].comment);
+          gal_string_allocate_copy(name[i], &allcols[i].name);
+          gal_string_allocate_copy(desc[i], &allcols[i].comment);
           if( !strcmp(unit[i]," ") ) allcols[i].unit=NULL;
-          else gal_checkset_allocate_copy(unit[i], &allcols[i].unit);
+          else gal_string_allocate_copy(unit[i], &allcols[i].unit);
         }
 
       /* Print the basic information. */

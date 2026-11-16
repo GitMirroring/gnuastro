@@ -29,10 +29,10 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/fits.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/convolve.h>
 
 #include <gnuastro-internal/timing.h>
-#include <gnuastro-internal/checkset.h>
 
 #include "main.h"
 
@@ -89,7 +89,7 @@ noisechisel_convolve(struct noisechiselparams *p)
   if(p->conv!=p->input)
     {
       if(p->conv->name) free(p->conv->name);
-      gal_checkset_allocate_copy( ( p->widekernel
+      gal_string_allocate_copy( ( p->widekernel
                                     ? "CONVOLVED-SHARPER"
                                     : "CONVOLVED" ), &p->conv->name);
     }
@@ -109,7 +109,7 @@ noisechisel_convolve(struct noisechiselparams *p)
       p->wconv=gal_convolve_spatial(tl->tiles, p->widekernel,
                                     p->cp.numthreads, 1,
                                     tl->workoverch, 0);
-      gal_checkset_allocate_copy("CONVOLVED-WIDER", &p->wconv->name);
+      gal_string_allocate_copy("CONVOLVED-WIDER", &p->wconv->name);
 
       if(!p->cp.quiet)
         gal_timing_report(&t1, "Convolved with wider kernel.", 1);

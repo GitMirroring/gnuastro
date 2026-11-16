@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/blank.h>
 #include <gnuastro/table.h>
 #include <gnuastro/array.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/arithmetic.h>
 #include <gnuastro/statistics.h>
@@ -360,7 +361,7 @@ ui_read_column(struct convolveparams *p, int i0k1)
                   ? gal_checkset_dataset_name(filename, hdu)
                   : "Standard input" ));
         case 1:
-          gal_checkset_allocate_copy("1", &columnname);
+          gal_string_allocate_copy("1", &columnname);
           break;
         default:
           error(EXIT_FAILURE, 0, "%s is a table containing more than one "
@@ -419,7 +420,7 @@ ui_read_column(struct convolveparams *p, int i0k1)
   /* If the input was from standard input, we can actually write this into
      it (for future reporting). */
   if(filename==NULL)
-    gal_checkset_allocate_copy("standard-input",
+    gal_string_allocate_copy("standard-input",
                                ( i0k1==0 ? &p->filename : &p->kernelname ));
 
   /* One-dimensional convolution is only supported in spatial-mode

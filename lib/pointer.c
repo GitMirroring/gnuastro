@@ -31,6 +31,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <sys/mman.h>
 
 #include <gnuastro/type.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
 #include <gnuastro-internal/checkset.h>
@@ -120,7 +121,7 @@ gal_pointer_mmap_allocate(uint8_t type, size_t size, int clear,
   /* Check if the 'gnuastro_mmap' folder exists, write the file there. If
      it doesn't exist, then make it. If it can't be built, we'll make a
      randomly named file in the current directory. */
-  gal_checkset_allocate_copy("./gnuastro_mmap/", &dirname);
+  gal_string_allocate_copy("./gnuastro_mmap/", &dirname);
   if( gal_checkset_mkdir(dirname) )
     {
       /* The directory couldn't be built. Free the old name. */

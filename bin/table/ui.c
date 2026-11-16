@@ -32,6 +32,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/wcs.h>
 #include <gnuastro/fits.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
 #include <gnuastro-internal/timing.h>
@@ -789,7 +790,7 @@ ui_columns_prepare(struct tableparams *p, gal_list_str_t *lines)
               /* Repeat the arithmetic command for each column. */
               for(i=1;i<=numcols;++i)
                 {
-                  gal_checkset_allocate_copy(str, &tstr);
+                  gal_string_allocate_copy(str, &tstr);
                   sprintf(tstr+arithallind+1, "%-3zu", i);
                   tstr[arithallind+4]=' ';
                   ui_columns_prepare_arith(p, colinfo, &colstoread,
@@ -910,7 +911,7 @@ ui_check_select_sort_read_col_ind(char *string)
   size_t out;
   void *ptr=&out;
 
-  if( gal_type_from_string(&ptr, string, GAL_TYPE_SIZE_T) )
+  if( gal_string_to_type(&ptr, string, GAL_TYPE_SIZE_T) )
     out=GAL_BLANK_SIZE_T;
   else out-=1;
 

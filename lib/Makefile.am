@@ -136,6 +136,7 @@ libgnuastro_la_SOURCES = \
   dimension.c \
   speclines.c \
   statistics.c \
+  string.c \
   table.c \
   tableintern.c \
   threads.c \
@@ -189,6 +190,7 @@ pkginclude_HEADERS = gnuastro/config.h \
   $(headersdir)/qsort.h \
   $(headersdir)/speclines.h \
   $(headersdir)/statistics.h \
+  $(headersdir)/string.h \
   $(headersdir)/table.h \
   $(headersdir)/threads.h \
   $(headersdir)/tiff.h \

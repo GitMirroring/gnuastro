@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/tile.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/arithmetic.h>
 #include <gnuastro/statistics.h>
@@ -334,7 +335,8 @@ statistics_print_one_row(struct statisticsparams *p)
          characters before or after the printed outputs. So we have defined
          'counter' to add a single white space character before any element
          except the first one. */
-      toprint=gal_type_to_string(out->array, out->type, 0);
+      toprint=gal_string_from_type(out->array, out->type, GAL_BLANK_UINT8,
+                                   0, 0, 0);
       printf("%s%s", counter ? " " : "", toprint);
       free(toprint);
 
@@ -991,13 +993,13 @@ histogram_2d_set_ctype(char *orig, char *backup)
     {
       /* Copy the original name into a newly allocated space because we
          later want to free it. */
-      gal_checkset_allocate_copy(orig, &out);
+      gal_string_allocate_copy(orig, &out);
 
       /* Parse the copy and if a dash is present, correct it. */
       for(c=out; *c!='\0'; ++c) if(*c=='-') *c='_';
     }
   else
-    gal_checkset_allocate_copy(backup, &out);
+    gal_string_allocate_copy(backup, &out);
 
   /* Return the final string. */
   return out;
@@ -1229,14 +1231,14 @@ print_basics(struct statisticsparams *p)
 
   /* Minimum: */
   tmp=gal_statistics_minimum(p->input);
-  str=gal_type_to_string(tmp->array, tmp->type, 0);
+  str=gal_string_from_type(tmp->array, tmp->type, GAL_BLANK_UINT8,0,0,0);
   printf("  %-*s %s\n", namewidth, "Minimum:", str);
   gal_data_free(tmp);
   free(str);
 
   /* Maximum: */
   tmp=gal_statistics_maximum(p->input);
-  str=gal_type_to_string(tmp->array, tmp->type, 0);
+  str=gal_string_from_type(tmp->array, tmp->type, GAL_BLANK_UINT8,0,0,0);
   printf("  %-*s %s\n", namewidth, "Maximum:", str);
   gal_data_free(tmp);
   free(str);
@@ -1263,7 +1265,7 @@ print_basics(struct statisticsparams *p)
 
   /* Find and print the median:  */
   tmp=gal_statistics_median(p->input, 0);
-  str=gal_type_to_string(tmp->array, tmp->type, 0);
+  str=gal_string_from_type(tmp->array, tmp->type, GAL_BLANK_UINT8,0,0,0);
   printf("  %-*s %s\n", namewidth, "Median:", str);
   gal_data_free(tmp);
   free(str);

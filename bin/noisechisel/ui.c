@@ -32,6 +32,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/array.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/dimension.h>
@@ -613,7 +614,7 @@ ui_preparations_read_input(struct noisechiselparams *p)
 
   /* When the input doesn't have a name, use 'INPUT'. */
   if(p->input->name==NULL)
-    gal_checkset_allocate_copy("INPUT", &p->input->name);
+    gal_string_allocate_copy("INPUT", &p->input->name);
 
   /* Check the dimensions of the input. */
   ndim=p->input->ndim;

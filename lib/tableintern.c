@@ -22,6 +22,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************/
 #include <config.h>
 
+#include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
 #include <error.h>
@@ -33,10 +34,10 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/txt.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
 #include <gnuastro-internal/timing.h>
-#include <gnuastro-internal/checkset.h>
 #include <gnuastro-internal/tableintern.h>
 
 
@@ -446,10 +447,10 @@ gal_tableintern_read_blank(gal_data_t *col, char *blank)
      'gal_data_string_to_type' will return 0. In that case, we need to
      initialize the necessary parameters to read this data structure
      correctly. */
-  if( gal_type_from_string((void **)(&col->array), blank, col->type) )
+  if( gal_string_to_type((void **)(&col->array), blank, col->type) )
     {
       col->flag |= GAL_TABLEINTERN_FLAG_ARRAY_IS_BLANK_STRING;
-      gal_checkset_allocate_copy(blank, (char **)(&col->array));
+      gal_string_allocate_copy(blank, (char **)(&col->array));
     }
   else
     {

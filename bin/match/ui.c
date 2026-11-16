@@ -30,6 +30,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/fits.h>
 #include <gnuastro/match.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 
 #include <gnuastro-internal/timing.h>
@@ -211,16 +212,16 @@ ui_parse_match_type(struct argp_option *option, char *arg,
       switch(value)
         {
         case GAL_MATCH_ARRANGE_FULL:
-          gal_checkset_allocate_copy("full", &str);
+          gal_string_allocate_copy("full", &str);
           break;
         case GAL_MATCH_ARRANGE_INNER:
-          gal_checkset_allocate_copy("inner", &str);
+          gal_string_allocate_copy("inner", &str);
           break;
         case GAL_MATCH_ARRANGE_OUTER:
-          gal_checkset_allocate_copy("outer", &str);
+          gal_string_allocate_copy("outer", &str);
           break;
         case GAL_MATCH_ARRANGE_OUTERWITHINAPERTURE:
-          gal_checkset_allocate_copy("outer-within-aperture", &str);
+          gal_string_allocate_copy("outer-within-aperture", &str);
           break;
         default:
           error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' "
@@ -1039,7 +1040,7 @@ ui_preparations_out_cols(struct matchparams *p)
             if(p->coord)
               {
                 goodvalue=0;
-                rptr=gal_type_string_to_number(col+1, &readtype);
+                rptr=gal_string_to_number(col+1, &readtype);
                 if(rptr)
                   {
                     read=gal_data_alloc(rptr, readtype, 1, &one, NULL, 0,

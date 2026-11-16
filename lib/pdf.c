@@ -32,6 +32,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/eps.h>
 #include <gnuastro/pdf.h>
 #include <gnuastro/jpeg.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
 #include <gnuastro-internal/checkset.h>
@@ -107,7 +108,7 @@ gal_pdf_write(gal_data_t *in, char *filename, float widthincm,
   size_t w_h_in_pt[2];
   gal_list_str_t *command=NULL;
   char *device, *devwp, *devhp, *devopt;
-  char *epsname=gal_checkset_malloc_cat(filename, ".ps");
+  char *epsname=gal_string_malloc_cat(filename, ".ps");
 
   /* Write the EPS file. */
   gal_eps_write(in, epsname, widthincm, borderwidth,

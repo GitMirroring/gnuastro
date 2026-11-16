@@ -32,9 +32,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/list.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
-#include <gnuastro-internal/checkset.h>
 
 
 
@@ -62,7 +62,7 @@ gal_list_str_add(gal_list_str_t **list, char *value,
     error(EXIT_FAILURE, errno, "%s: allocating new node", __func__);
 
   if(allocate)
-    gal_checkset_allocate_copy(value, &newnode->v);
+    gal_string_allocate_copy(value, &newnode->v);
   else
     newnode->v=value;
 
@@ -185,7 +185,7 @@ gal_list_str_extract(char *string)
   /* Make a copy of the input string, remove all commented delimiters
      (those with a preceding '\'), this was inspired from
      'gal_options_parse_list_of_strings'. */
-  gal_checkset_allocate_copy(string, &cp);
+  gal_string_allocate_copy(string, &cp);
   for(c=cp; *c!='\0'; c++)
     if(*c=='\\' && c[1]!='\0')
       {

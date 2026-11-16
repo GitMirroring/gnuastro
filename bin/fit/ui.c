@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/array.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 
 #include <gnuastro-internal/timing.h>
 #include <gnuastro-internal/options.h>
@@ -500,17 +501,17 @@ ui_sanity_file_read(struct fitparams *p, char *name, char *hdu,
         {
         case 2:
           if(out->name==NULL) free(out->name);
-          gal_checkset_allocate_copy("X", &out->name);
+          gal_string_allocate_copy("X", &out->name);
           if(out->next->name==NULL) free(out->next);
-          gal_checkset_allocate_copy("Y", &out->next->name);
+          gal_string_allocate_copy("Y", &out->next->name);
           break;
         case 3:
           if(out->name==NULL) free(out->name);
-          gal_checkset_allocate_copy("X1", &out->name);
+          gal_string_allocate_copy("X1", &out->name);
           if(out->next->name==NULL) free(out->next->name);
-          gal_checkset_allocate_copy("X2", &out->next->name);
+          gal_string_allocate_copy("X2", &out->next->name);
           if(out->next->next->name==NULL) free(out->next->next->name);
-          gal_checkset_allocate_copy("Y", &out->next->next->name);
+          gal_string_allocate_copy("Y", &out->next->next->name);
           break;
         default:
           error(EXIT_FAILURE, 0, "%s: the input for fitting has to have "
@@ -680,7 +681,7 @@ ui_read_raw_weight(struct fitparams *p)
 
   /* If it is a 1D column and doesn't have any name give it a name . */
   if( p->ywht->ndim==1 && p->ywht->name==NULL )
-    gal_checkset_allocate_copy("Y-WHT", &p->ywht->name);
+    gal_string_allocate_copy("Y-WHT", &p->ywht->name);
 }
 
 
@@ -973,8 +974,7 @@ ui_read_estimate(struct fitparams *p)
 
       /* Set the pointer to read/write. */
       dptr=evals+i++;
-      if( gal_type_from_string((void **)(&dptr), stmp->v,
-                               GAL_TYPE_FLOAT64) )
+      if(gal_string_to_type((void **)(&dptr), stmp->v, GAL_TYPE_FLOAT64))
         { *dptr=NAN; break; } /* !=0: could not be read as a number! */
     }
 

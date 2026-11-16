@@ -222,12 +222,14 @@ if COND_STATISTICS
   statistics/estimate_sky.sh: arithmetic/mknoise-sigma-from-mean.sh.log
 endif
 if COND_TABLE
-  MAYBE_TABLE_TESTS = table/arith-img-to-wcs.sh \
+  MAYBE_TABLE_TESTS = table/string-columns.sh \
+                      table/arith-img-to-wcs.sh \
                       table/txt-to-fits-ascii.sh \
                       table/fits-ascii-to-txt.sh \
                       table/txt-to-fits-binary.sh \
                       table/fits-binary-to-txt.sh \
                       table/sexagesimal-to-deg.sh
+  table/string-columns.sh: prepconf.sh.log
   table/txt-to-fits-ascii.sh: prepconf.sh.log
   table/txt-to-fits-binary.sh: prepconf.sh.log
   table/sexagesimal-to-deg.sh: prepconf.sh.log

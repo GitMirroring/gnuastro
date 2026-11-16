@@ -36,6 +36,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnumake.h>
 
 #include <gnuastro/txt.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
 #include <gnuastro-internal/options.h>
@@ -246,8 +247,8 @@ makeplugin_text_to_upper(const char *caller, unsigned int argc,
   if(makeplugin_sanity_check(argv, 1)) return NULL;
 
   /* Main operation. */
-  gal_checkset_allocate_copy(argv[0], &out);
-  gal_checkset_string_case_change(out, 1);
+  gal_string_allocate_copy(argv[0], &out);
+  gal_string_case_change(out, 1);
   return out;
 }
 
@@ -266,8 +267,8 @@ makeplugin_text_to_lower(const char *caller, unsigned int argc,
   if(makeplugin_sanity_check(argv, 1)) return NULL;
 
   /* Main operation. */
-  gal_checkset_allocate_copy(argv[0], &out);
-  gal_checkset_string_case_change(out, 0);
+  gal_string_allocate_copy(argv[0], &out);
+  gal_string_case_change(out, 0);
   return out;
 }
 
@@ -297,7 +298,7 @@ makeplugin_text_prev_batch_work(char *target, size_t num_in_batch,
 
   /* Parse the line to find the desired element, but first copy the input
      list into a new editable space with 'strdupa'. */
-  gal_checkset_allocate_copy(list, &cp);
+  gal_string_allocate_copy(list, &cp);
   token=strtok_r(cp, delimiters, &saveptr);
   do
     {
@@ -399,7 +400,7 @@ makeplugin_text_next_work(char *target, size_t num_in_batch,
 
   /* Parse the line to find the desired element, but first copy the input
      list into a new editable space with 'strdupa'. */
-  gal_checkset_allocate_copy(list, &cp);
+  gal_string_allocate_copy(list, &cp);
   token=strtok_r(cp, delimiters, &saveptr);
   do
     {
@@ -507,7 +508,7 @@ makeplugin_text_batch(const char *caller, unsigned int argc,
 
   /* Interpret the number. */
   nptr=&num;
-  if( gal_type_from_string(&nptr, numstr, GAL_TYPE_SIZE_T) )
+  if( gal_string_to_type(&nptr, numstr, GAL_TYPE_SIZE_T) )
     {
       fprintf(stderr, "%s: '%s' could not be read as an unsigned "
               "(positive) integer", caller, numstr);
@@ -570,7 +571,7 @@ makeplugin_text_prev_batch_by_ram(const char *caller, unsigned int argc,
 
   /* Interpret the number. */
   nptr=&needed_gb;
-  if( gal_type_from_string(&nptr, ramstr, GAL_TYPE_FLOAT32) )
+  if( gal_string_to_type(&nptr, ramstr, GAL_TYPE_FLOAT32) )
     {
       fprintf(stderr, "'%s' could not be read as an unsigned "
               "integer", ramstr);

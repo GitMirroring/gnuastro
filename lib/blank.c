@@ -33,10 +33,10 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/data.h>
 #include <gnuastro/tile.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/statistics.h>
 
-#include <gnuastro-internal/checkset.h>
 
 
 
@@ -62,7 +62,7 @@ gal_blank_write(void *ptr, uint8_t type)
 
     /* String type. */
     case GAL_TYPE_STRING:
-      gal_checkset_allocate_copy(GAL_BLANK_STRING, ptr);
+      gal_string_allocate_copy(GAL_BLANK_STRING, ptr);
       break;
 
     /* Complex types. */
@@ -119,7 +119,7 @@ gal_blank_initialize(gal_data_t *input)
       for(i=0;i<input->size;++i)
         {
           if(strarr[i]) free(strarr[i]);
-          gal_checkset_allocate_copy(GAL_BLANK_STRING, &strarr[i]);
+          gal_string_allocate_copy(GAL_BLANK_STRING, &strarr[i]);
         }
     }
   else
@@ -982,7 +982,7 @@ gal_blank_flag_apply(gal_data_t *input, gal_data_t *flag)
           if(*f && *f!=GAL_BLANK_UINT8)
             {
               free(strarr[j]);
-              gal_checkset_allocate_copy(GAL_BLANK_STRING, &strarr[j]);
+              gal_string_allocate_copy(GAL_BLANK_STRING, &strarr[j]);
             }
           ++f;
         }
@@ -1210,7 +1210,7 @@ gal_blank_remove(gal_data_t *input, int free_if_all_blank)
         case GAL_TYPE_STRING:
           strarr=input->array;
           for(i=0;i<input->size;++i)
-            if( strcmp(strarr[i], GAL_BLANK_STRING) ) /* Not blank. */
+            if( strarr[i] && strcmp(strarr[i], GAL_BLANK_STRING) ) /* Not blank. */
               { strarr[num++]=strarr[i]; }
             else { free(strarr[i]); strarr[i]=NULL; }  /* Is blank. */
           break;

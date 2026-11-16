@@ -45,8 +45,11 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 
 
+
+
 /* Actual header contants (the above were for the Pre-processor). */
 __BEGIN_C_DECLS  /* From C++ preparations */
+
 
 
 
@@ -76,33 +79,7 @@ gal_checkset_known_types(char *optarg, int *type, char *filename,
 
 
 
-/**************************************************************/
-/**********          My String functions:          ************/
-/**************************************************************/
-int
-gal_checkset_string_has_space(char *in);
 
-void
-gal_checkset_string_case_change(char *in, int toupper1_tolower0);
-
-char *
-gal_checkset_malloc_cat(char *inname, char *toappend);
-
-void
-gal_checkset_allocate_copy(const char *arg, char **copy);
-
-void
-gal_checkset_allocate_copy_set(char *arg, char **copy, int *set);
-
-char *
-gal_checkset_dataset_name(char *filename, char *hdu);
-
-char *
-gal_checkset_timestamp(char *filename, char *newext);
-
-int
-gal_checkset_noprefix_isequal(char *string, char *prefix,
-                              const char *tocompare);
 
 /**************************************************************/
 /**********               Run commands             ************/
@@ -110,11 +87,19 @@ gal_checkset_noprefix_isequal(char *string, char *prefix,
 int
 gal_checkset_exec(char *executable_abs_address, gal_list_str_t *args);
 
+
+
+
+
 /**************************************************************/
 /**********         Common dataset formats         ************/
 /**************************************************************/
 gal_data_t *
 gal_checkset_labels_to_int32(gal_data_t *input, const char *funcname);
+
+
+
+
 
 /**************************************************************/
 /********** Set file names and check if they exist ************/
@@ -157,6 +142,18 @@ gal_checkset_check_dir_write_add_slash(char **dirname);
 
 int
 gal_checkset_mkdir(char *dirname);
+
+char *
+gal_checkset_timestamp(char *filename, char *newext);
+
+char *
+gal_checkset_dataset_name(char *filename, char *hdu);
+
+int
+gal_checkset_noprefix_isequal(char *string, char *prefix,
+                              const char *tocompare);
+
+
 
 
 

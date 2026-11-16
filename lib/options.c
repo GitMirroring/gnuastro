@@ -40,6 +40,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/blank.h>
 #include <gnuastro/units.h>
 #include <gnuastro/color.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/arithmetic.h>
@@ -218,7 +219,7 @@ gal_options_check_version(struct argp_option *option, char *arg,
          just be present (for a check in a reproduction pipeline for
          example) than for it to be printed. So we don't want to waste
          resources in allocating a redundant value. */
-      gal_checkset_allocate_copy(PACKAGE_VERSION, &str);
+      gal_string_allocate_copy(PACKAGE_VERSION, &str);
       return str;
     }
 
@@ -385,7 +386,7 @@ gal_options_check_config(struct argp_option *option, char *arg,
   /* First see if we are reading or writing. */
   if(lineno==-1)
     {
-      gal_checkset_allocate_copy("1", &str);
+      gal_string_allocate_copy("1", &str);
       return str;
     }
 
@@ -441,7 +442,7 @@ gal_options_read_type(struct argp_option *option, char *arg,
     {
       /* Note that 'gal_data_type_as_string' returns a static string. But
          the output must be an allocated string so we can free it. */
-      gal_checkset_allocate_copy(
+      gal_string_allocate_copy(
            gal_type_name( *(uint8_t *)(option->value), 1), &str);
       return str;
     }
@@ -480,7 +481,7 @@ gal_options_read_color(struct argp_option *option, char *arg,
     {
       /* Note that 'gal_data_type_as_string' returns a static string. But
          the output must be an allocated string so we can free it. */
-      gal_checkset_allocate_copy(
+      gal_string_allocate_copy(
            gal_color_id_to_name( *(uint8_t *)(option->value)), &str);
       return str;
     }
@@ -518,7 +519,7 @@ gal_options_read_searchin(struct argp_option *option, char *arg,
     {
       /* Note that 'gal_data_type_as_string' returns a static string. But
          the output must be an allocated string so we can free it. */
-      gal_checkset_allocate_copy(
+      gal_string_allocate_copy(
         gal_tableintern_searchin_as_string( *(uint8_t *)(option->value)),
         &str);
       return str;
@@ -563,10 +564,10 @@ gal_options_read_wcslinearmatrix(struct argp_option *option, char *arg,
       value=*(uint8_t *)(option->value);
       switch(value)
         {
-        case GAL_WCS_LINEAR_MATRIX_PC: gal_checkset_allocate_copy("pc",
+        case GAL_WCS_LINEAR_MATRIX_PC: gal_string_allocate_copy("pc",
                                                                   &str);
           break;
-        case GAL_WCS_LINEAR_MATRIX_CD: gal_checkset_allocate_copy("cd",
+        case GAL_WCS_LINEAR_MATRIX_CD: gal_string_allocate_copy("cd",
                                                                   &str);
           break;
         default:
@@ -610,7 +611,7 @@ gal_options_read_tableformat(struct argp_option *option, char *arg,
     {
       /* Note that 'gal_data_type_as_string' returns a static string. But
          the output must be an allocated string so we can free it. */
-      gal_checkset_allocate_copy(
+      gal_string_allocate_copy(
         gal_tableintern_format_as_string( *(uint8_t *)(option->value)),
         &str);
       return str;
@@ -648,10 +649,10 @@ gal_options_read_interpmetric(struct argp_option *option, char *arg,
       switch(*(uint8_t *)(option->value))
         {
         case GAL_INTERPOLATE_NEIGHBORS_METRIC_RADIAL:
-          gal_checkset_allocate_copy("radial", &str);
+          gal_string_allocate_copy("radial", &str);
           break;
         case GAL_INTERPOLATE_NEIGHBORS_METRIC_MANHATTAN:
-          gal_checkset_allocate_copy("manhattan", &str);
+          gal_string_allocate_copy("manhattan", &str);
           break;
         default:
           error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at %s to "
@@ -1000,7 +1001,7 @@ gal_options_parse_list_of_strings(char *string, char *filename,
 
   /* Make a copy of the input string and remove all commented delimiters
      (those with a preceding '\'). */
-  gal_checkset_allocate_copy(string, &cp);
+  gal_string_allocate_copy(string, &cp);
   for(c=cp; *c!='\0'; c++)
     if(*c=='\\' && c[1]!='\0')
       {
@@ -1056,21 +1057,6 @@ gal_options_parse_list_of_strings(char *string, char *filename,
   return out;
 }
 
-
-
-
-
-static int
-options_string_has_space(char *string)
-{
-  char *c;
-
-  /* If a space character is present, just return. */
-  for(c=string;*c!='\0';++c) if(*c==' ' || *c=='\t') return 1;
-
-  /* If control reaches here, there was no space character. */
-  return 0;
-}
 
 
 
@@ -1287,7 +1273,7 @@ gal_options_parse_csv_strings(struct argp_option *option, char *arg,
       /* See if there are any space characters in the final string. */
       strarr=values->array;
       for(i=0;i<values->size;++i)
-        if(has_space==0) has_space=options_string_has_space(strarr[i]);
+        if(has_space==0) has_space=gal_string_has_space(strarr[i]);
 
       /* If there is a space, the string must start wth quotation marks. */
       nc = has_space ? 1 : 0;
@@ -1312,7 +1298,7 @@ gal_options_parse_csv_strings(struct argp_option *option, char *arg,
 
       /* Copy the string into a dynamically allocated space, because it
          will be freed later. */
-      gal_checkset_allocate_copy(sstr, &str);
+      gal_string_allocate_copy(sstr, &str);
       return str;
     }
 
@@ -1439,7 +1425,7 @@ gal_options_parse_sizes_reverse(struct argp_option *option, char *arg,
 
       /* Copy the string into a dynamically allocated space, because it
          will be freed later. */
-      gal_checkset_allocate_copy(sstr, &str);
+      gal_string_allocate_copy(sstr, &str);
       return str;
     }
 
@@ -1527,7 +1513,7 @@ gal_options_parse_csv_float64(struct argp_option *option, char *arg,
 
       /* Copy the string into a dynamically allocated space, because it
          will be freed later. */
-      gal_checkset_allocate_copy(sstr, &str);
+      gal_string_allocate_copy(sstr, &str);
       return str;
     }
 
@@ -1694,7 +1680,7 @@ gal_options_parse_name_and_values(struct argp_option *option, char *arg,
 
       /* Copy the string into a dynamically allocated space, because it
          will be freed later. */
-      gal_checkset_allocate_copy(sstr, &str);
+      gal_string_allocate_copy(sstr, &str);
       return str;
     }
   else
@@ -1712,7 +1698,7 @@ gal_options_parse_name_and_values(struct argp_option *option, char *arg,
          the 'name' and 'values' points to the next character). So we can
          safely set 'c' to '\0' to have the 'name'. */
       *c='\0';
-      gal_checkset_allocate_copy(arg, &name);
+      gal_string_allocate_copy(arg, &name);
 
       /* Read the values. */
       switch(str0_f641_sz2)
@@ -1988,7 +1974,7 @@ gal_options_parse_colon_sep_csv(struct argp_option *option, char *arg,
 
       /* Copy the string into a dynamically allocated space, because it
          will be freed later. */
-      gal_checkset_allocate_copy(sstr, &str);
+      gal_string_allocate_copy(sstr, &str);
       return str;
     }
   else
@@ -2280,7 +2266,7 @@ gal_options_read_check(struct argp_option *option, char *arg,
             }
 
           /* Read the string argument into the value. */
-          if( gal_type_from_string(&option->value, arg, option->type) )
+          if( gal_string_to_type(&option->value, arg, option->type) )
             /* Fortunately 'error_at_line' will behave like 'error' when
                the filename is NULL (the option was read from a
                command-line). */
@@ -3025,8 +3011,9 @@ options_print_any_type(struct argp_option *option, void *ptr, int type,
 
   /* Write the value into a string. */
   str = ( option->func
-          ? option->func(option, NULL, NULL, (size_t)(-1), cp->program_struct)
-          : gal_type_to_string(ptr, type, 1) );
+          ? option->func(option, NULL, NULL, (size_t)(-1),
+                         cp->program_struct)
+          : gal_string_from_type(ptr, type, GAL_BLANK_UINT8, 0, 1, 0) );
 
   /* If only the width was desired, don't actually print the string, just
      return its length. Otherwise, print it. */
@@ -3437,9 +3424,9 @@ options_as_fits_keywords_write(gal_fits_list_key_t **keys,
               tmp!=NULL; tmp=tmp->next)
             {
               /* 'name' and 'doc' have a 'const' qualifier. */
-              gal_checkset_allocate_copy(tmp->v, &strval);
-              gal_checkset_allocate_copy(options[i].doc,  &doc);
-              gal_checkset_allocate_copy(options[i].name, &name);
+              gal_string_allocate_copy(tmp->v, &strval);
+              gal_string_allocate_copy(options[i].doc,  &doc);
+              gal_string_allocate_copy(options[i].name, &name);
               gal_fits_key_list_add(keys, GAL_TYPE_STRING, name, 1,
                                     strval, 1, doc, 1, NULL, 0);
             }
@@ -3468,13 +3455,13 @@ options_as_fits_keywords_write(gal_fits_list_key_t **keys,
 
             /* Write the keyword. Note that 'name' and 'doc' have a 'const'
                qualifier. */
-            gal_checkset_allocate_copy(options[i].name, &name);
+            gal_string_allocate_copy(options[i].name, &name);
             if(vtype==GAL_TYPE_STRING && strlen(vptr)>FLEN_KEYWORD)
               gal_fits_key_write_filename(name, vptr, keys, 1,
                                           cp->quiet);
             else
               {
-                gal_checkset_allocate_copy(options[i].doc,  &doc);
+                gal_string_allocate_copy(options[i].doc,  &doc);
                 gal_fits_key_list_add(keys, vtype, name, 1, vptr,
                                       vptrfree, doc, 1, NULL, 0);
               }
@@ -3497,9 +3484,9 @@ gal_options_as_fits_keywords(struct gal_options_common_params *cp)
 
   /* Add the extension name (to be all-caps). Note that 'toupper' will make
      it upper-case inplace (which is not intended here). */
-  gal_checkset_allocate_copy(cp->program_name, &pname_upper);
-  gal_checkset_string_case_change(pname_upper, 1);
-  extname=gal_checkset_malloc_cat(pname_upper, "-CONFIG");
+  gal_string_allocate_copy(cp->program_name, &pname_upper);
+  gal_string_case_change(pname_upper, 1);
+  extname=gal_string_malloc_cat(pname_upper, "-CONFIG");
   gal_fits_key_list_add(&cp->ckeys, GAL_TYPE_STRING, "EXTNAME", 0,
                         extname, 1, "HDU name", 0, NULL, 0);
   free(pname_upper);

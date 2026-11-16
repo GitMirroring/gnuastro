@@ -40,6 +40,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/table.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/color.h>
+#include <gnuastro/string.h>
 #include <gnuastro/arithmetic.h>
 
 #include <gnuastro-internal/timing.h>
@@ -1414,8 +1415,8 @@ ui_marks_read_coords(struct converttparams *p, gal_data_t **coord1,
   /* The columns should have specific names. */
   if(c1->name) free(c1->name);
   if(c2->name) free(c2->name);
-  gal_checkset_allocate_copy(GAL_EPS_MARK_COLNAME_XPIX, &c1->name);
-  gal_checkset_allocate_copy(GAL_EPS_MARK_COLNAME_YPIX, &c2->name);
+  gal_string_allocate_copy(GAL_EPS_MARK_COLNAME_XPIX, &c1->name);
+  gal_string_allocate_copy(GAL_EPS_MARK_COLNAME_YPIX, &c2->name);
 
   /* The columns should have specific types. */
   *coord1=gal_data_copy_to_new_type_free(c1, GAL_TYPE_FLOAT32);
@@ -1543,7 +1544,7 @@ ui_marks_read_named_cols(gal_data_t *in, int shape1_color2)
 
   /* Set the specific name of the output. */
   if(out->name) free(out->name);
-  gal_checkset_allocate_copy(name, &out->name);
+  gal_string_allocate_copy(name, &out->name);
 
   /* Return the output dataset. */
   return out;
@@ -1593,7 +1594,7 @@ ui_marks_read_fixedtype_col(struct converttparams *p, gal_data_t *in,
 
   /* Free the possibly existing current name. */
   if(out->name) free(out->name);
-  gal_checkset_allocate_copy(name, &out->name);
+  gal_string_allocate_copy(name, &out->name);
 
   /* Return the proper dataset. */
   return out;

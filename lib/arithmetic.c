@@ -49,6 +49,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/units.h>
 #include <gnuastro/qsort.h>
 #include <gnuastro/binary.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/gradient.h>
@@ -1060,7 +1061,7 @@ arithmetic_date_str_from(int operator, uint8_t flags, gal_data_t *in)
           if(ismilli)
             {
               sprintf(ssecstr, ".%"PRId64, sec%=1000);
-              tout=gal_checkset_malloc_cat(sa[i], ssecstr);
+              tout=gal_string_malloc_cat(sa[i], ssecstr);
               free(sa[i]);
               sa[i]=tout;
             }
@@ -3245,7 +3246,7 @@ arithmetic_binary_out_type(int operator, gal_data_t *l, gal_data_t *r)
 /* Binary arithmetic's type checks: According to C's implicity/automatic
    type conversion in binary operators, the unsigned types have higher
    precedence for the same width. See the description of
-   'gal_type_string_to_number' in the Gnuastro book for an example.
+   'gal_string_to_number' in the Gnuastro book for an example.
 
    To avoid this situation, it is therefore necessary to print a message
    and let the user know that strange situations like above may occur. Just
@@ -4404,7 +4405,7 @@ gal_arithmetic_load_col(char *str, int searchin, int ignorecase,
      string. But we don't want to ruin the input string (in case it isn't
      for this purpose), so for the rest of the steps we'll make a copy of
      the input string and work on that. */
-  gal_checkset_allocate_copy(str, &copy);
+  gal_string_allocate_copy(str, &copy);
 
   /* Parse the string and separate the components. */
   gal_list_str_add(&colid,
@@ -4478,6 +4479,406 @@ gal_arithmetic_load_col(char *str, int searchin, int ignorecase,
   /* Clean up and return. */
   gal_list_str_free(colid, 0);
   free(copy);
+  return out;
+}
+
+
+
+
+
+/* Read the input string(s) as a number written in decimal form. */
+static gal_data_t *
+arithmetic_string_to_number(gal_data_t *input, int operator, int flags)
+{
+  size_t i;
+  void *value;
+  gal_data_t *out;
+  char *in, **istarr;
+  uint8_t type=GAL_TYPE_INVALID;
+
+  /* Sanity check. */
+  if ( input->type != GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: only type string is accepted. "
+          "Use '%s' to convert it", __func__,
+          gal_arithmetic_operator_string(operator));
+
+  /* Loop over the input strings, to find the type of the number. Stop the
+     loop if a type (floating point) has been found. */
+  istarr=input->array;
+  for(i=0; i<input->size && type==GAL_TYPE_INVALID; i++)
+    {
+      /* Initialize the pointer to this string. */
+      in=istarr[i];
+
+      /* Check if it starts with a dot. If it's the case, we can assume
+         input can be read as a floating point number. */
+      if(*(in++)=='.')
+        type=GAL_TYPE_FLOAT64;
+      else
+        /* Loop all over the rest of the string, looking for a decimal
+           point or 'e' to indicate an exponent like 1e+3 or 37e-2. We also
+           look for 'E', as 1e3 and 1E3 are valid. */
+        do
+          switch(*in)
+            {
+            case '.': case 'e': case 'E':
+              type=GAL_TYPE_FLOAT64;
+              break;
+            }
+        while(*(++in)!='\0' && type==GAL_TYPE_INVALID);
+    }
+
+  /* if type is not floating point, then assume integer. */
+  if (!type) type=GAL_TYPE_INT64;
+
+  /* Allocate the output dataset and do the conversion. */
+  out=gal_data_alloc(NULL, type, input->ndim,
+                     input->dsize, NULL, 0, input->minmapsize,
+                     input->quietmmap, NULL, NULL, NULL);
+  for(i=0; i<input->size; i++)
+    {
+      /* Set the output string pointer. */
+      value=gal_pointer_increment(out->array, i, out->type);
+
+      /* The check above on the type was very simple (not perfect!), so we
+         also need to check the returned value of 'gal_string_to_type'. */
+      if(gal_string_to_type(&value, istarr[i], out->type)>0)
+        {
+          gal_blank_write(value, out->type);
+          if( (flags & GAL_ARITHMETIC_FLAG_QUIET)==0 )
+            error(EXIT_SUCCESS, 0, "%s: convertion of string '%s' to a "
+                  "number (of type %s) failed. This warning can be "
+                  "suppressed with '--quiet' (or '-q')", __func__,
+                  istarr[i], gal_type_name(out->type, 1));
+        }
+    }
+
+  /* Clean up. */
+  if(out!=input && (flags & GAL_ARITHMETIC_FLAG_FREE))
+    gal_data_free(input);
+
+  /* Return the allocated dataset. */
+  return out;
+}
+
+
+
+
+
+/* Write a number as string, assuming base 10. */
+static gal_data_t *
+arithmetic_to_string(gal_data_t *input, gal_data_t *inprec,
+                     gal_data_t *informat, int operator, int flags)
+{
+  size_t i;
+  void *value;
+  char **outarr;
+  gal_data_t *out=NULL, *prec=NULL, *format=NULL;
+  int precision=0, f1e0=0, quiet=(flags & GAL_ARITHMETIC_FLAG_QUIET)==0;
+
+  /* If the input is floating point, we need the precision and format. */
+  switch(operator)
+    {
+    /* The only thing to check for 'int-to-string' is the type. */
+    case GAL_ARITHMETIC_OP_INT_TO_STRING:
+      if( gal_type_is_int(input->type)==0 )
+        error(EXIT_FAILURE, 0, "the '%s' operator inputs should have "
+              "an integer type, but it has a type of '%s'. %s",
+              gal_arithmetic_operator_string(operator),
+              gal_type_name(input->type, 1),
+              input->type==GAL_TYPE_STRING ? "Since it is already a "
+              "string, you can remove this operator": "Use the "
+              "'float-to-string' operator instead (note that it needs "
+              "two extra operands: the precision and format)");
+      break;
+
+    /* The 'float-to-string' operator needs the type checks as well as some
+       other preparations. */
+    case GAL_ARITHMETIC_OP_FLOAT_TO_STRING:
+      if( gal_type_is_int(input->type) || input->type==GAL_TYPE_STRING )
+        error(EXIT_FAILURE, 0, "the '%s' operator inputs should have "
+              "a floating point type, but it has a type of '%s'. %s",
+              gal_arithmetic_operator_string(operator),
+              gal_type_name(input->type, 1),
+              input->type==GAL_TYPE_STRING ? "Since it is already a "
+              "string, you can remove this operator": "Use the "
+              "'int-to-string' operator instead (note that it only "
+              "takes a single operand)");
+
+      /* Make sure the format and precision arguments are given. */
+      if(inprec==NULL || informat==NULL)
+        error(EXIT_FAILURE, 0, "%s: a bug! The '%s' operator should have "
+              "non-NULL 'inprec' and 'informat' arguments, but at least "
+              "one of them is NULL", __func__,
+              gal_arithmetic_operator_string(operator));
+
+      /* Make sure that the format and precision operands only have a
+         single element (our current assumption). */
+      if(informat->size!=1 || inprec->size!=1)
+        error(EXIT_FAILURE, 0, "the first and second popped operands of "
+              "'%s' (the format and precision to print the floating "
+              "point) should currently have a single element. If you "
+              "need a different precision and format for each input "
+              "elemnt, get in touch with us at '%s'",
+              gal_arithmetic_operator_string(operator),
+              PACKAGE_BUGREPORT);
+
+      /* Make sure the precision and format have the proper type, then
+         extract their values into a simple variable.. */
+      if(inprec) prec=gal_data_copy_to_new_type(inprec, GAL_TYPE_INT8);
+      if(informat) format=gal_data_copy_to_new_type(informat, GAL_TYPE_INT8);
+      if(format) f1e0=((int8_t *)format->array)[0];
+      if(prec) precision=((int8_t *)prec->array)[0];
+
+      /* The format value should only be 0 or 1. */
+      if(f1e0!=0 && f1e0!=1)
+        error(EXIT_FAILURE, 0, "the first popped operand of '%s' (the "
+              "format of the printed floating point) can only have a "
+              "value of '0' or '1', but it has a value of '%"PRId8"'",
+              gal_arithmetic_operator_string(operator), f1e0);
+      break;
+
+    /* The operator is not for this function. */
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! The operator code '%d' is not "
+            "expected", __func__, operator);
+    }
+
+  /* Allocate the output dataset. */
+  out=gal_data_alloc(NULL, GAL_TYPE_STRING, input->ndim,
+                     input->dsize, NULL, 0, input->minmapsize,
+                     input->quietmmap, NULL, NULL, NULL);
+
+  /* Loop over the input and do the conversion. */
+  outarr=out->array;
+  for(i=0; i<input->size; i++)
+    {
+      value=gal_pointer_increment(input->array, i, input->type);
+      outarr[i]=gal_string_from_type(value, input->type, precision,
+                                     f1e0, 1, quiet==0 || i!=0);
+    }
+
+  /* Clean up. */
+  if(prec && inprec!=prec) gal_data_free(prec);
+  if(format && informat!=format) gal_data_free(format);
+  if(out!=input && (flags & GAL_ARITHMETIC_FLAG_FREE))
+    {
+      gal_data_free(input);
+      gal_data_free(inprec);
+      gal_data_free(informat);
+    }
+
+  /* Return the allocated dataset. */
+  return out;
+}
+
+
+
+
+
+/* Append a character to a given string */
+static gal_data_t *
+arithmetic_append_char(gal_data_t *input, int operator, int flags)
+{
+  size_t i;
+  char tmpstr[2];
+  gal_data_t *out;
+  char **outarr, **istarr;
+
+  if ( input->type != GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: only type string is accepted. "
+          "Use 'to-string' to convert it", __func__);
+
+  /* Allocate the output dataset. */
+  out=gal_data_alloc(NULL, GAL_TYPE_STRING, input->ndim,
+                     input->dsize, NULL, 0, input->minmapsize,
+                     input->quietmmap, NULL, NULL, NULL);
+
+  /* Set the pointers to the strings. */
+  outarr=out->array;
+  istarr=input->array;
+
+  /* Set terminating character */
+  tmpstr[1]='\0';
+
+  /* Obtain the desired character. */
+  switch(operator)
+    {
+    case GAL_ARITHMETIC_OP_APPEND_HYPHEN:            /* '-' */
+      tmpstr[0]='-';
+      break;
+
+    case GAL_ARITHMETIC_OP_APPEND_AMPERSAND:         /* '&' */
+      tmpstr[0]='&';
+      break;
+
+    case GAL_ARITHMETIC_OP_APPEND_UNDERSCORE:        /* '_' */
+      tmpstr[0]='_';
+      break;
+
+    default:
+      error(EXIT_FAILURE, 0, "%s: a bug! Please contact us at '%s' to "
+            "fix the problem. The value '%d' isn't recognized for the "
+            "variable 'operator'", __func__, PACKAGE_BUGREPORT, operator);
+    }
+
+  /* Append character to inputs, and save in outputs. */
+  for(i=0; i<input->size; i++)
+      outarr[i]=gal_string_malloc_cat(istarr[i], tmpstr);
+
+  /* Clean up */
+  if(out!=input && (flags & GAL_ARITHMETIC_FLAG_FREE))
+    gal_data_free(input);
+
+  /* Return the allocated dataset. */
+  return out;
+}
+
+
+
+
+
+/* Concatenate two strings */
+static gal_data_t *
+arithmetic_append(gal_data_t *dest_d, gal_data_t *src_d,
+                  int operator, int flags)
+{
+  size_t i;
+  gal_data_t *out;
+  char **src, **dest, **outarr;
+
+  /* Check type of inputs. */
+  if ( dest_d->type != GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: only type string is accepted. "
+          "Use 'number-to-string' to convert it.", __func__);
+  if ( src_d->type != GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: only type string is accepted. "
+          "Use 'to-string' to convert it.", __func__);
+
+  /* Check if the column we are concatenating with has enough values */
+  if ( src_d->size < dest_d->size )
+    error(EXIT_FAILURE, 0, "%s: Not enough elements in the second "
+                                "argument. This can happen for instance "
+                                "if 'unique' was performed on it.",
+                                __func__);
+
+  /* Allocate the output dataset. */
+  out=gal_data_alloc(NULL, GAL_TYPE_STRING, dest_d->ndim,
+                     dest_d->dsize, NULL, 0, dest_d->minmapsize,
+                     dest_d->quietmmap, NULL, NULL, NULL);
+
+  /* Easier pointers to arrays */
+  src=src_d->array;
+  outarr=out->array;
+  dest=dest_d->array;
+
+  /* Concatenate the two columns */
+  for(i=0; i<dest_d->size; i++)
+    outarr[i]=gal_string_malloc_cat(dest[i], src[i]);
+
+  /* Clean up */
+  if(out!=dest_d && (flags & GAL_ARITHMETIC_FLAG_FREE))
+    gal_data_free(dest_d);
+  if(out!=src_d && (flags & GAL_ARITHMETIC_FLAG_FREE))
+    gal_data_free(src_d);
+
+  /* Return the allocated dataset. */
+  return out;
+}
+
+
+
+
+
+/* Change case of string to upper or lowercase. */
+static gal_data_t *
+arithmetic_case_change(gal_data_t *input, int operator, int flags)
+{
+  size_t i;
+  gal_data_t *out;
+  char **str, **outarr;
+
+  /* Check type of input. */
+  if ( input->type != GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: only type string is accepted. "
+          "'to-string' to convert it.", __func__);
+
+  /* Allocate the output dataset. */
+  out=gal_data_alloc(NULL, GAL_TYPE_STRING, input->ndim,
+                     input->dsize, NULL, 0, input->minmapsize,
+                     input->quietmmap, NULL, NULL, NULL);
+
+  /* Easier pointers to arrays. */
+  str=input->array;
+  outarr=out->array;
+
+  /* Parse all the elements of the column, copy them changing the case. */
+  for(i=0; i<input->size; i++)
+    {
+      gal_string_allocate_copy(str[i], &outarr[i]);
+      gal_string_case_change(outarr[i],
+                             operator==GAL_ARITHMETIC_OP_STRING_TO_UPPER);
+    }
+
+  /* Clean up */
+  if(out!=input && (flags & GAL_ARITHMETIC_FLAG_FREE))
+    gal_data_free(input);
+
+
+  /* Return the allocated dataset. */
+  return out;
+}
+
+
+
+
+
+/* Remove spaces from string */
+static gal_data_t *
+arithmetic_remove_space(gal_data_t *input, int operator, int flags)
+{
+  size_t i, j;
+  gal_data_t *out;
+  char *in, *outstr;
+  char **str, **outarr;
+
+  /* Check type of input. */
+  if ( input->type != GAL_TYPE_STRING )
+    error(EXIT_FAILURE, 0, "%s: only type string is accepted. "
+          "Use 'to-string' to convert it.", __func__);
+
+  /* Allocate the output dataset. */
+  out=gal_data_alloc(NULL, GAL_TYPE_STRING, input->ndim,
+                     input->dsize, NULL, 0, input->minmapsize,
+                     input->quietmmap, NULL, NULL, NULL);
+
+  /* Easier pointers to arrays. */
+  str=input->array;
+  outarr=out->array;
+
+  /*Parse all the elements of the column, copying them without spaces. */
+  for(i=0; i<input->size; i++)
+    {
+      j=0;
+      in=str[i];
+      outstr=outarr[i]=calloc(strlen(str[i]+1), sizeof(char));
+      do
+        switch(*in)
+          {
+          /* Look for spaces, tabs, vertical tabs. */
+          case ' ': case '\t': case '\v':
+            break;
+          default:
+            outstr[j++]=*in;
+          }
+      while(*(++in)!='\0');
+    }
+
+  /* Clean up. */
+  if(out!=input && (flags & GAL_ARITHMETIC_FLAG_FREE))
+    gal_data_free(input);
+
+  /* Return the allocated dataset. */
   return out;
 }
 
@@ -4997,6 +5398,28 @@ gal_arithmetic_set_operator(char *string, size_t *num_operands)
   else if (!strcmp(string, "pool-median"))
     { op=GAL_ARITHMETIC_OP_POOLMEDIAN;        *num_operands=3;  }
 
+  /* String operators. */
+  else if (!strcmp(string, "remove-space"))
+    { op=GAL_ARITHMETIC_OP_REMOVE_SPACE;      *num_operands=1;  }
+  else if (!strcmp(string, "append"))
+    { op=GAL_ARITHMETIC_OP_APPEND;            *num_operands=2;  }
+  else if (!strcmp(string, "append-hyphen"))
+    { op=GAL_ARITHMETIC_OP_APPEND_HYPHEN;     *num_operands=1;  }
+  else if (!strcmp(string, "append-ampersand"))
+    { op=GAL_ARITHMETIC_OP_APPEND_AMPERSAND;  *num_operands=1;  }
+  else if (!strcmp(string, "append-underscore"))
+    { op=GAL_ARITHMETIC_OP_APPEND_UNDERSCORE; *num_operands=1;  }
+  else if (!strcmp(string, "string-to-lower"))
+    { op=GAL_ARITHMETIC_OP_STRING_TO_LOWER;   *num_operands=1;  }
+  else if (!strcmp(string, "string-to-upper"))
+    { op=GAL_ARITHMETIC_OP_STRING_TO_UPPER;   *num_operands=1;  }
+  else if (!strcmp(string, "string-to-number"))
+    { op=GAL_ARITHMETIC_OP_STRING_TO_NUMBER;  *num_operands=1;  }
+  else if (!strcmp(string, "int-to-string"))
+    { op=GAL_ARITHMETIC_OP_INT_TO_STRING;     *num_operands=1;  }
+  else if (!strcmp(string, "float-to-string"))
+    { op=GAL_ARITHMETIC_OP_FLOAT_TO_STRING;   *num_operands=3;  }
+
   /* Memory issues. */
   else if (!strcmp(string, "free"))
     { op=GAL_ARITHMETIC_OP_FREE;              *num_operands=1; }
@@ -5216,7 +5639,8 @@ gal_arithmetic_operator_string(int operator)
 
     case GAL_ARITHMETIC_OP_ROTATE_COORD:    return "rotate-coord";
     case GAL_ARITHMETIC_OP_BOX_AROUND_ELLIPSE: return "box-around-ellipse";
-    case GAL_ARITHMETIC_OP_BOX_VERTICES_ON_SPHERE: return "vertices-on-sphere";
+    case GAL_ARITHMETIC_OP_BOX_VERTICES_ON_SPHERE:
+      return "vertices-on-sphere";
 
     case GAL_ARITHMETIC_OP_SIZE:            return "size";
     case GAL_ARITHMETIC_OP_MAKENEW:         return "makenew";
@@ -5232,6 +5656,17 @@ gal_arithmetic_operator_string(int operator)
     case GAL_ARITHMETIC_OP_POOLSUM:         return "pool-sum";
     case GAL_ARITHMETIC_OP_POOLMEAN:        return "pool-mean";
     case GAL_ARITHMETIC_OP_POOLMEDIAN:      return "pool-median";
+
+    case GAL_ARITHMETIC_OP_REMOVE_SPACE:     return "remove-space";
+    case GAL_ARITHMETIC_OP_APPEND:           return "append";
+    case GAL_ARITHMETIC_OP_APPEND_HYPHEN:    return "append-hyphen";
+    case GAL_ARITHMETIC_OP_APPEND_AMPERSAND: return "append-ampersand";
+    case GAL_ARITHMETIC_OP_APPEND_UNDERSCORE:return "append-underscore";
+    case GAL_ARITHMETIC_OP_STRING_TO_LOWER:  return "string-to-lower";
+    case GAL_ARITHMETIC_OP_STRING_TO_UPPER:  return "string-to-upper";
+    case GAL_ARITHMETIC_OP_STRING_TO_NUMBER: return "string-to-number";
+    case GAL_ARITHMETIC_OP_INT_TO_STRING:    return "int-to-string";
+    case GAL_ARITHMETIC_OP_FLOAT_TO_STRING:  return "float-to-string";
 
     case GAL_ARITHMETIC_OP_EQB1950_TO_EQJ2000:
       return "eq-b1950-to-eq-j2000";
@@ -5743,7 +6178,49 @@ gal_arithmetic(uint8_t flags, size_t numthreads, int operator, ...)
       out=arithmetic_pool(operator, numthreads, flags, d1, d2, d3);
       break;
 
-    /* Memory options. */
+    /* String operators. */
+    case GAL_ARITHMETIC_OP_STRING_TO_NUMBER:
+      d1 = va_arg(va, gal_data_t *);
+      out=arithmetic_string_to_number(d1, operator, flags);
+      break;
+
+    case GAL_ARITHMETIC_OP_INT_TO_STRING:
+      d1 = va_arg(va, gal_data_t *);
+      out=arithmetic_to_string(d1, NULL, NULL, operator, flags);
+      break;
+
+    case GAL_ARITHMETIC_OP_FLOAT_TO_STRING:
+      d1 = va_arg(va, gal_data_t *);
+      d2 = va_arg(va, gal_data_t *);
+      d3 = va_arg(va, gal_data_t *);
+      out=arithmetic_to_string(d1, d2, d3, operator, flags);
+      break;
+
+    case GAL_ARITHMETIC_OP_APPEND_HYPHEN:
+    case GAL_ARITHMETIC_OP_APPEND_AMPERSAND:
+    case GAL_ARITHMETIC_OP_APPEND_UNDERSCORE:
+      d1 = va_arg(va, gal_data_t *);
+      out=arithmetic_append_char(d1, operator, flags);
+      break;
+
+    case GAL_ARITHMETIC_OP_APPEND:
+      d1 = va_arg(va, gal_data_t *);
+      d2 = va_arg(va, gal_data_t *);
+      out=arithmetic_append(d1, d2, operator, flags);
+      break;
+
+    case GAL_ARITHMETIC_OP_STRING_TO_LOWER:
+    case GAL_ARITHMETIC_OP_STRING_TO_UPPER:
+      d1 = va_arg(va, gal_data_t *);
+      out=arithmetic_case_change(d1, operator, flags);
+      break;
+
+    case GAL_ARITHMETIC_OP_REMOVE_SPACE:
+      d1 = va_arg(va, gal_data_t *);
+      out=arithmetic_remove_space(d1, operator, flags);
+      break;
+
+      /* Memory options. */
     case GAL_ARITHMETIC_OP_FREE:
       d1 = va_arg(va, gal_data_t *);
       gal_data_free(d1);

@@ -31,10 +31,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/units.h>
 #include <gnuastro/match.h>
 #include <gnuastro/kdtree.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/statistics.h>
-
-#include <gnuastro-internal/checkset.h>
 
 #include <main.h>
 
@@ -57,9 +56,9 @@ outkeys_numeric(gal_fits_list_key_t **keylist, void *number,
   memcpy(value, number, gal_type_sizeof(type));
 
   /* Allocate and copy the strings. */
-  gal_checkset_allocate_copy(namei, &name);
-  gal_checkset_allocate_copy(uniti, &unit);
-  gal_checkset_allocate_copy(commenti, &comment);
+  gal_string_allocate_copy(namei, &name);
+  gal_string_allocate_copy(uniti, &unit);
+  gal_string_allocate_copy(commenti, &comment);
 
   /* Add this keyword to the list. */
   gal_fits_key_list_add_end(keylist, type, name, 1, value, 1, comment, 1,
@@ -204,9 +203,9 @@ outkeys_confusion_limit_dist(struct mkcatalogparams *p, gal_data_t *wcscrd,
       free(dista->name);
       free(dista->unit);
       free(dista->comment);
-      gal_checkset_allocate_copy("arcsec", &dista->unit);
-      gal_checkset_allocate_copy("DISTANCE_WCS", &dista->name);
-      gal_checkset_allocate_copy("Distance on a sphere to nearest point.",
+      gal_string_allocate_copy("arcsec", &dista->unit);
+      gal_string_allocate_copy("DISTANCE_WCS", &dista->name);
+      gal_string_allocate_copy("Distance on a sphere to nearest point.",
                                  &dista->comment);
 
       /* Fill up the column with distances in pixels. */

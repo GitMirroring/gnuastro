@@ -38,13 +38,12 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/list.h>
 #include <gnuastro/table.h>
 #include <gnuastro/qsort.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/polygon.h>
 #include <gnuastro/arithmetic.h>
 #include <gnuastro/statistics.h>
 #include <gnuastro/permutation.h>
-
-#include <gnuastro-internal/checkset.h>
 
 #include "main.h"
 
@@ -345,7 +344,7 @@ table_selection_equal_or_notequal(struct tableparams *p, gal_data_t *col,
           varr=value->array;
 
           /* Read the stored string as a float64. */
-          if( gal_type_from_string(&varr, strarr[i], GAL_TYPE_FLOAT64) )
+          if( gal_string_to_type(&varr, strarr[i], GAL_TYPE_FLOAT64) )
             {
               fprintf(stderr, "%s couldn't be read as a number.\n",
                       strarr[i]);
@@ -777,7 +776,7 @@ table_catcolumn(struct tableparams *p)
                   {
                     /* Add the counter suffix to the column name. */
                     sprintf(cstr, "-%zu", counter);
-                    tmpname=gal_checkset_malloc_cat(newcol->name, cstr);
+                    tmpname=gal_string_malloc_cat(newcol->name, cstr);
 
                     /* Free the old name and put in the new one. */
                     free(newcol->name);
@@ -1185,7 +1184,7 @@ table_colmetadata(struct tableparams *p)
       /* If the given column specifier is a name (not parse-able as a
          number), then this condition will fail. */
       colnum=NULL;
-      if( gal_type_from_string((void **)(&colnum), meta->name,
+      if( gal_string_to_type((void **)(&colnum), meta->name,
                                GAL_TYPE_SIZE_T) )
         {
           /* We have been given a string, so find the first column that has
@@ -1222,7 +1221,7 @@ table_colmetadata(struct tableparams *p)
          abort the program). The first given string is the new name. */
       strarr=meta->array;
       if(col->name) free(col->name);
-      gal_checkset_allocate_copy(strarr[0], &col->name);
+      gal_string_allocate_copy(strarr[0], &col->name);
 
       /* If more than one string is given, the second one is the new
          unit. */
@@ -1230,13 +1229,13 @@ table_colmetadata(struct tableparams *p)
         {
           /* Replace the unit. */
           if(col->unit) free(col->unit);
-          gal_checkset_allocate_copy(strarr[1], &col->unit);
+          gal_string_allocate_copy(strarr[1], &col->unit);
 
           /* The next element is the comment of the column. */
           if(meta->size>2)
             {
               if(col->comment) free(col->comment);
-              gal_checkset_allocate_copy(strarr[2], &col->comment);
+              gal_string_allocate_copy(strarr[2], &col->comment);
             }
         }
     }
@@ -1319,7 +1318,7 @@ table_noblankend(struct tableparams *p)
           {
             /* Parse the given index. */
             index=NULL;
-            if( gal_type_from_string((void **)(&index), tmp->v,
+            if( gal_string_to_type((void **)(&index), tmp->v,
                                      GAL_TYPE_SIZE_T) )
               error(EXIT_FAILURE, 0, "column '%s' didn't match any of the "
                     "final column names and can't be parsed as a column "

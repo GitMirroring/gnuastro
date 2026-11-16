@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/table.h>
 #include <gnuastro/array.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/arithmetic.h>
 
@@ -383,7 +384,7 @@ ui_check_options_and_arguments(struct arithmeticparams *p)
                                                    "_arith.fits");
       else
         {
-          gal_checkset_allocate_copy("arithmetic.fits", &cp->output);
+          gal_string_allocate_copy("arithmetic.fits", &cp->output);
           gal_checkset_writable_remove(cp->output, basename, cp->keep,
                                        cp->dontdelete);
         }

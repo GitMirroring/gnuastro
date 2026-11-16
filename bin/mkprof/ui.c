@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/array.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
 #include <gnuastro-internal/timing.h>
@@ -340,7 +341,7 @@ ui_parse_kernel(struct argp_option *option, char *arg,
 
       /* Copy the string into a dynamically allocated space, because it
          will be freed later.*/
-      gal_checkset_allocate_copy(sstr, &str);
+      gal_string_allocate_copy(sstr, &str);
       return str;
     }
   else
@@ -480,7 +481,7 @@ ui_parse_coordinate_mode(struct argp_option *option, char *arg,
   /* We want to print the stored values. */
   if(lineno==-1)
     {
-      gal_checkset_allocate_copy( *(uint8_t *)(option->value)==MKPROF_MODE_IMG
+      gal_string_allocate_copy( *(uint8_t *)(option->value)==MKPROF_MODE_IMG
                                   ? "img" : "wcs", &outstr );
       return outstr;
     }
@@ -641,7 +642,7 @@ ui_check_options_and_arguments(struct mkprofparams *p)
      the configuration files, then automatic output should be used, in
      which case, cp->output should be the current directory. */
   if(p->cp.output==NULL)
-      gal_checkset_allocate_copy("./", &p->cp.output);
+      gal_string_allocate_copy("./", &p->cp.output);
 
 
   /* Set the necessary output names. */
@@ -653,7 +654,7 @@ ui_check_options_and_arguments(struct mkprofparams *p)
     }
   else                            /* --output is a directory name. */
     {
-      gal_checkset_allocate_copy(p->cp.output, &p->outdir);
+      gal_string_allocate_copy(p->cp.output, &p->outdir);
       gal_checkset_check_dir_write_add_slash(&p->outdir);
       tmpname=gal_checkset_automatic_output(&p->cp,
                                             ( p->catname
@@ -662,7 +663,7 @@ ui_check_options_and_arguments(struct mkprofparams *p)
                                             ( p->kernel
                                               ? ".fits"
                                               : "_profiles.fits" ));
-      p->mergedimgname=gal_checkset_malloc_cat(p->outdir, tmpname);
+      p->mergedimgname=gal_string_malloc_cat(p->outdir, tmpname);
       free(tmpname);
     }
   p->basename=gal_checkset_not_dir_part(p->mergedimgname);
@@ -719,7 +720,7 @@ ui_read_cols_general(struct mkprofparams *p, gal_list_str_t *colstrs)
      standard input was used (therefore 'catname==NULL', set it to
      'stdin'). */
   if(p->catname==NULL)
-    gal_checkset_allocate_copy("standard-input", &p->catname);
+    gal_string_allocate_copy("standard-input", &p->catname);
 
   /* Set the number of objects and return the columns. */
   p->num = cols ? cols->size : 0;
@@ -1686,9 +1687,9 @@ ui_prepare_canvas(struct mkprofparams *p)
   if(p->out)
     {
       if(p->out->name) free(p->out->name);
-      gal_checkset_allocate_copy("Mock profiles", &p->out->name);
+      gal_string_allocate_copy("Mock profiles", &p->out->name);
       if(p->out->unit==NULL)
-        gal_checkset_allocate_copy("counts", &p->out->unit);
+        gal_string_allocate_copy("counts", &p->out->unit);
     }
 }
 

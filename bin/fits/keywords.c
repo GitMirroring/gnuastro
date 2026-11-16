@@ -31,10 +31,10 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/wcs.h>
 #include <gnuastro/fits.h>
 #include <gnuastro/units.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
-#include <gnuastro-internal/timing.h>
 
-#include <gnuastro-internal/checkset.h>
+#include <gnuastro-internal/timing.h>
 
 #include "main.h"
 
@@ -97,7 +97,7 @@ keywords_rename_keys(struct fitsparams *p, fitsfile **fptr, int *r)
 
       /* Take a copy of the input string for error reporting, because
          'strtok' will write into the array. */
-      gal_checkset_allocate_copy(str, &copy);
+      gal_string_allocate_copy(str, &copy);
 
       /* Tokenize the input. */
       from = strtok(str,  ", ");
@@ -737,7 +737,7 @@ keywords_value_in_output_first(struct fitsparams *p, gal_data_t *topout,
 
       /* Write the filename. */
       strarr=topout->array;
-      gal_checkset_allocate_copy(filename, &strarr[in_counter]);
+      gal_string_allocate_copy(filename, &strarr[in_counter]);
     }
 
   /* Add the new columns into the raw output (only keyword values). */
@@ -767,7 +767,7 @@ keywords_value_in_output_first(struct fitsparams *p, gal_data_t *topout,
       if( key->status )
         {
           strarr=write->array;
-          gal_checkset_allocate_copy(GAL_BLANK_STRING,
+          gal_string_allocate_copy(GAL_BLANK_STRING,
                                      &strarr[in_counter]);
         }
       else
@@ -825,7 +825,7 @@ keywords_value_in_output_rest(struct fitsparams *p, gal_data_t *out,
 
   /* Write the file name in the first column. */
   strarr=out->array;
-  gal_checkset_allocate_copy(filename, &strarr[in_counter]);
+  gal_string_allocate_copy(filename, &strarr[in_counter]);
 
   /* Go over all the keys are write them in. */
   write=out;

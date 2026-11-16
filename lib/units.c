@@ -26,6 +26,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <time.h>
 #include <math.h>
+#include <ctype.h>
 #include <errno.h>
 #include <error.h>
 #include <stdio.h>
@@ -34,9 +35,9 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <inttypes.h>
 
 #include <gnuastro/type.h>
+#include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
-
-#include <gnuastro-internal/checkset.h>
 
 
 
@@ -727,8 +728,8 @@ gal_units_date_to_struct_tm(char *datestr, struct tm *tp)
 
         /* Allocate space (by copying the remaining full string and adding
            a '\0' where necessary. */
-        gal_checkset_allocate_copy(c, &subsec);
-        gal_checkset_allocate_copy(datestr, &nosubsec);
+        gal_string_allocate_copy(c, &subsec);
+        gal_string_allocate_copy(datestr, &nosubsec);
 
         /* Parse the sub-seconds part and end the 'subsec' string when the
            sub-seconds digits finishs (there may be characters after it. */
@@ -865,7 +866,7 @@ gal_units_date_to_unix_seconds(char *datestr, char **subsecstr,
       if(tmp)
         {
           if(subsec)
-            if( gal_type_from_string(&subsecptr, tmp, GAL_TYPE_FLOAT64) )
+            if( gal_string_to_type(&subsecptr, tmp, GAL_TYPE_FLOAT64) )
               error(EXIT_FAILURE, 0, "%s: the sub-second portion of '%s' "
                     "(or '%s') couldn't be read as a number", __func__,
                     datestr, tmp);
@@ -935,7 +936,7 @@ gal_units_unix_seconds_to_date(int64_t unixsec, double subsec,
     {
       sprintf(strfmt, "%%.%df", subsecdigits);
       asprintf(&tmp, strfmt, subsec);
-      tout=gal_checkset_malloc_cat(out, tmp+1);
+      tout=gal_string_malloc_cat(out, tmp+1);
       free(out);
       out=tout;
     }

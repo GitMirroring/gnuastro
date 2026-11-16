@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/dimension.h>
 
@@ -226,7 +227,7 @@ ui_parse_coordinate_mode(struct argp_option *option, char *arg,
   /* We want to print the stored values. */
   if(lineno==-1)
     {
-      gal_checkset_allocate_copy( *(int *)(option->value)==IMGCROP_MODE_IMG
+      gal_string_allocate_copy( *(int *)(option->value)==IMGCROP_MODE_IMG
                                   ? "img" : "wcs", &outstr );
       return outstr;
     }
@@ -464,7 +465,7 @@ ui_check_options_and_arguments(struct cropparams *p)
 
   /* If no output name is given, set it to the current directory. */
   if(p->cp.output==NULL)
-    gal_checkset_allocate_copy(DEFAULTOUTPUT, &p->cp.output);
+    gal_string_allocate_copy(DEFAULTOUTPUT, &p->cp.output);
 
   /* Catalog mode needs multiple threads and a directory for the output. */
   if(p->catname)

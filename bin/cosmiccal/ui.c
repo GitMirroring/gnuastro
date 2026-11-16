@@ -30,13 +30,13 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 
 #include <gnuastro/fits.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/speclines.h>
 #include <gnuastro/cosmology.h>
 
 #include <gnuastro-internal/timing.h>
 #include <gnuastro-internal/options.h>
-#include <gnuastro-internal/checkset.h>
 #include <gnuastro-internal/fixedstringmacros.h>
 
 #include "main.h"
@@ -237,7 +237,7 @@ ui_add_to_single_value(struct argp_option *option, char *arg,
           /* If the argument is a number, read it, if not, see if it is a
              known specral line name. */
           dptr=&val;
-          if( gal_type_from_string((void **)(&dptr), ltmp->v,
+          if( gal_string_to_type((void **)(&dptr), ltmp->v,
                                    GAL_TYPE_FLOAT64) )
             {
               linecode=gal_speclines_line_code(ltmp->v);
@@ -310,7 +310,7 @@ ui_parse_obsline(struct argp_option *option, char *arg,
 
       /* Copy the string into a dynamically allocated space, because it
          will be freed later.*/
-      gal_checkset_allocate_copy(sstr, &str);
+      gal_string_allocate_copy(sstr, &str);
       return str;
     }
   else
@@ -336,7 +336,7 @@ ui_parse_obsline(struct argp_option *option, char *arg,
       /* If a wavelength is given directly as a number (not a name), then
          put that number in a second element of the array. */
       dptr=&manualwl;
-      if( gal_type_from_string((void **)(&dptr), linename,
+      if( gal_string_to_type((void **)(&dptr), linename,
                                GAL_TYPE_FLOAT64) )
         { /* 'linename' isn't a number. */
           obsline->status=gal_speclines_line_code(linename);

@@ -37,9 +37,8 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/tile.h>
 #include <gnuastro/blank.h>
 #include <gnuastro/table.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
-
-#include <gnuastro-internal/checkset.h>
 
 
 
@@ -133,9 +132,9 @@ gal_data_initialize(gal_data_t *data, void *array, uint8_t type,
   data->minmapsize = minmapsize;
   data->disp_precision=GAL_BLANK_INT;
   data->disp_fmt=GAL_TABLE_DISPLAY_FMT_INVALID;
-  gal_checkset_allocate_copy(name, &data->name);
-  gal_checkset_allocate_copy(unit, &data->unit);
-  gal_checkset_allocate_copy(comment, &data->comment);
+  gal_string_allocate_copy(name, &data->name);
+  gal_string_allocate_copy(unit, &data->unit);
+  gal_string_allocate_copy(comment, &data->comment);
 
 
   /* Copy the WCS structure. */
@@ -541,10 +540,10 @@ data_copy_from_string(gal_data_t *from, gal_data_t *to)
 
       /* Read/put the input into the output. */
       if(to->type==GAL_TYPE_STRING)
-        gal_checkset_allocate_copy(strarr[i], &outstrarr[i]);
+        gal_string_allocate_copy(strarr[i], &outstrarr[i]);
       else
         {
-          if( gal_type_from_string(&ptr, strarr[i], to->type) )
+          if( gal_string_to_type(&ptr, strarr[i], to->type) )
             data_copy_to_string_not_parsed(strarr[i], ptr, to->type);
         }
     }
@@ -565,7 +564,7 @@ data_copy_from_string(gal_data_t *from, gal_data_t *to)
               error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__); \
           }                                                             \
         else                                                            \
-          gal_checkset_allocate_copy(GAL_BLANK_STRING, &strarr[i]);     \
+          gal_string_allocate_copy(GAL_BLANK_STRING, &strarr[i]);     \
       }                                                                 \
   }
 
@@ -580,7 +579,7 @@ data_copy_from_string(gal_data_t *from, gal_data_t *to)
             if( asprintf(&strarr[i], FMT, a[i])<0 )                    \
               error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__); \
           }                                                             \
-        else gal_checkset_allocate_copy(GAL_BLANK_STRING, &strarr[i]);  \
+        else gal_string_allocate_copy(GAL_BLANK_STRING, &strarr[i]);  \
       }                                                                 \
   }
 
@@ -622,7 +621,7 @@ data_copy_to_string(gal_data_t *from, gal_data_t *to)
         }
     }
   else
-    gal_checkset_allocate_copy("%g", &fltfmt);
+    gal_string_allocate_copy("%g", &fltfmt);
 
   /* Do the copying */
   switch(from->type)
@@ -659,7 +658,7 @@ data_copy_to_string(gal_data_t *from, gal_data_t *to)
 
     case GAL_TYPE_STRING:
       for(i=0;i<from->size;++i)
-        gal_checkset_allocate_copy(instrarr[i], &strarr[i]);
+        gal_string_allocate_copy(instrarr[i], &strarr[i]);
       break;
 
     case GAL_TYPE_BIT:
@@ -888,9 +887,9 @@ gal_data_copy_to_allocated(gal_data_t *in, gal_data_t *out)
   out->status         = in->status;
   out->disp_width     = in->disp_width;
   out->disp_precision = in->disp_precision;
-  gal_checkset_allocate_copy(in->name,    &out->name);
-  gal_checkset_allocate_copy(in->unit,    &out->unit);
-  gal_checkset_allocate_copy(in->comment, &out->comment);
+  gal_string_allocate_copy(in->name,    &out->name);
+  gal_string_allocate_copy(in->unit,    &out->unit);
+  gal_string_allocate_copy(in->comment, &out->comment);
 
   /* Do the copying (only when 'array!=NULL' and size==0). Note that when
      working in-place, it can happen that array is not NULL, but size is
@@ -998,7 +997,7 @@ gal_data_append_second_array_to_first_free(gal_data_t *a, gal_data_t *b)
 
 
 
-/* Just a wrapper around 'gal_type_from_string_auto', to return a
+/* Just a wrapper around 'gal_string_to_type_auto', to return a
    'gal_data_t' dataset hosting the allocated number. */
 gal_data_t *
 gal_data_copy_string_to_number(char *string)
@@ -1006,7 +1005,7 @@ gal_data_copy_string_to_number(char *string)
   void *ptr;
   uint8_t type;
   size_t dsize=1;
-  ptr=gal_type_string_to_number(string, &type);
+  ptr=gal_string_to_number(string, &type);
   return ( ptr
            ? gal_data_alloc(ptr, type, 1, &dsize, NULL, 0, -1,
                             1, NULL, NULL, NULL)

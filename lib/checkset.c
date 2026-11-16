@@ -34,6 +34,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <sys/fcntl.h>
 
 #include <gnuastro/data.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
 #include <gnuastro-internal/timing.h>
@@ -99,7 +100,7 @@ checkset_meminfo_line(char *line, char *keyname, size_t keylen,
     {
       /* We need to work on a copied line to avoid messing up the
          contents of the actual line. */
-      gal_checkset_allocate_copy(line, &linecp);
+      gal_string_allocate_copy(line, &linecp);
 
       /* The first token (which we don't need). */
       token=strtok_r(linecp, delimiters, &saveptr);
@@ -109,7 +110,7 @@ checkset_meminfo_line(char *line, char *keyname, size_t keylen,
       if(token)
         {
           /* Read the token as a number. */
-          if( gal_type_from_string((void **)(&freemem), token,
+          if( gal_string_to_type((void **)(&freemem), token,
                                    GAL_TYPE_SIZE_T) )
             error(EXIT_SUCCESS, 0, "WARNING: %s: value of '%s' "
                   "keyword couldn't be read as an integer. Hence "
@@ -335,182 +336,6 @@ gal_checkset_need_mmap(size_t bytesize, size_t minmapsize, int quietmmap)
 
 
 /**************************************************************/
-/**********          My String functions:          ************/
-/**************************************************************/
-int
-gal_checkset_string_has_space(char *in)
-{
-  do
-    switch(*in)
-      {
-      case ' ': case '\t': case '\v':
-        return 1;
-      }
-  while(*(++in)!='\0');
-  return 0;
-}
-
-
-
-
-
-void
-gal_checkset_string_case_change(char *in, int toupper1_tolower0)
-{
-  if(toupper1_tolower0) do *in=toupper(*in); while(*in++!='\0');
-  else                  do *in=tolower(*in); while(*in++!='\0');
-
-}
-
-
-
-
-
-char *
-gal_checkset_malloc_cat(char *inname, char *toappend)
-{
-  char *out;
-  size_t inl, apl;
-
-  inl=strlen(inname);
-  apl=strlen(toappend);
-
-  errno=0;
-  out=malloc(inl+apl+1);
-  if(out==NULL)
-    error(EXIT_FAILURE, errno, "%s: allocating %zu bytes", __func__,
-          inl+apl+1);
-
-  strcpy(out, inname);
-  strcat(out, toappend);
-  return out;
-}
-
-
-
-
-/* Copy the input string to the output (and also allocate the
-   output). */
-void
-gal_checkset_allocate_copy(const char *arg, char **copy)
-{
-  if(arg)
-    {
-      errno=0;
-      *copy=malloc(strlen(arg)+1);
-      if(*copy==NULL)
-        error(EXIT_FAILURE, errno, "%s: %zu bytes to copy %s", __func__,
-              strlen(arg)+1, arg);
-      strcpy(*copy, arg);
-    }
-  else
-    *copy=NULL;
-}
-
-
-
-
-/* This function is mainly for reading in the arguments (from the
-   command line or configuration files) that need to be copied. The
-   set argument is for making sure that it has not already been set
-   before, see the main.h files of any program. */
-void
-gal_checkset_allocate_copy_set(char *arg, char **copy, int *set)
-{
-  /* Incase *set==1, then you shouldn't do anything, just return. */
-  if(*set) return;
-
-  /* The variable was not copied, copy it: */
-  errno=0;
-  *copy=malloc(strlen(arg)+1);
-  if(*copy==NULL)
-    error(EXIT_FAILURE, errno, "%s: %zu bytes to copy %s", __func__,
-          strlen(arg)+1, arg);
-  strcpy(*copy, arg);
-  *set=1;
-}
-
-
-
-
-
-/* The dataset may be alone in a file (for example a table in a text file)
-   or it may an extension of a FITS file. In error messages in particular,
-   we need to differentiate between the two. This function will check the
-   filename and if it is FITS, it will return a string with the filename
-   and HDU in parenthesis. If it isn't a FITS file, it will only return the
-   filename. Note that the output needs to be freed, although when used in
-   an error message, you can leave it to the system to free the
-   space. There is no problem. */
-char *
-gal_checkset_dataset_name(char *filename, char *hdu)
-{
-  char *out;
-  if( gal_fits_name_is_fits(filename) )
-    {
-      if( asprintf(&out, "%s (hdu %s)", filename, hdu)<0 )
-        error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
-    }
-  else
-    gal_checkset_allocate_copy(filename, &out);
-  return out;
-}
-
-
-
-
-
-/* Remove the given prefix from the name, then compare. If the prefix is
-   NULL, then this becomes a basic string comparison '!strcmp(a,b)'. */
-int
-gal_checkset_noprefix_isequal(char *string, char *prefix,
-                              const char *tocompare)
-{
-  size_t plen;
-
-  /* If the input string is empty, then this option has nothing to do
-     (should return false): like NaN in math, two NULLs are not equal in
-     this scenario. */
-  if(string==NULL) return 0;
-  if(tocompare==NULL) return 0;
-
-  /* Do the comparison. */
-  if(prefix)
-    {
-      /* Check if 'string' starts with 'prefix'. When it does start with
-         the prefix, then do the comparison for the string after the
-         prefix. */
-      plen=strlen(prefix);
-      if( !strncmp(string, prefix, plen) )
-        return !strcmp(string+plen, tocompare);
-    }
-
-  /* If a prefix wasn't given, OR the string didn't start with the given
-     prefix, then ignore the prefix and simply compare the full input
-     string and the 'tocompare' string. */
-  return !strcmp(string, tocompare);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**************************************************************/
 /**********               Run commands             ************/
 /**************************************************************/
 /* We are not using the 'system()' command because that call '/bin/sh',
@@ -632,10 +457,10 @@ gal_checkset_dir_part(char *filename)
   /* If there was no slash, then the current directory should be
      given: */
   if(i==0 && filename[0]!='/')
-    gal_checkset_allocate_copy("./", &out);
+    gal_string_allocate_copy("./", &out);
   else
     {
-      gal_checkset_allocate_copy(filename, &out);
+      gal_string_allocate_copy(filename, &out);
       out[i+1]='\0';
     }
 
@@ -685,7 +510,7 @@ gal_checkset_suffix_separate(char *name, char **outsuffix)
   char *c, *out=NULL, *suffix=NULL;
 
   /* Make a copy of the input. */
-  gal_checkset_allocate_copy(name, &out);
+  gal_string_allocate_copy(name, &out);
 
   /* Parse the string from the end and stop when we hit a '.'. */
   c=out+strlen(out)-1;
@@ -695,7 +520,7 @@ gal_checkset_suffix_separate(char *name, char **outsuffix)
          and put it in 'suffix'. */
       if(*c=='.')
         {
-          gal_checkset_allocate_copy(c, &suffix);
+          gal_string_allocate_copy(c, &suffix);
           *c='\0';
           break;
         }
@@ -744,9 +569,9 @@ gal_checkset_make_unique_suffix(char *reference, char *suffix)
 
   /* Add the suffix. */
   out = ( suffix
-          ? gal_checkset_malloc_cat(tmpname, suffix)
+          ? gal_string_malloc_cat(tmpname, suffix)
           : ( insuffix
-              ? gal_checkset_malloc_cat(tmpname, insuffix)
+              ? gal_string_malloc_cat(tmpname, insuffix)
               : tmpname ) );
 
   /* Clean up and return the output. */
@@ -1007,7 +832,7 @@ gal_checkset_automatic_output(struct gal_options_common_params *cp,
 
   /* Merge the contents of the input name and suffix name (while also
      allocating the necessary space). */
-  out=gal_checkset_malloc_cat(inname, suffix);
+  out=gal_string_malloc_cat(inname, suffix);
 
   /* If there is actually a suffix, replace it with the (possibly) existing
      suffix. */
@@ -1090,9 +915,9 @@ checkset_directory_writable(char *dirname)
   /* Set the template for the temporary file (accounting for the possible
      extra '/'). */
   if(dirname[strlen(dirname)-1]=='/')
-    tmpname=gal_checkset_malloc_cat(dirname, "gnuastroXXXXXX");
+    tmpname=gal_string_malloc_cat(dirname, "gnuastroXXXXXX");
   else
-    tmpname=gal_checkset_malloc_cat(dirname, "/gnuastroXXXXXX");
+    tmpname=gal_string_malloc_cat(dirname, "/gnuastroXXXXXX");
 
   /* Make the temporary file (with the temporary name) and open it. */
   errno=0;
@@ -1130,9 +955,9 @@ gal_checkset_check_dir_write_add_slash(char **dirname)
 
   /* Set the template for the temporary file: */
   if(indir[strlen(indir)-1]=='/')
-    tmpname=gal_checkset_malloc_cat(indir, "gnuastroXXXXXX");
+    tmpname=gal_string_malloc_cat(indir, "gnuastroXXXXXX");
   else
-    tmpname=gal_checkset_malloc_cat(indir, "/gnuastroXXXXXX");
+    tmpname=gal_string_malloc_cat(indir, "/gnuastroXXXXXX");
 
   /* Make a temporary file name and try openning it. */
   errno=0;
@@ -1222,11 +1047,72 @@ gal_checkset_timestamp(char *filename, char *newext)
   top=gal_checkset_dir_part(filename);
   rawname=gal_checkset_not_dir_part(filename);
   filename=gal_checkset_suffix_separate(rawname, &oldext);
-  filename=gal_checkset_malloc_cat(filename, suffix);
-  filename=gal_checkset_malloc_cat(prefix, filename);
-  filename=gal_checkset_malloc_cat(top, filename);
-  if(newext) filename=gal_checkset_malloc_cat(filename, newext);
-  else       filename=gal_checkset_malloc_cat(filename, oldext);
+  filename=gal_string_malloc_cat(filename, suffix);
+  filename=gal_string_malloc_cat(prefix, filename);
+  filename=gal_string_malloc_cat(top, filename);
+  if(newext) filename=gal_string_malloc_cat(filename, newext);
+  else       filename=gal_string_malloc_cat(filename, oldext);
 
   return filename;
+}
+
+
+
+
+
+/* The dataset may be alone in a file (for example a table in a text file)
+   or it may an extension of a FITS file. In error messages in particular,
+   we need to differentiate between the two. This function will check the
+   filename and if it is FITS, it will return a string with the filename
+   and HDU in parenthesis. If it isn't a FITS file, it will only return the
+   filename. Note that the output needs to be freed, although when used in
+   an error message, you can leave it to the system to free the
+   space. There is no problem. */
+char *
+gal_checkset_dataset_name(char *filename, char *hdu)
+{
+  char *out;
+  if( gal_fits_name_is_fits(filename) )
+    {
+      if( asprintf(&out, "%s (hdu %s)", filename, hdu)<0 )
+        error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
+    }
+  else
+    gal_string_allocate_copy(filename, &out);
+  return out;
+}
+
+
+
+
+
+/* Remove the given prefix from the name, then compare. If the prefix is
+   NULL, then this becomes a basic string comparison '!strcmp(a,b)'. */
+int
+gal_checkset_noprefix_isequal(char *string, char *prefix,
+                              const char *tocompare)
+{
+  size_t plen;
+
+  /* If the input string is empty, then this option has nothing to do
+     (should return false): like NaN in math, two NULLs are not equal in
+     this scenario. */
+  if(string==NULL) return 0;
+  if(tocompare==NULL) return 0;
+
+  /* Do the comparison. */
+  if(prefix)
+    {
+      /* Check if 'string' starts with 'prefix'. When it does start with
+         the prefix, then do the comparison for the string after the
+         prefix. */
+      plen=strlen(prefix);
+      if( !strncmp(string, prefix, plen) )
+        return !strcmp(string+plen, tocompare);
+    }
+
+  /* If a prefix wasn't given, OR the string didn't start with the given
+     prefix, then ignore the prefix and simply compare the full input
+     string and the 'tocompare' string. */
+  return !strcmp(string, tocompare);
 }

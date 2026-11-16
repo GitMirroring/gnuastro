@@ -604,6 +604,7 @@ Arithmetic operators
 * Numerical type conversion operators::  Convert the numeric datatype of a dataset.
 * Random number generators::    Random numbers can be used to add noise for example.
 * Coordinate and border operators::  Return edges of 2D boxes.
+* String operators::            Working with strings.
 * Loading external columns::    Read a column from a table into the stack.
 * Size and position operators::  Extracting image size and pixel positions.
 * New operands::                How to construct an empty dataset from scratch.
@@ -885,7 +886,8 @@ Gnuastro library
 * Configuration information::   General information about library config.
 * Multithreaded programming::   Tools for easy multi-threaded operations.
 * Library data types::          Definitions and functions for types.
-* Pointers::                    Wrappers for easy working with pointers.@strong{}
+* String functions::            Wrappers for common string operations.
+* Pointers::                    Wrappers for easy working with pointers.
 * Library blank values::        Blank values and functions to deal with them.
 * Library data container::      General data container in Gnuastro.
 * Dimensions::                  Dealing with coordinates and dimensions.
@@ -19313,7 +19315,7 @@ Tables are the high-level products of processing on low-leveler data like images
 For example, in Gnuastro, MakeCatalog will process the pixels over an object and produce a catalog (or table) with the properties of each object such as magnitudes and positions (see @ref{MakeCatalog}).
 Each one of these properties is a column in its output catalog (or table) and for each input object, we have a row.
 
-When there are only a small number of objects (rows) and not too many properties (columns), then a simple plain text file is mainly enough to store, transfer, or even use the produced data.
+When there are only a small number of objects (rows) and not too many properties (columns), then a simple plain text file is mainly enough to store, transfer, or even use the produced data (see @ref{Gnuastro text table format}).
 However, to be more efficient, astronomers have defined the FITS binary table standard to store data in a binary format (which cannot be seen in a text editor text).
 This can offer major advantages: the file size will be greatly reduced and the reading and writing will also be faster (because the RAM and CPU also work in binary).
 The acceptable table formats are fully described in @ref{Tables}.
@@ -22512,6 +22514,7 @@ Reading NaN as a floating point number in Gnuastro is not case-sensitive.
 * Numerical type conversion operators::  Convert the numeric datatype of a dataset.
 * Random number generators::    Random numbers can be used to add noise for example.
 * Coordinate and border operators::  Return edges of 2D boxes.
+* String operators::            Working with strings.
 * Loading external columns::    Read a column from a table into the stack.
 * Size and position operators::  Extracting image size and pixel positions.
 * New operands::                How to construct an empty dataset from scratch.
@@ -24806,8 +24809,9 @@ Note that the bitwise operators only work on integer type datasets/numbers.
 @node Numerical type conversion operators, Random number generators, Bitwise operators, Arithmetic operators
 @subsubsection Numerical type conversion operators
 
-With the operators below you can convert the numerical data type of your input, see @ref{Numeric data types}.
+With the operators below you can convert the numerical data type of your input to another numerical type, see @ref{Numeric data types}.
 Type conversion is particularly useful when dealing with integers, see @ref{Integer benefits and pitfalls}.
+There are also operators to convert numbers to/from strings, they are described in @ref{String operators}.
 
 As an example, let's assume that your colleague gives you many single exposure images for processing, but they have a double-precision floating point type!
 You know that the statistical error a single-exposure image can never exceed 6 or 7 significant digits, so you would prefer to archive them as a single-precision floating point and save space on your computer (a double-precision floating point is also double the file size!).
@@ -24865,6 +24869,7 @@ $ ls -lh f64.fits f32.fits
 @itemx float64
 Convert the type of the popped operand to 64-bit (double precision) floating point (see @ref{Numeric data types}).
 The internal conversion of C will be used.
+
 @end table
 
 @node Random number generators, Coordinate and border operators, Numerical type conversion operators, Arithmetic operators
@@ -25276,7 +25281,7 @@ $ echo 1000 \
 These columns can easily be placed in the format for @ref{MakeProfiles} to be inserted into an image automatically.
 @end table
 
-@node Coordinate and border operators, Loading external columns, Random number generators, Arithmetic operators
+@node Coordinate and border operators, String operators, Random number generators, Arithmetic operators
 @subsubsection Coordinate and border operators
 
 The operators here help you in defining or manipulating coordinates.
@@ -25442,7 +25447,155 @@ It is smaller by a factor of @mymath{\cos({\delta})}.
 Therefore, an angular change (let's call it @mymath{\Delta_{lon}}) along the small circle defined by the fixed declination of @mymath{\delta} corresponds to @mymath{\Delta_{lon}/\cos(\delta)} on the equator.
 @end table
 
-@node Loading external columns, Size and position operators, Coordinate and border operators, Arithmetic operators
+@node String operators, Loading external columns, Coordinate and border operators, Arithmetic operators
+@subsubsection String operators
+
+As described in @ref{Table}, columns of a table can be of several types.
+The most common types are numbers, but we also have the ``string'' type: a sequences of characters that are not interpreted.
+In the context of astronomical data analysis columns with this type contain names (for example the name of objects like @code{NGC123}, filters or etc).
+
+For example have a look at the following table that has three columns: the first two are strings (name of the hypothetical object and name of filter) and the third is the magnitude of the object in that filter.
+The fourth column is the extinction of the object in that filter, but even though it is a number, it is stored as a string (this can happen!).
+For more on the this format of tables, see @ref{Gnuastro text table format}.
+
+@example
+$ cat table.txt
+# Column 1: OBJ    [name, str6] Name of object
+# Column 2: FILTER [name, str4] Name of filter
+# Column 3: MAG    [log,   f32] Magnitude in filter
+# Column 4: EXT    [log,  str3] Extinction (stored as string)
+NGC123   vis1   0.2   20
+NGC456   nir1   0.3   21
+NGC123   nir1   0.4   20
+AB 567   nir2   0.5   19
+@end example
+
+The examples given under each operator below use t @file{table.txt} above, but as described in @ref{Tables}, FITS tables are also acceptable (binary or ascii).
+The operators below allow various operations on string columns that are often necessary in astronomical data analysis.
+
+@table @command
+@item remove-space
+Removes all white space characters from the given input data, elements without space character are(s) are not touched.
+White space characters are the following: Space (ASCII code 32), Horizontal Tab (ASCII code 9) and Vertical Tab (ASCII code 11).
+The most common case will be the first (space) character.
+For example the command below removes the space chracter in all the object names of @code{input.txt} above.
+
+@example
+$ asttable input.txt -c'arith OBJ remove-space'
+NGC123
+NGC456
+NGC123
+NG567
+@end example
+
+@item append
+Append (concatenate) two strings.
+This operator takes two operands: the contents of the first popped operand are put after the second popped operand, see the example below.
+This operator usually blends nicely with the @code{append-*} operators described below to add a delimiter between the two string.
+
+@example
+# Concatenate two strings
+$ asttable input.txt -c'arith OBJ FILTER append'
+NGC123vis1
+NGC456nir1
+NGC123nir1
+NG 567nir2
+@end example
+
+@item  append-hyphen
+@itemx append-ampersand
+@itemx append-underscore
+Append a special character (namely `@key{-}', `@key{&}' and `@key{_}') to the end of the input string.
+This is useful as a step to concatenate two strings with a special character as a separator like the example below.
+
+@example
+$ asttable input.txt \
+      -c'arith OBJ remove-space append-hyphen FILTER append'
+NGC123-vis1
+NGC456-nir1
+NGC123-nir1
+NG567-nir2
+@end example
+
+@item  to-lower
+@itemx to-upper
+Change the case of the input string to lower (or upper) case.
+For example the command below converts the object names to lower case:
+
+@example
+$ asttable table.txt -c'arith OBJ to-lower'
+ngc123
+ngc456
+ngc123
+ng 567
+@end example
+
+@item string-to-number
+Convert the input (which should have a string type) into a number.
+If at least one of the elements has a `@key{.}', `@key{e}' or `@key{E}' character, all the elements of the input are read as 64-bit floating point numbers.
+Otherwise they will be read as 64-bit signed integers (see @ref{Numeric data types}).
+Any element that cannot be read as a string will be stored as the blank value of the respective type with a warning message (that can be suppressed with the @code{--quiet} option).
+
+For example the first command below assumes that you want to subtract the extinction from the magnitude, forgetting that the extinction is stored as a string in the demonstration table above.
+In the second command, this operator comes to the rescue.
+
+@example
+$ asttable input.txt -c'arith MAG EXT -' -Y
+asttable: type 'string' (of the right operand) is not
+usable with the '-' operator, if it is a number that is
+stored as a string, use the 'string-to-number' operator
+
+$ asttable input.txt -c'arith MAG EXT string-to-number -' -Y
+19.800000
+20.700000
+19.600000
+18.500000
+@end example
+
+If the two 64-bit numeric types are too large for the range/precision of your values, you can use the @ref{Numerical type conversion operators} to save the output in the most optimal type (for storage).
+For example observed magnitudes or extinctions do not need more than 32-bit precision, so you can speed up the operation and cut the output file size by half (on a large table, not this demo) with the @code{f32} operator like below.
+
+@example
+$ asttable input.txt -Y --output=out.fits \
+      -c'arith MAG EXT string-to-number f32 -'
+@end example
+
+@item int-to-string
+Convert the input integer data/column to a string (it only takes a single operand).
+This can be used to merge integer and string columns like the example below:
+
+@example
+$ asttable input.txt \
+    -c'arith ID int-to-string append-hyphen \
+             OBJ remove-space append'
+1-NGC123
+2-NGC456
+3-NGC123
+4-NG567
+@end example
+
+@item float-to-string
+Convert a floating point number into a string.
+It requires three operands:
+The first popped operand is the format and only takes two values: 1 for exponential (for example @code{1.2345e6}) and 0 for floating point (for example @code{1234500}).
+The second popped operand is the precision or number of digits to print after the decimal point (an integer).
+The third popped operand is the data/column.
+
+For example with the command below we are converting the magnitudes to a string with only two digits of precision and appending it to the object name with a hyphen.
+Recall that you can use @code{remove-space} after the @code{OBJ} to remove any potential space character before creating the combined string.
+
+@example
+$ asttable input.txt \
+    -c'arith OBJ append-hyphen MAG 2 1 float-to-string append'
+NGC123-20.00
+NGC456-21.00
+NGC123-20.00
+NG 567-19.00
+@end example
+
+@end table
+
+@node Loading external columns, Size and position operators, String operators, Arithmetic operators
 @subsubsection Loading external columns
 
 In the Arithmetic program, you can always load new dataset by simply giving their name.
@@ -39236,7 +39389,8 @@ If you use the Info version of this manual (see @ref{Info}), you do not have to 
 * Configuration information::   General information about library config.
 * Multithreaded programming::   Tools for easy multi-threaded operations.
 * Library data types::          Definitions and functions for types.
-* Pointers::                    Wrappers for easy working with pointers.@strong{}
+* String functions::            Wrappers for common string operations.
+* Pointers::                    Wrappers for easy working with pointers.
 * Library blank values::        Blank values and functions to deal with them.
 * Library data container::      General data container in Gnuastro.
 * Dimensions::                  Dealing with coordinates and dimensions.
@@ -39433,6 +39587,10 @@ more.
 * Gnuastro's thread related functions::  Functions for managing threads.
 @end menu
 
+
+
+
+
 @node Implementation of pthread_barrier, Gnuastro's thread related functions, Multithreaded programming, Multithreaded programming
 @subsubsection Implementation of @code{pthread_barrier}
 @cindex POSIX threads
@@ -39490,6 +39648,10 @@ remaining threads will get mixed with the new ones and you will get very
 strange and apparently random errors that are extremely hard to debug.
 @end cartouche
 @end deftypefun
+
+
+
+
 
 @node Gnuastro's thread related functions,  , Implementation of pthread_barrier, Multithreaded programming
 @subsubsection Gnuastro's thread related functions
@@ -39597,53 +39759,40 @@ However, when using @code{indexs}, you do not have to know the number of columns
 It is guaranteed that all the rows finish with @code{GAL_BLANK_SIZE_T} (see @ref{Library blank values}).
 The @code{GAL_BLANK_SIZE_T} macro plays a role very similar to a string's @code{\0}: every row finishes with this macro, so can easily stop parsing the indexes in the row as soon as you confront @code{GAL_BLANK_SIZE_T}.
 For some real examples, please see the example program in @file{tests/lib/multithread.c} for a demonstration.
-
 @end deftypefun
 
-@node Library data types, Pointers, Multithreaded programming, Gnuastro library
+
+
+
+
+@node Library data types, String functions, Multithreaded programming, Gnuastro library
 @subsection Library data types (@file{type.h})
 
-Data in astronomy can have many types, numeric (numbers) and strings
-(names, identifiers). The former can also be divided into integers and
-floats, see @ref{Numeric data types} for a thorough discussion of the
-different numeric data types and which one is useful for different
-contexts.
+Data in astronomy can have many types, numeric (numbers) and strings (names, identifiers).
+The former can also be divided into integers and floats, see @ref{Numeric data types} for a thorough discussion of the different numeric data types and which one is useful for different contexts.
 
-To deal with the very large diversity of types that are available (and used
-in different contexts), in Gnuastro each type is identified with global
-integer variable with a fixed name, this variable is then passed onto
-functions that can work on any type or is stored in Gnuastro's @ref{Generic
-data container} as one piece of meta-data.
+To deal with the very large diversity of types that are available (and used in different contexts), in Gnuastro each type is identified with global integer variable with a fixed name, this variable is then passed onto functions that can work on any type or is stored in Gnuastro's @ref{Generic data container} as one piece of meta-data.
 
-The actual values within these integer constants is irrelevant and you
-should never rely on them. When you need to check, explicitly use the named
-variable in the table below. If you want to check with more than one type,
-you can use C's @code{switch} statement.
+The actual values within these integer constants is irrelevant and you should never rely on them.
+When you need to check, explicitly use the named variable in the table below.
+If you want to check with more than one type, you can use C's @code{switch} statement.
 
-Since Gnuastro heavily deals with file input-output, the types it defines
-are fixed width types, these types are portable to all systems and are
-defined in the standard C header @file{stdint.h}. You do not need to include
-this header, it is included by any Gnuastro header that deals with the
-different types. However, the most commonly used types in a C (or C++)
-program (for example, @code{int} or @code{long}) are not defined by their
-exact width (storage size), but by their minimum storage. So for example, on
-some systems, @code{int} may be 2 bytes (16-bits, the minimum required by
-the standard) and on others it may be 4 bytes (32-bits, common in modern
-systems).
+Since Gnuastro heavily deals with file input-output, the types it defines are fixed width types, these types are portable to all systems and are defined in the standard C header @file{stdint.h}.
+You do not need to include this header, it is included by any Gnuastro header that deals with the different types.
+However, the most commonly used types in a C (or C++) program (for example, @code{int} or @code{long}) are not defined by their exact width (storage size), but by their minimum storage.
+So for example, on some systems, @code{int} may be 2 bytes (16-bits, the minimum required by the standard) and on others it may be 4 bytes (32-bits, common in modern systems).
 
-With every type, a unique ``blank'' value (or place-holder showing the
-absence of data) can be defined. Please see @ref{Library blank values} for
-constants that Gnuastro recognizes as a blank value for each type. See
-@ref{Numeric data types} for more explanation on the limits and particular
-aspects of each type.
+With every type, a unique ``blank'' value (or place-holder showing the absence of data) can be defined.
+Please see @ref{Library blank values} for constants that Gnuastro recognizes as a blank value for each type.
+See @ref{Numeric data types} for more explanation on the limits and particular aspects of each type.
 
 @deffn {Global integer} GAL_TYPE_INVALID
 This is just a place-holder to specifically mark that no type has been set.
 @end deffn
 
 @deffn {Global integer} GAL_TYPE_BIT
-Identifier for a bit-stream. Currently no program in Gnuastro works
-directly on bits, but features will be added in the future.
+Identifier for a bit-stream.
+Currently no program in Gnuastro works directly on bits, but features will be added in the future.
 @end deffn
 
 @deffn {Global integer} GAL_TYPE_UINT8
@@ -39687,30 +39836,28 @@ Identifier for a signed, 64-bit integer type: @code{int64_t} (from
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_INT
-Identifier for a @code{int} type. This is just an alias to @code{int16}, or
-@code{int32} types, depending on the system.
+Identifier for a @code{int} type.
+This is just an alias to @code{int16}, or @code{int32} types, depending on the system.
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_UINT
-Identifier for a @code{unsigned int} type. This is just an alias to
-@code{uint16}, or @code{uint32} types, depending on the system.
+Identifier for a @code{unsigned int} type.
+This is just an alias to @code{uint16}, or @code{uint32} types, depending on the system.
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_ULONG
-Identifier for a @code{unsigned long} type. This is just an alias to
-@code{uint32}, or @code{uint64} types for 32-bit, or 64-bit systems
-respectively.
+Identifier for a @code{unsigned long} type.
+This is just an alias to @code{uint32}, or @code{uint64} types for 32-bit, or 64-bit systems respectively.
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_LONG
-Identifier for a @code{long} type. This is just an alias to @code{int32},
-or @code{int64} types for 32-bit, or 64-bit systems respectively.
+Identifier for a @code{long} type.
+This is just an alias to @code{int32}, or @code{int64} types for 32-bit, or 64-bit systems respectively.
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_SIZE_T
-Identifier for a @code{size_t} type. This is just an alias to
-@code{uint32}, or @code{uint64} types for 32-bit, or 64-bit systems
-respectively.
+Identifier for a @code{size_t} type.
+This is just an alias to @code{uint32}, or @code{uint64} types for 32-bit, or 64-bit systems respectively.
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_FLOAT32
@@ -39724,15 +39871,13 @@ Identifier for a 64-bit double precision floating point type or
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_COMPLEX32
-Identifier for a complex number composed of two @code{float} types. Note
-that the complex type is not yet fully implemented in all Gnuastro's
-programs.
+Identifier for a complex number composed of two @code{float} types.
+Note that the complex type is not yet fully implemented in all Gnuastro's programs.
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_COMPLEX64
-Identifier for a complex number composed of two @code{double} types. Note
-that the complex type is not yet fully implemented in all Gnuastro's
-programs.
+Identifier for a complex number composed of two @code{double} types.
+Note that the complex type is not yet fully implemented in all Gnuastro's programs.
 @end deffn
 
 @deffn {Global integer}  GAL_TYPE_STRING
@@ -39745,9 +39890,8 @@ Identifier for a linked list of string of characters
 @end deffn
 
 @noindent
-The functions below are defined to make working with the integer constants
-above easier. In the functions below, the constants above can be used for
-the @code{type} input argument.
+The functions below are defined to make working with the integer constants above easier.
+In the functions below, the constants above can be used for the @code{type} input argument.
 
 @deftypefun size_t gal_type_sizeof (uint8_t @code{type})
 Return the number of bytes occupied by @code{type}.
@@ -39765,43 +39909,36 @@ For the full list of names/strings that this function will return, see @ref{Nume
 @end deftypefun
 
 @deftypefun uint8_t gal_type_from_name (char @code{*str})
-Return the Gnuastro integer constant that corresponds to the string
-@code{str}. This function is the inverse of the @code{gal_type_name}
-function and accepts both the short and long formats of each type. For the
-full list of names/strings that this function will return, see @ref{Numeric
-data types}.
+Return the Gnuastro integer constant that corresponds to the string @code{str}.
+This function is the inverse of the @code{gal_type_name} function and accepts both the short and long formats of each type.
+For the full list of names/strings that this function will return, see @ref{Numeric data types}.
 @end deftypefun
 
 @deftypefun void gal_type_min (uint8_t @code{type}, void @code{*in})
-Put the minimum possible value of @code{type} in the space pointed to by
-@code{in}. Since the value can have any type, this function does not return
-anything, it assumes the space for the given type is available to @code{in}
-and writes the value there. Here is one example
+Put the minimum possible value of @code{type} in the space pointed to by @code{in}.
+Since the value can have any type, this function does not return anything, it assumes the space for the given type is available to @code{in} and writes the value there.
+Here is one example
 @example
 int32_t min;
 gal_type_min(GAL_TYPE_INT32, &min);
 @end example
 
 @noindent
-Note: Do not use the minimum value for a blank value of a general
-(initially unknown) type, please use the constants/functions provided in
-@ref{Library blank values} for the definition and usage of blank values.
+Note: Do not use the minimum value for a blank value of a general (initially unknown) type, please use the constants/functions provided in @ref{Library blank values} for the definition and usage of blank values.
 @end deftypefun
 
 @deftypefun void gal_type_max (uint8_t @code{type}, void @code{*in})
-Put the maximum possible value of @code{type} in the space pointed to by
-@code{in}. Since the value can have any type, this function does not return
-anything, it assumes the space for the given type is available to @code{in}
-and writes the value there. Here is one example
+Put the maximum possible value of @code{type} in the space pointed to by @code{in}.
+Since the value can have any type, this function does not return anything, it assumes the space for the given type is available to @code{in} and writes the value there.
+Here is one example
+
 @example
 uint16_t max;
 gal_type_max(GAL_TYPE_INT16, &max);
 @end example
 
 @noindent
-Note: Do not use the maximum value for a blank value of a general
-(initially unknown) type, please use the constants/functions provided in
-@ref{Library blank values} for the definition and usage of blank values.
+Note: Do not use the maximum value for a blank value of a general (initially unknown) type, please use the constants/functions provided in @ref{Library blank values} for the definition and usage of blank values.
 @end deftypefun
 
 @deftypefun int gal_type_is_int (uint8_t @code{type})
@@ -39813,15 +39950,14 @@ Return 1 if the type is a linked list and zero otherwise.
 @end deftypefun
 
 @deftypefun int gal_type_out (int @code{first_type}, int @code{second_type})
-Return the larger of the two given types which can be used for the type of
-the output of an operation involving the two input types.
+Return the larger of the two given types which can be used for the type of the output of an operation involving the two input types.
 @end deftypefun
 
 @deftypefun {char *} gal_type_bit_string (void @code{*in}, size_t @code{size})
-Return the bit-string in the @code{size} bytes that @code{in} points
-to. The string is dynamically allocated and must be freed afterwards. You
-can use it to inspect the bits within one region of memory. Here is one
-short example:
+[This function will slowly be deprecated, as the C23 revision of the C Standard started to support @code{printf}'s @code{%b}, see @url{https://en.wikipedia.org/wiki/C23_(C_standard_revision)#Existing_functions}.]  Return the bit-string in the @code{size} bytes that @code{in} points to.
+The string is dynamically allocated and must be freed afterwards.
+You can use it to inspect the bits within one region of memory.
+Here is one short example:
 
 @example
 int32_t a=2017;
@@ -39836,30 +39972,62 @@ which will produce:
 2017: 11100001000001110000000000000000  (7E1)
 @end example
 
-As the example above shows, the bit-string is not the most efficient way to
-inspect bits. If you are familiar with hexadecimal notation, it is much
-more compact, see @url{https://en.wikipedia.org/wiki/Hexadecimal}. You can
-use @code{printf}'s @code{%x} or @code{%X} to print integers in hexadecimal
-format.
+As the example above shows, the bit-string is not the most efficient way to inspect bits.
+If you are familiar with hexadecimal notation, it is much more compact, see @url{https://en.wikipedia.org/wiki/Hexadecimal}.
+You can use @code{printf}'s @code{%x} or @code{%X} to print integers in hexadecimal format.
 @end deftypefun
 
-@deftypefun {char *} gal_type_to_string (void @code{*ptr}, uint8_t @code{type}, int @code{quote_if_str_has_space});
-Read the contents of the memory that @code{ptr} points to (assuming it has
-type @code{type} and print it into an allocated string which is returned.
 
-If the memory is a string of characters and @code{quote_if_str_has_space}
-is non-zero, the output string will have double-quotes around it if it
-contains space characters. Also, note that in this case, @code{ptr} must be
-a pointer to an array of characters (or @code{char **}), as in the example
-below (which will put @code{"sample string"} into @code{out}):
+
+
+
+@node String functions, Pointers, Library data types, Gnuastro library
+@subsection Strings (@file{string.h})
+
+@cindex Strings
+Strings are ubiquitous in programming, representing a sequence of characters terminated by a special character that in the C programming language is the null character @code{'\0'}.
+In particular strings can be used to represent filenames, or even to print numbers in an human readable format.
+Several functions to manipulate strings can be found in standard libraries, but in some cases higher-level wrappers are more handy.
+The functions in this section are some such functions.
+
+@deftypefun {int} gal_string_has_space (char @code{*in})
+Check if the string pointed by @code{in} contains a space, a tab or a vertical tab.
+If (at least) one of this is found, the function returns @code{1}, otherwise returns @code{0}.
+@end deftypefun
+
+@deftypefun {void} gal_string_case_change (char @code{*in}, int @code{toupper1_tolower0})
+Convert all the characters of the given string into the desired case specified by the self-explainatory @code{toupper1_tolower0}.
+The function is a wrapper over @code{ctype.h}'s @code{toupper} and @code{tolower}.
+@end deftypefun
+
+@deftypefun {char*} gal_string_malloc_cat (char @code{*inname}, char @code{*toappend})
+Concatenate the @code{toappend} string into @code{inname}.
+In C strings are arrays, so a limited fixed space is allocated for them and often there is no extra padding space that can be used.
+In this implementation, the function itself take care of the allocation of the extra space required to perform the concatenation.
+@end deftypefun
+
+@deftypefun {void} gal_string_allocate_copy (const char @code{*arg}, char @code{**copy})
+Copy the string @code{arg} into the space pointed by @code{copy}, allocating the necessary space.
+@end deftypefun
+
+@deftypefun {char *} gal_string_from_type (void @code{*ptr}, uint8_t @code{type}, uint8_t @code{precision}, uint8_t @code{f1e0}, int @code{quote_if_str_has_space}, int @code{quiet})
+Read the contents of the memory that @code{ptr} points to (assuming it has type @code{type}) and print it into an allocated string which is returned.
+Warnings may be printed where bad values are detected.
+To disable the warnings, give a non-zero value to @code{quiet}.
+
+If @code{type} indicates a floating point number, it is necessary also to give a value to @code{precision} (the number of desired decimals), as well as @code{f1e0} (the format: 0 for exponential and 1 for simple decimal point).
+When @code{precision==GAL_BLANK_UINT8}, it will be set to the biggest number of significant digit in the specified floating point type (usually 6 for single precision, 15 for double precision: values will be taken from the host computer's C library).
+
+If the memory is a string of characters and @code{quote_if_str_has_space} is non-zero, the output string will have double-quotes around it if it contains space characters.
+Also, note that in this case, @code{ptr} must be a pointer to an array of characters (or @code{char **}), as in the example below (which will put @code{"sample string"} into @code{out}):
 
 @example
 char *out, *string="sample string"
-out = gal_type_to_string(&string, GAL_TYPE_STRING, 1);
+out = gal_string_from_type(&string, GAL_TYPE_STRING, 0, 0, 1, 0);
 @end example
 @end deftypefun
 
-@deftypefun int gal_type_from_string (void @code{**out}, char @code{*string}, uint8_t @code{type})
+@deftypefun {int} gal_string_to_type (void @code{**out}, char @code{*string}, uint8_t @code{type})
 Read a string as a given data type and put a pointer to it in @code{*out}.
 When @code{*out!=NULL}, then it is assumed to be already allocated and the value will be simply put there.
 If @code{*out==NULL}, then space will be allocated for the given type and the string will be read into that type.
@@ -39876,7 +40044,7 @@ This output format will help you check the status of the conversion in a code li
 @example
 float out;
 void *outptr=&out;
-if( gal_type_from_string(&outptr, string, GAL_TYPE_FLOAT32) )
+if( gal_string_to_type(&outptr, string, GAL_TYPE_FLOAT32) )
   @{
     fprintf(stderr, "%s could not be read as float32\n", string);
     exit(EXIT_FAILURE);
@@ -39887,7 +40055,7 @@ if( gal_type_from_string(&outptr, string, GAL_TYPE_FLOAT32) )
 When you need to read many numbers into an array, @code{out} would be an array, and you can simply increment @code{outptr=out+i} (where you increment @code{i}).
 @end deftypefun
 
-@deftypefun {void *} gal_type_string_to_number (char @code{*string}, uint8_t @code{*type})
+@deftypefun {void *} gal_string_to_number (char @code{*string}, uint8_t @code{*type})
 Read @code{string} into smallest type that can host the number, the allocated space for the number will be returned and the type of the number will be put into the memory that @code{type} points to.
 If @code{string} could not be read as a number, this function will return @code{NULL}.
 
@@ -39930,37 +40098,33 @@ However, if we read 100000 as a signed 32-bit integer, there will not be any pro
 For the advantages of integers, see @ref{Integer benefits and pitfalls}.
 @end deftypefun
 
-@node Pointers, Library blank values, Library data types, Gnuastro library
+
+
+
+
+@node Pointers, Library blank values, String functions, Gnuastro library
 @subsection Pointers (@file{pointer.h})
 
 @cindex Pointers
-Pointers play an important role in the C programming language. As the name
-suggests, they @emph{point} to a byte in memory (like an address in a
-city). The C programming language gives you complete freedom in how to use
-the byte (and the bytes that follow it). Pointers are thus a very powerful
-feature of C. However, as the saying goes: ``With great power comes great
-responsibility'', so they must be approached with care. The functions in
-this header are not very complex, they are just wrappers over some basic
-pointer functionality regarding pointer arithmetic and allocation (in
-memory or HDD/SSD).
+Pointers play an important role in the C programming language.
+As the name suggests, they @emph{point} to a byte in memory (like an address in a city).
+The C programming language gives you complete freedom in how to use the byte (and the bytes that follow it).
+Pointers are thus a very powerful feature of C.
+However, as the saying goes: ``With great power comes great responsibility'', so they must be approached with care.
+The functions in this header are not very complex, they are just wrappers over some basic pointer functionality regarding pointer arithmetic and allocation (in memory or HDD/SSD).
 
 @deftypefun {void *} gal_pointer_increment (void @code{*pointer}, size_t @code{increment}, uint8_t @code{type})
-Return a pointer to an element that is @code{increment} elements ahead of
-@code{pointer}, assuming each element has type of @code{type}. For the type
-codes, see @ref{Library data types}.
+Return a pointer to an element that is @code{increment} elements ahead of @code{pointer}, assuming each element has type of @code{type}.
+For the type codes, see @ref{Library data types}.
 
-When working with the @code{array} elements of @code{gal_data_t}, we are
-actually dealing with @code{void *} pointers. However, pointer arithmetic
-does not apply to @code{void *}, because the system does not know how many
-bytes there are in each element to increment the pointer respectively. This
-function will use the given @code{type} to calculate where the incremented
-element is located in memory.
+When working with the @code{array} elements of @code{gal_data_t}, we are actually dealing with @code{void *} pointers.
+However, pointer arithmetic does not apply to @code{void *}, because the system does not know how many bytes there are in each element to increment the pointer respectively.
+This function will use the given @code{type} to calculate where the incremented element is located in memory.
 @end deftypefun
 
 @deftypefun size_t gal_pointer_num_between (void @code{*earlier}, void @code{*later}, uint8_t @code{type})
-Return the number of elements (in the given @code{type}) between
-@code{earlier} and @code{later}. For the type codes, see @ref{Library data
-types}).
+Return the number of elements (in the given @code{type}) between @code{earlier} and @code{later}.
+For the type codes, see @ref{Library data types}).
 @end deftypefun
 
 @deftypefun {void *} gal_pointer_allocate (uint8_t @code{type}, size_t @code{size}, int @code{clear}, const char @code{*funcname}, const char @code{*varname})
@@ -40016,6 +40180,9 @@ If @code{allocfailed!=0} and the memory mapping attempt fails, the warning messa
 ``Free'' (actually delete) the memory-mapped file that is named @code{*mmapname}, then free the string.
 If @code{quietmmap} is non-zero, then a warning will be printed for the user to know that the given file has been deleted.
 @end deftypefun
+
+
+
 
 
 @node Library blank values, Library data container, Pointers, Gnuastro library
@@ -40242,6 +40409,8 @@ In any case (no matter which columns are checked for blanks), the selected rows 
 
 
 
+
+
 @node Library data container, Dimensions, Library blank values, Gnuastro library
 @subsection Data container (@file{data.h})
 
@@ -40256,6 +40425,10 @@ To deal with any generic dataset, Gnuastro defines the @code{gal_data_t} as inpu
 * Arrays of datasets::          Functions to help with array of datasets.
 * Copying datasets::            Functions to copy a dataset to a new one.
 @end menu
+
+
+
+
 
 @node Generic data container, Dataset allocation, Library data container, Library data container
 @subsubsection Generic data container (@code{gal_data_t})
@@ -40456,6 +40629,9 @@ See @ref{Tessellation library} for a more thorough explanation and functions to 
 @end table
 
 
+
+
+
 @node Dataset allocation, Arrays of datasets, Generic data container, Library data container
 @subsubsection Dataset allocation
 Gnuastro's main data container was defined in @ref{Generic data container}.
@@ -40505,6 +40681,10 @@ For a complete description of @code{gal_data_t} and its contents, see @ref{Gener
 Free all the non-@code{NULL} pointers in @code{gal_data_t}, then free the actual data structure.
 @end deftypefun
 
+
+
+
+
 @node Arrays of datasets, Copying datasets, Dataset allocation, Library data container
 @subsubsection Arrays of datasets
 
@@ -40545,6 +40725,10 @@ This is useful when you want to allocate individual datasets later (for example,
 @deftypefun void gal_data_array_ptr_free (gal_data_t @code{**dataptr}, size_t @code{size}, int @code{free_array});
 Free all the individual datasets within the elements of @code{dataptr}, then free @code{dataptr} itself (the array of pointers that was probably allocated with @code{gal_data_array_ptr_calloc}.
 @end deftypefun
+
+
+
+
 
 @node Copying datasets,  , Arrays of datasets, Library data container
 @subsubsection Copying datasets
@@ -40594,7 +40778,7 @@ So if you want to use a pre-allocated space/dataset multiple times with varying 
 
 @deftypefun {gal_data_t *} gal_data_copy_string_to_number (char @code{*string})
 Read @code{string} into the smallest type that can store the value (see @ref{Numeric data types}).
-This function is just a wrapper for the @code{gal_type_string_to_number}, but will put the value into a single-element dataset.
+This function is just a wrapper for the @code{gal_string_to_number}, but will put the value into a single-element dataset.
 @end deftypefun
 
 @deftypefun {void} gal_data_append_second_array_to_first_free (gal_data_t @code{*a}, gal_data_t @code{*b})
@@ -40602,6 +40786,9 @@ Append the contents of @code{a->array} and @code{b->array} into an internal arra
 Finally, free @code{b}.
 Both inputs have to have the same type and have to have a single dimension.
 @end deftypefun
+
+
+
 
 
 @node Dimensions, Linked lists, Library data container, Gnuastro library
@@ -40892,6 +41079,10 @@ See the example in @ref{Library demo - inspecting neighbors} for a fully working
 This macro works fully within its own @code{@{@}} block and except for the @code{nind} variable that shows the neighbor's index, all the variables within this macro's block start with @code{gdn_}.
 @end deffn
 
+
+
+
+
 @node Linked lists, Array input output, Dimensions, Gnuastro library
 @subsection Linked lists (@file{list.h})
 
@@ -40972,6 +41163,10 @@ All these structures and functions are defined and declared in @file{gnuastro/li
 * Doubly linked ordered list of size_t::  Definition and functions.
 * List of gal_data_t::          Simply linked list Gnuastro's generic datatype.
 @end menu
+
+
+
+
 
 @node List of strings, List of int32_t, Linked lists, Linked lists
 @subsubsection List of strings
@@ -41441,6 +41636,10 @@ Free any element within the input list.
 Each node in this singly-linked list contains a @code{size_t} value and a floating point value with a type of double-precision floating point.
 @end deftp
 
+
+
+
+
 @node List of two size_ts and a double, List of void, List of size_t and double, Linked lists
 @subsubsection List of two @code{size_t}s and a @code{double}
 
@@ -41536,6 +41735,9 @@ Free every node in @code{list}.
 @end deftypefun
 
 
+
+
+
 @node Ordered list of size_t, Doubly linked ordered list of size_t, List of void, Linked lists
 @subsubsection Ordered list of @code{size_t}
 
@@ -41577,6 +41779,10 @@ After the conversion is done, this function will free the input list.
 Note that the @code{out} list does not have to be empty.
 If it already contains some nodes, the new nodes will be added on top of them.
 @end deftypefun
+
+
+
+
 
 @node Doubly linked ordered list of size_t, List of gal_data_t, Ordered list of size_t, Linked lists
 @subsubsection Doubly linked ordered list of @code{size_t}
@@ -41635,6 +41841,9 @@ Convert the doubly linked, ordered @code{size_t} list into a singly-linked list 
 @deftypefun void gal_list_dosizet_free (gal_list_dosizet_t @code{*largest})
 Free the doubly linked, ordered @code{sizet_t} list.
 @end deftypefun
+
+
+
 
 
 @node List of gal_data_t,  , Doubly linked ordered list of size_t, Linked lists
@@ -41791,6 +42000,10 @@ Regarding @code{*hdu_option_name}, see the description for the same argument in 
 Similar to @code{gal_array_read_one_ch}, but the output data structure will
 has a numeric data type of @code{type}, see @ref{Numeric data types}.
 @end deftypefun
+
+
+
+
 
 @node Table input output, FITS files, Array input output, Gnuastro library
 @subsection Table input output (@file{table.h})
@@ -42096,6 +42309,9 @@ This function is useful when you want to report a random file to the user which 
 @end deftypefun
 
 
+
+
+
 @node CFITSIO and Gnuastro types, FITS HDUs, FITS macros errors filenames, FITS files
 @subsubsection CFITSIO and Gnuastro types
 
@@ -42135,6 +42351,10 @@ Return Gnuastro's type identifier that corresponds to the CFITSIO @code{datatype
 Note that when dealing with CFITSIO's @code{TLONG}, the fixed width type differs between tables and images.
 So if the corresponding dataset is a table column, put a non-zero value into @code{is_table_column}.
 @end deftypefun
+
+
+
+
 
 @node FITS HDUs, FITS header keywords, CFITSIO and Gnuastro types, FITS files
 @subsubsection FITS HDUs
@@ -42593,6 +42813,9 @@ So when writing FITS images in parallel, we cannot write the header keywords in 
 @end deftypefun
 
 
+
+
+
 @node FITS tables,  , FITS arrays - images or cubes, FITS files
 @subsubsection FITS tables
 
@@ -42818,6 +43041,9 @@ When @code{colinfoinstdout!=0} and @code{filename==NULL} (columns are printed in
 When printing to the standard output, the column information can be piped into another program for further processing and thus the meta-data (lines starting with a @code{#}) must be ignored.
 In such cases, you only print the column values by passing @code{0} to @code{colinfoinstdout}.
 @end deftypefun
+
+
+
 
 
 @node TIFF files, JPEG files, Text files, File input output
@@ -44010,6 +44236,10 @@ This function will extract the column identifier, the file name and the HDU (if 
 See @ref{Table input output} for the macros that can be given to @code{searchin} and @code{ignorecase} and @ref{Generic data container} for the definitions of @code{minmapsize} and @code{quietmmap}.
 @end deftypefun
 
+
+
+
+
 @node Tessellation library, Bounding box, Arithmetic on datasets, Gnuastro library
 @subsection Tessellation library (@file{tile.h})
 
@@ -44057,12 +44287,14 @@ You can then only change the @code{block} element for the tiles you define over 
 Below, we will first review constructs for @ref{Independent tiles} and then define the current approach to fully tessellating a dataset (or covering every pixel/data-element with a non-overlapping tile grid in @ref{Tile grid}.
 This approach to dealing with parts of a larger block was inspired from a similarly named concept in the GNU Scientific Library (GSL), see its ``Vectors and Matrices'' chapter for their implementation.
 
-
-
 @menu
 * Independent tiles::           Work on or check independent tiles.
 * Tile grid::                   Cover a full dataset with non-overlapping tiles.
 @end menu
+
+
+
+
 
 @node Independent tiles, Tile grid, Tessellation library, Tessellation library
 @subsubsection Independent tiles
@@ -44348,6 +44580,8 @@ gal_data_free(faketile);
 
 
 
+
+
 @node Tile grid,  , Independent tiles, Tessellation library
 @subsubsection Tile grid
 
@@ -44546,6 +44780,8 @@ Having this ID, you can use the @code{tl->tiles} array to get to the proper tile
 @deftypefun void gal_tile_full_free_contents (struct gal_tile_two_layer_params @code{*tl})
 Free all the allocated arrays within @code{tl}.
 @end deftypefun
+
+
 
 
 
@@ -45173,6 +45409,9 @@ Therefore, in case you have already stored @code{input->array} for other usage @
 @end deftypefun
 
 
+
+
+
 @node Matching, Statistical operations, Permutations, Gnuastro library
 @subsection Matching (@file{match.h})
 
@@ -45270,6 +45509,10 @@ When @code{arrange} is outer or outer-within-aperture, the output is only a two 
 The first one is the permutation that that should be applied to the first input and the second one is the distance between the match.
 This is because in these types of arrangements, the second output is not changed or permuted).
 @end deftypefun
+
+
+
+
 
 @node Statistical operations, Fitting functions, Matching, Gnuastro library
 @subsection Statistical operations (@file{statistics.h})
@@ -45710,11 +45953,6 @@ When @code{inplace!=0}, the sorting and removal of blank elements is done on the
 
 
 
-
-
-
-
-
 @node Fitting functions, Binary datasets, Statistical operations, Gnuastro library
 @subsection Fitting functions (@file{fit.h})
 
@@ -46082,6 +46320,10 @@ Holes larger than @code{maxsize} are not filled.
 This function currently only works on a 2D dataset.
 @end deftypefun
 
+
+
+
+
 @node Labeled datasets, Convolution functions, Binary datasets, Gnuastro library
 @subsection Labeled datasets (@file{label.h})
 
@@ -46274,6 +46516,9 @@ The output has the same type as the values dataset.
 @end deftypefun
 
 
+
+
+
 @node Convolution functions, Pooling functions, Labeled datasets, Gnuastro library
 @subsection Convolution functions (@file{convolve.h})
 
@@ -46311,6 +46556,10 @@ Hence, it is much faster.
 When @code{conv_on_blank} is non-zero, this function will also attempt convolution over the blank pixels (and therefore give values to the blank pixels that are near non-blank pixels).
 @end deftypefun
 
+
+
+
+
 @node Pooling functions, Gradient measurements, Convolution functions, Gnuastro library
 @subsection Pooling functions (@file{pool.h})
 
@@ -46344,6 +46593,10 @@ Return the median-pool of @code{input}, assuming a pool size of @code{psize} pix
 The number of threads to use can be set with @code{numthreads}.
 @end deftypefun
 
+
+
+
+
 @node Gradient measurements, Interpolation, Pooling functions, Gnuastro library
 @subsection Gradient measurements (@file{gradient.h})
 
@@ -46369,6 +46622,10 @@ Calculate the direction and magnitude of the gradient around each pixel in a sin
 This is much faster than calling the dedicated functions separately.
 The returned dataset will be a linked list of datasets (see @ref{List of gal_data_t}) with two nodes: the top node will have the direction and the bottom node will have the magnitude of the gradient.
 @end deftypefun
+
+
+
+
 
 @node Interpolation, Warp library, Gradient measurements, Gnuastro library
 @subsection Interpolation (@file{interpolate.h})
@@ -46794,6 +47051,10 @@ Given the identifier of a color, write the color's red-green-blue fractions in t
 It is up to the caller to have the space for three 32-bit floating point numbers to be already allocated before calling this function.
 @end deftypefun
 
+
+
+
+
 @node Git wrappers, Python interface, Color functions, Gnuastro library
 @subsection Git wrappers (@file{git.h})
 
@@ -46817,6 +47078,10 @@ $ git describe --dirty --always
 Space for the output string is allocated within this function, so after using the value you have to @code{free} the output string.
 If libgit2 is not installed or the program calling this function is not within a version controlled directory, then the output will be the @code{NULL} pointer.
 @end deftypefun
+
+
+
+
 
 @node Python interface, Unit conversion library, Git wrappers, Gnuastro library
 @subsection Python interface (@file{python.h})
@@ -46857,6 +47122,9 @@ Returns the NumPy datatype corresponding to a certain Gnuastro @code{type}, see 
 Returns Gnuastro's numerical datatype that corresponds to the input NumPy @code{type}.
 For Gnuastro's recognized data types, see @ref{Library data types}.
 @end deftypefun
+
+
+
 
 
 @node Unit conversion library, Spectral lines library, Python interface, Gnuastro library
@@ -47069,6 +47337,9 @@ These functions also return any possible sub-second fraction in the space that @
 @deftypefunx double gal_units_jd_to_mars_sol (double jd)
 Return the desired Julian date variant from the Julian date, see @ref{Date conversion} for more on the definition of each variation.
 @end deftypefun
+
+
+
 
 
 @node Spectral lines library, Cosmology library, Unit conversion library, Gnuastro library

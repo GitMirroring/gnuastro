@@ -39,6 +39,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/tile.h>
 #include <gnuastro/blank.h>
+#include <gnuastro/string.h>
 #include <gnuastro/threads.h>
 #include <gnuastro/pointer.h>
 
@@ -178,7 +179,7 @@ gal_fits_name_save_as_string(char *filename, char *hdu)
 
   /* Small sanity check. */
   if(filename==NULL)
-    gal_checkset_allocate_copy("stdin", &name);
+    gal_string_allocate_copy("stdin", &name);
   else
     {
       if( gal_fits_name_is_fits(filename) )
@@ -186,7 +187,7 @@ gal_fits_name_save_as_string(char *filename, char *hdu)
           if( asprintf(&name, "%s (hdu: %s)", filename, hdu)<0 )
             error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
         }
-      else gal_checkset_allocate_copy(filename, &name);
+      else gal_string_allocate_copy(filename, &name);
     }
   return name;
 }
@@ -1261,7 +1262,7 @@ gal_fits_key_read_from_ptr(fitsfile *fptr, gal_data_t *keysll,
             /* If the string can be parsed as a number, the number will be
                allocated and placed in 'numptr', otherwise, 'numptr' will
                be NULL. */
-            numptr=gal_type_string_to_number(valueptr, &numtype);
+            numptr=gal_string_to_number(valueptr, &numtype);
             if(numptr)
               {
                 free(valueptr);
@@ -1536,19 +1537,19 @@ gal_fits_key_list_add_date(gal_fits_list_key_t **keylist,
   fits_get_system_time(datestr, &timeref, &status);
 
   /* Allocate the necessary components. */
-  gal_checkset_allocate_copy("DATE", &kname);
-  gal_checkset_allocate_copy(incomment, &comment);
-  gal_checkset_allocate_copy("YYYY-MM-DDThh:mm:ss", &unit);
+  gal_string_allocate_copy("DATE", &kname);
+  gal_string_allocate_copy(incomment, &comment);
+  gal_string_allocate_copy("YYYY-MM-DDThh:mm:ss", &unit);
   gal_fits_key_list_add(keylist, GAL_TYPE_STRING, kname, 1, datestr, 1,
                         comment, 1, unit, 1);
 
   /* Add keyword to note if date is in UTC. */
   isutc=gal_pointer_allocate(GAL_TYPE_UINT8, 1, 0, __func__, "isutc");
   *isutc=!timeref;
-  gal_checkset_allocate_copy("DATEUTC", &kname);
-  gal_checkset_allocate_copy("If 'DATE' is in UTC, value is '1'.",
+  gal_string_allocate_copy("DATEUTC", &kname);
+  gal_string_allocate_copy("If 'DATE' is in UTC, value is '1'.",
                              &comment);
-  gal_checkset_allocate_copy("bool", &unit);
+  gal_string_allocate_copy("bool", &unit);
   gal_fits_key_list_add(keylist, GAL_TYPE_UINT8, kname, 1, isutc, 1,
                         comment, 1, unit, 1);
 }
@@ -1585,8 +1586,8 @@ gal_fits_key_list_add_software_versions(gal_fits_list_key_t **keylist)
                CFITSIO_MINOR)<0 )
     error(EXIT_FAILURE, 0, "%s: asprintf allocation", __func__);
 #endif
-  gal_checkset_allocate_copy("CFITSIO", &kname);
-  gal_checkset_allocate_copy("Version of CFITSIO used.", &comment);
+  gal_string_allocate_copy("CFITSIO", &kname);
+  gal_string_allocate_copy("Version of CFITSIO used.", &comment);
   gal_fits_key_list_add(keylist, GAL_TYPE_STRING, kname, 1,
                         cfitsioversion, 1, comment, 1, NULL, 0);
 
@@ -1596,25 +1597,25 @@ gal_fits_key_list_add_software_versions(gal_fits_list_key_t **keylist)
      its check in configure.ac.*/
 #if GAL_CONFIG_HAVE_WCSLIB_VERSION == 1
   wcslibversion_const=wcslib_version(wcslibvers);
-  gal_checkset_allocate_copy(wcslibversion_const, &wcslibversion);
-  gal_checkset_allocate_copy("WCSLIB", &kname);
-  gal_checkset_allocate_copy("Version of WCSLIB used.", &comment);
+  gal_string_allocate_copy(wcslibversion_const, &wcslibversion);
+  gal_string_allocate_copy("WCSLIB", &kname);
+  gal_string_allocate_copy("Version of WCSLIB used.", &comment);
   gal_fits_key_list_add(keylist, GAL_TYPE_STRING, kname, 1,
                         wcslibversion, 1, comment, 1, NULL, 0);
 #endif
 
   /* Write the GSL version. */
-  gal_checkset_allocate_copy("GSL", &kname);
-  gal_checkset_allocate_copy(GSL_VERSION, &gslversion);
-  gal_checkset_allocate_copy("Version of GNU Scientific Library used.",
+  gal_string_allocate_copy("GSL", &kname);
+  gal_string_allocate_copy(GSL_VERSION, &gslversion);
+  gal_string_allocate_copy("Version of GNU Scientific Library used.",
                              &comment);
   gal_fits_key_list_add(keylist, GAL_TYPE_STRING, kname, 1,
                         gslversion, 1, comment, 1, NULL, 0);
 
   /* Write the Gnuastro's version. */
-  gal_checkset_allocate_copy("GNUASTRO", &kname);
-  gal_checkset_allocate_copy(PACKAGE_VERSION, &gnuastroversion);
-  gal_checkset_allocate_copy("Version of GNU Astronomy Utilities used.",
+  gal_string_allocate_copy("GNUASTRO", &kname);
+  gal_string_allocate_copy(PACKAGE_VERSION, &gnuastroversion);
+  gal_string_allocate_copy("Version of GNU Astronomy Utilities used.",
                              &comment);
   gal_fits_key_list_add(keylist, GAL_TYPE_STRING, kname, 1,
                         gnuastroversion, 1, comment, 1, NULL, 0);
@@ -1630,8 +1631,8 @@ gal_fits_key_list_add_git_commit(gal_fits_list_key_t **keylist)
   char *kname, *comment, *gitdescribe=gal_git_describe();
   if(gitdescribe)
     {
-      gal_checkset_allocate_copy("COMMIT", &kname);
-      gal_checkset_allocate_copy("Git commit in running directory.",
+      gal_string_allocate_copy("COMMIT", &kname);
+      gal_string_allocate_copy("Git commit in running directory.",
                                  &comment);
       gal_fits_key_list_add(keylist, GAL_TYPE_STRING, kname, 1,
                             gitdescribe, 1, comment, 1, NULL, 0);
@@ -3278,7 +3279,7 @@ gal_fits_tab_info(char *filename, char *hdu, size_t *numcols,
         {
           index = strtoul(&keyname[5], &tailptr, 10) - 1;
           if(index<tfields)
-            gal_checkset_allocate_copy(value, &allcols[index].name);
+            gal_string_allocate_copy(value, &allcols[index].name);
         }
 
 
@@ -3287,7 +3288,7 @@ gal_fits_tab_info(char *filename, char *hdu, size_t *numcols,
         {
           index = strtoul(&keyname[5], &tailptr, 10) - 1;
           if(index<tfields)
-            gal_checkset_allocate_copy(value, &allcols[index].unit);
+            gal_string_allocate_copy(value, &allcols[index].unit);
         }
 
 
@@ -3296,7 +3297,7 @@ gal_fits_tab_info(char *filename, char *hdu, size_t *numcols,
         {
           index = strtoul(&keyname[5], &tailptr, 10) - 1;
           if(index<tfields)
-            gal_checkset_allocate_copy(value, &allcols[index].comment);
+            gal_string_allocate_copy(value, &allcols[index].comment);
         }
 
 
@@ -3942,9 +3943,9 @@ fits_table_prepare_arrays(gal_data_t *cols, size_t numcols,
         {
           for(j=1;j<col->dsize[1];++j)
             {
-              gal_checkset_allocate_copy(tform[i], &tform[i+j]);
-              gal_checkset_allocate_copy(tunit[i], &tunit[i+j]);
-              gal_checkset_allocate_copy(ttype[i], &ttype[i+j]);
+              gal_string_allocate_copy(tform[i], &tform[i+j]);
+              gal_string_allocate_copy(tunit[i], &tunit[i+j]);
+              gal_string_allocate_copy(ttype[i], &ttype[i+j]);
             }
           i+=col->dsize[1];
         }

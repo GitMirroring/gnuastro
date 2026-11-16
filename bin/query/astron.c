@@ -27,7 +27,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <error.h>
 #include <string.h>
 
-#include <gnuastro-internal/checkset.h>
+#include <gnuastro/string.h>
 
 #include "main.h"
 
@@ -45,9 +45,9 @@ astron_sanity_checks(struct queryparams *p)
   if(p->datasetstr)
     {
       if( !strcmp(p->datasetstr, "tgssadr") )
-        gal_checkset_allocate_copy("tgssadr.main", &p->datasetuse);
+        gal_string_allocate_copy("tgssadr.main", &p->datasetuse);
       else
-        gal_checkset_allocate_copy(p->datasetstr, &p->datasetuse);
+        gal_string_allocate_copy(p->datasetstr, &p->datasetuse);
     }
 
   /* Currently we assume ASTRON only uses TAP. */

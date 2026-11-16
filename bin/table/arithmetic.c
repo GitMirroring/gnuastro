@@ -32,10 +32,10 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/wcs.h>
 #include <gnuastro/type.h>
 #include <gnuastro/units.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 #include <gnuastro/statistics.h>
 
-#include <gnuastro-internal/checkset.h>
 #include <gnuastro-internal/arithmetic-set.h>
 
 #include "main.h"
@@ -257,7 +257,7 @@ arithmetic_init_addcol(char *token, struct arithmetic_token *node,
 
   /* See if the column identifier is a number, then 'num' will not be a
      blank value. */
-  if( gal_type_from_string(&numptr, id, GAL_TYPE_SIZE_T) )
+  if( gal_string_to_type(&numptr, id, GAL_TYPE_SIZE_T) )
     num=GAL_BLANK_SIZE_T;
 
   /* See if the column exists in the main input catalog. */
@@ -282,7 +282,7 @@ arithmetic_init_addcol(char *token, struct arithmetic_token *node,
     }
   else
     {
-      gal_checkset_allocate_copy(id, &node->id_at_usage);/* Future usage. */
+      gal_string_allocate_copy(id, &node->id_at_usage);/* Future usage. */
       node->num_at_usage=num;   /* Avoid converting to a number again! */
       node->index=GAL_BLANK_SIZE_T; /* Crash if not used properly! */
     }
@@ -320,7 +320,7 @@ arithmetic_init(struct tableparams *p, struct arithmetic_token **arith,
       if(node->operator==GAL_ARITHMETIC_OP_INVALID)
         {
           /* Token is a single number.*/
-          if( (num=gal_type_string_to_number(token, &ntype)) )
+          if( (num=gal_string_to_number(token, &ntype)) )
             node->constant=gal_data_alloc(num, ntype, 1, &one, NULL, 0,
                                           -1, 1, NULL, NULL, NULL);
 
@@ -330,7 +330,7 @@ arithmetic_init(struct tableparams *p, struct arithmetic_token **arith,
             {
               node->num_operands=0;
               node->operator=ARITHMETIC_TABLE_OP_SET;
-              gal_checkset_allocate_copy(token, &node->name_def);
+              gal_string_allocate_copy(token, &node->name_def);
             }
 
           /* This is a 'load-col' operator. */
@@ -349,7 +349,7 @@ arithmetic_init(struct tableparams *p, struct arithmetic_token **arith,
                     && strcmp(token,
                               ( atmp->name_def
                                 + GAL_ARITHMETIC_SET_PREFIX_LENGTH) )==0 )
-                  gal_checkset_allocate_copy(token, &node->name_use);
+                  gal_string_allocate_copy(token, &node->name_use);
 
               /* If it wasn't found to be a pre-defined name, then its a
                  column operand (column number or name). */
@@ -549,9 +549,9 @@ arithmetic_update_metadata(gal_data_t *col, char *name, char *unit,
       if(col->name)    free(col->name);
       if(col->unit)    free(col->unit);
       if(col->comment) free(col->comment);
-      gal_checkset_allocate_copy(name, &col->name);
-      gal_checkset_allocate_copy(unit, &col->unit);
-      gal_checkset_allocate_copy(comment, &col->comment);
+      gal_string_allocate_copy(name, &col->name);
+      gal_string_allocate_copy(unit, &col->unit);
+      gal_string_allocate_copy(comment, &col->comment);
     }
 }
 
@@ -1100,7 +1100,7 @@ arithmetic_read_at_usage(struct tableparams *p,
                                  p->cp.minmapsize, p->cp.quietmmap, NULL,
                                  NULL, NULL);
               strarr=tmp->array;
-              gal_checkset_allocate_copy(token->id_at_usage, &strarr[0]);
+              gal_string_allocate_copy(token->id_at_usage, &strarr[0]);
               return tmp;
             }
         }

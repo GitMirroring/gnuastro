@@ -27,7 +27,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <error.h>
 #include <string.h>
 
-#include <gnuastro-internal/checkset.h>
+#include <gnuastro/string.h>
 
 #include "main.h"
 
@@ -46,9 +46,9 @@ ned_sanity_checks(struct queryparams *p)
     {
       /* Correct the dataset name if 'objdir' is given. */
       if( !strcmp(p->datasetstr, "objdir") )
-        gal_checkset_allocate_copy("NEDTAP.objdir", &p->datasetuse);
+        gal_string_allocate_copy("NEDTAP.objdir", &p->datasetuse);
       else
-        gal_checkset_allocate_copy(p->datasetstr, &p->datasetuse);
+        gal_string_allocate_copy(p->datasetstr, &p->datasetuse);
 
 
       /* Database-specific checks. For example, if we should use TAP or

@@ -27,7 +27,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <error.h>
 #include <string.h>
 
-#include <gnuastro-internal/checkset.h>
+#include <gnuastro/string.h>
 
 #include "main.h"
 
@@ -58,55 +58,55 @@ vizier_sanity_checks(struct queryparams *p)
     {
       /* Check if the dataset name is a known summary. */
       if( !strcmp(p->datasetstr, "2mass") )
-        gal_checkset_allocate_copy("II/246/out", &p->datasetuse);
+        gal_string_allocate_copy("II/246/out", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "akarifis") )
-        gal_checkset_allocate_copy("II/298/fis", &p->datasetuse);
+        gal_string_allocate_copy("II/298/fis", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "allwise") )
-        gal_checkset_allocate_copy("II/328/allwise", &p->datasetuse);
+        gal_string_allocate_copy("II/328/allwise", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "apass9") )
-        gal_checkset_allocate_copy("II/336/apass9", &p->datasetuse);
+        gal_string_allocate_copy("II/336/apass9", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "des1") )
-        gal_checkset_allocate_copy("II/357/des_dr1", &p->datasetuse);
+        gal_string_allocate_copy("II/357/des_dr1", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "gaiaedr3") )
-        gal_checkset_allocate_copy("I/350/gaiaedr3", &p->datasetuse);
+        gal_string_allocate_copy("I/350/gaiaedr3", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "gaiadr3") )
-        gal_checkset_allocate_copy("I/355/gaiadr3", &p->datasetuse);
+        gal_string_allocate_copy("I/355/gaiadr3", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "galex5") )
-        gal_checkset_allocate_copy("II/312/ais", &p->datasetuse);
+        gal_string_allocate_copy("II/312/ais", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "nomad") )
-        gal_checkset_allocate_copy("I/297/out", &p->datasetuse);
+        gal_string_allocate_copy("I/297/out", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "panstarrs1") )
-        gal_checkset_allocate_copy("II/349/ps1", &p->datasetuse);
+        gal_string_allocate_copy("II/349/ps1", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "pmx1") )
-        gal_checkset_allocate_copy("I/317/sample", &p->datasetuse);
+        gal_string_allocate_copy("I/317/sample", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "usnob1") )
-        gal_checkset_allocate_copy("I/284/out", &p->datasetuse);
+        gal_string_allocate_copy("I/284/out", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "ucac5") )
-        gal_checkset_allocate_copy("I/340/ucac5", &p->datasetuse);
+        gal_string_allocate_copy("I/340/ucac5", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "unwise") )
-        gal_checkset_allocate_copy("II/363/unwise", &p->datasetuse);
+        gal_string_allocate_copy("II/363/unwise", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "catwise") )
         {
           if(p->ra_name==NULL) p->ra_name="RA_ICRS";
           if(p->dec_name==NULL) p->dec_name="DE_ICRS";
-          gal_checkset_allocate_copy("II/365/catwise", &p->datasetuse);
+          gal_string_allocate_copy("II/365/catwise", &p->datasetuse);
         }
       else if( !strcmp(p->datasetstr, "gaiadr2") )
         {
           if(p->ra_name==NULL) p->ra_name="ra_epoch2000";
           if(p->dec_name==NULL) p->dec_name="dec_epoch2000";
-          gal_checkset_allocate_copy("I/345/gaia2", &p->datasetuse);
+          gal_string_allocate_copy("I/345/gaia2", &p->datasetuse);
         }
       else if( !strcmp(p->datasetstr, "sdss12") )
         {
           if(p->ra_name==NULL) p->ra_name="RA_ICRS";
           if(p->dec_name==NULL) p->dec_name="DE_ICRS";
-          gal_checkset_allocate_copy("V/147/sdss12", &p->datasetuse);
+          gal_string_allocate_copy("V/147/sdss12", &p->datasetuse);
         }
 
       /* The given dataset is not a known summary. */
       else
-        gal_checkset_allocate_copy(p->datasetstr, &p->datasetuse);
+        gal_string_allocate_copy(p->datasetstr, &p->datasetuse);
     }
 
   /* Currently we assume VizieR only uses TAP. */

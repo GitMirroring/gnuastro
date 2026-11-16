@@ -29,6 +29,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 
 #include <gnuastro/fits.h>
+#include <gnuastro/string.h>
 #include <gnuastro/pointer.h>
 
 #include <gnuastro-internal/timing.h>
@@ -440,7 +441,7 @@ ui_check_only_options(struct queryparams *p)
      downloaded file. */
   else
     {
-      basename=gal_checkset_malloc_cat(p->databasestr, suffix);
+      basename=gal_string_malloc_cat(p->databasestr, suffix);
       p->cp.output=gal_checkset_make_unique_suffix(basename, suffix);
       free(basename);
     }
@@ -452,7 +453,7 @@ ui_check_only_options(struct queryparams *p)
   if( !strcmp(suffix, ".xml") )
     {
       p->keeprawdownload=1;
-      gal_checkset_allocate_copy(p->cp.output, &p->downloadname);
+      gal_string_allocate_copy(p->cp.output, &p->downloadname);
     }
   else
     {

@@ -27,7 +27,7 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <error.h>
 #include <string.h>
 
-#include <gnuastro-internal/checkset.h>
+#include <gnuastro/string.h>
 
 #include "main.h"
 
@@ -70,19 +70,19 @@ gaia_sanity_checks(struct queryparams *p)
   if(p->datasetstr)
     {
       if( !strcmp(p->datasetstr, "dr3") )
-        gal_checkset_allocate_copy("gaiadr3.gaia_source", &p->datasetuse);
+        gal_string_allocate_copy("gaiadr3.gaia_source", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "edr3") )
-        gal_checkset_allocate_copy("gaiaedr3.gaia_source", &p->datasetuse);
+        gal_string_allocate_copy("gaiaedr3.gaia_source", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "dr2") )
-        gal_checkset_allocate_copy("gaiadr2.gaia_source", &p->datasetuse);
+        gal_string_allocate_copy("gaiadr2.gaia_source", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "dr1") )
-        gal_checkset_allocate_copy("gaiadr1.gaia_source", &p->datasetuse);
+        gal_string_allocate_copy("gaiadr1.gaia_source", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "hipparcos") )
-        gal_checkset_allocate_copy("public.hipparcos", &p->datasetuse);
+        gal_string_allocate_copy("public.hipparcos", &p->datasetuse);
       else if( !strcmp(p->datasetstr, "tycho2") )
-        gal_checkset_allocate_copy("public.tycho2", &p->datasetuse);
+        gal_string_allocate_copy("public.tycho2", &p->datasetuse);
       else
-        gal_checkset_allocate_copy(p->datasetstr, &p->datasetuse);
+        gal_string_allocate_copy(p->datasetstr, &p->datasetuse);
     }
 
   /* Currently we assume GAIA only uses TAP. */

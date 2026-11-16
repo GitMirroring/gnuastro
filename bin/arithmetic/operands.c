@@ -33,7 +33,8 @@ along with Gnuastro. If not, see <http://www.gnu.org/licenses/>.
 #include <gnuastro/fits.h>
 #include <gnuastro/tiff.h>
 #include <gnuastro/array.h>
-#include <gnuastro-internal/checkset.h>
+#include <gnuastro/string.h>
+
 #include <gnuastro-internal/arithmetic-set.h>
 
 #include "main.h"
@@ -169,7 +170,7 @@ operands_add(struct arithmeticparams *p, char *filename, gal_data_t *data)
             {
               /* Set the HDU for this filename. */
               if(p->globalhdu)
-                gal_checkset_allocate_copy(p->globalhdu, &newnode->hdu);
+                gal_string_allocate_copy(p->globalhdu, &newnode->hdu);
               else
                 newnode->hdu=gal_list_str_pop(&p->hdus);
 
