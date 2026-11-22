@@ -71,7 +71,7 @@
 # space characters in them, quote the full value
 numjobs=8
 builddir=build
-outdir=~/tmp
+outdir=
 
 
 
@@ -91,8 +91,8 @@ outdir=~/tmp
 # of the script to make sure that program is also re-built: 'if [ -f
 # "$utility" ]; then rm "$utility"; fi' that will delete that particular
 # program.
-utilname=table
-arguments=table.txt
+utilname=
+arguments=
 options=
 
 
@@ -211,8 +211,7 @@ if make -j$numjobs -C "$builddir"; then
     fi
 
     # Run the built utility with the given arguments and options.
-    "$utility" $arguments $option $extraopts  \
-               -c'arith MAG 3 1 float-to-string'
+    "$utility" $arguments $option $extraopts
 
     # Clean up.
     rm -rf .gnuastro

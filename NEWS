@@ -388,6 +388,9 @@ See the end of the file for license conditions.
   - bug #68805: Compilation warning (-Wvarargs) for 'va_start'. Found with
     the help of Stergios Amarantidis.
 
+  - bug #68939: MakeProfiles memory leak for point profiles. Found by
+    marinelay (on Savannah).
+
 
 
 

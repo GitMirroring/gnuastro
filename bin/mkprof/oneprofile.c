@@ -358,6 +358,7 @@ oneprofile_pix_by_pix(struct mkonthread *mkp)
   struct builtqueue *ibq=mkp->ibq;
   size_t ndim=ibq->image->ndim, *dsize=ibq->image->dsize;
 
+  size_t i, p, *dinc;
   uint8_t *byt, notfirst=0;
   gal_list_sizet_t *Q=NULL;
   int use_rand_points=1, ispeak=1;
@@ -365,7 +366,6 @@ oneprofile_pix_by_pix(struct mkonthread *mkp)
   float circ_r, *array=mkp->ibq->image->array;
   double (*profile)(struct mkonthread *)=mkp->profile;
   double truncr=mkp->truncr, approx, hp=0.5f/mkp->p->oversample;
-  size_t i, p, *dinc=gal_dimension_increment(ndim, dsize);
 
   /* lQ: Largest. sQ: Smallest in queue */
   gal_list_dosizet_t *lQ=NULL, *sQ;
@@ -377,10 +377,12 @@ oneprofile_pix_by_pix(struct mkonthread *mkp)
   /* If this is a point source, just fill that one pixel and leave this
      function. */
   if(mkp->func==PROFILE_POINT)
-    { array[p] = mkp->fixedvalue; return; }
+    { array[p]=mkp->fixedvalue; return; }
 
-  /* Allocate the 'byt' array. It is used as a flag to make sure that we
+  /* Allocate the 'dinc' and 'byt' arrays. The former is used for parsing
+     the dataset and the latter is used as a flag to make sure that we
      don't re-calculate the profile value on a pixel more than once. */
+  dinc=gal_dimension_increment(ndim, dsize);
   byt = gal_pointer_allocate(GAL_TYPE_UINT8,
                              gal_dimension_total_size(ndim, dsize), 1,
                              __func__, "byt");

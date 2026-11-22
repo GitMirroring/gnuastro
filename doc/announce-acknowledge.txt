@@ -3,6 +3,7 @@ Alphabetically ordered list to acknowledge in the next release.
 Ivan Brossard
 Leindert Boogaard
 Mariano Moles
+marinelay (on Savannah)
 Raúl Infante Sainz
 Stergios Amarantidis
 
