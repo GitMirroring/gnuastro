@@ -391,6 +391,12 @@ See the end of the file for license conditions.
   - bug #68939: MakeProfiles memory leak for point profiles. Found by
     marinelay (on Savannah).
 
+  - bug #68949: MakeProfiles memory leak for input column names. Found by
+    marinelay (on Savannah).
+
+  - bug #68950: MakeProfiles memory leak of file name in WCS warning. Found
+    by marinelay (on Savannah).
+
 
 
 

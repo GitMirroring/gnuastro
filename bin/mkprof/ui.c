@@ -708,11 +708,13 @@ ui_read_cols_general(struct mkprofparams *p, gal_list_str_t *colstrs)
      them here and avoid possible bugs. */
   gal_list_str_reverse(&colstrs);
 
-  /* Read the desired columns from the file. */
+  /* Read the desired columns from the file and free the column names
+     (either as lines or 'colstrs').*/
   lines=gal_options_check_stdin(p->catname, p->cp.stdintimeout, "input");
   cols=gal_table_read(p->catname, p->cp.hdu, lines, colstrs,
                       p->cp.searchin, p->cp.ignorecase, p->cp.numthreads,
                       p->cp.minmapsize, p->cp.quietmmap, NULL, "--hdu");
+  gal_list_str_free(colstrs, 1);
   gal_list_str_free(lines, 1);
 
   /* The name of the input catalog is only for informative steps from now
@@ -760,7 +762,7 @@ ui_read_cols_2d(struct mkprofparams *p)
   gal_list_str_add(&colstrs, p->mcol, 0);
   gal_list_str_add(&colstrs, p->tcol, 0);
 
-  /* Read the columns. */
+  /* Read the columns ('colstrs' is freed in the function). */
   cols=ui_read_cols_general(p, colstrs);
 
   /* Put each column's data in the respective internal array. */
@@ -1017,7 +1019,7 @@ ui_read_cols_3d(struct mkprofparams *p)
   gal_list_str_add(&colstrs, p->mcol,  0);
   gal_list_str_add(&colstrs, p->tcol,  0);
 
-  /* Read the columns. */
+  /* Read the columns ('colstrs' is freed in the function). */
   cols=ui_read_cols_general(p, colstrs);
 
   /* Put each column's data in the respective internal array. */
@@ -1515,6 +1517,7 @@ ui_prepare_wcs(struct mkprofparams *p)
 static void
 ui_prepare_canvas(struct mkprofparams *p)
 {
+  char *ininfo;
   float *f, *ff;
   int setshift=0;
   long width[3]={1,1,1};
@@ -1667,16 +1670,19 @@ ui_prepare_canvas(struct mkprofparams *p)
           /* If the background image didn't have WCS, the output shouldn't
              have any either! So let the user know. */
           if(p->cp.quiet==0)
-            error(EXIT_SUCCESS, 0, "WARNING: no WCS in image given to "
-                  "'--background': %s! The output will therefore also "
-                  "not have any WCS. If you want to use the "
-                  "MakeProfiles WCS options ('--crpix', '--crval' and "
-                  "etc) to manually set the WCS of your output image, "
-                  "please do _not_ use '--background' and give the "
-                  "final size (in pixels) of your desired output through "
-                  "the '--mergedsize' option. You can suppress this "
-                  "warning with the '--quiet' option",
-                  gal_fits_name_save_as_string(p->backname, p->backhdu));
+            {
+              ininfo=gal_fits_name_save_as_string(p->backname, p->backhdu);
+              error(EXIT_SUCCESS, 0, "WARNING: no WCS in image given to "
+                    "'--background': %s! The output will therefore also "
+                    "not have any WCS. If you want to use the "
+                    "MakeProfiles WCS options ('--crpix', '--crval' and "
+                    "etc) to manually set the WCS of your output image, "
+                    "please do _not_ use '--background' and give the "
+                    "final size (in pixels) of your desired output through "
+                    "the '--mergedsize' option. You can suppress this "
+                    "warning with the '--quiet' option", ininfo);
+              free(ininfo);
+            }
         }
       else
         ui_prepare_wcs(p);
