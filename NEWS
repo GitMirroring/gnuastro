@@ -350,6 +350,11 @@ See the end of the file for license conditions.
 
   - gal_string_to_number: new name for 'gal_type_string_to_number'
 
+*** developer-build
+
+  - The '--publish' option does not include '--debug' since it can hide
+    certain execution bugs that may show up without it.
+
 ** Bugs fixed
 
   - bug #67776: astfits crashes if asked to convert distortion of an image

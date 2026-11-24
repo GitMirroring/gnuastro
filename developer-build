@@ -213,9 +213,7 @@ Options:
                           For example: -u my-server:folder
                           Current status: $upload_status
 
- -p, --publish STR        Short for '-a -c -d -C -u STR'. '-d' is added
-                          because it will greatly speed up the build. It
-                          will have no effect on the produced tarball.
+ -p, --publish STR        Short for '-a -c -C -u STR'.
 
  -I, --install-archive    Short for '-a -c -C -i -D'.
 
@@ -343,7 +341,6 @@ do
         -p|--publish)
             dist=1
             clean=1
-            debug=1
             check=1
             reconf=1
             upload=1
