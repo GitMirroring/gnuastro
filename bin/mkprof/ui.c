@@ -714,7 +714,7 @@ ui_read_cols_general(struct mkprofparams *p, gal_list_str_t *colstrs)
   cols=gal_table_read(p->catname, p->cp.hdu, lines, colstrs,
                       p->cp.searchin, p->cp.ignorecase, p->cp.numthreads,
                       p->cp.minmapsize, p->cp.quietmmap, NULL, "--hdu");
-  gal_list_str_free(colstrs, 1);
+  gal_list_str_free(colstrs, 0);
   gal_list_str_free(lines, 1);
 
   /* The name of the input catalog is only for informative steps from now
@@ -2249,6 +2249,16 @@ ui_free_report(struct mkprofparams *p, struct timeval *t1)
   free(p->cp.hdu);
   free(p->outdir);
   free(p->basename);
+  if(p->fcol) free(p->fcol);
+  if(p->rcol) free(p->rcol);
+  if(p->ncol) free(p->ncol);
+  if(p->pcol) free(p->pcol);
+  if(p->qcol) free(p->qcol);
+  if(p->mcol) free(p->mcol);
+  if(p->tcol) free(p->tcol);
+  if(p->p2col) free(p->p2col);
+  if(p->p3col) free(p->p3col);
+  if(p->q2col) free(p->q2col);
 
   /* p->cp.output might be equal to p->mergedimgname. In this case, if
      we simply free them after each other, there will be a double free
